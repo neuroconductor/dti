@@ -6,19 +6,22 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine eigen3r(y,lambda,theta,ierr)
       integer ierr
       real*8 y(6),a(3,3),lambda,theta(3)
-      integer i,j,l,ISUPPZ(2),lwork,iwork(50),liwork
-      real*8 w(3),work(104)
+      integer i,j,l,ISUPPZ(2),lwork,iwork(50),liwork,n,m
+      real*8 w(3),work(104),vl,vu,eps
+      n=3
+      m=1
+      eps=1.d-10
       l=1
       DO i=1,3
          DO j=i,3
 	    a(i,j)=y(l)
+	    l=l+1
          END DO
-	 l=l+1
       END DO
       lwork=104
       liwork=50
-      call dsyevr('V','I','U',3,a,3,vl,vu,3,3,1.d-10,l,w,
-     1            theta,3,ISUPPZ,work,lwork,iwork,liwork,ierr)
+      call dsyevr('V','I','U',n,a,n,vl,vu,n,n,eps,m,w,
+     1            theta,n,ISUPPZ,work,lwork,iwork,liwork,ierr)
       if(ierr.eq.0) THEN
          lambda=w(1)
       ELSE
@@ -34,42 +37,22 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine eigen3(y,lambda,theta,ierr)
       integer ierr
       real*8 y(6),a(3,3),lambda(3),theta(3,3)
-      integer i,j,l,ISUPPZ(2),lwork,iwork(50),liwork
-      real*8 work(104)
+      integer i,j,l,ISUPPZ(2),lwork,iwork(50),liwork,n,m
+      real*8 work(104),vl,vu,eps
+      n=3
+      m=3
+      eps=1.d-10
       l=1
       DO i=1,3
          DO j=i,3
 	    a(i,j)=y(l)
+            l=l+1
          END DO
-	 l=l+1
       END DO
       lwork=104
       liwork=50
-      call dsyevr('V','A','U',3,a,3,vl,vu,1,3,1.d-10,l,lambda,
-     1            theta,3,ISUPPZ,work,lwork,iwork,liwork,ierr)
-      RETURN
-      END
-      
-      subroutine eig3old(ddiff, diff, evectors, evalues, evaonly, ierr)
-      integer ddiff, ierr(ddiff)
-      real*8 diff(ddiff,6), evectors(9,ddiff), evalues(3,ddiff)
-      logical evaonly
-      real*8 xmat(9),work1(3),work2(3)
-      integer i,n
-      n=3
-      DO i=1,ddiff
-         xmat(1)=diff(i,1)
-         xmat(2)=diff(i,4)
-         xmat(3)=diff(i,5)
-         xmat(4)=diff(i,4)
-         xmat(5)=diff(i,2)
-         xmat(6)=diff(i,6)
-         xmat(7)=diff(i,5)
-         xmat(8)=diff(i,6)
-         xmat(9)=diff(i,3)
-	 call rs(n, n, xmat, evalues(1,i), evaonly, evectors(1,i), 
-     1            work1, work2, ierr(i)) 
-      END DO 
+      call dsyevr('V','A','U',n,a,n,vl,vu,1,n,eps,m,lambda,
+     1            theta,n,ISUPPZ,work,lwork,iwork,liwork,ierr)
       RETURN
       END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
@@ -89,7 +72,7 @@ C   n1,n2,n3 dimensions of the grid
 C   dt       estimated flow intensity
 C
       integer n1,n2,n3
-      real*8 theta(n1,n2,n3,3),try(n1,n2,n3),hd,ht,dt(n1,n2,n3)
+      real*8 theta(3,n1,n2,n3),try(n1,n2,n3),hd,ht,dt(n1,n2,n3)
       integer i1,i2,i3,j1,j2,j3,j1a,j2a,j3a,j1e,j2e,j3e,ih1
       real*8 sw,swy,thi1,thi2,thi3,p11,p12,p13,p22,p23,p33,zd,zt,z,
      1     d,d1,d2,d3,ht2
@@ -100,9 +83,9 @@ C
 	    DO i3=1,n3
 	       sw=0.d0
 	       swy=0.d0
-	       thi1=theta(i1,i2,i3,1)
-	       thi2=theta(i1,i2,i3,2)
-	       thi3=theta(i1,i2,i3,3)
+	       thi1=theta(1,i1,i2,i3)
+	       thi2=theta(2,i1,i2,i3)
+	       thi3=theta(3,i1,i2,i3)
 	       p11=(1-thi1*thi1)/hd
 	       p22=(1-thi2*thi2)/hd
 	       p33=(1-thi3*thi3)/hd
@@ -158,7 +141,7 @@ C   n1,n2,n3 dimensions of the grid
 C   dt       estimated flow intensity
 C
       integer n1,n2,n3
-      real*8 theta(n1,n2,n3,3),y(n1,n2,n3,6),h,dt(n1,n2,n3)
+      real*8 theta(3,n1,n2,n3),y(6,n1,n2,n3),h,dt(n1,n2,n3)
       integer i1,i2,i3,j1,j2,j3,j1a,j2a,j3a,j1e,j2e,j3e,ih1,ih2,ih3
       real*8 h2,swy(6),lambda
       h2=h*h 
@@ -190,7 +173,7 @@ C
 			z=z*dt(j1,j2,j3)
 			sw=sw+z
 			DO k=1,6
-			   swy(k)=swy(k)+z*y(j1,j2,j3,k)
+			   swy(k)=swy(k)+z*y(k,j1,j2,j3)
 			END DO
         	     END DO
 	          END DO
@@ -198,9 +181,24 @@ C
 	       DO k=1,6
 	          swy(k)=swy(k)/sw
 	       END DO
-               call eigen3r(swy,lambda,theta(i1,i2,i3,1),ierr)
+               call eigen3r(swy,lambda,theta(1,i1,i2,i3),ierr)
+C   largest eigenvalue in lambda, corresponding EV in theta(1,i1,i2,i3)
 	    END DO
 	 END DO
       END DO
       RETURN
       END
+      subroutine tracey(y,n1,n2,n3,try)
+      integer n1,n2,n3
+      real*8 y(6,n1,n2,n3),try(n1,n2,n3)
+      integer i1,i2,i3
+      real*8 z
+      DO i1=1,n1
+         DO i2=1,n2
+	    DO i3=1,n3
+	       try(i1,i2,i3)=y(1,i1,i2,i3)+y(4,i1,i2,i3)+y(6,i1,i2,i3)
+	    END DO
+	 END DO
+      END DO
+      return
+      end
