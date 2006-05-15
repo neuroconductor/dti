@@ -4,6 +4,7 @@ C   Compute the largest eigenvalue (lambda) of a 3x3 matrix and the correspondin
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC      
       subroutine eigen3r(y,lambda,theta,ierr)
+      implicit logical (a-z)
       integer ierr
       real*8 y(6),a(3,3),lambda,theta(3)
       integer i,j,l,ISUPPZ(2),lwork,iwork(50),liwork,n,m
@@ -35,6 +36,7 @@ C   Compute all eigenvalues (lambda) of a 3x3 matrix and the corresponding EV (t
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC      
       subroutine eigen3(y,lambda,theta,ierr)
+      implicit logical (a-z)
       integer ierr
       real*8 y(6),a(3,3),lambda(3),theta(3,3)
       integer i,j,l,ISUPPZ(2),lwork,iwork(50),liwork,n,m
@@ -71,9 +73,10 @@ C   h        bandwidth
 C   n1,n2,n3 dimensions of the grid
 C   dt       estimated flow intensity
 C
+      implicit logical (a-z)
       integer n1,n2,n3
       real*8 theta(3,n1,n2,n3),try(n1,n2,n3),hd,ht,dt(n1,n2,n3)
-      integer i1,i2,i3,j1,j2,j3,j1a,j2a,j3a,j1e,j2e,j3e,ih1
+      integer i1,i2,i3,j1,j2,j3,j1a,j1e,ih1
       real*8 sw,swy,thi1,thi2,thi3,p11,p12,p13,p22,p23,p33,zd,zt,z,
      1     d,d1,d2,d3,ht2
       ht2=ht*ht
@@ -140,10 +143,12 @@ C   h        bandwidth
 C   n1,n2,n3 dimensions of the grid
 C   dt       estimated flow intensity
 C
+      implicit logical (a-z)
       integer n1,n2,n3
       real*8 theta(3,n1,n2,n3),y(6,n1,n2,n3),h,dt(n1,n2,n3)
-      integer i1,i2,i3,j1,j2,j3,j1a,j2a,j3a,j1e,j2e,j3e,ih1,ih2,ih3
-      real*8 h2,swy(6),lambda
+      integer i1,i2,i3,j1,j2,j3,j1a,j2a,j3a,j1e,j2e,j3e,ih1,ih2,ih3,
+     1        k,ierr
+      real*8 h2,swy(6),lambda,sw,d1,d2,d3,z1,z2,z
       h2=h*h 
       ih1=h
       DO i1=1,n1
@@ -161,7 +166,7 @@ C
 		  ih2=dsqrt(h2-z1)
 	          j2a=max0(1,i2-ih2)
 	          j2e=min0(n1,i2+ih2)
-	          DO j2=j2a,j2e2
+	          DO j2=j2a,j2e
 		     d2=i2-j2
 		     z2=d2*d2
 		     ih3=dsqrt(h2-z1-z2)
@@ -188,11 +193,16 @@ C   largest eigenvalue in lambda, corresponding EV in theta(1,i1,i2,i3)
       END DO
       RETURN
       END
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+C
+C    Compute trace of y
+C
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine tracey(y,n1,n2,n3,try)
+      implicit logical (a-z)
       integer n1,n2,n3
       real*8 y(6,n1,n2,n3),try(n1,n2,n3)
       integer i1,i2,i3
-      real*8 z
       DO i1=1,n1
          DO i2=1,n2
 	    DO i3=1,n3
