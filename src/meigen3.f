@@ -165,13 +165,13 @@ C
 		  z1=d1*d1
 		  ih2=dsqrt(h2-z1)
 	          j2a=max0(1,i2-ih2)
-	          j2e=min0(n1,i2+ih2)
+	          j2e=min0(n2,i2+ih2)
 	          DO j2=j2a,j2e
 		     d2=i2-j2
 		     z2=d2*d2
 		     ih3=dsqrt(h2-z1-z2)
 	             j3a=max0(1,i3-ih3)
-	             j3e=min0(n1,i3+ih3)
+	             j3e=min0(n3,i3+ih3)
 		     DO j3=j3a,j3e
 		        d3=i3-j3
 			z=1.d0-(z1+z2+d3*d3)/h2
