@@ -160,8 +160,7 @@ theta.estimate <- function(y,dt=NULL,h) {
 dt.estimate <- function(theta,y,hd,ht) {
   cat("\nNOTE: This code is still experimental!\n") 
 
-  dftr <- function(y) sum(y[1:3])
-  try <- apply(y,c(1,2,3),dftr)
+  try <- dftr(y)
   cat("Trace determined\n")
   
   n1 <- dim(try)[1]
@@ -185,3 +184,72 @@ dt.estimate <- function(theta,y,hd,ht) {
   dim(z$dt) <- c(n1,n2,n3)
   z$dt
 }
+
+  dftr <- function(y) {
+     dy <- dim(y)
+     dim(y) <- c(prod(dy[1:3]),6)
+     try <- y[,c(1,4,6)]%*%c(1,1,1)
+     dim(try) <- dy[1:3]
+     try
+     }
+
+dt.estimate2 <- function(theta,y,ai,lmax,hd,ht) {
+  cat("\nNOTE: This code is still experimental!\n") 
+
+  try <- dftr(y)
+  cat("Trace determined\n")
+  
+  n1 <- dim(try)[1]
+  n2 <- dim(try)[2]
+  n3 <- dim(try)[3]
+  
+  if (length(theta) == 3) theta <- aperm(array(theta,dim=c(3,n1,n2,n3)),c(2,3,4,1))
+  cat("Extended theta\n")
+  
+  z <- .Fortran("estimdt2",
+                as.double(theta),
+                as.double(try),
+		as.double(ai),
+		as.double(lmax),
+                as.double(hd),
+                as.double(ht),
+                as.integer(n1),
+                as.integer(n2),
+                as.integer(n3),
+                dt = double(n1*n2*n3),
+                PACKAGE="dti")[c("dt")]
+
+  dim(z$dt) <- c(n1,n2,n3)
+  z$dt
+}
+
+tensor.estimate <- function(y,dt=NULL,h) {
+  cat("\nNOTE: This code is still experimental!\n")
+
+  n1 <- dim(y)[1]
+  n2 <- dim(y)[2]
+  n3 <- dim(y)[3]
+  n <- n1*n2*n3
+  if (is.null(dt)) dt <- array(1,c(n1,n2,n3))
+  
+  z <- .Fortran("esttens",
+                as.double(aperm(y,c(4,1,2,3))),
+                as.double(dt),
+                as.integer(n1),
+                as.integer(n2),
+                as.integer(n3),
+                as.double(h),
+                theta = double(3*n),
+		yhat = double(6*n),
+		aihat = double(n),
+		lmhat = double(n),
+                PACKAGE="dti")[c("theta","yhat","aihat","lmhat")]
+              
+  dim(z$theta) <- c(3,n1,n2,n3)
+  dim(z$yhat) <- c(6,n1,n2,n3)
+  z$yhat <- aperm(z$yhat,c(2:4,1))
+  dim(z$aihat) <- c(n1,n2,n3)
+  dim(z$lmhat) <- c(n1,n2,n3)
+  z
+}
+

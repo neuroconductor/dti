@@ -1,4 +1,4 @@
 useDynLib(dti)
 export(create.designmatrix.dti,calculate.lm.dti,determine.eigenvalue,anisotropy)
-export(theta.estimate,dt.estimate)
+export(theta.estimate,dt.estimate,tensor.estimate,dt.estimate2)
 export(determine2.eigenvalue)
