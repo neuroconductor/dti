@@ -73,35 +73,115 @@ determine.eigenvalue <- function(diff) {
   list(eigen=eigen)
 }
 
-determine2.eigenvalue <- function(diff,only.values=TRUE) {
+determine2.eigenvalue <- function(y, reduced=FALSE) {
   cat("\nNOTE: This code is still experimental!\n") 
-  n<-3
-  ddiff<-prod(dim(diff)[-4])
-  z<-.Fortran("eigen3", as.integer(ddiff), as.double(diff), evectors = double(ddiff*9), evalues = double(ddiff*3),
-            !only.values, ierr = integer(ddiff), PACKAGE="fmri")[c("evalues","evectors","ierr")]
-  list(evalues=array(t(matrix(z$evalues,3,ddiff)),c(dim(diff)[-4],3)),evectors=array(t(matrix(z$evectors,9,ddiff)),c(dim(diff)[-4],3,3)),ierr=z$ierr)
-}
 
-anisotropy <- function(eigen) {
-  cat("\nNOTE: This code is still experimental!\n") 
-  
-  fa <-
-    array(0,dim=c(dim(eigen)[1],dim(eigen)[2],dim(eigen)[3]))
-  ra <-
-    array(0,dim=c(dim(eigen)[1],dim(eigen)[2],dim(eigen)[3]))
-  trc <-
-    array(0,dim=c(dim(eigen)[1],dim(eigen)[2],dim(eigen)[3]))
-  
-  for (i in 1:dim(eigen)[1]) {
+  dy <- dim(y)
+  n <- prod(dy[-4]) # number of voxel
+
+  if (reduced) {
+    ll <- array(0,dy[1:3])
+    th <- array(0,c(dy[1:3],3))
+  } else {
+    ll <- array(0,c(dy[1:3],3))
+    th <- array(0,c(dy[1:3],9))
+  }
+  ierr <- array(0,dy[1:3])
+
+  for (i in 1:dy[1]) {
     cat(".")
-    for (j in 1:dim(eigen)[2]) {
-      for (k in 1:dim(eigen)[3]) {
-        trc[i,j,k] <- mean(eigen[i,j,k,])
-        fa[i,j,k] <- sqrt(3*sum((eigen[i,j,k,]-trc[i,j,k])^2))/sqrt(2*(sum(eigen[i,j,k,]^2)))
-        ra[i,j,k] <- sqrt(sum((eigen[i,j,k,]-trc[i,j,k])^2))/sqrt(3*trc[i,j,k])
+    for (j in 1:dy[2]) {
+      for (k in 1:dy[3]) {
+        if (reduced) {
+          z <- .Fortran("eigen3r",
+                        as.double(y[i,j,k,c(1,4,5,2,6,3)]),
+                        lambda = double(1),
+                        theta = double(3),
+                        ierr = integer(1),
+                        PACKAGE="dti")[c("lambda","theta","ierr")]
+          ll[i,j,k] <- z$lambda
+        } else {
+          z <- .Fortran("eigen3",
+                        as.double(y[i,j,k,c(1,4,5,2,6,3)]),
+                        lambda = double(3),
+                        theta = double(3*3),
+                        ierr = integer(1),
+                        PACKAGE="dti")[c("lambda","theta","ierr")]
+          ll[i,j,k,] <- z$lambda
+        }
+        th[i,j,k,] <- z$theta
+        ierr[i,j,k] <- z$ierr
       }
     }
   }
 
-  list(fa=fa,ra=ra, trace=trc)
+  if (!reduced) dim(th) <- c(dy[1:3],3,3)
+  
+  list(lambda = ll, theta = th, ierr = ierr)
+}
+
+anisotropy <- function(eigen) {
+  cat("\nNOTE: This code is still experimental!\n") 
+  dimdt <- dim(eigen)
+  dim(eigen) <- c(prod(dimdt[1:3]),3)
+
+  trc <- as.vector(eigen %*% c(1,1,1))/3
+  fa <- sqrt(1.5*((sweep(eigen,1,trc)^2)%*% c(1,1,1))/((eigen^2)%*% c(1,1,1)))
+  ra <- sqrt(((sweep(eigen,1,trc)^2)%*% c(1,1,1))/(3*trc))
+
+  dim(trc) <- dim(fa) <- dim(ra) <- dimdt[1:3]
+  
+  list(fa=fa, ra=ra, trace=trc)
+}
+
+theta.estimate <- function(y,dt=NULL,h) {
+  cat("\nNOTE: This code is still experimental!\n")
+
+  n1 <- dim(y)[1]
+  n2 <- dim(y)[2]
+  n3 <- dim(y)[3]
+
+  if (is.null(dt)) dt <- array(1,c(n1,n2,n3))
+  
+  z <- .Fortran("esttheta",
+                as.double(aperm(y,c(4,1,2,3))),
+                as.double(dt),
+                as.integer(n1),
+                as.integer(n2),
+                as.integer(n3),
+                as.double(h),
+                theta = double(3*n1*n2*n3),
+                PACKAGE="dti")[c("theta")]
+
+  dim(z$theta) <- c(3,n1,n2,n3)
+  z$theta
+}
+
+dt.estimate <- function(theta,y,hd,ht) {
+  cat("\nNOTE: This code is still experimental!\n") 
+
+  dftr <- function(y) sum(y[1:3])
+  try <- apply(y,c(1,2,3),dftr)
+  cat("Trace determined\n")
+  
+  n1 <- dim(try)[1]
+  n2 <- dim(try)[2]
+  n3 <- dim(try)[3]
+  
+  if (length(theta) == 3) theta <- aperm(array(theta,dim=c(3,n1,n2,n3)),c(2,3,4,1))
+  cat("Extended theta\n")
+  
+  z <- .Fortran("estimdt",
+                as.double(theta),
+                as.double(try),
+                as.double(hd),
+                as.double(ht),
+                as.integer(n1),
+                as.integer(n2),
+                as.integer(n3),
+                dt = double(n1*n2*n3),
+                PACKAGE="dti")[c("dt")]
+
+  dim(z$dt) <- c(n1,n2,n3)
+  z$dt
 }

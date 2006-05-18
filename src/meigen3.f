@@ -23,11 +23,11 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       liwork=50
       call dsyevr('V','I','U',n,a,n,vl,vu,n,n,eps,m,w,
      1            theta,n,ISUPPZ,work,lwork,iwork,liwork,ierr)
-      if(ierr.eq.0) THEN
+c      if(ierr.eq.0) THEN
          lambda=w(1)
-      ELSE
-         lambda=0.d0
-      END IF
+c      ELSE
+c         lambda=0.d0
+c      END IF
       RETURN
       END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
@@ -188,6 +188,7 @@ C
 	       END DO
                call eigen3r(swy,lambda,theta(1,i1,i2,i3),ierr)
 C   largest eigenvalue in lambda, corresponding EV in theta(1,i1,i2,i3)
+               call rchkusr()
 	    END DO
 	 END DO
       END DO
