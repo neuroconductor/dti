@@ -13,11 +13,11 @@ create.designmatrix.dti <- function(bvec, bvalue=1) {
 
   for (d in 1:directions) {
     z[d,1] <- bvec[d,1]^2
-    z[d,2] <- bvec[d,2]^2
-    z[d,3] <- bvec[d,3]^2
-    z[d,4] <- 2*bvec[d,1]*bvec[d,2]
-    z[d,5] <- 2*bvec[d,1]*bvec[d,3]
-    z[d,6] <- 2*bvec[d,2]*bvec[d,3]
+    z[d,4] <- bvec[d,2]^2
+    z[d,6] <- bvec[d,3]^2
+    z[d,2] <- 2*bvec[d,1]*bvec[d,2]
+    z[d,3] <- 2*bvec[d,1]*bvec[d,3]
+    z[d,5] <- 2*bvec[d,2]*bvec[d,3]
     z[d,] <- bvalue*z[d,]
   }
   
@@ -56,24 +56,7 @@ calculate.lm.dti <- function(ttt,z,res=FALSE) {
   }
 }
   
-determine.eigenvalue <- function(diff) {
-  cat("\nNOTE: This code is still experimental!\n") 
-
-  eigen <- array(0,dim=c(dim(diff)[1],dim(diff)[2],dim(diff)[3],3))
-  for (i in 1:dim(diff)[1]) {
-    cat(".")
-    for (j in 1:dim(diff)[2]) {
-      for (k in 1:dim(diff)[3]) {
-        eigen[i,j,k,] <- eigen(matrix(diff[i,j,k,c(1,4,5,4,2,6,5,6,3)],c(3,3)),symmetric=TRUE,only.values=TRUE)$values
-      }
-    }
-  }
-# ediff<-apply(array(diff[,,,c(1,2,3,2,4,5,3,5,6)],c(dim(diff)[-4],3,3)),1:3,eigen)  
-#  gives a list of dimension dim(diff)  containing the eigenvalues and eigenvectors
-  list(eigen=eigen)
-}
-
-determine2.eigenvalue <- function(y, reduced=FALSE) {
+determine.eigenvalue <- function(y, reduced=FALSE) {
   cat("\nNOTE: This code is still experimental!\n") 
 
   dy <- dim(y)
@@ -94,7 +77,7 @@ determine2.eigenvalue <- function(y, reduced=FALSE) {
       for (k in 1:dy[3]) {
         if (reduced) {
           z <- .Fortran("eigen3r",
-                        as.double(y[i,j,k,c(1,4,5,2,6,3)]),
+                        as.double(y[i,j,k,]),
                         lambda = double(1),
                         theta = double(3),
                         ierr = integer(1),
@@ -102,7 +85,7 @@ determine2.eigenvalue <- function(y, reduced=FALSE) {
           ll[i,j,k] <- z$lambda
         } else {
           z <- .Fortran("eigen3",
-                        as.double(y[i,j,k,c(1,4,5,2,6,3)]),
+                        as.double(y[i,j,k,]),
                         lambda = double(3),
                         theta = double(3*3),
                         ierr = integer(1),
@@ -185,13 +168,13 @@ dt.estimate <- function(theta,y,hd,ht) {
   z$dt
 }
 
-  dftr <- function(y) {
-     dy <- dim(y)
-     dim(y) <- c(prod(dy[1:3]),6)
-     try <- y[,c(1,4,6)]%*%c(1,1,1)
-     dim(try) <- dy[1:3]
-     try
-     }
+dftr <- function(y) {
+  dy <- dim(y)
+  dim(y) <- c(prod(dy[1:3]),6)
+  try <- y[,c(1,4,6)]%*%c(1,1,1)
+  dim(try) <- dy[1:3]
+  try
+}
 
 dt.estimate2 <- function(theta,y,ai,lmax,hd,ht) {
   cat("\nNOTE: This code is still experimental!\n") 
