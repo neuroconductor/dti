@@ -236,3 +236,69 @@ tensor.estimate <- function(y,dt=NULL,h) {
   z
 }
 
+dtianiso<-function(y,hmax,lambda,rho,graph=FALSE,slice=NULL){
+  args <- match.call()
+  dimy <- dim(y)
+  if(length(dimy)!=4||dimy[1]!=6) stop("y does not contain 3D diffusion tensor image")
+  n1<-dimy[2]
+  n2<-dimy[3]
+  n3<-dimy[4]
+  n<-n1*n2*n3
+  theta <- y
+  z <- .Fortran("initdti",
+                theta=as.double(theta),
+                as.integer(n1),
+                as.integer(n2),
+                as.integer(n3),
+                anindex=double(n),
+                andirection=double(3*n),
+                DUP=FALSE,
+                PACKAGE="dti")[c("theta","anindex","andirection")]
+  z$bi <- array(1,dimy[-1])
+  dim(z$theta) <- dimy
+  dim(z$anindex) <- dimy[-1]
+  dim(z$andirection) <- c(3,dimy[-1])
+#
+#  initial state for h=1
+#
+  if(graph){
+     oldpar <- par(mfrow=c(1,2),mar=c(1,1,3,.25),mgp=c(2,1,0))
+     on.exit(par(oldpar))
+     if(is.null(slice)) slice<-n3%/%2
+     image(z$anindex[,,slice],col=grey((0:255)/255))
+     title(paste("Anisotropy index (h=1), slice",slice))
+     image(z$bi[,,slice],col=grey((0:255)/255))
+     title(paste("sum of weights, slice",slice))
+  }
+  hincr <- 1.25^(1/3)
+  hakt <- hincr
+  while( hakt <= hmax) {
+     z <- .Fortran("awsdti",
+                as.double(y),
+                as.double(z$theta),
+                bi=as.double(z$bi),
+                anindex=as.double(z$anindex),
+                andirection=as.double(z$andirection),
+                as.integer(n1),
+                as.integer(n2),
+                as.integer(n3),
+                as.double(hakt),
+                as.double(rho),
+                as.double(lambda),
+                theta=as.double(z$theta),
+                DUP=FALSE,
+                PACKAGE="dti")[c("theta","bi","anindex","andirection")]
+     dim(z$bi) <- dimy[-1]
+     dim(z$theta) <- dimy
+     dim(z$anindex) <- dimy[-1]
+     dim(z$andirection) <- c(3,dimy[-1])
+     if(graph){
+     image(z$anindex[,,slice],col=grey((0:255)/255))
+     title(paste("Anisotropy index (h=",signif(hakt,3),"), slice",slice))
+     image(z$bi[,,slice],col=grey((0:255)/255))
+     title(paste("sum of weights  max=",signif(max(z$bi),3),"), slice",slice))
+     }
+     hakt <- hakt*hincr
+  }
+invisible(list(theta=z$theta,bi=z$bi,anindex=z$anindex,andirection=z$andirection,call=args))
+}

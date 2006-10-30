@@ -28,33 +28,6 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 C
-C   Compute all eigenvalues (lambda) of a 3x3 matrix and the corresponding EV (theta)
-C
-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC      
-      subroutine eigen3(y,lambda,theta,ierr)
-      implicit logical (a-z)
-      integer ierr
-      real*8 y(6),a(3,3),lambda(3),theta(3,3)
-      integer i,j,l,ISUPPZ(2),lwork,iwork(50),liwork,n,m
-      real*8 work(104),vl,vu,eps
-      n=3
-      m=3
-      eps=1.d-20
-      l=1
-      DO i=1,3
-         DO j=i,3
-	    a(i,j)=y(l)
-            l=l+1
-         END DO
-      END DO
-      lwork=104
-      liwork=50
-      call dsyevr('V','A','U',n,a,n,vl,vu,1,n,eps,m,lambda,
-     1            theta,n,ISUPPZ,work,lwork,iwork,liwork,ierr)
-      RETURN
-      END
-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-C
 C   Estimate local flow intensity
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC      
