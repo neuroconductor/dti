@@ -19,12 +19,12 @@ C   thnew    -  new smoothed diffusion tensor data
       real*8 y(6,n1,n2,n3),th(6,n1,n2,n3),thnew(6,n1,n2,n3),rho,
      1       lambda,bi(n1,n2,n3),ani(n1,n2,n3),dir(3,n1,n2,n3)
       integer i1,j1,j1a,j1e,jj1,i2,j2,j2a,j2e,jj2,i3,j3a,j3e,jj3,ierr,k
-      real*8 wij,adist,sw,swy(6),h2,thi(6),bii,ewert(3),evect(3,3),
+      real*8 wij,adist,sw,swy(6),h3,thi(6),bii,ewert(3),evect(3,3),
      1       mew,z1,z2,z3,dtidist,sij,diri(3),anii
       external adist,dtidist
       logical aws 
       aws=lambda.lt.1e20
-      h2=h*h
+      h3=h*h*h
 C  now anisotropic smoothing 
       DO i1=1,n1
          DO i2=1,n2
@@ -40,7 +40,7 @@ C  now anisotropic smoothing
                   diri(k)=dir(k,i1,i2,i3)
                END DO
                call rangex(thi,h,rho,bii,j1a,j1e)
-               DO j1=j1a,j1eandirection
+               DO j1=j1a,j1e
                   jj1=i1+j1
                   if(jj1.le.0.or.jj1.gt.n1) CYCLE
                   call rangey(thi,j1,h,rho,bii,j2a,j2e)
@@ -53,11 +53,11 @@ C  now anisotropic smoothing
                         if(jj3.le.0.or.jj3.gt.n3) CYCLE
                         wij=adist(thi,j1,j2,j3,rho,bii)
 C     triangular location kernel
-                        if(wij.gt.h2) THEN
+                        if(wij.gt.h3) THEN
                            call dblepr("outside",7,wij,1)
                            CYCLE
                         END IF
-                        wij = 1.d0 - wij/h2
+                        wij = 1.d0 - wij/h3
                         IF(aws) THEN
                         sij=dtidist(diri,dir(1,jj1,jj2,jj3),anii)/bii
                            if(sij.gt.lambda) CYCLE
@@ -83,6 +83,7 @@ C     triangular location kernel
                DO k=1,3
                   dir(k,i1,i2,i3)=evect(k,1)
                END DO
+               call rchkusr()
             END DO
          END DO
       END DO
