@@ -252,11 +252,13 @@ dtianiso<-function(y,hmax,lambda,rho,graph=FALSE,slice=NULL){
                 as.integer(n3),
                 anindex=double(n),
                 andirection=double(3*n),
+                det=double(n),
+                mask=logical(n),
                 DUP=FALSE,
-                PACKAGE="dti")[c("theta","anindex","andirection")]
+                PACKAGE="dti")[c("theta","anindex","andirection","det","mask")]
   z$bi <- array(1,dimy[-1])
   dim(z$theta) <- dimy
-  dim(z$anindex) <- dimy[-1]
+  dim(z$anindex) <-dim(z$det) <-dim(z$mask) <- dimy[-1]
   dim(z$andirection) <- c(3,dimy[-1])
 #
 #  initial state for h=1
@@ -279,24 +281,25 @@ dtianiso<-function(y,hmax,lambda,rho,graph=FALSE,slice=NULL){
                 bi=as.double(z$bi),
                 anindex=as.double(z$anindex),
                 andirection=as.double(z$andirection),
+                det=as.double(z$det),
                 as.integer(n1),
                 as.integer(n2),
                 as.integer(n3),
                 as.double(hakt),
                 as.double(rho),
                 as.double(lambda),
-                theta=as.double(z$theta),
+                theta=double(6*n),
+                mask=as.logical(z$mask),
                 DUP=FALSE,
-                PACKAGE="dti")[c("theta","bi","anindex","andirection")]
-     dim(z$bi) <- dimy[-1]
+                PACKAGE="dti")[c("theta","bi","anindex","andirection","det","mask")]
+     dim(z$bi) <- dim(z$anindex) <-dim(z$det) <- dimy[-1]
      dim(z$theta) <- dimy
-     dim(z$anindex) <- dimy[-1]
      dim(z$andirection) <- c(3,dimy[-1])
      if(graph){
      image(z$anindex[,,slice],col=grey((0:255)/255))
      title(paste("Anisotropy index (h=",signif(hakt,3),"), slice",slice))
      image(z$bi[,,slice],col=grey((0:255)/255))
-     title(paste("sum of weights  max=",signif(max(z$bi),3),"), slice",slice))
+     title(paste("sum of weights  max=",signif(max(z$bi),3),"mean=",signif(mean(z$bi[z$mask]),3)))
      }
      hakt <- hakt*hincr
   }
