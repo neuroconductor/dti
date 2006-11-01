@@ -37,7 +37,7 @@ C  now anisotropic smoothing
                if(.not.mask(i1,i2,i3)) CYCLE
                sw=0.d0
                deti=det(i1,i2,i3)
-               bii=bi(i1,i2,i3)
+               bii=bi(i1,i2,i3)/lambda
                DO k=1,6
                   swy(k)=0.d0
                   thi(k)=th(k,i1,i2,i3)/deti
@@ -121,8 +121,8 @@ C                           CYCLE
 C                              call dblepr("sij",3,sij,1)
                               sij=0.d0
                            END IF
-                           if(sij.gt.lambda) CYCLE
-                           wij=wij*(1.d0-sij/lambda)
+                           if(sij.gt.1.d0) CYCLE
+                           wij=wij*(1.d0-sij)
                         END IF
                         sw=sw+wij
                         DO k=1,6
@@ -172,7 +172,159 @@ C                              call dblepr("sij",3,sij,1)
                call rchkusr()
             END DO
          END DO
-         call intpr("i1",2,i1,1)
+C         call intpr("i1",2,i1,1)
+      END DO
+      RETURN
+      END
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+C
+C   3D anisotropic smoothing of diffusion tensor data
+C
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+      subroutine awsdti2(y,th,bi,ani,det,bcov,sigma2,n1,n2,n3,h,
+     1                  rho,lambda,thnew,mask)
+C
+C   y        -  observed diffusion tensor data
+C   th       -  smoothed diffusion tensor data
+C   bi       -  voxelwise sum of weights 
+C   ani      -  anisotropy index 
+C   dir      -  direction of main anisotropy 
+C   det      -  det(A)^(1/3) 
+C   n1,n2,n3 -  spatial dimensions
+C   rho      -  regularization parameter for anisotropic neighborhoods
+C               (X,y,z) ( A(theta)+ rho/bi I ) (X,y,z)^T  = h^2  defines the elloispid 
+C   lambda   -  scale factor in the statistical penalty
+C   thnew    -  new smoothed diffusion tensor data
+      implicit logical (a-z)
+      integer n1,n2,n3
+      real*8 y(6,n1,n2,n3),th(6,n1,n2,n3),thnew(6,n1,n2,n3),h,rho,
+     1       lambda,bi(n1,n2,n3),ani(n1,n2,n3),
+     2       det(n1,n2,n3),bcov(6,6),sigma2
+      integer i1,j1,j1a,j1e,jj1,i2,j2,j2a,j2e,jj2,i3,j3,j3a,j3e,jj3,
+     1        ierr,k
+      real*8 wij,adist,sw,swy(6),h3,thi(6),bii,ew(3),ev(3,3),
+     1       mew,z1,z2,z3,dtidist2,sij,anii,deti,z,sew
+      external adist,dtidist2
+      logical aws,mask(n1,n2,n3) 
+      aws=lambda.lt.1e20
+      h3=h*h*h
+C  now anisotropic smoothing 
+      DO i1=1,n1
+         DO i2=1,n2
+            DO i3=1,n3
+               if(.not.mask(i1,i2,i3)) CYCLE
+               sw=0.d0
+               deti=det(i1,i2,i3)
+               bii=bi(i1,i2,i3)
+               DO k=1,6
+                  swy(k)=0.d0
+                  thi(k)=th(k,i1,i2,i3)/deti
+               END DO
+               thi(1)=thi(1)+rho*bii
+               thi(4)=thi(4)+rho*bii
+               thi(6)=thi(6)+rho*bii
+               call eigen3(thi,ew,ev,ierr)
+               if(ierr.ne.0) THEN
+               call intpr("ierr",4,ierr,1)
+                  thi(1)=1
+                  thi(2)=0
+                  thi(3)=0
+                  thi(4)=1
+                  thi(5)=0
+                  thi(6)=1
+               ELSE
+                  sew=ew(1)*ew(2)*ew(3)
+                  sew=dexp(dlog(sew)/3.d0)
+                  ew(1)=ew(1)/sew
+                  ew(2)=ew(2)/sew
+                  ew(3)=ew(3)/sew
+                  thi(1)=ev(1,1)*ev(1,1)*ew(1)+ev(1,2)*ev(1,2)*ew(2)+
+     1                   ev(1,3)*ev(1,3)*ew(3)
+                  thi(2)=ev(1,1)*ev(2,1)*ew(1)+ev(1,2)*ev(2,2)*ew(2)+
+     1                   ev(1,3)*ev(2,3)*ew(3)
+                  thi(3)=ev(1,1)*ev(3,1)*ew(1)+ev(1,2)*ev(3,2)*ew(2)+
+     1                   ev(1,3)*ev(3,3)*ew(3)
+                  thi(4)=ev(2,1)*ev(2,1)*ew(1)+ev(2,2)*ev(2,2)*ew(2)+
+     1                   ev(2,3)*ev(2,3)*ew(3)
+                  thi(5)=ev(2,1)*ev(3,1)*ew(1)+ev(2,2)*ev(3,2)*ew(2)+
+     1                   ev(2,3)*ev(3,3)*ew(3)
+                  thi(6)=ev(3,1)*ev(3,1)*ew(1)+ev(3,2)*ev(3,2)*ew(2)+
+     1                   ev(3,3)*ev(3,3)*ew(3)
+               END IF
+               anii=ani(i1,i2,i3)
+               call rangex(thi,h,j1a,j1e)
+               DO j1=j1a,j1e
+                  jj1=i1+j1
+                  if(jj1.le.0.or.jj1.gt.n1) CYCLE
+                  call rangey(thi,j1,h,j2a,j2e)
+                 DO j2=j2a,j2e
+                     jj2=i2+j2
+                     if(jj2.le.0.or.jj2.gt.n2) CYCLE
+                     call rangez(thi,j1,j2,h,j3a,j3e)
+                      DO j3=j3a,j3e
+                        jj3=i3+j3
+                        if(jj3.le.0.or.jj3.gt.n3) CYCLE
+                        if(.not.mask(jj1,jj2,jj3)) CYCLE 
+                        wij=adist(thi,j1,j2,j3)
+C     triangular location kernel
+                        if(wij.gt.h3) CYCLE
+                        wij = 1.d0 - wij/h3
+                        IF(aws) THEN
+                        sij=dtidist2(th(1,i1,i2,i3),
+     1                      th(1,jj1,jj2,jj3),bcov)*bii/lambda/sigma2
+                           if(sij.le.0.d0.and.j3.ne.0) THEN
+                              call dblepr("sij",3,sij,1)
+                              call dblepr("bii",3,bii,1)
+                              call dblepr("lam",3,lambda,1)
+                              call dblepr("sig",3,sigma2,1)
+                              sij=0.d0
+                           END IF
+                           if(sij.gt.1.d0) CYCLE
+                           wij=wij*(1.d0-sij)
+                        END IF
+                        sw=sw+wij
+                        DO k=1,6
+                           swy(k)=swy(k)+wij*y(k,jj1,jj2,jj3)
+                        END DO
+                     END DO
+                  END DO
+               END DO
+               if(sw.eq.0) THEN
+                  call intpr("sw=0 in i1",9,i1,1)
+                  call intpr("i2",2,i2,1)
+                  call intpr("i3",2,i3,1)
+               END IF
+               bi(i1,i2,i3)=sw
+               DO k=1,6
+                  thnew(k,i1,i2,i3)=swy(k)/sw
+               END DO
+               call eigen3(thnew(1,i1,i2,i3),ew,ev,ierr)
+               if(ierr.ne.0) THEN
+                  ani(i1,i2,i3)=0.d0
+                  det(i1,i2,i3)=1
+               ELSE
+                  mew=(ew(1)+ew(2)+ew(3))/3.d0
+                  z1=ew(1)-mew
+                  z2=ew(2)-mew
+                  z3=ew(3)-mew
+                  z=3.d0*(z1*z1+z2*z2+z3*z3)
+                  z1=ew(1)
+                  z2=ew(2)
+                  z3=ew(3)
+                  mew=2.d0*(z1*z1+z2*z2+z3*z3)
+                  if(mew.le.1d-20) mew=1.d0
+                  ani(i1,i2,i3)=dsqrt(z/mew)
+                  z=ew(1)*ew(2)*ew(3)
+                  IF(z.le.1d-20) THEN
+                     det(i1,i2,i3)=0.d0
+                  ELSE
+                     det(i1,i2,i3)=dexp(dlog(z)/3)
+                  END IF
+               ENDIF
+               call rchkusr()
+            END DO
+         END DO
+C         call intpr("i1",2,i1,1)
       END DO
       RETURN
       END
@@ -298,9 +450,31 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       real*8 function dtidist(diri,dirj,ani)
       implicit logical (a-z)
       real*8 diri(3),dirj(3),ani,z
-      z=dabs(diri(1)*dirj(1)+diri(2)*dirj(2)+diri(3)*dirj(3))
-      if(z.lt.0.d0) call dblepr("dist",4,z,1)
-      dtidist=ani*(1.d0-z)
+      z=(diri(1)*dirj(1)+diri(2)*dirj(2)+diri(3)*dirj(3))
+      dtidist=ani*ani*(1.d0-z*z)
+      RETURN
+      END
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+C
+C    Compute statistical penalty for dti
+C
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+      real*8 function dtidist2(th1,th2,Bcov)
+      implicit logical (a-z)
+      real*8 th1(6),th2(6),Bcov(6,6),z,zd,zd2
+      integer i,j
+      z=0.d0
+      DO i=1,6
+         zd=th1(i)-th2(i)
+         z=z+zd*zd*Bcov(i,i)
+         if(i.lt.6) THEN
+            DO j=i+1,6
+               zd2=th1(j)-th2(j)
+               z=z+2.d0*zd*zd2*Bcov(i,j)
+            END DO
+         END IF
+      END DO
+      dtidist2=z
       RETURN
       END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
