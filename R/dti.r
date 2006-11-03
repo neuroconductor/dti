@@ -321,7 +321,10 @@ dtianiso2<-function(y,hmax,lambda,rho,graph=FALSE,slice=NULL,bvec=NULL,sigma2=NU
   n2<-dimy[3]
   n3<-dimy[4]
   n<-n1*n2*n3
-  if(is.null(dim(sigma2))) dim(sigma2)<-dimg[-1]
+  if(is.null(dim(sigma2))) {
+    sigma2 <- rep(sigma2,n)
+    dim(sigma2) <- dimy[-1]
+  }
   sigma2[sigma2<=mean(sigma2)*1e-5]<- mean(sigma2)*1e-5
   z <- .Fortran("projdt",
                 as.double(y),
