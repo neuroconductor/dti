@@ -109,6 +109,7 @@ C               call intpr("j3e",3,j3e,1)
                         if(jj3.le.0.or.jj3.gt.n3) CYCLE
                         if(.not.mask(jj1,jj2,jj3)) CYCLE 
                         wij=adist(thi,j1,j2,j3)
+                        if(wij.lt.0.d0) call dblepr("wij",3,wij,1)
 C     triangular location kernel
                         if(wij.gt.h3) CYCLE
 C                           call dblepr("h3",2,h3,1)
@@ -319,7 +320,7 @@ C     triangular location kernel
                   ani(i1,i2,i3)=dsqrt(z/mew)
                   z=ew(1)*ew(2)*ew(3)
                   DO k=1,3
-                     andir(k,i1,i2,i3)=ev(k,1)
+                     andir(k,i1,i2,i3)=ev(k,3)
                   END DO
                   IF(z.le.1d-20) THEN
                      det(i1,i2,i3)=0.d0
@@ -382,7 +383,7 @@ C  compute anisotropy index and direction of main anisotropy (nneded in statisti
                   if(mew.le.1d-20) mew=1.d0
                   ani(i1,i2,i3)=dsqrt(z/mew)
                   DO k=1,3
-                     dir(k,i1,i2,i3)=ev(k,1)
+                     dir(k,i1,i2,i3)=ev(k,3)
                   END DO
                   z=ew(1)*ew(2)*ew(3)
                   IF(z.le.1d-20) THEN
@@ -479,6 +480,8 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       liwork=50
       call dsyevr('V','A','U',n,a,n,vl,vu,1,n,eps,m,lambda,
      1            theta,n,ISUPPZ,work,lwork,iwork,liwork,ierr)
+C      if(lambda(3).lt.dmax1(lambda(2),lambda(1)))
+C     1       call dblepr("reverse ev",10,lambda,3)
       RETURN
       END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
