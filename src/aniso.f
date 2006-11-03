@@ -181,7 +181,7 @@ C
 C   3D anisotropic smoothing of diffusion tensor data
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-      subroutine awsdti2(y,th,bi,ani,det,bcov,sigma2,n1,n2,n3,h,
+      subroutine awsdti2(y,th,bi,ani,andir,det,bcov,sigma2,n1,n2,n3,h,
      1                  rho,lambda,thnew,mask)
 C
 C   y        -  observed diffusion tensor data
@@ -198,8 +198,8 @@ C   thnew    -  new smoothed diffusion tensor data
       implicit logical (a-z)
       integer n1,n2,n3
       real*8 y(6,n1,n2,n3),th(6,n1,n2,n3),thnew(6,n1,n2,n3),h,rho,
-     1       lambda,bi(n1,n2,n3),ani(n1,n2,n3),
-     2       det(n1,n2,n3),bcov(6,6),sigma2
+     1       lambda,bi(n1,n2,n3),ani(n1,n2,n3),andir(3,n1,n2,n3),
+     2       det(n1,n2,n3),bcov(6,6),sigma2(n1,n2,n3)
       integer i1,j1,j1a,j1e,jj1,i2,j2,j2a,j2e,jj2,i3,j3,j3a,j3e,jj3,
      1        ierr,k
       real*8 wij,adist,sw,swy(6),h3,thi(6),bii,ew(3),ev(3,3),
@@ -225,7 +225,7 @@ C  now anisotropic smoothing
                thi(6)=thi(6)+rho*bii
                call eigen3(thi,ew,ev,ierr)
                if(ierr.ne.0) THEN
-               call intpr("ierr",4,ierr,1)
+                  call intpr("ierr",4,ierr,1)
                   thi(1)=1
                   thi(2)=0
                   thi(3)=0
@@ -268,10 +268,10 @@ C  now anisotropic smoothing
                         wij=adist(thi,j1,j2,j3)
 C     triangular location kernel
                         if(wij.gt.h3) CYCLE
-                        wij = 1.d0 - wij/h3
+                        wij = (1.d0 - wij/h3)
                         IF(aws) THEN
                         sij=dtidist2(th(1,i1,i2,i3),
-     1                      th(1,jj1,jj2,jj3),bcov)*bii/lambda/sigma2
+     1                      th(1,jj1,jj2,jj3),bcov)*bii/lambda
                            if(sij.le.0.d0.and.j3.ne.0) THEN
                               call dblepr("sij",3,sij,1)
                               call dblepr("bii",3,bii,1)
@@ -280,7 +280,7 @@ C     triangular location kernel
                               sij=0.d0
                            END IF
                            if(sij.gt.1.d0) CYCLE
-                           wij=wij*(1.d0-sij)
+                           wij=wij*(1.d0-sij)/sigma2(jj1,jj2,jj3)
                         END IF
                         sw=sw+wij
                         DO k=1,6
@@ -302,6 +302,9 @@ C     triangular location kernel
                if(ierr.ne.0) THEN
                   ani(i1,i2,i3)=0.d0
                   det(i1,i2,i3)=1
+                  DO k=1,3
+                     andir(k,i1,i2,i3)=0.d0
+                  END DO
                ELSE
                   mew=(ew(1)+ew(2)+ew(3))/3.d0
                   z1=ew(1)-mew
@@ -315,6 +318,9 @@ C     triangular location kernel
                   if(mew.le.1d-20) mew=1.d0
                   ani(i1,i2,i3)=dsqrt(z/mew)
                   z=ew(1)*ew(2)*ew(3)
+                  DO k=1,3
+                     andir(k,i1,i2,i3)=ev(k,1)
+                  END DO
                   IF(z.le.1d-20) THEN
                      det(i1,i2,i3)=0.d0
                   ELSE
@@ -388,6 +394,59 @@ C  compute anisotropy index and direction of main anisotropy (nneded in statisti
                   IF(ew(3).le.0.d0) mask(i1,i2,i3)=.FALSE.
                   IF(ew(2).le.0.d0) mask(i1,i2,i3)=.FALSE.
                   IF(ew(1).le.0.d0) mask(i1,i2,i3)=.FALSE.
+               ENDIF
+               call rchkusr()
+            END DO
+         END DO
+      END DO
+      RETURN
+      END
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+C
+C   Initialize anisotropy index and direction of main anisotropy
+C
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+      subroutine projdt(th,n1,n2,n3,thnew,mask)
+C
+C   th       -  observed diffusion tensor data
+C   thnew    -  projected tensor data
+      implicit logical (a-z)
+      integer n1,n2,n3
+      real*8 th(6,n1,n2,n3),thnew(6,n1,n2,n3)
+      integer i1,i2,i3,ierr,k
+      real*8 ew(3),ev(3,3),mew,z1,z2,z3,z
+      logical mask(n1,n2,n3)
+C  compute anisotropy index and direction of main anisotropy (nneded in statistical penalty)
+      DO i1=1,n1
+         DO i2=1,n2
+            DO i3=1,n3
+               mask(i1,i2,i3)=.TRUE.
+               call eigen3(th(1,i1,i2,i3),ew,ev,ierr)
+               IF(ierr.ne.0) THEN
+                  DO k=1,6
+                     thnew(k,i1,i2,i3)=0.d0
+                  END DO
+                  mask(i1,i2,i3)=.FALSE.
+               ELSE IF(dmin1(ew(1),ew(2),ew(3)).lt.1d-10) THEN
+                  z1=dmax1(ew(1),1d-10)
+                  z2=dmax1(ew(2),1d-10)
+                  z3=dmax1(ew(3),1d-10)
+                  thnew(1,i1,i2,i3)=z1*ev(1,1)*ev(1,1)+
+     1                     z2*ev(1,2)*ev(1,2)+z2*ev(1,3)*ev(1,3)
+                  thnew(2,i1,i2,i3)=z1*ev(1,1)*ev(2,1)+
+     1                     z2*ev(1,2)*ev(2,2)+z2*ev(1,3)*ev(2,3)
+                  thnew(3,i1,i2,i3)=z1*ev(1,1)*ev(3,1)+
+     1                     z2*ev(1,2)*ev(3,2)+z2*ev(1,3)*ev(3,3)
+                  thnew(4,i1,i2,i3)=z1*ev(2,1)*ev(2,1)+
+     1                     z2*ev(2,2)*ev(2,2)+z2*ev(2,3)*ev(2,3)
+                  thnew(5,i1,i2,i3)=z1*ev(2,1)*ev(3,1)+
+     1                     z2*ev(2,2)*ev(3,2)+z2*ev(2,3)*ev(3,3)
+                  thnew(6,i1,i2,i3)=z1*ev(3,1)*ev(3,1)+
+     1                     z2*ev(3,2)*ev(3,2)+z2*ev(3,3)*ev(3,3)
+               ELSE
+                  DO k=1,6
+                     thnew(k,i1,i2,i3)=th(k,i1,i2,i3)
+                  END DO
                ENDIF
                call rchkusr()
             END DO

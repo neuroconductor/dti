@@ -305,7 +305,7 @@ dtianiso<-function(y,hmax,lambda,rho,graph=FALSE,slice=NULL){
   }
 invisible(list(theta=z$theta,bi=z$bi,anindex=z$anindex,andirection=z$andirection,mask=z$mask,call=args))
 }
-dtianiso2<-function(y,hmax,lambda,rho,graph=FALSE,slice=NULL,bvec=NULL,sigma2=NULL){
+dtianiso2<-function(y,hmax,lambda,rho,graph=FALSE,slice=NULL,bvec=NULL,sigma2=NULL,scorr=c(.5,.5)){
   args <- match.call()
   btb<-matrix(0,6,25)
   btb[1,]<-bvec[1,]^2
@@ -321,6 +321,19 @@ dtianiso2<-function(y,hmax,lambda,rho,graph=FALSE,slice=NULL,bvec=NULL,sigma2=NU
   n2<-dimy[3]
   n3<-dimy[4]
   n<-n1*n2*n3
+  if(is.null(dim(sigma2))) dim(sigma2)<-dimg[-1]
+  sigma2[sigma2<=mean(sigma2)*1e-5]<- mean(sigma2)*1e-5
+  z <- .Fortran("projdt",
+                as.double(y),
+                as.integer(n1),
+                as.integer(n2),
+                as.integer(n3),
+                ynew=double(6*n),
+                mask=logical(n),
+                DUP=FALSE,
+                PACKAGE="dti")[c("ynew","mask")]
+  y <- array(z$ynew,dimy)
+  mask1 <- array(z$mask,dimy[-1])
   theta <- y
   z <- .Fortran("initdti",
                 theta=as.double(theta),
@@ -332,30 +345,45 @@ dtianiso2<-function(y,hmax,lambda,rho,graph=FALSE,slice=NULL,bvec=NULL,sigma2=NU
                 det=double(n),
                 mask=logical(n),
                 DUP=FALSE,
-                PACKAGE="dti")[c("theta","anindex","det","mask")]
-  z$bi <- array(1,dimy[-1])
+                PACKAGE="dti")[c("theta","anindex","andirection","det","mask")]
+  z$bi <- 1/sigma2
   dim(z$theta) <- dimy
   dim(z$anindex) <-dim(z$det) <-dim(z$mask) <- dimy[-1]
-#
+  dim(z$andirection) <- c(3,dimy[-1]) 
 #  initial state for h=1
 #
   if(graph){
+     require(adimpro)
      oldpar <- par(mfrow=c(1,2),mar=c(1,1,3,.25),mgp=c(2,1,0))
      on.exit(par(oldpar))
      if(is.null(slice)) slice<-n3%/%2
-     image(z$anindex[,,slice],col=grey((0:255)/255))
+     show.image(make.image(andir.image(z)[,,slice,]))
      title(paste("Anisotropy index (h=1), slice",slice))
-     image(z$bi[,,slice],col=grey((0:255)/255))
+     ni<-z$bi[,,slice]*sigma2[,,slice]
+     show.image(make.image(65535*ni/max(ni)))
      title(paste("sum of weights, slice",slice))
   }
+  if (max(scorr)>0) {
+    h0 <- numeric(length(scorr))
+    for (i in 1:length(h0)) h0[i] <- get.bw.gauss(scorr[i],interv=2)
+    if (length(h0)<2) h0 <- rep(h0[1],2)
+# no spatial correlation iz z-direction
+    cat("Corresponding bandwiths for specified correlation:",h0,"\n")
+  }
   hincr <- 1.25^(1/3)
+  hakt0 <- 1
   hakt <- hincr
+  lambda0 <- lambda
   while( hakt <= hmax) {
+    if (scorr[1]>=0.1) lambda0 <- lambda * Spatialvar.gauss(hakt0/0.42445/4,h0,2) /
+      Spatialvar.gauss(h0,1e-5,2) /
+        Spatialvar.gauss(hakt0/0.42445/4,1e-5,2)
      z <- .Fortran("awsdti2",
                 as.double(y),
                 as.double(z$theta),
                 bi=as.double(z$bi),
                 anindex=as.double(z$anindex),
+                andirection=as.double(z$andirection),
                 det=as.double(z$det),
                 as.double(Bcov),
                 as.double(sigma2),
@@ -364,20 +392,141 @@ dtianiso2<-function(y,hmax,lambda,rho,graph=FALSE,slice=NULL,bvec=NULL,sigma2=NU
                 as.integer(n3),
                 as.double(hakt),
                 as.double(rho),
-                as.double(lambda),
+                as.double(lambda0),
                 theta=double(6*n),
                 mask=as.logical(z$mask),
                 DUP=FALSE,
                 PACKAGE="dti")[c("theta","bi","anindex","andirection","det","mask")]
      dim(z$bi) <- dim(z$anindex) <-dim(z$det) <- dimy[-1]
      dim(z$theta) <- dimy
+     dim(z$andirection) <- c(3,dimy[-1]) 
      if(graph){
-     image(z$anindex[,,slice],col=grey((0:255)/255))
+     show.image(make.image(andir.image(z)[,,slice,]))
      title(paste("Anisotropy index (h=",signif(hakt,3),"), slice",slice,"range:",signif(range(z$anindex[z$mask]))))
-     image(z$bi[,,slice],col=grey((0:255)/255))
-     title(paste("sum of weights  max=",signif(max(z$bi),3),"mean=",signif(mean(z$bi[z$mask]),3)))
+     ni<-z$bi[,,slice]*sigma2[,,slice]
+     show.image(make.image(65535*ni/max(ni)))
+     title(paste("sum of weights  mean=",signif(mean(z$bi[z$mask]*sigma2[z$mask]),3)))
      }
+     hakt0<-hakt
      hakt <- hakt*hincr
   }
 invisible(list(theta=z$theta,bi=z$bi,anindex=z$anindex,andirection=z$andirection,mask=z$mask,call=args))
+}
+
+andir.image <- function(dtobject){
+anindex <- dtobject$anindex
+andirection <- dtobject$andirection
+anindex[anindex>1]<-0
+anindex[anindex<0]<-0
+dimg <- dim(anindex)
+dim(andirection)<-c(3,prod(dimg))
+ind<-andirection[1,]<0
+andirection[,ind] <- - andirection[,ind]
+andirection[2,] <- (1+andirection[2,])/2
+andirection[3,] <- (1+andirection[3,])/2
+andirection <- t(andirection)
+andirection <- andirection*as.vector(anindex)
+dim(andirection)<-c(dimg,3)
+invisible(andirection)
+} 
+
+Spatialvar.gauss<-function(h,h0,d,interv=1){
+#
+#   Calculates the factor of variance reduction obtained for Gaussian Kernel and bandwidth h in 
+#
+#   case of colored noise that was produced by smoothing with Gaussian kernel and bandwidth h0
+#
+#   Spatialvar.gauss(lkern,h,h0,d)/Spatialvar.gauss(lkern,h,1e-5,d) gives the 
+#   a factor for lambda to be used with bandwidth h 
+#
+#
+#  interv allows for further discretization of the Gaussian Kernel, result depends on
+#  interv for small bandwidths. interv=1  is correct for kernel smoothing, 
+#  interv>>1 should be used to handle intrinsic correlation (smoothing preceeding 
+#  discretisation into voxel) 
+#
+  h0 <- pmax(h0,1e-5)
+  h <- pmax(h,1e-5)
+  h<-h/2.3548*interv
+  if(length(h)==1) h<-rep(h,d)
+  ih<-trunc(4*h)
+  ih<-pmax(1,ih)
+  dx<-2*ih+1
+  penl<-dnorm(((-ih[1]):ih[1])/h[1])
+  if(d==2) penl<-outer(dnorm(((-ih[1]):ih[1])/h[1]),dnorm(((-ih[2]):ih[2])/h[2]),"*")
+  if(d==3) penl<-outer(dnorm(((-ih[1]):ih[1])/h[1]),outer(dnorm(((-ih[2]):ih[2])/h[2]),dnorm(((-ih[3]):ih[3])/h[3]),"*"),"*")
+  dim(penl)<-dx
+  h0<-h0/2.3548*interv
+  if(length(h0)==1) h0<-rep(h0,d)
+  ih<-trunc(4*h0)
+  ih<-pmax(1,ih)
+  dx0<-2*ih+1
+  x<- ((-ih[1]):ih[1])/h0[1]
+  penl0<-dnorm(((-ih[1]):ih[1])/h0[1])
+  if(d==2) penl0<-outer(dnorm(((-ih[1]):ih[1])/h0[1]),dnorm(((-ih[2]):ih[2])/h0[2]),"*")
+  if(d==3) penl0<-outer(dnorm(((-ih[1]):ih[1])/h0[1]),outer(dnorm(((-ih[2]):ih[2])/h0[2]),dnorm(((-ih[3]):ih[3])/h0[3]),"*"),"*")
+  dim(penl0)<-dx0
+  penl0<-penl0/sum(penl0)
+  dz<-dx+dx0-1
+  z<-array(0,dz)
+  if(d==1){
+    for(i1 in 1:dx0) {
+      ind1<-c(0:(i1-1),(dz-dx0+i1):dz+1)
+      ind1<-ind1[ind1<=dz][-1]
+      z[-ind1]<-z[-ind1]+penl*penl0[i1]
+    }
+  } else if(d==2){
+    for(i1 in 1:dx0[1]) for(i2 in 1:dx0[2]){
+      ind1<-c(0:(i1-1),(dz[1]-dx0[1]+i1):dz[1]+1)
+      ind1<-ind1[ind1<=dz[1]][-1]
+      ind2<-c(0:(i2-1),(dz[2]-dx0[2]+i2):dz[2]+1)
+      ind2<-ind2[ind2<=dz[2]][-1]
+      z[-ind1,-ind2]<-z[-ind1,-ind2]+penl*penl0[i1,i2]
+    }
+  } else if(d==3){
+    for(i1 in 1:dx0[1]) for(i2 in 1:dx0[2]) for(i3 in 1:dx0[3]){
+      ind1<-c(0:(i1-1),(dz[1]-dx0[1]+i1):dz[1]+1)
+      ind1<-ind1[ind1<=dz[1]][-1]
+      ind2<-c(0:(i2-1),(dz[2]-dx0[2]+i2):dz[2]+1)
+      ind2<-ind2[ind2<=dz[2]][-1]
+      ind3<-c(0:(i3-1),(dz[3]-dx0[3]+i3):dz[3]+1)
+      ind3<-ind3[ind3<=dz[3]][-1]
+      z[-ind1,-ind2,-ind3]<-z[-ind1,-ind2,-ind3]+penl*penl0[i1,i2,i3]
+    }
+  }
+  sum(z^2)/sum(z)^2*interv^d
+}
+get.bw.gauss <- function(corr, step = 1.001,interv=2) {
+  
+  # get the   bandwidth for lkern corresponding to a given correlation
+  #  keep it simple result does not depend on d
+
+  #  interv allows for further discretization of the Gaussian Kernel, result depends on
+  #  interv for small bandwidths. interv=1  is correct for kernel smoothing, 
+  #  interv>>1 should be used to handle intrinsic correlation (smoothing preceeding 
+  #  discretisation into voxel)   
+  if (corr < 0.1) {
+    h <- 0
+  } else { 
+    h <- .5
+    z <- 0
+    while (z<corr) {
+      h <- h*step
+      z <- get.corr.gauss(h,interv)
+    }
+    h <- h/step
+  }
+  h
+}
+
+get.corr.gauss <- function(h,interv=1) {
+    #
+    #   Calculates the correlation of 
+    #   colored noise that was produced by smoothing with "gaussian" kernel and bandwidth h
+    #   Result does not depend on d for "Gaussian" kernel !!
+    h <- h/2.3548*interv
+    ih <- trunc(4*h+ 2*interv-1)
+    dx <- 2*ih+1
+    penl <- dnorm(((-ih):ih)/h)
+    sum(penl[-(1:interv)]*penl[-((dx-interv+1):dx)])/sum(penl^2)
 }
