@@ -183,7 +183,7 @@ C   3D anisotropic smoothing of diffusion tensor data
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine awsdti2(y,th,bi,ani,andir,det,bcov,sigma2,n1,n2,n3,h,
-     1                  rho,lambda,thnew,mask)
+     1                  zext,rho,lambda,thnew,mask)
 C
 C   y        -  observed diffusion tensor data
 C   th       -  smoothed diffusion tensor data
@@ -200,7 +200,7 @@ C   thnew    -  new smoothed diffusion tensor data
       integer n1,n2,n3
       real*8 y(6,n1,n2,n3),th(6,n1,n2,n3),thnew(6,n1,n2,n3),h,rho,
      1       lambda,bi(n1,n2,n3),ani(n1,n2,n3),andir(3,n1,n2,n3),
-     2       det(n1,n2,n3),bcov(6,6),sigma2(n1,n2,n3)
+     2       det(n1,n2,n3),bcov(6,6),sigma2(n1,n2,n3),zext
       integer i1,j1,j1a,j1e,jj1,i2,j2,j2a,j2e,jj2,i3,j3,j3a,j3e,jj3,
      1        ierr,k
       real*8 wij,adist,sw,swy(6),h3,thi(6),bii,ew(3),ev(3,3),
@@ -261,12 +261,12 @@ C  now anisotropic smoothing
                  DO j2=j2a,j2e
                      jj2=i2+j2
                      if(jj2.le.0.or.jj2.gt.n2) CYCLE
-                     call rangez(thi,j1,j2,h,j3a,j3e)
+                     call rangez(thi,j1,j2,h,j3a,j3e,zext)
                       DO j3=j3a,j3e
                         jj3=i3+j3
                         if(jj3.le.0.or.jj3.gt.n3) CYCLE
                         if(.not.mask(jj1,jj2,jj3)) CYCLE 
-                        wij=adist(thi,j1,j2,j3)
+                        wij=adist(thi,j1,j2,j3,zext)
 C     triangular location kernel
                         if(wij.gt.h3) CYCLE
                         wij = (1.d0 - wij/h3)
@@ -415,7 +415,7 @@ C   thnew    -  projected tensor data
       integer n1,n2,n3
       real*8 th(6,n1,n2,n3),thnew(6,n1,n2,n3)
       integer i1,i2,i3,ierr,k
-      real*8 ew(3),ev(3,3),mew,z1,z2,z3,z
+      real*8 ew(3),ev(3,3),z1,z2,z3
       logical mask(n1,n2,n3)
 C  compute anisotropy index and direction of main anisotropy (nneded in statistical penalty)
       DO i1=1,n1
@@ -489,7 +489,7 @@ C
 C    Compute anisotropic distance
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-      real*8 function adist(a,x,y,z)
+      real*8 function adist(a,x,y,z,zext)
 C
 C    a - diffusion tensor  ( a_11, a_12, a_13, a_22, a_23, a_33
 C    ix - x-coordinate 
@@ -499,9 +499,10 @@ C    ni -  sum of weights (measures the variability of a
 C    ia,ie -  rane of x values (restricted to the grid)
       implicit logical (a-z)
       integer x,y,z
-      real*8 a(6)
-      adist=a(1)*x*x+a(4)*y*y+a(6)*z*z+
-     1               2.d0*(a(2)*x*y+a(3)*x*z+a(5)*y*z)
+      real*8 a(6),zz,zext
+      zz=z*zext
+      adist=a(1)*x*x+a(4)*y*y+a(6)*zz*zz+
+     1               2.d0*(a(2)*x*y+a(3)*x*zz+a(5)*y*zz)
       RETURN
       END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
@@ -632,7 +633,7 @@ C
 C    Compute range of x for anisotropic neighborhood
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-      subroutine rangez(a,ix,jy,h,ka,ke)
+      subroutine rangez(a,ix,jy,h,ka,ke,zext)
 C
 C    a - diffusion tensor  ( a_11, a_12, a_13, a_22, a_23, a_33
 C    ix - x-coordinate 
@@ -643,7 +644,7 @@ C    ia,ie -  rane of x values (restricted to the grid)
       implicit logical (a-z)
       integer ka,ke,ix,jy
       real*8 a(6),h
-      real*8 p1,p2,p3,p4,p5,p6,z,t,x,y
+      real*8 p1,p2,p3,p4,p5,p6,z,t,x,y,zext
       x=ix/h
       y=jy/h
       p1=a(1)
@@ -660,7 +661,7 @@ C    ia,ie -  rane of x values (restricted to the grid)
       ELSE 
          z=sqrt(z)
       END IF
-      ka=(t-z)*h
-      ke=(t+z)*h
+      ka=(t-z)*h/zext
+      ke=(t+z)*h/zext
       RETURN
       END

@@ -305,7 +305,7 @@ dtianiso<-function(y,hmax,lambda,rho,graph=FALSE,slice=NULL){
   }
 invisible(list(theta=z$theta,bi=z$bi,anindex=z$anindex,andirection=z$andirection,mask=z$mask,call=args))
 }
-dtianiso2<-function(y,hmax,lambda,rho,graph=FALSE,slice=NULL,bvec=NULL,sigma2=NULL,scorr=c(.5,.5)){
+dtianiso2<-function(y,hmax,lambda,rho,graph=FALSE,slice=NULL,bvec=NULL,sigma2=NULL,scorr=c(.5,.5),mask=NULL,quant=.8,zext=1){
   args <- match.call()
   btb<-matrix(0,6,25)
   btb[1,]<-bvec[1,]^2
@@ -321,6 +321,7 @@ dtianiso2<-function(y,hmax,lambda,rho,graph=FALSE,slice=NULL,bvec=NULL,sigma2=NU
   n2<-dimy[3]
   n3<-dimy[4]
   n<-n1*n2*n3
+  if(is.null(mask)) mask <- array(logical(n),dimy[-1])
   if(is.null(dim(sigma2))) {
     sigma2 <- rep(sigma2,n)
     dim(sigma2) <- dimy[-1]
@@ -336,7 +337,7 @@ dtianiso2<-function(y,hmax,lambda,rho,graph=FALSE,slice=NULL,bvec=NULL,sigma2=NU
                 DUP=FALSE,
                 PACKAGE="dti")[c("ynew","mask")]
   y <- array(z$ynew,dimy)
-  mask1 <- array(z$mask,dimy[-1])
+  mask <- array(z$mask,dimy[-1])&mask
   theta <- y
   z <- .Fortran("initdti",
                 theta=as.double(theta),
@@ -352,6 +353,7 @@ dtianiso2<-function(y,hmax,lambda,rho,graph=FALSE,slice=NULL,bvec=NULL,sigma2=NU
   z$bi <- 1/sigma2
   dim(z$theta) <- dimy
   dim(z$anindex) <-dim(z$det) <-dim(z$mask) <- dimy[-1]
+  z$mask <- array(z$mask,dimy[-1])&mask
   dim(z$andirection) <- c(3,dimy[-1]) 
 #  initial state for h=1
 #
@@ -360,7 +362,7 @@ dtianiso2<-function(y,hmax,lambda,rho,graph=FALSE,slice=NULL,bvec=NULL,sigma2=NU
      oldpar <- par(mfrow=c(1,2),mar=c(1,1,3,.25),mgp=c(2,1,0))
      on.exit(par(oldpar))
      if(is.null(slice)) slice<-n3%/%2
-     show.image(make.image(andir.image(z)[,,slice,]))
+     show.image(make.image(andir.image(z,quant=quant)[,,slice,]))
      title(paste("Anisotropy index (h=1), slice",slice))
      ni<-z$bi[,,slice]*sigma2[,,slice]
      show.image(make.image(65535*ni/max(ni)))
@@ -394,6 +396,7 @@ dtianiso2<-function(y,hmax,lambda,rho,graph=FALSE,slice=NULL,bvec=NULL,sigma2=NU
                 as.integer(n2),
                 as.integer(n3),
                 as.double(hakt),
+                as.double(zext),
                 as.double(rho),
                 as.double(lambda0),
                 theta=double(6*n),
@@ -404,31 +407,41 @@ dtianiso2<-function(y,hmax,lambda,rho,graph=FALSE,slice=NULL,bvec=NULL,sigma2=NU
      dim(z$theta) <- dimy
      dim(z$andirection) <- c(3,dimy[-1]) 
      if(graph){
-     show.image(make.image(andir.image(z)[,,slice,]))
-     title(paste("Anisotropy index (h=",signif(hakt,3),"), slice",slice,"range:",signif(range(z$anindex[z$mask]))))
+     show.image(make.image(andir.image(z,quant=quant)[,,slice,]))
+     title(paste("Anisotropy index (h=",signif(hakt,3),"), slice",slice,"range:",signif(min(z$anindex[z$mask]),3),"-",
+                                                                                 signif(max(z$anindex[z$mask]),3)))
      ni<-z$bi[,,slice]*sigma2[,,slice]
      show.image(make.image(65535*ni/max(ni)))
      title(paste("sum of weights  mean=",signif(mean(z$bi[z$mask]*sigma2[z$mask]),3)))
      }
+     cat("h=",signif(hakt,3),"Quantiles of anisotropy index",signif(quantile(z$anindex[z$mask])),"\n")
      hakt0<-hakt
      hakt <- hakt*hincr
   }
 invisible(list(theta=z$theta,bi=z$bi,anindex=z$anindex,andirection=z$andirection,mask=z$mask,call=args))
 }
 
-andir.image <- function(dtobject){
+andir.image <- function(dtobject,method=1,quant=0){
 anindex <- dtobject$anindex
 andirection <- dtobject$andirection
+mask <- dtobject$mask
 anindex[anindex>1]<-0
 anindex[anindex<0]<-0
 dimg <- dim(anindex)
 dim(andirection)<-c(3,prod(dimg))
+minanindex <- quantile(anindex[mask],quant)
+if(method==1) {
+andirection[1,] <- abs(andirection[1,])
+andirection[2,] <- abs(andirection[2,])
+andirection[3,] <- abs(andirection[3,])
+} else {
 ind<-andirection[1,]<0
 andirection[,ind] <- - andirection[,ind]
 andirection[2,] <- (1+andirection[2,])/2
 andirection[3,] <- (1+andirection[3,])/2
+}
 andirection <- t(andirection)
-andirection <- andirection*as.vector(anindex)
+andirection <- andirection*as.vector(anindex)*as.numeric(mask)*as.numeric(anindex>minanindex)
 dim(andirection)<-c(dimg,3)
 invisible(andirection)
 } 
