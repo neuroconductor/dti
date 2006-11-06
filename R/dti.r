@@ -307,7 +307,7 @@ invisible(list(theta=z$theta,bi=z$bi,anindex=z$anindex,andirection=z$andirection
 }
 dtianiso2<-function(y,hmax,lambda,rho,graph=FALSE,slice=NULL,bvec=NULL,sigma2=NULL,scorr=c(.5,.5),mask=NULL,quant=.8,zext=1){
   args <- match.call()
-  btb<-matrix(0,6,25)
+  btb<-matrix(0,6,dim(bvec)[2])
   btb[1,]<-bvec[1,]^2
   btb[4,]<-bvec[2,]^2
   btb[6,]<-bvec[3,]^2
@@ -414,7 +414,7 @@ dtianiso2<-function(y,hmax,lambda,rho,graph=FALSE,slice=NULL,bvec=NULL,sigma2=NU
      show.image(make.image(65535*ni/max(ni)))
      title(paste("sum of weights  mean=",signif(mean(z$bi[z$mask]*sigma2[z$mask]),3)))
      }
-     cat("h=",signif(hakt,3),"Quantiles of anisotropy index",signif(quantile(z$anindex[z$mask])),"\n")
+     cat("h=",signif(hakt,3),"Quantiles (.5, .75, .9, .95, 1) of anisotropy index",signif(quantile(z$anindex[z$mask],c(.5, .75, .9, .95, 1)),3),"\n")
      hakt0<-hakt
      hakt <- hakt*hincr
   }
