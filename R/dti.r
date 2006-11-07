@@ -236,76 +236,7 @@ tensor.estimate <- function(y,dt=NULL,h) {
   z
 }
 
-dtianiso<-function(y,hmax,lambda,rho,graph=FALSE,slice=NULL){
-  args <- match.call()
-  dimy <- dim(y)
-  if(length(dimy)!=4||dimy[1]!=6) stop("y does not contain 3D diffusion tensor image")
-  n1<-dimy[2]
-  n2<-dimy[3]
-  n3<-dimy[4]
-  n<-n1*n2*n3
-  theta <- y
-  z <- .Fortran("initdti",
-                theta=as.double(theta),
-                as.integer(n1),
-                as.integer(n2),
-                as.integer(n3),
-                anindex=double(n),
-                andirection=double(3*n),
-                det=double(n),
-                mask=logical(n),
-                DUP=FALSE,
-                PACKAGE="dti")[c("theta","anindex","andirection","det","mask")]
-  z$bi <- array(1,dimy[-1])
-  dim(z$theta) <- dimy
-  dim(z$anindex) <-dim(z$det) <-dim(z$mask) <- dimy[-1]
-  dim(z$andirection) <- c(3,dimy[-1])
-#
-#  initial state for h=1
-#
-  if(graph){
-     oldpar <- par(mfrow=c(1,2),mar=c(1,1,3,.25),mgp=c(2,1,0))
-     on.exit(par(oldpar))
-     if(is.null(slice)) slice<-n3%/%2
-     image(z$anindex[,,slice],col=grey((0:255)/255))
-     title(paste("Anisotropy index (h=1), slice",slice))
-     image(z$bi[,,slice],col=grey((0:255)/255))
-     title(paste("sum of weights, slice",slice))
-  }
-  hincr <- 1.25^(1/3)
-  hakt <- hincr
-  while( hakt <= hmax) {
-     z <- .Fortran("awsdti",
-                as.double(y),
-                as.double(z$theta),
-                bi=as.double(z$bi),
-                anindex=as.double(z$anindex),
-                andirection=as.double(z$andirection),
-                det=as.double(z$det),
-                as.integer(n1),
-                as.integer(n2),
-                as.integer(n3),
-                as.double(hakt),
-                as.double(rho),
-                as.double(lambda),
-                theta=double(6*n),
-                mask=as.logical(z$mask),
-                DUP=FALSE,
-                PACKAGE="dti")[c("theta","bi","anindex","andirection","det","mask")]
-     dim(z$bi) <- dim(z$anindex) <-dim(z$det) <- dimy[-1]
-     dim(z$theta) <- dimy
-     dim(z$andirection) <- c(3,dimy[-1])
-     if(graph){
-     image(z$anindex[,,slice],col=grey((0:255)/255))
-     title(paste("Anisotropy index (h=",signif(hakt,3),"), slice",slice,"range:",signif(range(z$anindex[z$mask]))))
-     image(z$bi[,,slice],col=grey((0:255)/255))
-     title(paste("sum of weights  max=",signif(max(z$bi),3),"mean=",signif(mean(z$bi[z$mask]),3)))
-     }
-     hakt <- hakt*hincr
-  }
-invisible(list(theta=z$theta,bi=z$bi,anindex=z$anindex,andirection=z$andirection,mask=z$mask,call=args))
-}
-dtianiso2<-function(y,hmax,lambda,rho,graph=FALSE,slice=NULL,bvec=NULL,sigma2=NULL,scorr=c(.5,.5),mask=NULL,quant=.8,zext=1){
+dtianiso<-function(y,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,bvec=NULL,sigma2=NULL,scorr=c(.5,.5),mask=NULL,quant=.8,minanindex=NULL,zext=1){
   args <- match.call()
   btb<-matrix(0,6,dim(bvec)[2])
   btb[1,]<-bvec[1,]^2
@@ -321,7 +252,7 @@ dtianiso2<-function(y,hmax,lambda,rho,graph=FALSE,slice=NULL,bvec=NULL,sigma2=NU
   n2<-dimy[3]
   n3<-dimy[4]
   n<-n1*n2*n3
-  if(is.null(mask)) mask <- array(logical(n),dimy[-1])
+  if(is.null(mask)) mask <- array(TRUE,dimy[-1])
   if(is.null(dim(sigma2))) {
     sigma2 <- rep(sigma2,n)
     dim(sigma2) <- dimy[-1]
@@ -332,24 +263,26 @@ dtianiso2<-function(y,hmax,lambda,rho,graph=FALSE,slice=NULL,bvec=NULL,sigma2=NU
                 as.integer(n1),
                 as.integer(n2),
                 as.integer(n3),
-                ynew=double(6*n),
-                mask=logical(n),
-                DUP=FALSE,
-                PACKAGE="dti")[c("ynew","mask")]
-  y <- array(z$ynew,dimy)
-  mask <- array(z$mask,dimy[-1])&mask
-  theta <- y
-  z <- .Fortran("initdti",
-                theta=as.double(theta),
-                as.integer(n1),
-                as.integer(n2),
-                as.integer(n3),
+                theta=double(6*n),
                 anindex=double(n),
                 andirection=double(3*n),
                 det=double(n),
-                mask=logical(n),
+                mask=as.logical(mask),
                 DUP=FALSE,
                 PACKAGE="dti")[c("theta","anindex","andirection","det","mask")]
+  y <- array(z$theta,dimy)
+#  mask <- array(z$mask,dimy[-1])&mask
+#  z <- .Fortran("initdti",
+#                theta=as.double(y),
+#                as.integer(n1),
+#                as.integer(n2),
+#                as.integer(n3),
+#                anindex=double(n),
+#                andirection=double(3*n),
+#                det=double(n),
+#                mask=as.logical(mask),
+#                DUP=FALSE,
+#                PACKAGE="dti")[c("theta","anindex","andirection","det","mask")]
   z$bi <- 1/sigma2
   dim(z$theta) <- dimy
   dim(z$anindex) <-dim(z$det) <-dim(z$mask) <- dimy[-1]
@@ -362,7 +295,8 @@ dtianiso2<-function(y,hmax,lambda,rho,graph=FALSE,slice=NULL,bvec=NULL,sigma2=NU
      oldpar <- par(mfrow=c(1,2),mar=c(1,1,3,.25),mgp=c(2,1,0))
      on.exit(par(oldpar))
      if(is.null(slice)) slice<-n3%/%2
-     show.image(make.image(andir.image(z,quant=quant)[,,slice,]))
+     class(z) <- "dti"
+     show.image(make.image(andir.image(z,slice,quant=quant,minanindex=minanindex)))
      title(paste("Anisotropy index (h=1), slice",slice))
      ni<-z$bi[,,slice]*sigma2[,,slice]
      show.image(make.image(65535*ni/max(ni)))
@@ -383,7 +317,7 @@ dtianiso2<-function(y,hmax,lambda,rho,graph=FALSE,slice=NULL,bvec=NULL,sigma2=NU
     if (scorr[1]>=0.1) lambda0 <- lambda * Spatialvar.gauss(hakt0/0.42445/4,h0,2) /
       Spatialvar.gauss(h0,1e-5,2) /
         Spatialvar.gauss(hakt0/0.42445/4,1e-5,2)
-     z <- .Fortran("awsdti2",
+     z <- .Fortran("awsdti",
                 as.double(y),
                 as.double(z$theta),
                 bi=as.double(z$bi),
@@ -403,11 +337,12 @@ dtianiso2<-function(y,hmax,lambda,rho,graph=FALSE,slice=NULL,bvec=NULL,sigma2=NU
                 mask=as.logical(z$mask),
                 DUP=FALSE,
                 PACKAGE="dti")[c("theta","bi","anindex","andirection","det","mask")]
-     dim(z$bi) <- dim(z$anindex) <-dim(z$det) <- dimy[-1]
+     dim(z$bi) <- dim(z$anindex) <- dim(z$det) <- dim(z$mask) <- dimy[-1]
      dim(z$theta) <- dimy
      dim(z$andirection) <- c(3,dimy[-1]) 
      if(graph){
-     show.image(make.image(andir.image(z,quant=quant)[,,slice,]))
+     class(z) <- "dti"
+     show.image(make.image(andir.image(z,slice,quant=quant,minanindex=minanindex)))
      title(paste("Anisotropy index (h=",signif(hakt,3),"), slice",slice,"range:",signif(min(z$anindex[z$mask]),3),"-",
                                                                                  signif(max(z$anindex[z$mask]),3)))
      ni<-z$bi[,,slice]*sigma2[,,slice]
@@ -418,18 +353,25 @@ dtianiso2<-function(y,hmax,lambda,rho,graph=FALSE,slice=NULL,bvec=NULL,sigma2=NU
      hakt0<-hakt
      hakt <- hakt*hincr
   }
-invisible(list(theta=z$theta,bi=z$bi,anindex=z$anindex,andirection=z$andirection,mask=z$mask,call=args))
+z <- list(theta=z$theta,bi=z$bi,anindex=z$anindex,andirection=z$andirection,mask=z$mask,InvCov=Bcov,call=args)
+class(z) <- "dti"
+invisible(z)
 }
 
-andir.image <- function(dtobject,method=1,quant=0){
+andir.image <- function(dtobject,slice=NULL,method=1,quant=0,minanindex=NULL){
+if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
 anindex <- dtobject$anindex
-andirection <- dtobject$andirection
-mask <- dtobject$mask
+dimg <- dim(anindex)
+if(is.null(slice)) slice <- 1:dimg[3]
+lslice <- length(slice)
+if(lslice>1) dimg[3] <- length(slice) else dimg <- dimg[1:2]
+anindex <- anindex[,,slice]
+andirection <- dtobject$andirection[,,,slice]
+mask <- dtobject$mask[,,slice]
 anindex[anindex>1]<-0
 anindex[anindex<0]<-0
-dimg <- dim(anindex)
 dim(andirection)<-c(3,prod(dimg))
-minanindex <- quantile(anindex[mask],quant)
+if(is.null(minanindex)) minanindex <- quantile(anindex[mask],quant)
 if(method==1) {
 andirection[1,] <- abs(andirection[1,])
 andirection[2,] <- abs(andirection[2,])

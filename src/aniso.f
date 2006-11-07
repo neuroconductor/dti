@@ -3,186 +3,7 @@ C
 C   3D anisotropic smoothing of diffusion tensor data
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-      subroutine awsdti(y,th,bi,ani,dir,det,n1,n2,n3,h,rho,lambda,
-     1                  thnew,mask)
-C
-C   y        -  observed diffusion tensor data
-C   th       -  smoothed diffusion tensor data
-C   bi       -  voxelwise sum of weights 
-C   ani      -  anisotropy index 
-C   dir      -  direction of main anisotropy 
-C   det      -  det(A)^(1/3) 
-C   n1,n2,n3 -  spatial dimensions
-C   rho      -  regularization parameter for anisotropic neighborhoods
-C               (X,y,z) ( A(theta)+ rho/bi I ) (X,y,z)^T  = h^2  defines the elloispid 
-C   lambda   -  scale factor in the statistical penalty
-C   thnew    -  new smoothed diffusion tensor data
-      implicit logical (a-z)
-      integer n1,n2,n3
-      real*8 y(6,n1,n2,n3),th(6,n1,n2,n3),thnew(6,n1,n2,n3),h,rho,
-     1       lambda,bi(n1,n2,n3),ani(n1,n2,n3),dir(3,n1,n2,n3),
-     2       det(n1,n2,n3)
-      integer i1,j1,j1a,j1e,jj1,i2,j2,j2a,j2e,jj2,i3,j3,j3a,j3e,jj3,
-     1        ierr,k
-      real*8 wij,adist,sw,swy(6),h3,thi(6),bii,ew(3),ev(3,3),
-     1       mew,z1,z2,z3,dtidist,sij,diri(3),anii,deti,z,sew
-      external adist,dtidist
-      logical aws,mask(n1,n2,n3) 
-      aws=lambda.lt.1e20
-      h3=h*h*h
-C  now anisotropic smoothing 
-      DO i1=1,n1
-         DO i2=1,n2
-            DO i3=1,n3
-               if(.not.mask(i1,i2,i3)) CYCLE
-               sw=0.d0
-               deti=det(i1,i2,i3)
-               bii=bi(i1,i2,i3)/lambda
-               DO k=1,6
-                  swy(k)=0.d0
-                  thi(k)=th(k,i1,i2,i3)/deti
-               END DO
-C        if(thi(1).le.0.d0.or.thi(4).le.0.d0.or.thi(6).le.0.d0) THEN
-C        call intpr("i1",2,i1,1)
-C        call intpr("i2",2,i2,1)
-C        call intpr("i3",2,i3,1)
-C        call intpr("mask",4,mask(i1,i2,i3),1)
-C         call dblepr("y",1,y(1,i1,i2,i3),6)
-C         call dblepr("thi0",4,th(1,i1,i2,i3),6)
-C         call dblepr("deti",4,deti,1)
-C         call dblepr("bii",3,bii,1)
-C         call dblepr("rho",3,rho,1)
-C        call dblepr("y",1,y(1,i1,i2,i3),6)
-C     END IF
-               thi(1)=thi(1)+rho*bii
-               thi(4)=thi(4)+rho*bii
-               thi(6)=thi(6)+rho*bii
-C               call dblepr("thi0",4,thi,6)
-               call eigen3(thi,ew,ev,ierr)
-               if(ierr.ne.0) THEN
-               call intpr("ierr",4,ierr,1)
-                  thi(1)=1
-                  thi(2)=0
-                  thi(3)=0
-                  thi(4)=1
-                  thi(5)=0
-                  thi(6)=1
-               ELSE
-                  sew=ew(1)*ew(2)*ew(3)
-                  sew=dexp(dlog(sew)/3.d0)
-                  ew(1)=ew(1)/sew
-                  ew(2)=ew(2)/sew
-                  ew(3)=ew(3)/sew
-                  thi(1)=ev(1,1)*ev(1,1)*ew(1)+ev(1,2)*ev(1,2)*ew(2)+
-     1                   ev(1,3)*ev(1,3)*ew(3)
-                  thi(2)=ev(1,1)*ev(2,1)*ew(1)+ev(1,2)*ev(2,2)*ew(2)+
-     1                   ev(1,3)*ev(2,3)*ew(3)
-                  thi(3)=ev(1,1)*ev(3,1)*ew(1)+ev(1,2)*ev(3,2)*ew(2)+
-     1                   ev(1,3)*ev(3,3)*ew(3)
-                  thi(4)=ev(2,1)*ev(2,1)*ew(1)+ev(2,2)*ev(2,2)*ew(2)+
-     1                   ev(2,3)*ev(2,3)*ew(3)
-                  thi(5)=ev(2,1)*ev(3,1)*ew(1)+ev(2,2)*ev(3,2)*ew(2)+
-     1                   ev(2,3)*ev(3,3)*ew(3)
-                  thi(6)=ev(3,1)*ev(3,1)*ew(1)+ev(3,2)*ev(3,2)*ew(2)+
-     1                   ev(3,3)*ev(3,3)*ew(3)
-               END IF
-C               call intpr("i3",2,i3,1)
-C               call dblepr("thi",3,thi,6)
-               anii=ani(i1,i2,i3)
-               DO k=1,3
-                  diri(k)=dir(k,i1,i2,i3)
-               END DO
-               call rangex(thi,h,j1a,j1e)
-C               call intpr("j1e",3,j1e,1)
-               DO j1=j1a,j1e
-                  jj1=i1+j1
-                  if(jj1.le.0.or.jj1.gt.n1) CYCLE
-                  call rangey(thi,j1,h,j2a,j2e)
-C               call intpr("j2e",3,j2e,1)
-                 DO j2=j2a,j2e
-                     jj2=i2+j2
-                     if(jj2.le.0.or.jj2.gt.n2) CYCLE
-                     call rangez(thi,j1,j2,h,j3a,j3e)
-C               call intpr("j3e",3,j3e,1)
-                      DO j3=j3a,j3e
-                        jj3=i3+j3
-                        if(jj3.le.0.or.jj3.gt.n3) CYCLE
-                        if(.not.mask(jj1,jj2,jj3)) CYCLE 
-                        wij=adist(thi,j1,j2,j3)
-                        if(wij.lt.0.d0) call dblepr("wij",3,wij,1)
-C     triangular location kernel
-                        if(wij.gt.h3) CYCLE
-C                           call dblepr("h3",2,h3,1)
-C                           call dblepr("outside",7,wij,1)
-C                           CYCLE
-                        wij = 1.d0 - wij/h3
-                        IF(aws) THEN
-                        sij=dtidist(diri,dir(1,jj1,jj2,jj3),anii)*bii
-                           if(sij.lt.0.d0) THEN
-C                              call dblepr("sij",3,sij,1)
-                              sij=0.d0
-                           END IF
-                           if(sij.gt.1.d0) CYCLE
-                           wij=wij*(1.d0-sij)
-                        END IF
-                        sw=sw+wij
-                        DO k=1,6
-                           swy(k)=swy(k)+wij*y(k,jj1,jj2,jj3)
-                        END DO
-                     END DO
-                  END DO
-               END DO
-               if(sw.eq.0) THEN
-                  call intpr("sw=0 in i1",9,i1,1)
-                  call intpr("i2",2,i2,1)
-                  call intpr("i3",2,i3,1)
-               END IF
-               bi(i1,i2,i3)=sw
-               DO k=1,6
-                  thnew(k,i1,i2,i3)=swy(k)/sw
-               END DO
-               call eigen3(thnew(1,i1,i2,i3),ew,ev,ierr)
-               if(ierr.ne.0) THEN
-                  ani(i1,i2,i3)=0.d0
-                  DO k=1,3
-                     dir(k,i1,i2,i3)=0.d0
-                  END DO
-                  det(i1,i2,i3)=1
-               ELSE
-                  mew=(ew(1)+ew(2)+ew(3))/3.d0
-                  z1=ew(1)-mew
-                  z2=ew(2)-mew
-                  z3=ew(3)-mew
-                  z=3.d0*(z1*z1+z2*z2+z3*z3)
-                  z1=ew(1)
-                  z2=ew(2)
-                  z3=ew(3)
-                  mew=2.d0*(z1*z1+z2*z2+z3*z3)
-                  if(mew.le.1d-20) mew=1.d0
-                  ani(i1,i2,i3)=dsqrt(z/mew)
-                  DO k=1,3
-                     dir(k,i1,i2,i3)=ev(k,1)
-                  END DO
-                  z=ew(1)*ew(2)*ew(3)
-                  IF(z.le.1d-20) THEN
-                     det(i1,i2,i3)=0.d0
-                  ELSE
-                     det(i1,i2,i3)=dexp(dlog(z)/3)
-                  END IF
-               ENDIF
-               call rchkusr()
-            END DO
-         END DO
-C         call intpr("i1",2,i1,1)
-      END DO
-      RETURN
-      END
-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-C
-C   3D anisotropic smoothing of diffusion tensor data
-C
-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-      subroutine awsdti2(y,th,bi,ani,andir,det,bcov,sigma2,n1,n2,n3,h,
+      subroutine awsdti(y,th,bi,ani,andir,det,bcov,sigma2,n1,n2,n3,h,
      1                  zext,rho,lambda,thnew,mask)
 C
 C   y        -  observed diffusion tensor data
@@ -190,7 +11,7 @@ C   th       -  smoothed diffusion tensor data
 C   bi       -  voxelwise sum of weights 
 C   ani      -  anisotropy index 
 C   dir      -  direction of main anisotropy 
-C   det      -  det(A)^(1/3) 
+C   det      -  det(A)
 C   n1,n2,n3 -  spatial dimensions
 C   rho      -  regularization parameter for anisotropic neighborhoods
 C               (X,y,z) ( A(theta)+ rho/bi I ) (X,y,z)^T  = h^2  defines the elloispid 
@@ -203,7 +24,7 @@ C   thnew    -  new smoothed diffusion tensor data
      2       det(n1,n2,n3),bcov(6,6),sigma2(n1,n2,n3),zext
       integer i1,j1,j1a,j1e,jj1,i2,j2,j2a,j2e,jj2,i3,j3,j3a,j3e,jj3,
      1        ierr,k
-      real*8 wij,adist,sw,swy(6),h3,thi(6),bii,ew(3),ev(3,3),
+      real*8 wij,adist,sw,swy(6),h3,thi(6),bii,sqrbii,ew(3),ev(3,3),
      1       mew,z1,z2,z3,dtidist2,sij,anii,deti,z,sew
       external adist,dtidist2
       logical aws,mask(n1,n2,n3) 
@@ -215,15 +36,17 @@ C  now anisotropic smoothing
             DO i3=1,n3
                if(.not.mask(i1,i2,i3)) CYCLE
                sw=0.d0
-               deti=det(i1,i2,i3)
+               deti=dexp(dlog(det(i1,i2,i3))/3)
                bii=bi(i1,i2,i3)
+               sqrbii=dsqrt(bii)*sigma2(i1,i2,i3)
                DO k=1,6
                   swy(k)=0.d0
                   thi(k)=th(k,i1,i2,i3)/deti
                END DO
-               thi(1)=thi(1)+rho*bii
-               thi(4)=thi(4)+rho*bii
-               thi(6)=thi(6)+rho*bii
+               thi(1)=thi(1)+rho*sqrbii
+               thi(4)=thi(4)+rho*sqrbii
+               thi(6)=thi(6)+rho*sqrbii
+C  this is scale invariant sice sqrbii scales with dsqrt(sigma2) (standard deviation)
                call eigen3(thi,ew,ev,ierr)
                if(ierr.ne.0) THEN
                   call intpr("ierr",4,ierr,1)
@@ -271,15 +94,8 @@ C     triangular location kernel
                         if(wij.gt.h3) CYCLE
                         wij = (1.d0 - wij/h3)
                         IF(aws) THEN
-                        sij=dtidist2(th(1,i1,i2,i3),
-     1                      th(1,jj1,jj2,jj3),bcov)*bii/lambda
-                           if(sij.le.0.d0.and.j3.ne.0) THEN
-                              call dblepr("sij",3,sij,1)
-                              call dblepr("bii",3,bii,1)
-                              call dblepr("lam",3,lambda,1)
-                              call dblepr("sig",3,sigma2,1)
-                              sij=0.d0
-                           END IF
+                           sij=dtidist2(th(1,i1,i2,i3),
+     1                          th(1,jj1,jj2,jj3),bcov)*bii/lambda
                            if(sij.gt.1.d0) CYCLE
                            wij=wij*(1.d0-sij)/sigma2(jj1,jj2,jj3)
                         END IF
@@ -290,11 +106,6 @@ C     triangular location kernel
                      END DO
                   END DO
                END DO
-               if(sw.eq.0) THEN
-                  call intpr("sw=0 in i1",9,i1,1)
-                  call intpr("i2",2,i2,1)
-                  call intpr("i3",2,i3,1)
-               END IF
                bi(i1,i2,i3)=sw
                DO k=1,6
                   thnew(k,i1,i2,i3)=swy(k)/sw
@@ -318,20 +129,14 @@ C     triangular location kernel
                   mew=2.d0*(z1*z1+z2*z2+z3*z3)
                   if(mew.le.1d-20) mew=1.d0
                   ani(i1,i2,i3)=dsqrt(z/mew)
-                  z=ew(1)*ew(2)*ew(3)
+                  det(i1,i2,i3)=ew(1)*ew(2)*ew(3)
                   DO k=1,3
                      andir(k,i1,i2,i3)=ev(k,3)
                   END DO
-                  IF(z.le.1d-20) THEN
-                     det(i1,i2,i3)=0.d0
-                  ELSE
-                     det(i1,i2,i3)=dexp(dlog(z)/3)
-                  END IF
                ENDIF
                call rchkusr()
             END DO
          END DO
-C         call intpr("i1",2,i1,1)
       END DO
       RETURN
       END
@@ -351,7 +156,7 @@ C   lambda   -  scale factor in the statistical penalty
 C   thnew    -  new smoothed diffusion tensor data
 C   ani      -  anisotropy index (computed internally)
 C   dir      -  direction of main anisotropy (computed internally)
-C   det      -  det(A)^(1/3) 
+C   det      -  det(A)
       implicit logical (a-z)
       integer n1,n2,n3
       real*8 th(6,n1,n2,n3),ani(n1,n2,n3),dir(3,n1,n2,n3),det(n1,n2,n3)
@@ -362,15 +167,8 @@ C  compute anisotropy index and direction of main anisotropy (nneded in statisti
       DO i1=1,n1
          DO i2=1,n2
             DO i3=1,n3
-               mask(i1,i2,i3)=.TRUE.
-               call eigen3(th(1,i1,i2,i3),ew,ev,ierr)
-               if(ierr.ne.0) THEN
-                  ani(i1,i2,i3)=0
-                  DO k=1,3
-                     dir(k,i1,i2,i3)=0
-                  END DO
-                  mask(i1,i2,i3)=.FALSE.
-               ELSE
+               IF(mask(i1,i2,i3)) THEN
+                  call eigen3(th(1,i1,i2,i3),ew,ev,ierr)
                   mew=(ew(1)+ew(2)+ew(3))/3.d0
                   z1=ew(1)-mew
                   z2=ew(2)-mew
@@ -386,15 +184,12 @@ C  compute anisotropy index and direction of main anisotropy (nneded in statisti
                      dir(k,i1,i2,i3)=ev(k,3)
                   END DO
                   z=ew(1)*ew(2)*ew(3)
-                  IF(z.le.1d-20) THEN
+                  IF(z.le.1d-30) THEN
                      det(i1,i2,i3)=0.d0
                      mask(i1,i2,i3)=.FALSE.
                   ELSE
-                     det(i1,i2,i3)=dexp(dlog(z)/3)
+                     det(i1,i2,i3)=z
                   END IF
-                  IF(ew(3).le.0.d0) mask(i1,i2,i3)=.FALSE.
-                  IF(ew(2).le.0.d0) mask(i1,i2,i3)=.FALSE.
-                  IF(ew(1).le.0.d0) mask(i1,i2,i3)=.FALSE.
                ENDIF
                call rchkusr()
             END DO
@@ -407,44 +202,89 @@ C
 C   Initialize anisotropy index and direction of main anisotropy
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-      subroutine projdt(th,n1,n2,n3,thnew,mask)
+      subroutine projdt(th,n1,n2,n3,thnew,ani,dir,det,mask)
 C
 C   th       -  observed diffusion tensor data
 C   thnew    -  projected tensor data
       implicit logical (a-z)
       integer n1,n2,n3
-      real*8 th(6,n1,n2,n3),thnew(6,n1,n2,n3)
+      real*8 th(6,n1,n2,n3),thnew(6,n1,n2,n3),ani(n1,n2,n3),
+     1       dir(3,n1,n2,n3),det(n1,n2,n3),mew
       integer i1,i2,i3,ierr,k
-      real*8 ew(3),ev(3,3),z1,z2,z3
+      real*8 ew(3),ev(3,3),z1,z2,z3,z
       logical mask(n1,n2,n3)
 C  compute anisotropy index and direction of main anisotropy (nneded in statistical penalty)
       DO i1=1,n1
          DO i2=1,n2
             DO i3=1,n3
-               mask(i1,i2,i3)=.TRUE.
-               call eigen3(th(1,i1,i2,i3),ew,ev,ierr)
-               IF(ierr.ne.0) THEN
-                  DO k=1,6
-                     thnew(k,i1,i2,i3)=0.d0
-                  END DO
-                  mask(i1,i2,i3)=.FALSE.
-               ELSE IF(dmin1(ew(1),ew(2),ew(3)).lt.1d-10) THEN
-                  z1=dmax1(ew(1),1d-10)
-                  z2=dmax1(ew(2),1d-10)
-                  z3=dmax1(ew(3),1d-10)
-                  thnew(1,i1,i2,i3)=z1*ev(1,1)*ev(1,1)+
-     1                     z2*ev(1,2)*ev(1,2)+z2*ev(1,3)*ev(1,3)
-                  thnew(2,i1,i2,i3)=z1*ev(1,1)*ev(2,1)+
-     1                     z2*ev(1,2)*ev(2,2)+z2*ev(1,3)*ev(2,3)
-                  thnew(3,i1,i2,i3)=z1*ev(1,1)*ev(3,1)+
-     1                     z2*ev(1,2)*ev(3,2)+z2*ev(1,3)*ev(3,3)
-                  thnew(4,i1,i2,i3)=z1*ev(2,1)*ev(2,1)+
-     1                     z2*ev(2,2)*ev(2,2)+z2*ev(2,3)*ev(2,3)
-                  thnew(5,i1,i2,i3)=z1*ev(2,1)*ev(3,1)+
-     1                     z2*ev(2,2)*ev(3,2)+z2*ev(2,3)*ev(3,3)
-                  thnew(6,i1,i2,i3)=z1*ev(3,1)*ev(3,1)+
-     1                     z2*ev(3,2)*ev(3,2)+z2*ev(3,3)*ev(3,3)
+               IF(mask(i1,i2,i3)) THEN
+                  call eigen3(th(1,i1,i2,i3),ew,ev,ierr)
+                  IF(ierr.ne.0) THEN
+C
+C       error in eigenvalue decomposition of tensor, set voxel inactive
+C
+                     DO k=1,6
+                        thnew(k,i1,i2,i3)=0.d0
+                     END DO
+                     mask(i1,i2,i3)=.FALSE.
+                  ELSE IF(dmin1(ew(1),ew(2),ew(3)).lt.1d-10) THEN
+C
+C       negative eigenvalue of tensor, project to space of positive definite tensors
+C
+                     ew(1)=dmax1(ew(1),1d-10)
+                     ew(2)=dmax1(ew(2),1d-10)
+                     ew(3)=dmax1(ew(3),1d-10)
+                     thnew(1,i1,i2,i3)=ew(1)*ev(1,1)*ev(1,1)+
+     1                     ew(2)*ev(1,2)*ev(1,2)+ew(3)*ev(1,3)*ev(1,3)
+                     thnew(2,i1,i2,i3)=ew(1)*ev(1,1)*ev(2,1)+
+     1                     ew(2)*ev(1,2)*ev(2,2)+ew(3)*ev(1,3)*ev(2,3)
+                     thnew(3,i1,i2,i3)=ew(1)*ev(1,1)*ev(3,1)+
+     1                     ew(2)*ev(1,2)*ev(3,2)+ew(3)*ev(1,3)*ev(3,3)
+                     thnew(4,i1,i2,i3)=ew(1)*ev(2,1)*ev(2,1)+
+     1                     ew(2)*ev(2,2)*ev(2,2)+ew(3)*ev(2,3)*ev(2,3)
+                     thnew(5,i1,i2,i3)=ew(1)*ev(2,1)*ev(3,1)+
+     1                     ew(2)*ev(2,2)*ev(3,2)+ew(3)*ev(2,3)*ev(3,3)
+                     thnew(6,i1,i2,i3)=ew(1)*ev(3,1)*ev(3,1)+
+     1                     ew(2)*ev(3,2)*ev(3,2)+ew(3)*ev(3,3)*ev(3,3)
+                  ELSE
+C
+C       valid tensor tensor, copy data
+C
+                     DO k=1,6
+                        thnew(k,i1,i2,i3)=th(k,i1,i2,i3)
+                     END DO
+                  END IF
+                  IF(mask(i1,i2,i3)) THEN
+C
+C       compute anisotropy index, direction corresponding to the first eigenvalue
+C       and determinant
+C
+                     mew=(ew(1)+ew(2)+ew(3))/3.d0
+                     z1=ew(1)-mew
+                     z2=ew(2)-mew
+                     z3=ew(3)-mew
+                     z=3.d0*(z1*z1+z2*z2+z3*z3)
+                     z1=ew(1)
+                     z2=ew(2)
+                     z3=ew(3)
+                     mew=2.d0*(z1*z1+z2*z2+z3*z3)
+                     if(mew.le.1d-20) mew=1.d0
+                     ani(i1,i2,i3)=dsqrt(z/mew)
+                     DO k=1,3
+                        dir(k,i1,i2,i3)=ev(k,3)
+                     END DO
+                     z=ew(1)*ew(2)*ew(3)
+                     IF(z.le.1d-30) THEN
+                        det(i1,i2,i3)=0.d0
+                        mask(i1,i2,i3)=.FALSE.
+                     ELSE
+                        det(i1,i2,i3)=z
+                     END IF
+                  END IF
                ELSE
+C
+C    inactive voxel, just copy the data
+C
                   DO k=1,6
                      thnew(k,i1,i2,i3)=th(k,i1,i2,i3)
                   END DO
