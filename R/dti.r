@@ -236,16 +236,87 @@ tensor.estimate <- function(y,dt=NULL,h) {
   z
 }
 
-dtianiso<-function(y,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,bvec=NULL,sigma2=NULL,scorr=c(.5,.5),mask=NULL,quant=.8,minanindex=NULL,zext=1){
+create.dti <- function(gradient,imagefile,ddim,residuals=TRUE){
+if(dim(gradient)[2]==3)  gradient<-t(gradient)
+if(dim(gradient)[1]!=3)  stop("Not a valid gradient matrix")
+ngrad <- dim(gradient)[2]
+if(!(file.exists(imagefile))) stop("Image file does not exist")
+zz<-file(imagefile,"rb")
+ttt <- readBin(zz,"integer",prod(ddim)*ngrad,2,FALSE)
+close(zz)
+n <- prod(ddim)
+dim(ttt) <- c(n,ngrad)
+ttt<-t(ttt)
+btb <- matrix(0,6,ngrad)
+btb[1,]<-gradient[1,]*gradient[1,]
+btb[4,]<-gradient[2,]*gradient[2,]
+btb[6,]<-gradient[3,]*gradient[3,]
+btb[2,]<-2*gradient[1,]*gradient[2,]
+btb[3,]<-2*gradient[1,]*gradient[3,]
+btb[5,]<-2*gradient[2,]*gradient[3,]
+btbsvd <- svd(btb)
+theta <- btbsvd$u %*% diag(1/btbsvd$d) %*% t(btbsvd$v)%*% ttt
+res <- ttt - t(btb) %*% theta
+rm(ttt)
+gc()
+mres2 <- res[1,]^2
+for(i in 2:ngrad) mres2 <- mres2 + res[i,]^2
+sigma2 <- array(mres2/(ngrad-6),ddim)
+rm(mres2)
+gc()
+z<-list(theta=array(theta,c(6,ddim)),sigma2=sigma2,btb=btb,scorr=c(0,0),
+        ddim=ddim,ngrad=ngrad,file=imagefile,res=if(residuals) res else NULL)
+class(z) <- "dti"
+invisible(z)
+}
+
+getscorr <- function(dtobject,mask){
+if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
+ddim <- dtobject$ddim
+n <- prod(ddim)
+ngrad <- dtobject$ngrad
+if(is.null(dtobject$res)) {
+imagefile <- dtiobject$file
+if(!(file.exists(imagefile))) stop("Image file does not exist")
+zz<-file(imagefile,"rb")
+ttt <- readBin(zz,"integer",prod(dim)*ngrad,2,FALSE)
+close(zz)
+btb <- dtiobject$btb
+res <- ttt - t(btb) %*% dtobject$theta
+} else {
+res <- dtiobject$res
+}
+scorr <- dtiobject$scorr
+dim(res) <- c(ngrad,ddim)
+res <- aperm(res,c(2:4,1))
+dim(res) <- c(n,ngrad)
+res1 <- as.vector(res[as.vector(mask),])
+scorr[1] <- mean(res1[-1]*res1[-length(res1)])/var(res1)
+dim(res) <- c(ddim,ngrad)
+res <- aperm(res,c(2,1,3,4))
+dim(res) <- c(n,ngrad)
+res1 <- as.vector(res[as.vector(aperm(mask,c(2,1,3))),])
+scorr[2] <- mean(res1[-1]*res1[-length(res1)])/var(res1)
+dtobject$scorr <- scorr
+dtobject$res <- NULL
+invisible(dtobject)
+}
+
+
+
+
+
+
+dtianiso<-function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,mask=NULL,quant=.8,minanindex=NULL,zext=1){
+if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
   args <- match.call()
-  btb<-matrix(0,6,dim(bvec)[2])
-  btb[1,]<-bvec[1,]^2
-  btb[4,]<-bvec[2,]^2
-  btb[6,]<-bvec[3,]^2
-  btb[2,]<-2*bvec[1,]*bvec[2,]
-  btb[3,]<-2*bvec[1,]*bvec[3,]
-  btb[5,]<-2*bvec[3,]*bvec[2,]
+  btb<-dtobject$btb
   Bcov <- btb%*%t(btb)
+  y <- dtobject$theta
+  sigma2 <- dtobject$sigma2
+  scorr <- dtobject$scorr
+  rm(dtobject)
+  gc()
   dimy <- dim(y)
   if(length(dimy)!=4||dimy[1]!=6) stop("y does not contain 3D diffusion tensor image")
   n1<-dimy[2]
@@ -253,10 +324,6 @@ dtianiso<-function(y,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,bvec=NULL,sig
   n3<-dimy[4]
   n<-n1*n2*n3
   if(is.null(mask)) mask <- array(TRUE,dimy[-1])
-  if(is.null(dim(sigma2))) {
-    sigma2 <- rep(sigma2,n)
-    dim(sigma2) <- dimy[-1]
-  }
   sigma2[sigma2<=mean(sigma2)*1e-5]<- mean(sigma2)*1e-5
   z <- .Fortran("projdt",
                 as.double(y),
@@ -271,23 +338,12 @@ dtianiso<-function(y,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,bvec=NULL,sig
                 DUP=FALSE,
                 PACKAGE="dti")[c("theta","anindex","andirection","det","mask")]
   y <- array(z$theta,dimy)
-#  mask <- array(z$mask,dimy[-1])&mask
-#  z <- .Fortran("initdti",
-#                theta=as.double(y),
-#                as.integer(n1),
-#                as.integer(n2),
-#                as.integer(n3),
-#                anindex=double(n),
-#                andirection=double(3*n),
-#                det=double(n),
-#                mask=as.logical(mask),
-#                DUP=FALSE,
-#                PACKAGE="dti")[c("theta","anindex","andirection","det","mask")]
   z$bi <- 1/sigma2
   dim(z$theta) <- dimy
   dim(z$anindex) <-dim(z$det) <-dim(z$mask) <- dimy[-1]
   z$mask <- array(z$mask,dimy[-1])&mask
   dim(z$andirection) <- c(3,dimy[-1]) 
+#
 #  initial state for h=1
 #
   if(graph){
@@ -358,13 +414,13 @@ class(z) <- "dti"
 invisible(z)
 }
 
-andir.image <- function(dtobject,slice=NULL,method=1,quant=0,minanindex=NULL){
+andir.image <- function(dtobject,slice=1,method=1,quant=0,minanindex=NULL,show=TRUE,...){
 if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
+if(is.null(dtobject$anindex)) stop("No anisotropy index yet")
+adimpro <- require(adimpro)
 anindex <- dtobject$anindex
-dimg <- dim(anindex)
-if(is.null(slice)) slice <- 1:dimg[3]
-lslice <- length(slice)
-if(lslice>1) dimg[3] <- length(slice) else dimg <- dimg[1:2]
+dimg <- dim(anindex)[1:2]
+if(is.null(slice)) slice <- 1
 anindex <- anindex[,,slice]
 andirection <- dtobject$andirection[,,,slice]
 mask <- dtobject$mask[,,slice]
@@ -385,6 +441,13 @@ andirection[3,] <- (1+andirection[3,])/2
 andirection <- t(andirection)
 andirection <- andirection*as.vector(anindex)*as.numeric(mask)*as.numeric(anindex>minanindex)
 dim(andirection)<-c(dimg,3)
+if(adimpro) {
+andirection <- make.image(andirection)
+if(show) show.image(andirection,...)
+} else if(show) {
+dim(anindex) <- dimg
+image(anindex,...)
+}
 invisible(andirection)
 } 
 

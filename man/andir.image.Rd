@@ -1,39 +1,39 @@
 \name{andir.image}
 \alias{andir.image}
 %- Also NEED an '\alias' for EACH other topic documented here.
-\title{ Construct a}
+\title{ Illustrate anisotropy within DT images.}
 \description{
-  ~~ A concise (1-5 lines) description of what the function does. ~~
+  The function generates an image characterizing the anisotropy within a specified
+slide of an 3D diffusion tensor image. 
 }
 \usage{
-andir.image(dtobject, slice = NULL, method = 1, quant = 0, minanindex = NULL)
+andir.image(dtobject, slice = 1, method = 1, quant = 0, minanindex = NULL, show=TRUE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{dtobject}{ ~~Describe \code{dtobject} here~~ }
-  \item{slice}{ ~~Describe \code{slice} here~~ }
-  \item{method}{ ~~Describe \code{method} here~~ }
-  \item{quant}{ ~~Describe \code{quant} here~~ }
-  \item{minanindex}{ ~~Describe \code{minanindex} here~~ }
+  \item{dtobject}{ object of class \code{dti} as produced by function \code{\link{dtianiso}}. }
+  \item{slice}{ slice number }
+  \item{method}{ \code{method} specifies the color coding of the anisotropy direction. }
+  \item{quant}{ If \code{is.null(minanindex)} then \code{quant} 
+       determines the lower bound for the anisotropy index as the \code{quant}-quantile of estimated
+       anisotropy indices.  }
+  \item{minanindex}{\code{minanindex} allows to determine the lower bound for the anisotropy index. 
+   only results at voxel with anisotropy index larger than this lower bound will be displayed. }
+  \item{show}{ Determines if the resulting object is displayed.}
+  \item{...}{ Additional parameters for function \code{show.image} from package \code{adimpro} or function \code{image}.}
 }
 \details{
-  ~~ If necessary, more details than the description above ~~
 }
 \value{
-  ~Describe the value returned
-  If it is a LIST, use
-  \item{comp1 }{Description of 'comp1'}
-  \item{comp2 }{Description of 'comp2'}
-  ...
+  If package \code{adimpro} is installed the function creates an image object of class \code{"adimpro"}, otherwise
+  an array of rgb-values, characterizing the anisotropy within the specified slice. 
 }
-\references{ ~put references to the literature/web site here ~ }
-\author{ ~~who you are~~ }
-\note{ ~~further notes~~ 
-
- ~Make other sections like Warning with \section{Warning }{....} ~
+\references{}
+\author{ Joerg Polzehl \email{polzehl@wias-berlin.de }
+\note{ 
 }
-\seealso{ ~~objects to See Also as \code{\link{help}}, ~~~ }
+\seealso{\code{\link{dtianiso}} }
 \examples{
 }
-\keyword{ ~kwd1 }% at least one, from doc/KEYWORDS
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+\keyword{ hplot }% at least one, from doc/KEYWORDS
+\keyword{ manip }% __ONLY ONE__ keyword per line
