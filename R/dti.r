@@ -242,11 +242,18 @@ if(dim(gradient)[1]!=3)  stop("Not a valid gradient matrix")
 ngrad <- dim(gradient)[2]
 if(!(file.exists(imagefile))) stop("Image file does not exist")
 zz<-file(imagefile,"rb")
+s0 <- readBin(zz,"integer",prod(ddim),2,FALSE)
 ttt <- readBin(zz,"integer",prod(ddim)*ngrad,2,FALSE)
 close(zz)
+cat("Data successfully read \n")
+ttt <- -log(ttt/s0)
+ttt[is.na(ttt)] <- 0
+ttt[(ttt==Inf)] <- 0
+ttt[(ttt==-Inf)] <- 0
 n <- prod(ddim)
 dim(ttt) <- c(n,ngrad)
 ttt<-t(ttt)
+cat("Data transformation completed \n")
 btb <- matrix(0,6,ngrad)
 btb[1,]<-gradient[1,]*gradient[1,]
 btb[4,]<-gradient[2,]*gradient[2,]
@@ -256,12 +263,14 @@ btb[3,]<-2*gradient[1,]*gradient[3,]
 btb[5,]<-2*gradient[2,]*gradient[3,]
 btbsvd <- svd(btb)
 theta <- btbsvd$u %*% diag(1/btbsvd$d) %*% t(btbsvd$v)%*% ttt
+cat("Diffusion tensors generated \n")
 res <- ttt - t(btb) %*% theta
 rm(ttt)
 gc()
 mres2 <- res[1,]^2
 for(i in 2:ngrad) mres2 <- mres2 + res[i,]^2
 sigma2 <- array(mres2/(ngrad-6),ddim)
+cat("Variance estimates generated \n")
 rm(mres2)
 gc()
 z<-list(theta=array(theta,c(6,ddim)),sigma2=sigma2,btb=btb,scorr=c(0,0),
@@ -276,27 +285,36 @@ ddim <- dtobject$ddim
 n <- prod(ddim)
 ngrad <- dtobject$ngrad
 if(is.null(dtobject$res)) {
-imagefile <- dtiobject$file
+imagefile <- dtobject$file
 if(!(file.exists(imagefile))) stop("Image file does not exist")
 zz<-file(imagefile,"rb")
-ttt <- readBin(zz,"integer",prod(dim)*ngrad,2,FALSE)
+s0 <- readBin(zz,"integer",prod(ddim),2,FALSE)
+ttt <- readBin(zz,"integer",prod(ddim)*ngrad,2,FALSE)
 close(zz)
-btb <- dtiobject$btb
+ttt[is.na(ttt)] <- 0
+ttt[(ttt==Inf)] <- 0
+ttt[(ttt==-Inf)] <- 0
+n <- prod(ddim)
+dim(ttt) <- c(n,ngrad)
+ttt<-t(ttt)
+btb <- dtobject$btb
 res <- ttt - t(btb) %*% dtobject$theta
 } else {
-res <- dtiobject$res
+res <- dtobject$res
 }
-scorr <- dtiobject$scorr
+scorr <- dtobject$scorr
 dim(res) <- c(ngrad,ddim)
 res <- aperm(res,c(2:4,1))
 dim(res) <- c(n,ngrad)
 res1 <- as.vector(res[as.vector(mask),])
 scorr[1] <- mean(res1[-1]*res1[-length(res1)])/var(res1)
+cat("correlation in x-direction",signif(scorr[1],3),"\n")
 dim(res) <- c(ddim,ngrad)
 res <- aperm(res,c(2,1,3,4))
 dim(res) <- c(n,ngrad)
 res1 <- as.vector(res[as.vector(aperm(mask,c(2,1,3))),])
 scorr[2] <- mean(res1[-1]*res1[-length(res1)])/var(res1)
+cat("correlation in y-direction",signif(scorr[2],3),"\n")
 dtobject$scorr <- scorr
 dtobject$res <- NULL
 invisible(dtobject)
@@ -352,7 +370,7 @@ if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
      on.exit(par(oldpar))
      if(is.null(slice)) slice<-n3%/%2
      class(z) <- "dti"
-     show.image(make.image(andir.image(z,slice,quant=quant,minanindex=minanindex)))
+     andir.image(z,slice,quant=quant,minanindex=minanindex)
      title(paste("Anisotropy index (h=1), slice",slice))
      ni<-z$bi[,,slice]*sigma2[,,slice]
      show.image(make.image(65535*ni/max(ni)))
@@ -398,7 +416,7 @@ if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
      dim(z$andirection) <- c(3,dimy[-1]) 
      if(graph){
      class(z) <- "dti"
-     show.image(make.image(andir.image(z,slice,quant=quant,minanindex=minanindex)))
+     andir.image(z,slice,quant=quant,minanindex=minanindex)
      title(paste("Anisotropy index (h=",signif(hakt,3),"), slice",slice,"range:",signif(min(z$anindex[z$mask]),3),"-",
                                                                                  signif(max(z$anindex[z$mask]),3)))
      ni<-z$bi[,,slice]*sigma2[,,slice]
