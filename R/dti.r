@@ -366,20 +366,42 @@ if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
 #
   if(graph){
      require(adimpro)
-     oldpar <- par(mfrow=c(1,2),mar=c(1,1,3,.25),mgp=c(2,1,0))
+     oldpar <- par(mfrow=c(3,3),mar=c(1,1,3,.25),mgp=c(2,1,0))
      on.exit(par(oldpar))
      if(is.null(slice)) slice<-n3%/%2
      class(z) <- "dti"
+     img<-z$theta[1,,,slice]
+     show.image(make.image(65535*img/max(img)))
+     title(paste("Dxx: min",signif(min(img),3),"max",signif(max(img),3)))
+     img<-z$theta[2,,,slice]
+     show.image(make.image(img))
+     title(paste("Dxy: min",signif(min(img),3),"max",signif(max(img),3)))
+     img<-z$theta[3,,,slice]
+     show.image(make.image(img))
+     title(paste("Dxz: min",signif(min(img),3),"max",signif(max(img),3)))
+     show.image(make.image(z$anindex[,,slice]))
+     title(paste("Anisotropy index  range:",signif(min(z$anindex[z$mask]),3),"-",
+                  signif(max(z$anindex[z$mask]),3)))
+     img<-z$theta[4,,,slice]
+     show.image(make.image(65535*img/max(img)))
+     title(paste("Dyy: min",signif(min(img),3),"max",signif(max(img),3)))
+     img<-z$theta[5,,,slice]
+     show.image(make.image(img))
+     title(paste("Dyz: min",signif(min(img),3),"max",signif(max(img),3)))
      andir.image(z,slice,quant=quant,minanindex=minanindex)
-     title(paste("Anisotropy index (h=1), slice",slice))
+     title(paste("Directions (h=1), slice",slice))
      ni<-z$bi[,,slice]*sigma2[,,slice]
      show.image(make.image(65535*ni/max(ni)))
-     title(paste("sum of weights, slice",slice))
+     title(paste("sum of weights  mean=",signif(mean(z$bi[z$mask]*sigma2[z$mask]),3)))
+     img<-z$theta[6,,,slice]
+     show.image(make.image(65535*img/max(img)))
+     title(paste("Dzz: min",signif(min(img),3),"max",signif(max(img),3)))
   }
   if (max(scorr)>0) {
     h0 <- numeric(length(scorr))
     for (i in 1:length(h0)) h0[i] <- get.bw.gauss(scorr[i],interv=2)
     if (length(h0)<2) h0 <- rep(h0[1],2)
+    h0 <- c(h0,1e-5)
 # no spatial correlation iz z-direction
     cat("Corresponding bandwiths for specified correlation:",h0,"\n")
   }
@@ -388,9 +410,13 @@ if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
   hakt <- hincr
   lambda0 <- lambda
   while( hakt <= hmax) {
-    if (scorr[1]>=0.1) lambda0 <- lambda * Spatialvar.gauss(hakt0/0.42445/4,h0,2) /
-      Spatialvar.gauss(h0,1e-5,2) /
-        Spatialvar.gauss(hakt0/0.42445/4,1e-5,2)
+    if (scorr[1]>=0.1) {
+       corrfactor <- Spatialvar.gauss(hakt0/0.42445/4,h0,3) /
+        Spatialvar.gauss(h0,1e-5,3) /
+        Spatialvar.gauss(hakt0/0.42445/4,1e-5,3)
+        lambda0 <- lambda * corrfactor
+     cat("Correction factor for spatial correlation",signif(corrfactor,3),"\n")
+}
      z <- .Fortran("awsdti",
                 as.double(y),
                 as.double(z$theta),
@@ -415,13 +441,34 @@ if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
      dim(z$theta) <- dimy
      dim(z$andirection) <- c(3,dimy[-1]) 
      if(graph){
+     
      class(z) <- "dti"
+     img<-z$theta[1,,,slice]
+     show.image(make.image(65535*img/max(img)))
+     title(paste("Dxx: min",signif(min(img),3),"max",signif(max(img),3)))
+     img<-z$theta[2,,,slice]
+     show.image(make.image(img))
+     title(paste("Dxy: min",signif(min(img),3),"max",signif(max(img),3)))
+     img<-z$theta[3,,,slice]
+     show.image(make.image(img))
+     title(paste("Dxz: min",signif(min(img),3),"max",signif(max(img),3)))
+     show.image(make.image(z$anindex[,,slice]))
+     title(paste("Anisotropy index  range:",signif(min(z$anindex[z$mask]),3),"-",
+                  signif(max(z$anindex[z$mask]),3)))
+     img<-z$theta[4,,,slice]
+     show.image(make.image(65535*img/max(img)))
+     title(paste("Dyy: min",signif(min(img),3),"max",signif(max(img),3)))
+     img<-z$theta[5,,,slice]
+     show.image(make.image(img))
+     title(paste("Dyz: min",signif(min(img),3),"max",signif(max(img),3)))
      andir.image(z,slice,quant=quant,minanindex=minanindex)
-     title(paste("Anisotropy index (h=",signif(hakt,3),"), slice",slice,"range:",signif(min(z$anindex[z$mask]),3),"-",
-                                                                                 signif(max(z$anindex[z$mask]),3)))
+     title(paste("Directions (h=",signif(hakt,3),"), slice",slice))
      ni<-z$bi[,,slice]*sigma2[,,slice]
      show.image(make.image(65535*ni/max(ni)))
      title(paste("sum of weights  mean=",signif(mean(z$bi[z$mask]*sigma2[z$mask]),3)))
+     img<-z$theta[6,,,slice]
+     show.image(make.image(65535*img/max(img)))
+     title(paste("Dyy: min",signif(min(img),3),"max",signif(max(img),3)))
      }
      cat("h=",signif(hakt,3),"Quantiles (.5, .75, .9, .95, 1) of anisotropy index",signif(quantile(z$anindex[z$mask],c(.5, .75, .9, .95, 1)),3),"\n")
      hakt0<-hakt

@@ -97,8 +97,9 @@ C     triangular location kernel
                            sij=dtidist2(th(1,i1,i2,i3),
      1                          th(1,jj1,jj2,jj3),bcov)*bii/lambda
                            if(sij.gt.1.d0) CYCLE
-                           wij=wij*(1.d0-sij)/sigma2(jj1,jj2,jj3)
+                           wij=wij*(1.d0-sij)
                         END IF
+                        wij=wij/sigma2(jj1,jj2,jj3)
                         sw=sw+wij
                         DO k=1,6
                            swy(k)=swy(k)+wij*y(k,jj1,jj2,jj3)
