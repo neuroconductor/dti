@@ -225,8 +225,8 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       implicit logical (a-z)
       real*8 tensor(3,3),tvect(3,3),u(3,3),g(3,3),lam(3),y(3,3),
      1       v(3,3),sig(3),ginv(3,3),rtlam(3),w(3,3),rem(3,3),ts(3,3)
-      integer i,j,k,ISUPPZ(6),iwork(50),ierr,nl
-      real*8 work(104),vl,vu,z
+      integer i,j,ISUPPZ(6),iwork(50),ierr,nl
+      real*8 work(104),vl,vu,z1,z2,z3
       nl=3
 C  get u and lambda
 C      call dblepr("remtensor",9,tensor,9)
@@ -251,21 +251,19 @@ C      call dblepr("remlam",6,lam,3)
 C  get y
 C      call dblepr("remtvect",8,tvect,9)
       DO i=1,3
+         z1=ginv(i,1)
+         z2=ginv(i,2)
+         z3=ginv(i,3)
          DO j=1,3
-            z=0.d0
-            DO k=1,3
-               z=z+ginv(i,k)*tvect(k,j)
-            END DO
-            w(i,j)=z
+            w(i,j)=z1*tvect(1,j)+z2*tvect(2,j)+z3*tvect(3,j)
          END DO
       END DO
       DO i=1,3
+         z1=w(i,1)
+         z2=w(i,2)
+         z3=w(i,3)
          DO j=i,3
-            z=0.d0
-            DO k=1,3
-               z=z+w(i,k)*ginv(j,k)
-            END DO
-            y(i,j)=z
+            y(i,j)=z1*ginv(j,1)+z2*ginv(j,2)+z3*ginv(j,3)
          END DO
       END DO
 C     get v and sig
@@ -277,12 +275,11 @@ C     get u=g%*%v
 C      if(nl.lt.3) 
 C      call dblepr("remsig",6,sig,3)
       DO i=1,3
+         z1=g(i,1)
+         z2=g(i,2)
+         z3=g(i,3)
          DO j=1,3
-            z=0.d0
-            DO k=1,3
-               z=z+g(i,k)*v(k,j)
-            END DO
-            u(i,j)=z
+            u(i,j)=z1*v(1,j)+z2*v(2,j)+z3*v(3,j)
          END DO
       END DO
 C     get result in rem
@@ -297,12 +294,11 @@ C     get result in rem
          END IF
       END DO  
       DO i=1,3
+         z1=u(i,1)*sig(1)
+         z2=u(i,2)*sig(2)
+         z3=u(i,3)*sig(3)
          DO j=i,3
-            z=0.d0
-            DO k=1,3
-               z=z+u(i,k)*u(j,k)*sig(k)
-            END DO
-            rem(i,j)=z
+            rem(i,j)=z1*u(j,1)+z2*u(j,2)+z3*u(j,3)
          END DO
       END DO
       rem(2,1)=rem(1,2)
@@ -321,8 +317,8 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       real*8 tensor(3,3),tvect(3,3,n),rlm(3,3,n)
       real*8 u(3,3),g(3,3),lam(3),y(3,3),ts(3,3),
      1       v(3,3),sig(3),ginv(3,3),rtlam(3),w(3,3)
-      integer m,i,j,k,ISUPPZ(6),iwork(50),ierr,nl
-      real*8 work(104),vl,vu,z
+      integer m,i,j,ISUPPZ(6),iwork(50),ierr,nl
+      real*8 work(104),vl,vu,z1,z2,z3
 C  get u and lambda
       nl=3
 C      call intpr("rlm1",4,n,1)
@@ -357,21 +353,19 @@ C  get y
 C      call intpr("rlm2",4,n,1)
       DO m=1,n
          DO i=1,3
+            z1=ginv(i,1)
+            z2=ginv(i,2)
+            z3=ginv(i,3)
             DO j=1,3
-               z=0.d0
-               DO k=1,3
-                  z=z+ginv(i,k)*tvect(k,j,m)
-               END DO
-               w(i,j)=z
+               w(i,j)=z1*tvect(1,j,m)+z2*tvect(2,j,m)+z3*tvect(3,j,m)
             END DO
          END DO
          DO i=1,3
+            z1=w(i,1)
+            z2=w(i,2)
+            z3=w(i,3)
             DO j=i,3
-               z=0.d0
-               DO k=1,3
-                  z=z+w(i,k)*ginv(j,k)
-               END DO
-               y(i,j)=z
+               y(i,j)=z1*ginv(j,1)+z2*ginv(j,2)+z3*ginv(j,3)
             END DO
          END DO
 C      call dblepr("y",1,y,9)
@@ -385,12 +379,11 @@ C      call intpr("rlm3",4,m,1)
 C     get u=g%*%v 
 C      call intpr("rlm4",4,m,1)
          DO i=1,3
+            z1=g(i,1)
+            z2=g(i,2)
+            z3=g(i,3)
             DO j=1,3
-               z=0.d0
-               DO k=1,3
-                  z=z+g(i,k)*v(k,j)
-               END DO
-               u(i,j)=z
+               u(i,j)=z1*v(1,j)+z2*v(2,j)+z3*v(3,j)
             END DO
          END DO
 C      call dblepr("u",1,u,9)
@@ -401,12 +394,11 @@ C            if(sig(i).lt.1e-10) call dblepr("sig",3,sig,3)
          END DO  
 C         call dblepr("sig",3,sig,3)
          DO i=1,3
+            z1=u(i,1)*sig(1)
+            z2=u(i,2)*sig(2)
+            z3=u(i,3)*sig(3)
             DO j=i,3
-               z=0.d0
-               DO k=1,3
-                  z=z+u(i,k)*u(j,k)*sig(k)
-               END DO
-               rlm(i,j,m)=z
+               rlm(i,j,m)=z1*u(j,1)+z2*u(j,2)+z3*u(j,3)
             END DO
          END DO
          rlm(2,1,m)=rlm(1,2,m)
