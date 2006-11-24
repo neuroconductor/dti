@@ -273,7 +273,7 @@ sigma2 <- array(mres2/(ngrad-6),ddim)
 cat("Variance estimates generated \n")
 rm(mres2)
 gc()
-z<-list(theta=array(theta,c(6,ddim)),sigma2=sigma2,btb=btb,scorr=c(0,0),
+z<-list(theta=array(theta,c(6,ddim)),sigma2=sigma2,btb=btb,scorr=c(0,0),s0=array(s0,ddim),
         ddim=ddim,ngrad=ngrad,file=imagefile,res=if(residuals) res else NULL)
 class(z) <- "dti"
 invisible(z)
@@ -616,3 +616,5 @@ get.corr.gauss <- function(h,interv=1) {
     penl <- dnorm(((-ih):ih)/h)
     sum(penl[-(1:interv)]*penl[-((dx-interv+1):dx)])/sum(penl^2)
 }
+
+

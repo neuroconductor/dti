@@ -228,13 +228,12 @@ C
                         thnew(k,i1,i2,i3)=0.d0
                      END DO
                      mask(i1,i2,i3)=.FALSE.
-                  ELSE IF(dmin1(ew(1),ew(2),ew(3)).lt.1d-10) THEN
+                  ELSE IF(dmin1(ew(1),ew(2)).lt.1d-10*ew(3)) THEN
 C
 C       negative eigenvalue of tensor, project to space of positive definite tensors
 C
-                     ew(1)=dmax1(ew(1),1d-10)
-                     ew(2)=dmax1(ew(2),1d-10)
-                     ew(3)=dmax1(ew(3),1d-10)
+                     ew(1)=dmax1(ew(1),1d-10*ew(3))
+                     ew(2)=dmax1(ew(2),1d-10*ew(3))
                      thnew(1,i1,i2,i3)=ew(1)*ev(1,1)*ev(1,1)+
      1                     ew(2)*ev(1,2)*ev(1,2)+ew(3)*ev(1,3)*ev(1,3)
                      thnew(2,i1,i2,i3)=ew(1)*ev(1,1)*ev(2,1)+
