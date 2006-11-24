@@ -342,7 +342,7 @@ C      call dblepr("u",1,u,9)
 C      call intpr("rlm1a",4,nl,1)
 C  get g and ginv
       DO i=1,3
-         if(lam(i).lt.1e-10) call dblepr("lam",3,lam,3)
+C         if(lam(i).lt.1e-10) call dblepr("lam",3,lam,3)
          rtlam(i)=dsqrt(lam(i))
          DO j=1,3
             g(j,i)=u(j,i)*rtlam(i)
