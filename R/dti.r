@@ -236,7 +236,7 @@ tensor.estimate <- function(y,dt=NULL,h) {
   z
 }
 
-create.dti <- function(gradient,imagefile,ddim,residuals=TRUE){
+create.dti <- function(gradient,imagefile,ddim,residuals=TRUE,level=0,part=0){
 if(dim(gradient)[2]==3)  gradient<-t(gradient)
 if(dim(gradient)[1]!=3)  stop("Not a valid gradient matrix")
 ngrad <- dim(gradient)[2]
@@ -245,7 +245,28 @@ zz<-file(imagefile,"rb")
 s0 <- readBin(zz,"integer",prod(ddim),2,FALSE)
 ttt <- readBin(zz,"integer",prod(ddim)*ngrad,2,FALSE)
 close(zz)
+dim(s0) <- ddim
+mask <- s0>level
+xind <- apply(mask,1,mean)
+xind <- (1:ddim[1])[xind>part]
+xind <- min(xind):max(xind)
+cat("range in x",range(xind),"\n")
+yind <- apply(mask,2,mean)
+yind <- (1:ddim[2])[yind>part]
+yind <- min(yind):max(yind)
+cat("range in y",range(yind),"\n")
+zind <- apply(mask,3,mean)
+zind <- (1:ddim[3])[zind>part]
+zind <- min(zind):max(zind)
+cat("range in z",range(zind),"\n")
 cat("Data successfully read \n")
+s0 <- s0[xind,yind,zind]
+mask <- mask[xind,yind,zind]
+ddim0 <- ddim
+ddim <- dim(s0)
+dim(ttt)<-c(ddim0,ngrad)
+ttt <- ttt[xind,yind,zind,]
+dim(s0)<-dim(ttt)<-NULL
 ttt <- -log(ttt/s0)
 ttt[is.na(ttt)] <- 0
 ttt[(ttt==Inf)] <- 0
@@ -274,23 +295,32 @@ cat("Variance estimates generated \n")
 rm(mres2)
 gc()
 z<-list(theta=array(theta,c(6,ddim)),sigma2=sigma2,btb=btb,scorr=c(0,0),s0=array(s0,ddim),
-        ddim=ddim,ngrad=ngrad,file=imagefile,res=if(residuals) res else NULL)
+        ddim=ddim,ddim0=ddim0,xind=xind,yind=yind,zind=zind,mask=mask,level=level,
+        ngrad=ngrad,file=imagefile,res=if(residuals) res else NULL)
 class(z) <- "dti"
 invisible(z)
 }
 
-getscorr <- function(dtobject,mask){
+getscorr <- function(dtobject){
 if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
 ddim <- dtobject$ddim
+mask <- dtobject$mask
 n <- prod(ddim)
 ngrad <- dtobject$ngrad
 if(is.null(dtobject$res)) {
 imagefile <- dtobject$file
+level <- dtobject$level
+ddim0 <- dtobject$ddim0
 if(!(file.exists(imagefile))) stop("Image file does not exist")
 zz<-file(imagefile,"rb")
-s0 <- readBin(zz,"integer",prod(ddim),2,FALSE)
-ttt <- readBin(zz,"integer",prod(ddim)*ngrad,2,FALSE)
+s0 <- readBin(zz,"integer",prod(ddim0),2,FALSE)
+ttt <- readBin(zz,"integer",prod(ddim0)*ngrad,2,FALSE)
 close(zz)
+dim(s0) <- ddim0
+s0 <- s0[dtobject$xind,dtobject$yind,dtobject$zind]
+dim(ttt) <- c(ddim0,ngrad)
+ttt <- ttt[dtobject$xind,dtobject$yind,dtobject$zind,]
+dim(s0) <- dim(ttt) <- NULL
 ttt[is.na(ttt)] <- 0
 ttt[(ttt==Inf)] <- 0
 ttt[(ttt==-Inf)] <- 0
@@ -325,7 +355,7 @@ invisible(dtobject)
 
 
 
-dtianiso<-function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,mask=NULL,quant=.8,minanindex=NULL,zext=1){
+dtianiso<-function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,quant=.8,minanindex=NULL,zext=1){
 if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
   args <- match.call()
   btb<-dtobject$btb
@@ -333,6 +363,7 @@ if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
   y <- dtobject$theta
   sigma2 <- dtobject$sigma2
   scorr <- dtobject$scorr
+  mask <- dtobject$mask
   rm(dtobject)
   gc()
   dimy <- dim(y)
@@ -341,7 +372,6 @@ if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
   n2<-dimy[3]
   n3<-dimy[4]
   n<-n1*n2*n3
-  if(is.null(mask)) mask <- array(TRUE,dimy[-1])
   sigma2[sigma2<=mean(sigma2)*1e-5]<- mean(sigma2)*1e-5
   z <- .Fortran("projdt",
                 as.double(y),
@@ -474,7 +504,8 @@ if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
      hakt0<-hakt
      hakt <- hakt*hincr
   }
-z <- list(theta=z$theta,bi=z$bi,anindex=z$anindex,andirection=z$andirection,mask=z$mask,InvCov=Bcov,call=args)
+z <- list(theta=z$theta,bi=z$bi,anindex=z$anindex,andirection=z$andirection,mask=z$mask,
+          ddim0=ddim0,xind=xind,yind=yind,zind=zind,InvCov=Bcov,call=args)
 class(z) <- "dti"
 invisible(z)
 }

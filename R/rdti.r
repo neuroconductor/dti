@@ -1,4 +1,4 @@
-rdtianiso<-function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,mask=NULL,quant=.8,minanindex=NULL,zext=1){
+rdtianiso<-function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,quant=.8,minanindex=NULL,zext=1){
 if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
   args <- match.call()
   btb<-dtobject$btb
@@ -6,6 +6,11 @@ if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
   y <- dtobject$theta
   sigma2 <- dtobject$sigma2
   scorr <- dtobject$scorr
+  mask <- dtobject$mask
+  ddim0 <- dtobject$ddim0
+  xind <- dtobject$xind
+  yind <- dtobject$yind
+  zind <- dtobject$zind
   rm(dtobject)
   gc()
   dimy <- dim(y)
@@ -14,7 +19,6 @@ if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
   n2<-dimy[3]
   n3<-dimy[4]
   n<-n1*n2*n3
-  if(is.null(mask)) mask <- array(TRUE,dimy[-1])
   sigma2[sigma2<=mean(sigma2)*1e-5]<- mean(sigma2)*1e-5
   z <- .Fortran("projdt",
                 as.double(y),
@@ -153,7 +157,8 @@ if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
      hakt0<-hakt
      hakt <- hakt*hincr
   }
-z <- list(theta=z$theta,bi=z$bi,anindex=z$anindex,andirection=z$andirection,mask=z$mask,InvCov=Bcov,call=args)
+z <- list(theta=z$theta,bi=z$bi,anindex=z$anindex,andirection=z$andirection,mask=z$mask,
+          ddim0=ddim0,xind=xind,yind=yind,zind=zind,InvCov=Bcov,call=args)
 class(z) <- "dti"
 invisible(z)
 }
