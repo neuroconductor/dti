@@ -41,18 +41,18 @@ C  now anisotropic smoothing
                deti=dexp(dlog(det(i1,i2,i3))/3)
                bii=bi(i1,i2,i3)
                sqrbii=dsqrt(bii)*sigma2(i1,i2,i3)
-               DO k=1,6
-                  thi(k)=th(k,i1,i2,i3)/deti
-               END DO
                thw(1,1)=th(1,i1,i2,i3)
                thw(2,2)=th(4,i1,i2,i3)
                thw(3,3)=th(6,i1,i2,i3)
                thw(1,2)=th(2,i1,i2,i3)
                thw(1,3)=th(3,i1,i2,i3)
                thw(2,3)=th(5,i1,i2,i3)
-               thw(2,1)=thw(1,2)
-               thw(3,1)=thw(1,3)
-               thw(3,2)=thw(2,3)
+C               thw(2,1)=thw(1,2)
+C               thw(3,1)=thw(1,3)
+C               thw(3,2)=thw(2,3)
+               DO k=1,6
+                  thi(k)=th(k,i1,i2,i3)/deti
+               END DO
                thi(1)=thi(1)+rho*sqrbii
                thi(4)=thi(4)+rho*sqrbii
                thi(6)=thi(6)+rho*sqrbii
@@ -301,9 +301,9 @@ C     get result in rem
             rem(i,j)=z1*u(j,1)+z2*u(j,2)+z3*u(j,3)
          END DO
       END DO
-      rem(2,1)=rem(1,2)
-      rem(3,1)=rem(1,3)
-      rem(3,2)=rem(2,3)
+C      rem(2,1)=rem(1,2)
+C      rem(3,1)=rem(1,3)
+C      rem(3,2)=rem(2,3)
       RETURN
       END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
@@ -401,9 +401,9 @@ C         call dblepr("sig",3,sig,3)
                rlm(i,j,m)=z1*u(j,1)+z2*u(j,2)+z3*u(j,3)
             END DO
          END DO
-         rlm(2,1,m)=rlm(1,2,m)
-         rlm(3,1,m)=rlm(1,3,m)
-         rlm(3,2,m)=rlm(2,3,m)
+C         rlm(2,1,m)=rlm(1,2,m)
+C         rlm(3,1,m)=rlm(1,3,m)
+C         rlm(3,2,m)=rlm(2,3,m)
 C       call intpr("rlm5",4,m,1)
       END DO
       RETURN
