@@ -36,42 +36,39 @@ C  now anisotropic smoothing
          DO i2=1,n2
             DO i3=1,n3
                lw=0
-               if(.not.mask(i1,i2,i3)) CYCLE
-               sw=0.d0
-               deti=dexp(dlog(det(i1,i2,i3))/3)
-               bii=bi(i1,i2,i3)
-               sqrbii=dsqrt(bii)*sigma2(i1,i2,i3)
-               thw(1,1)=th(1,i1,i2,i3)
-               thw(2,2)=th(4,i1,i2,i3)
-               thw(3,3)=th(6,i1,i2,i3)
-               thw(1,2)=th(2,i1,i2,i3)
-               thw(1,3)=th(3,i1,i2,i3)
-               thw(2,3)=th(5,i1,i2,i3)
-C               thw(2,1)=thw(1,2)
-C               thw(3,1)=thw(1,3)
-C               thw(3,2)=thw(2,3)
-               DO k=1,6
-                  thi(k)=th(k,i1,i2,i3)/deti
-               END DO
-               thi(1)=thi(1)+rho*sqrbii
-               thi(4)=thi(4)+rho*sqrbii
-               thi(6)=thi(6)+rho*sqrbii
+               if(mask(i1,i2,i3)) THEN
+                  sw=0.d0
+                  deti=dexp(dlog(det(i1,i2,i3))/3)
+                  bii=bi(i1,i2,i3)
+                  sqrbii=dsqrt(bii)*sigma2(i1,i2,i3)
+                  thw(1,1)=th(1,i1,i2,i3)
+                  thw(2,2)=th(4,i1,i2,i3)
+                  thw(3,3)=th(6,i1,i2,i3)
+                  thw(1,2)=th(2,i1,i2,i3)
+                  thw(1,3)=th(3,i1,i2,i3)
+                  thw(2,3)=th(5,i1,i2,i3)
+                  DO k=1,6
+                     thi(k)=th(k,i1,i2,i3)/deti
+                  END DO
+                  thi(1)=thi(1)+rho*sqrbii
+                  thi(4)=thi(4)+rho*sqrbii
+                  thi(6)=thi(6)+rho*sqrbii
 C  this is scale invariant sice sqrbii scales with dsqrt(sigma2) (standard deviation)
-               call eigen3(thi,ew,ev,ierr)
-               if(ierr.ne.0) THEN
-                  call intpr("ierr",4,ierr,1)
-                  thi(1)=1
-                  thi(2)=0
-                  thi(3)=0
-                  thi(4)=1
-                  thi(5)=0
-                  thi(6)=1
-               ELSE
-                  sew=ew(1)*ew(2)*ew(3)
-                  sew=dexp(dlog(sew)/3.d0)
-                  ew(1)=ew(1)/sew
-                  ew(2)=ew(2)/sew
-                  ew(3)=ew(3)/sew
+                  call eigen3(thi,ew,ev,ierr)
+                  if(ierr.ne.0) THEN
+                     call intpr("ierr",4,ierr,1)
+                     thi(1)=1
+                     thi(2)=0
+                     thi(3)=0
+                     thi(4)=1
+                     thi(5)=0
+                     thi(6)=1
+                  ELSE
+                     sew=ew(1)*ew(2)*ew(3)
+                     sew=dexp(dlog(sew)/3.d0)
+                     ew(1)=ew(1)/sew
+                     ew(2)=ew(2)/sew
+                     ew(3)=ew(3)/sew
                   thi(1)=ev(1,1)*ev(1,1)*ew(1)+ev(1,2)*ev(1,2)*ew(2)+
      1                   ev(1,3)*ev(1,3)*ew(3)
                   thi(2)=ev(1,1)*ev(2,1)*ew(1)+ev(1,2)*ev(2,2)*ew(2)+
@@ -84,107 +81,106 @@ C  this is scale invariant sice sqrbii scales with dsqrt(sigma2) (standard devia
      1                   ev(2,3)*ev(3,3)*ew(3)
                   thi(6)=ev(3,1)*ev(3,1)*ew(1)+ev(3,2)*ev(3,2)*ew(2)+
      1                   ev(3,3)*ev(3,3)*ew(3)
-               END IF
-               anii=ani(i1,i2,i3)
-C               CALL intpr("a",1,i3,1)
-               call rangex(thi,h,j1a,j1e)
-C               CALL intpr("b",1,i3,1)
-               DO j1=j1a,j1e
-                  jj1=i1+j1
-                  if(jj1.le.0.or.jj1.gt.n1) CYCLE
-                  call rangey(thi,j1,h,j2a,j2e)
-                  DO j2=j2a,j2e
-                     jj2=i2+j2
-                     if(jj2.le.0.or.jj2.gt.n2) CYCLE
-                     call rangez(thi,j1,j2,h,j3a,j3e,zext)
-                      DO j3=j3a,j3e
-                        jj3=i3+j3
-                        if(jj3.le.0.or.jj3.gt.n3) CYCLE
-                        if(.not.mask(jj1,jj2,jj3)) CYCLE 
-                        wij=adist(thi,j1,j2,j3,zext)
+                  END IF
+                  anii=ani(i1,i2,i3)
+                  call rangex(thi,h,j1a,j1e)
+                  DO j1=j1a,j1e
+                     jj1=i1+j1
+                     if(jj1.le.0.or.jj1.gt.n1) CYCLE
+                     call rangey(thi,j1,h,j2a,j2e)
+                     DO j2=j2a,j2e
+                        jj2=i2+j2
+                        if(jj2.le.0.or.jj2.gt.n2) CYCLE
+                        call rangez(thi,j1,j2,h,j3a,j3e,zext)
+                        DO j3=j3a,j3e
+                           jj3=i3+j3
+                           if(jj3.le.0.or.jj3.gt.n3) CYCLE
+                           if(.not.mask(jj1,jj2,jj3)) CYCLE 
+                           wij=adist(thi,j1,j2,j3,zext)
 C     triangular location kernel
-                        if(wij.ge.h3) CYCLE
-                        wij = (1.d0 - wij/h3)
-                        IF(aws) THEN
-                           sij=dtidist2(th(1,i1,i2,i3),
-     1                          th(1,jj1,jj2,jj3),bcov)*bii/lambda
-                           if(sij.gt.1.d0) CYCLE
-                           wij=wij*(1.d0-sij)
-                        END IF
-                        lw=lw+1
-                        IF(lw.gt.nw) THEN
-                           call intpr("lw>nw",5,lw,1)
-                           CYCLE
-                        END IF
-                        wij=wij/sigma2(jj1,jj2,jj3)
-                        wghts(lw)=wij
-                        yw(1,1,lw)=y(1,jj1,jj2,jj3)
-                        yw(2,2,lw)=y(4,jj1,jj2,jj3)
-                        yw(3,3,lw)=y(6,jj1,jj2,jj3)
-                        yw(1,2,lw)=y(2,jj1,jj2,jj3)
-                        yw(1,3,lw)=y(3,jj1,jj2,jj3)
-                        yw(2,3,lw)=y(5,jj1,jj2,jj3)
-                        yw(2,1,lw)=yw(1,2,lw)
-                        yw(3,1,lw)=yw(1,3,lw)
-                        yw(3,2,lw)=yw(2,3,lw)
-                        sw=sw+wij
+                           if(wij.ge.h3) CYCLE
+                           wij = (1.d0 - wij/h3)
+                           IF(aws) THEN
+                              sij=dtidist2(th(1,i1,i2,i3),
+     1                             th(1,jj1,jj2,jj3),bcov)*bii/lambda
+                              if(sij.gt.1.d0) CYCLE
+                              wij=wij*(1.d0-sij)
+                           END IF
+                           lw=lw+1
+                           IF(lw.gt.nw) THEN
+                              call intpr("lw>nw",5,lw,1)
+                              CYCLE
+                           END IF
+                           wij=wij/sigma2(jj1,jj2,jj3)
+                           wghts(lw)=wij
+                           yw(1,1,lw)=y(1,jj1,jj2,jj3)
+                           yw(2,2,lw)=y(4,jj1,jj2,jj3)
+                           yw(3,3,lw)=y(6,jj1,jj2,jj3)
+                           yw(1,2,lw)=y(2,jj1,jj2,jj3)
+                           yw(1,3,lw)=y(3,jj1,jj2,jj3)
+                           yw(2,3,lw)=y(5,jj1,jj2,jj3)
+                           yw(2,1,lw)=yw(1,2,lw)
+                           yw(3,1,lw)=yw(1,3,lw)
+                           yw(3,2,lw)=yw(2,3,lw)
+                           sw=sw+wij
+                        END DO
                      END DO
                   END DO
-               END DO
 C
 C    Compute the intrinsic mean of the Diffusion Tensors
 C
-C               CALL intpr("c",1,lw,1)
-               IF(lw.gt.1) THEN
-                  call rlogmap(thw,yw,lw,rlm)
-C               CALL intpr("i3",2,i3,1)
-                  DO j1=1,3
-                     DO j2=j1,3
-                        swy(j1,j2)=wghts(1)*rlm(j1,j2,1)
-                     END DO
-                  END DO
-                  IF (lw.gt.1) THEN
-                     DO k=2,lw
-                        DO j1=1,3
-                           DO j2=j1,3
-                           swy(j1,j2)=swy(j1,j2)+wghts(k)*rlm(j1,j2,k)
-                           END DO
+                  IF(lw.gt.1) THEN
+                     call rlogmap(thw,yw,lw,rlm)
+                     DO j1=1,3
+                        DO j2=j1,3
+                           swy(j1,j2)=wghts(1)*rlm(j1,j2,1)
                         END DO
                      END DO
-                  END IF
-                  DO j1=1,3
-                     DO j2=j1,3
-                        swy(j1,j2)=swy(j1,j2)/sw
+                     IF (lw.gt.1) THEN
+                        DO k=2,lw
+                           DO j1=1,3
+                              DO j2=j1,3
+                           swy(j1,j2)=swy(j1,j2)+wghts(k)*rlm(j1,j2,k)
+                              END DO
+                           END DO
+                        END DO
+                     END IF
+                     DO j1=1,3
+                        DO j2=j1,3
+                           swy(j1,j2)=swy(j1,j2)/sw
+                        END DO
                      END DO
-                  END DO
-                  swy(2,1)=swy(1,2)
-                  swy(3,1)=swy(1,3)
-                  swy(3,2)=swy(2,3)
-C               if(swy(1,1).le.0.d0) THEN
-C                  call dblepr("wghts",5,wghts,lw)
-C                  do k=1,lw
-C                     call dblepr("rlm",3,rlm(1,1,k),9)
-C                  END DO
-C               END IF
-C               call dblepr("ani",3,ani(i1,i2,i3),1)
-                  call rexpmap(thw,swy,rem,ierr)
-                  IF(ierr.eq.0) THEN
-                     bi(i1,i2,i3)=sw
-                     thnew(1,i1,i2,i3)=rem(1,1)
-                     thnew(2,i1,i2,i3)=rem(1,2)
-                     thnew(3,i1,i2,i3)=rem(1,3)
-                     thnew(4,i1,i2,i3)=rem(2,2)
-                     thnew(5,i1,i2,i3)=rem(2,3)
-                     thnew(6,i1,i2,i3)=rem(3,3)
+                     swy(2,1)=swy(1,2)
+                     swy(3,1)=swy(1,3)
+                     swy(3,2)=swy(2,3)
+                     call rexpmap(thw,swy,rem,ierr)
+                     IF(ierr.eq.0) THEN
+                        bi(i1,i2,i3)=sw
+                        thnew(1,i1,i2,i3)=rem(1,1)
+                        thnew(2,i1,i2,i3)=rem(1,2)
+                        thnew(3,i1,i2,i3)=rem(1,3)
+                        thnew(4,i1,i2,i3)=rem(2,2)
+                        thnew(5,i1,i2,i3)=rem(2,3)
+                        thnew(6,i1,i2,i3)=rem(3,3)
+                     ELSE
+                        DO k=1,6
+                           thnew(k,i1,i2,i3)=th(k,i1,i2,i3)
+                        END DO
+                     END IF
                   ELSE
                      DO k=1,6
                         thnew(k,i1,i2,i3)=th(k,i1,i2,i3)
                      END DO
                   END IF
                ELSE
-                  DO k=1,6
-                     thnew(k,i1,i2,i3)=th(k,i1,i2,i3)
-                  END DO
+C   don't smooth, keep original data
+                  bi(i1,i2,i3)=1.d0/sigma2(i1,i2,i3)
+                  thnew(1,i1,i2,i3)=y(1,i1,i2,i3)
+                  thnew(2,i1,i2,i3)=y(2,i1,i2,i3)
+                  thnew(3,i1,i2,i3)=y(3,i1,i2,i3)
+                  thnew(4,i1,i2,i3)=y(4,i1,i2,i3)
+                  thnew(5,i1,i2,i3)=y(5,i1,i2,i3)
+                  thnew(6,i1,i2,i3)=y(6,i1,i2,i3)
                END IF
                call eigen3(thnew(1,i1,i2,i3),ew,ev,ierr)
                if(ierr.ne.0) THEN
@@ -229,7 +225,6 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       real*8 work(104),vl,vu,z
       nl=3
 C  get u and lambda
-C      call dblepr("remtensor",9,tensor,9)
       DO i=1,3
          DO j=i,3
             ts(i,j)=tensor(i,j)
@@ -238,9 +233,6 @@ C      call dblepr("remtensor",9,tensor,9)
       call dsyevr('V','A','U',3,ts,3,vl,vu,1,3,1.d-10,nl,lam,
      1            u,3,ISUPPZ,work,104,iwork,50,ierr)
       if(ierr.ne.0) call intpr("ierr1",5,ierr,1)
-C      if(nl.lt.3) call dblepr("rmp1nl",6,lam,3)
-C  get g and ginv
-C      call dblepr("remlam",6,lam,3)
       DO i=1,3
          rtlam(i)=dsqrt(lam(i))
          DO j=1,3
@@ -249,7 +241,6 @@ C      call dblepr("remlam",6,lam,3)
          END DO
       END DO
 C  get y
-C      call dblepr("remtvect",8,tvect,9)
       DO i=1,3
          DO j=1,3
             z=0.d0
@@ -269,13 +260,10 @@ C      call dblepr("remtvect",8,tvect,9)
          END DO
       END DO
 C     get v and sig
-C      call dblepr("remy",4,y,9)
       call dsyevr('V','A','U',3,y,3,vl,vu,1,3,1.d-10,nl,sig,
      1            v,3,ISUPPZ,work,104,iwork,50,ierr)
 C     get u=g%*%v 
       if(ierr.ne.0) call intpr("ierr2",5,ierr,1)
-C      if(nl.lt.3) 
-C      call dblepr("remsig",6,sig,3)
       DO i=1,3
          DO j=1,3
             z=0.d0
@@ -305,9 +293,6 @@ C     get result in rem
             rem(i,j)=z
          END DO
       END DO
-C      rem(2,1)=rem(1,2)
-C      rem(3,1)=rem(1,3)
-C      rem(3,2)=rem(2,3)
       RETURN
       END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
@@ -325,36 +310,26 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       real*8 work(104),vl,vu,z
 C  get u and lambda
       nl=3
-C      call intpr("rlm1",4,n,1)
-C      call dblepr("tensor",6,tensor,9)
       DO i=1,3
          DO j=i,3
             ts(i,j)=tensor(i,j)
          END DO
       END DO
-C      call dblepr("ts",2,ts,9)
       call dsyevr('V','A','U',3,ts,3,vl,vu,1,3,1.d-10,nl,lam,
      1            u,3,ISUPPZ,work,104,iwork,50,ierr)
       if(ierr.ne.0) call intpr("ierr3",5,ierr,1)
       if(nl.lt.3) call dblepr("rlp3nl",6,lam,3)
-C      call dblepr("lam",3,lam,3)
-C      call dblepr("u",1,u,9)
-C      call intpr("rlm1a",4,nl,1)
 C  get g and ginv
       DO i=1,3
-C         if(lam(i).lt.1e-10) call dblepr("lam",3,lam,3)
          rtlam(i)=dsqrt(lam(i))
          DO j=1,3
             g(j,i)=u(j,i)*rtlam(i)
             ginv(i,j)=u(j,i)/rtlam(i)
          END DO
       END DO
-C      call dblepr("g",1,g,9)
-C      call dblepr("ginv",4,ginv,9)
       
 C  thats the common part, now get results for all i = 1,n
 C  get y
-C      call intpr("rlm2",4,n,1)
       DO m=1,n
          DO i=1,3
             DO j=1,3
@@ -374,16 +349,13 @@ C      call intpr("rlm2",4,n,1)
                y(i,j)=z
             END DO
          END DO
-C      call dblepr("y",1,y,9)
 C     get v and sig
-C      call intpr("rlm3",4,m,1)
          call dsyevr('V','A','U',3,y,3,vl,vu,1,3,1.d-10,nl,sig,
      1            v,3,ISUPPZ,work,104,iwork,50,ierr)
-      if(ierr.ne.0) call intpr("ierr4",5,ierr,1)
-      if(nl.lt.3) call dblepr("rlp4nl",6,sig,3)
+         if(ierr.ne.0) call intpr("ierr4",5,ierr,1)
+         if(nl.lt.3) call dblepr("rlp4nl",6,sig,3)
 
 C     get u=g%*%v 
-C      call intpr("rlm4",4,m,1)
          DO i=1,3
             DO j=1,3
                z=0.d0
@@ -393,13 +365,10 @@ C      call intpr("rlm4",4,m,1)
                u(i,j)=z
             END DO
          END DO
-C      call dblepr("u",1,u,9)
 C     get result in rlm
          DO i=1,3
-C            if(sig(i).lt.1e-10) call dblepr("sig",3,sig,3)
             sig(i)=dlog(sig(i))
          END DO  
-C         call dblepr("sig",3,sig,3)
          DO i=1,3
             DO j=i,3
                z=0.d0
@@ -409,10 +378,6 @@ C         call dblepr("sig",3,sig,3)
                rlm(i,j,m)=z
             END DO
          END DO
-C         rlm(2,1,m)=rlm(1,2,m)
-C         rlm(3,1,m)=rlm(1,3,m)
-C         rlm(3,2,m)=rlm(2,3,m)
-C       call intpr("rlm5",4,m,1)
       END DO
       RETURN
       END
