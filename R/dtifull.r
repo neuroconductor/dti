@@ -244,15 +244,18 @@ z <- list(theta=z$theta,bi=z$bi,anindex=z$anindex,andirection=z$andirection,
 class(z) <- "dti"
 invisible(z)
 }
-andir2.image <- function(dtobject,slice=1,method=1,quant=0,minanindex=NULL,show=TRUE,...){
+andir2.image <- function(dtobject,slice=1,method=1,quant=0,minanindex=NULL,show=TRUE,xind=NULL,yind=NULL,...){
 if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
 if(is.null(dtobject$anindex)) stop("No anisotropy index yet")
 adimpro <- require(adimpro)
 anindex <- dtobject$anindex
 dimg <- dim(anindex)[1:2]
+if(is.null(xind)) xind <- 1:dimg[1]
+if(is.null(yind)) yind <- 1:dimg[2]
 if(is.null(slice)) slice <- 1
-anindex <- anindex[,,slice]
-andirection <- dtobject$andirection[,,,slice]
+anindex <- anindex[xind,yind,slice]
+dimg <- dim(anindex)[1:2]
+andirection <- dtobject$andirection[,xind,yind,slice]
 anindex[anindex>1]<-0
 anindex[anindex<0]<-0
 dim(andirection)<-c(3,prod(dimg))
