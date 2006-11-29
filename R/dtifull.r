@@ -82,7 +82,7 @@ invisible(dtobject)
 
 
 
-dtianiso2<-function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,quant=.8,minanindex=NULL,zext=1){
+dtianiso2<-function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,quant=.8,minanindex=NULL,zext=1,eps=1e-5){
 if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
   args <- match.call()
   btb<-dtobject$btb
@@ -116,6 +116,7 @@ if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
                 anindex=double(n),
                 andirection=double(3*n),
                 det=double(n),
+                as.double(eps),
                 DUP=FALSE,
                 PACKAGE="dti")[c("theta","anindex","andirection","det")]
   y <- array(z$theta,dimy)
@@ -199,9 +200,11 @@ if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
                 as.double(rho),
                 as.double(lambda0),
                 theta=double(6*n),
+                s0hat=double(n),
                 double(ngrad),
+                as.double(eps),
                 DUP=FALSE,
-                PACKAGE="dti")[c("theta","bi","anindex","andirection","det")]
+                PACKAGE="dti")[c("theta","bi","anindex","andirection","det","s0hat")]
      dim(z$bi) <- dim(z$anindex) <- dim(z$det) <- dimy[-1]
      dim(z$theta) <- dimy
      dim(z$andirection) <- c(3,dimy[-1]) 
@@ -240,7 +243,7 @@ if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
      hakt <- hakt*hincr
   }
 z <- list(theta=z$theta,bi=z$bi,anindex=z$anindex,andirection=z$andirection,
-          ddim0=ddim0,xind=xind,yind=yind,zind=zind,InvCov=Bcov,call=args)
+          ddim0=ddim0,xind=xind,yind=yind,zind=zind,InvCov=Bcov,s0hat=z$s0hat,call=args)
 class(z) <- "dti"
 invisible(z)
 }
@@ -282,3 +285,27 @@ image(anindex,...)
 }
 invisible(andirection)
 } 
+
+createdata.dti <- function(file,dtensor,btb,s0,sigma,level=250){
+ngrad <- dim(btb)[2]
+ddim <- dim(s0)
+dtensor[1,,,][s0<level] <- 1e-5
+dtensor[4,,,][s0<level] <- 1e-5
+dtensor[6,,,][s0<level] <- 1e-5
+dtensor[2,,,][s0<level] <- 0
+dtensor[3,,,][s0<level] <- 0
+dtensor[5,,,][s0<level] <- 0
+dim(dtensor)<-c(6,prod(ddim))
+dtensor <- t(dtensor)
+si <- exp(-dtensor%*%btb)*as.vector(s0)
+rsi <- pmax(0,rnorm(si,si,pmin(s0/2.5,sigma)))
+rs0 <- pmax(0,rnorm(s0,s0,pmin(s0/2.5,sigma)))
+zz <- file(file,"wb")
+writeBin(as.integer(rs0),zz,2)
+writeBin(as.integer(rsi),zz,2)
+close(zz)
+dim(s0)<-ddim
+dtensor <- t(dtensor)
+dim(dtensor)<-c(6,ddim)
+list(s0=s0,si=si)
+}

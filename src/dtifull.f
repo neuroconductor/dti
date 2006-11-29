@@ -4,7 +4,7 @@ C   3D anisotropic smoothing of diffusion tensor data
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine awssidti(s0,si,th,bi,ani,andir,det,bcov,solvebtb,
-     1          sigma2,n1,n2,n3,ngrad,h,zext,rho,lambda,thnew,swsi)
+     1 sigma2,n1,n2,n3,ngrad,h,zext,rho,lambda,thnew,s0new,swsi,eps)
 C
 C   y        -  observed diffusion tensor data
 C   th       -  smoothed diffusion tensor data
@@ -22,15 +22,17 @@ C   thnew    -  new smoothed diffusion tensor data
       real*8 s0(n1,n2,n3),th(6,n1,n2,n3),thnew(6,n1,n2,n3),h,rho,
      1       lambda,bi(n1,n2,n3),ani(n1,n2,n3),andir(3,n1,n2,n3),
      2       det(n1,n2,n3),bcov(6,6),sigma2(n1,n2,n3),zext,
-     3       si(n1,n2,n3,ngrad),solvebtb(6,ngrad),swsi(ngrad)
+     3       si(n1,n2,n3,ngrad),solvebtb(6,ngrad),swsi(ngrad),
+     4       s0new(n1,n2,n3)
       integer i1,j1,j1a,j1e,jj1,i2,j2,j2a,j2e,jj2,i3,j3,j3a,j3e,jj3,
      1        ierr,k,l
       real*8 wij,adist,sw,sws0,h3,thi(6),bii,sqrbii,ew(3),ev(3,3),
-     1       mew,z1,z2,z3,dtidist2,sij,anii,deti,z,sew
+     1       mew,z1,z2,z3,dtidist2,sij,anii,deti,z,sew,eps,eps3
       external adist,dtidist2
       logical aws
       aws=lambda.lt.1e20
       h3=h*h*h
+      eps3=eps*eps*eps
 C  now anisotropic smoothing 
       DO i1=1,n1
          DO i2=1,n2
@@ -112,6 +114,11 @@ C     triangular location kernel
                END DO
                bi(i1,i2,i3)=sw
                IF(sws0.gt.0.d0) THEN
+                  IF(sw.gt.0.d0.and.sw.lt.1.d20) THEN
+                     s0new(i1,i2,i3)=sws0/sw
+                  ELSE
+                     s0new(i1,i2,i3)=s0(i1,i2,i3)
+                  END IF
                   sws0=dlog(sws0)
                   DO k=1,ngrad
                      IF(swsi(k).gt.0.d0) THEN
@@ -121,6 +128,7 @@ C     triangular location kernel
                      END IF
                   END DO
                ELSE
+                  s0new(i1,i2,i3)=s0(i1,i2,i3)
                   DO k=1,ngrad
                      swsi(k)=0.d0
                   END DO 
@@ -137,20 +145,19 @@ C     triangular location kernel
 C
 C       error in eigenvalue decomposition of tensor, set voxel inactive
 C
-                  thnew(1,i1,i2,i3)=1.d-5
+                  thnew(1,i1,i2,i3)=eps
                   thnew(1,i1,i2,i3)=0.d0
                   thnew(1,i1,i2,i3)=0.d0
-                  thnew(1,i1,i2,i3)=1.d-5
+                  thnew(1,i1,i2,i3)=eps
                   thnew(1,i1,i2,i3)=0.d0
-                  thnew(1,i1,i2,i3)=1.d-5
-               ELSE IF(dmin1(ew(1),ew(2)).lt.dmax1(1.d-5,1d-5*ew(3))) 
-     1            THEN
+                  thnew(1,i1,i2,i3)=eps
+               ELSE IF(dmin1(ew(1),ew(2),ew(3)).lt.eps) THEN
 C
 C       negative eigenvalue of tensor, project to space of positive definite tensors
 C
-                  ew(1)=dmax1(ew(1),dmax1(1.d-5,1d-5*ew(3)))
-                  ew(2)=dmax1(ew(2),dmax1(1.d-5,1d-5*ew(3)))
-                  ew(3)=dmax1(1.d-5,ew(3))
+                  ew(1)=dmax1(ew(1),eps)
+                  ew(2)=dmax1(ew(2),eps)
+                  ew(3)=dmax1(ew(3),eps)
                   thnew(1,i1,i2,i3)=ew(1)*ev(1,1)*ev(1,1)+
      1                     ew(2)*ev(1,2)*ev(1,2)+ew(3)*ev(1,3)*ev(1,3)
                   thnew(2,i1,i2,i3)=ew(1)*ev(1,1)*ev(2,1)+
@@ -180,7 +187,7 @@ C
                z2=ew(2)
                z3=ew(3)
                mew=2.d0*(z1*z1+z2*z2+z3*z3)
-               if(mew.le.1d-20) mew=1.d0
+               if(mew.le.eps*eps) mew=1.d0
                ani(i1,i2,i3)=dsqrt(z/mew)
                det(i1,i2,i3)=ew(1)*ew(2)*ew(3)
                DO k=1,3
@@ -197,7 +204,7 @@ C
 C   Initialize anisotropy index and direction of main anisotropy
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-      subroutine projdt2(th,n1,n2,n3,thnew,ani,dir,det)
+      subroutine projdt2(th,n1,n2,n3,thnew,ani,dir,det,eps)
 C
 C   th       -  observed diffusion tensor data
 C   thnew    -  projected tensor data
@@ -206,8 +213,9 @@ C   thnew    -  projected tensor data
       real*8 th(6,n1,n2,n3),thnew(6,n1,n2,n3),ani(n1,n2,n3),
      1       dir(3,n1,n2,n3),det(n1,n2,n3),mew
       integer i1,i2,i3,ierr,k
-      real*8 ew(3),ev(3,3),z1,z2,z3,z
+      real*8 ew(3),ev(3,3),z1,z2,z3,z,eps,eps3
 C  compute anisotropy index and direction of main anisotropy (nneded in statistical penalty)
+      eps3=eps*eps*eps
       DO i1=1,n1
          DO i2=1,n2
             DO i3=1,n3
@@ -222,14 +230,17 @@ C
                   thnew(1,i1,i2,i3)=1.d-5
                   thnew(1,i1,i2,i3)=0.d0
                   thnew(1,i1,i2,i3)=1.d-5
-               ELSE IF(dmin1(ew(1),ew(2)).lt.dmax1(1.d-5,1d-5*ew(3))) 
-     1            THEN
+C               ELSE IF(dmin1(ew(1),ew(2)).lt.dmax1(1.d-5,1d-5*ew(3))) 
+C     1            THEN
+               ELSE IF(dmin1(ew(1),ew(2),ew(3)).lt.eps) THEN 
 C
 C       negative eigenvalue of tensor, project to space of positive definite tensors
 C
-                  ew(1)=dmax1(ew(1),dmax1(1.d-5,1d-5*ew(3)))
-                  ew(2)=dmax1(ew(2),dmax1(1.d-5,1d-5*ew(3)))
-                  ew(3)=dmax1(1.d-5,ew(3))
+C                  ew(1)=dmax1(ew(1),dmax1(1.d-5,1d-5*ew(3)))
+C                  ew(2)=dmax1(ew(2),dmax1(1.d-5,1d-5*ew(3)))
+                  ew(1)=dmax1(eps,ew(1))
+                  ew(2)=dmax1(eps,ew(2))
+                  ew(3)=dmax1(eps,ew(3))
                   thnew(1,i1,i2,i3)=ew(1)*ev(1,1)*ev(1,1)+
      1                     ew(2)*ev(1,2)*ev(1,2)+ew(3)*ev(1,3)*ev(1,3)
                   thnew(2,i1,i2,i3)=ew(1)*ev(1,1)*ev(2,1)+
@@ -269,8 +280,8 @@ C
                   dir(k,i1,i2,i3)=ev(k,3)
                END DO
                z=ew(1)*ew(2)*ew(3)
-               IF(z.le.1d-30) THEN
-                  det(i1,i2,i3)=0.d0
+               IF(z.le.eps3) THEN
+                  det(i1,i2,i3)=eps3
                ELSE
                   det(i1,i2,i3)=z
                END IF
