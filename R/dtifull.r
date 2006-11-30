@@ -205,7 +205,7 @@ if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
                 as.double(eps),
                 DUP=FALSE,
                 PACKAGE="dti")[c("theta","bi","anindex","andirection","det","s0hat")]
-     dim(z$bi) <- dim(z$anindex) <- dim(z$det) <- dimy[-1]
+     dim(z$s0hat) <- dim(z$bi) <- dim(z$anindex) <- dim(z$det) <- dimy[-1]
      dim(z$theta) <- dimy
      dim(z$andirection) <- c(3,dimy[-1]) 
      if(graph){
