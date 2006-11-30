@@ -307,5 +307,5 @@ close(zz)
 dim(s0)<-ddim
 dtensor <- t(dtensor)
 dim(dtensor)<-c(6,ddim)
-list(s0=s0,si=si)
+list(s0=s0,si=si,dtensor=dtensor,sigma=sigma,level=level,btb=btb)
 }
