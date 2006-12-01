@@ -146,11 +146,11 @@ C
 C       error in eigenvalue decomposition of tensor, set voxel inactive
 C
                   thnew(1,i1,i2,i3)=eps
-                  thnew(1,i1,i2,i3)=0.d0
-                  thnew(1,i1,i2,i3)=0.d0
-                  thnew(1,i1,i2,i3)=eps
-                  thnew(1,i1,i2,i3)=0.d0
-                  thnew(1,i1,i2,i3)=eps
+                  thnew(2,i1,i2,i3)=0.d0
+                  thnew(3,i1,i2,i3)=0.d0
+                  thnew(4,i1,i2,i3)=eps
+                  thnew(5,i1,i2,i3)=0.d0
+                  thnew(6,i1,i2,i3)=eps
                ELSE IF(dmin1(ew(1),ew(2),ew(3)).lt.eps) THEN
 C
 C       negative eigenvalue of tensor, project to space of positive definite tensors
@@ -174,9 +174,9 @@ C
 C
 C       valid tensor tensor, copy data
 C
-                  DO k=1,6
-                     thnew(k,i1,i2,i3)=th(k,i1,i2,i3)
-                  END DO
+C                  DO k=1,6
+C                     thnew(k,i1,i2,i3)=th(k,i1,i2,i3)
+C                  END DO
                END IF
                mew=(ew(1)+ew(2)+ew(3))/3.d0
                z1=ew(1)-mew
@@ -224,12 +224,12 @@ C  compute anisotropy index and direction of main anisotropy (nneded in statisti
 C
 C       error in eigenvalue decomposition of tensor, set voxel inactive
 C
-                  thnew(1,i1,i2,i3)=1.d-5
-                  thnew(1,i1,i2,i3)=0.d0
-                  thnew(1,i1,i2,i3)=0.d0
-                  thnew(1,i1,i2,i3)=1.d-5
-                  thnew(1,i1,i2,i3)=0.d0
-                  thnew(1,i1,i2,i3)=1.d-5
+                  thnew(1,i1,i2,i3)=eps
+                  thnew(2,i1,i2,i3)=0.d0
+                  thnew(3,i1,i2,i3)=0.d0
+                  thnew(4,i1,i2,i3)=eps
+                  thnew(5,i1,i2,i3)=0.d0
+                  thnew(6,i1,i2,i3)=eps
 C               ELSE IF(dmin1(ew(1),ew(2)).lt.dmax1(1.d-5,1d-5*ew(3))) 
 C     1            THEN
                ELSE IF(dmin1(ew(1),ew(2),ew(3)).lt.eps) THEN 

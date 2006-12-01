@@ -82,7 +82,7 @@ invisible(dtobject)
 
 
 
-dtianiso2<-function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,quant=.8,minanindex=NULL,zext=1,eps=1e-5){
+dtianiso2<-function(dtobject,hmax=5,lambda=25,rho=1,graph=FALSE,slice=NULL,quant=.8,minanindex=NULL,zext=1,eps=1e-6){
 if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
   args <- match.call()
   btb<-dtobject$btb
@@ -124,6 +124,7 @@ if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
   dim(z$theta) <- dimy
   dim(z$anindex) <-dim(z$det) <- dimy[-1]
   dim(z$andirection) <- c(3,dimy[-1]) 
+  z$s0hat <- s0
 #
 #  initial state for h=1
 #
@@ -135,7 +136,7 @@ if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
      class(z) <- "dti"
      img<-z$theta[1,,,slice]
      show.image(make.image(65535*img/max(img)))
-     title(paste("Dxx: min",signif(min(img),3),"max",signif(max(img),3)))
+     title(paste("Dxx: mean",signif(mean(img),3),"max",signif(max(img),3)))
      img<-z$theta[2,,,slice]
      show.image(make.image(img))
      title(paste("Dxy: min",signif(min(img),3),"max",signif(max(img),3)))
@@ -147,7 +148,7 @@ if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
                   signif(max(z$anindex),3)))
      img<-z$theta[4,,,slice]
      show.image(make.image(65535*img/max(img)))
-     title(paste("Dyy: min",signif(min(img),3),"max",signif(max(img),3)))
+     title(paste("Dyy: mean",signif(mean(img),3),"max",signif(max(img),3)))
      img<-z$theta[5,,,slice]
      show.image(make.image(img))
      title(paste("Dyz: min",signif(min(img),3),"max",signif(max(img),3)))
@@ -158,7 +159,7 @@ if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
      title(paste("sum of weights  mean=",signif(mean(z$bi*sigma2),3)))
      img<-z$theta[6,,,slice]
      show.image(make.image(65535*img/max(img)))
-     title(paste("Dzz: min",signif(min(img),3),"max",signif(max(img),3)))
+     title(paste("Dzz: mean",signif(mean(img),3),"max",signif(max(img),3)))
   }
   if (max(scorr)>0) {
     h0 <- numeric(length(scorr))  
@@ -209,11 +210,10 @@ if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
      dim(z$theta) <- dimy
      dim(z$andirection) <- c(3,dimy[-1]) 
      if(graph){
-     
      class(z) <- "dti"
      img<-z$theta[1,,,slice]
      show.image(make.image(65535*img/max(img)))
-     title(paste("Dxx: min",signif(min(img),3),"max",signif(max(img),3)))
+     title(paste("Dxx: mean",signif(mean(img),3),"max",signif(max(img),3)))
      img<-z$theta[2,,,slice]
      show.image(make.image(img))
      title(paste("Dxy: min",signif(min(img),3),"max",signif(max(img),3)))
@@ -225,7 +225,7 @@ if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
                   signif(max(z$anindex),3)))
      img<-z$theta[4,,,slice]
      show.image(make.image(65535*img/max(img)))
-     title(paste("Dyy: min",signif(min(img),3),"max",signif(max(img),3)))
+     title(paste("Dyy: mean",signif(mean(img),3),"max",signif(max(img),3)))
      img<-z$theta[5,,,slice]
      show.image(make.image(img))
      title(paste("Dyz: min",signif(min(img),3),"max",signif(max(img),3)))
@@ -236,12 +236,13 @@ if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
      title(paste("sum of weights  mean=",signif(mean(z$bi*sigma2),3)))
      img<-z$theta[6,,,slice]
      show.image(make.image(65535*img/max(img)))
-     title(paste("Dyy: min",signif(min(img),3),"max",signif(max(img),3)))
+     title(paste("Dyy: mean",signif(mean(img),3),"max",signif(max(img),3)))
      }
      cat("h=",signif(hakt,3),"Quantiles (.5, .75, .9, .95, 1) of anisotropy index",signif(quantile(z$anindex,c(.5, .75, .9, .95, 1)),3),"\n")
      hakt0<-hakt
      hakt <- hakt*hincr
   }
+dim(z$s0hat) <- c(n1,n2,n3)
 z <- list(theta=z$theta,bi=z$bi,anindex=z$anindex,andirection=z$andirection,
           ddim0=ddim0,xind=xind,yind=yind,zind=zind,InvCov=Bcov,s0hat=z$s0hat,call=args)
 class(z) <- "dti"
@@ -305,6 +306,7 @@ writeBin(as.integer(rs0),zz,2)
 writeBin(as.integer(rsi),zz,2)
 close(zz)
 dim(s0)<-ddim
+dim(si)<-c(ddim,ngrad)
 dtensor <- t(dtensor)
 dim(dtensor)<-c(6,ddim)
 list(s0=s0,si=si,dtensor=dtensor,sigma=sigma,level=level,btb=btb)
