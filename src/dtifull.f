@@ -4,7 +4,8 @@ C   3D anisotropic smoothing of diffusion tensor data
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine awssidti(s0,si,th,bi,ani,andir,det,bcov,solvebtb,
-     1 sigma2,n1,n2,n3,ngrad,h,zext,rho,lambda,thnew,s0new,swsi,eps)
+     1 sigma2,sigma2h,n1,n2,n3,ngrad,h,zext,rho,lambda,thnew,s0new,
+     2                             sigma2n,swsi,eps)
 C
 C   y        -  observed diffusion tensor data
 C   th       -  smoothed diffusion tensor data
@@ -23,11 +24,11 @@ C   thnew    -  new smoothed diffusion tensor data
      1       lambda,bi(n1,n2,n3),ani(n1,n2,n3),andir(3,n1,n2,n3),
      2       det(n1,n2,n3),bcov(6,6),sigma2(n1,n2,n3),zext,
      3       si(n1,n2,n3,ngrad),solvebtb(6,ngrad),swsi(ngrad),
-     4       s0new(n1,n2,n3)
+     4       s0new(n1,n2,n3),sigma2h(n1,n2,n3),sigma2n(n1,n2,n3)
       integer i1,j1,j1a,j1e,jj1,i2,j2,j2a,j2e,jj2,i3,j3,j3a,j3e,jj3,
      1        ierr,k,l
       real*8 wij,adist,sw,sws0,h3,thi(6),bii,sqrbii,ew(3),ev(3,3),
-     1       mew,z1,z2,z3,dtidist2,sij,anii,deti,z,sew,eps,eps3
+     1       mew,z1,z2,z3,dtidist2,sij,anii,deti,z,sew,eps,eps3,ss2,sw0
       external adist,dtidist2
       logical aws
       aws=lambda.lt.1e20
@@ -38,13 +39,15 @@ C  now anisotropic smoothing
          DO i2=1,n2
             DO i3=1,n3
                sw=0.d0
+               sw0=0.d0
                sws0=0.d0
+               ss2=0.d0
                DO k=1,ngrad
                   swsi(k)=0.d0
                END DO
                deti=dexp(dlog(det(i1,i2,i3))/3)
                bii=bi(i1,i2,i3)
-               sqrbii=dsqrt(bii)*sigma2(i1,i2,i3)
+               sqrbii=dsqrt(bii)*sigma2h(i1,i2,i3)
                DO k=1,6
                   thi(k)=th(k,i1,i2,i3)/deti
                END DO
@@ -103,7 +106,9 @@ C     triangular location kernel
                            if(sij.gt.1.d0) CYCLE
                            wij=wij*(1.d0-sij)
                         END IF
-                        wij=wij/sigma2(jj1,jj2,jj3)
+                        ss2=ss2+wij*sigma2(jj1,jj2,jj3)
+                        sw0=sw0+wij
+                        wij=wij/sigma2h(jj1,jj2,jj3)
                         sw=sw+wij
                         sws0=sws0+wij*s0(jj1,jj2,jj3)
                         DO k=1,ngrad
@@ -116,8 +121,10 @@ C     triangular location kernel
                IF(sws0.gt.0.d0) THEN
                   IF(sw.gt.0.d0.and.sw.lt.1.d20) THEN
                      s0new(i1,i2,i3)=sws0/sw
-                  ELSE
+                     sigma2n(i1,i2,i3)=ss2/sw0
+                   ELSE
                      s0new(i1,i2,i3)=s0(i1,i2,i3)
+                     sigma2n(i1,i2,i3)=sigma2h(i1,i2,i3)
                   END IF
                   sws0=dlog(sws0)
                   DO k=1,ngrad
@@ -132,6 +139,7 @@ C     triangular location kernel
                   DO k=1,ngrad
                      swsi(k)=0.d0
                   END DO 
+                  sigma2n(i1,i2,i3)=sigma2h(i1,i2,i3)
                END IF
                DO k=1,6
                   z=0.d0

@@ -125,6 +125,7 @@ if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
   dim(z$anindex) <-dim(z$det) <- dimy[-1]
   dim(z$andirection) <- c(3,dimy[-1]) 
   z$s0hat <- s0
+  z$sigma2hat <- sigma2
 #
 #  initial state for h=1
 #
@@ -192,6 +193,7 @@ if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
                 as.double(Bcov),
                 as.double(solvebtb),
                 as.double(sigma2),
+                as.double(z$sigma2hat),
                 as.integer(n1),
                 as.integer(n2),
                 as.integer(n3),
@@ -202,10 +204,11 @@ if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
                 as.double(lambda0),
                 theta=double(6*n),
                 s0hat=double(n),
+                sigma2hat=double(n),
                 double(ngrad),
                 as.double(eps),
                 DUP=FALSE,
-                PACKAGE="dti")[c("theta","bi","anindex","andirection","det","s0hat")]
+                PACKAGE="dti")[c("theta","bi","anindex","andirection","det","s0hat","sigma2hat")]
      dim(z$s0hat) <- dim(z$bi) <- dim(z$anindex) <- dim(z$det) <- dimy[-1]
      dim(z$theta) <- dimy
      dim(z$andirection) <- c(3,dimy[-1]) 
@@ -231,9 +234,9 @@ if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
      title(paste("Dyz: min",signif(min(img),3),"max",signif(max(img),3)))
      andir2.image(z,slice,quant=quant,minanindex=minanindex)
      title(paste("Directions (h=",signif(hakt,3),"), slice",slice))
-     ni<-z$bi[,,slice]*sigma2[,,slice]
+     ni<-z$bi[,,slice]*z$sigma2hat[,,slice]
      show.image(make.image(65535*ni/max(ni)))
-     title(paste("sum of weights  mean=",signif(mean(z$bi*sigma2),3)))
+     title(paste("sum of weights  mean=",signif(mean(z$bi*z$sigma2hat),3)))
      img<-z$theta[6,,,slice]
      show.image(make.image(65535*img/max(img)))
      title(paste("Dyy: mean",signif(mean(img),3),"max",signif(max(img),3)))
