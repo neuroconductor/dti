@@ -299,3 +299,43 @@ C
       END DO
       RETURN
       END
+      subroutine smsigma(sigma2,n1,n2,n3,h,zext,sigma2h)
+      implicit logical (a-z)
+      integer n1,n2,n3
+      real*8 sigma2(n1,n2,n3),sigma2h(n1,n2,n3),zext,h
+      integer i1,i2,i3,j1,j2,j3,ih1,ih2,ih3
+      real*8 ssig,sw,w,h2,z1,z2,z3,z11,z22,z33,ze2
+      h2=h*h
+      ze2=zext*zext
+      ih1=h
+      DO i1=1,n1
+         DO i2=1,n2
+            DO i3=1,n3
+               sw=0.d0
+               ssig=0.d0
+               DO j1=i1-ih1,i1+ih1
+                  if(j1.le.1.or.j1.gt.n1) CYCLE
+                  z1=j1-i1
+                  z11=z1*z1
+                  ih2=dsqrt(h2-z11)
+                  DO j2=i2-ih2,i2+ih2
+                     if(j2.le.1.or.j2.gt.n2) CYCLE
+                     z2=j2-i2
+                     z22=z11+z2*z2
+                     ih3=dsqrt(h2-z22)/zext
+                     DO j3=i3-ih3,i3+ih3
+                        if(j3.le.1.or.j3.gt.n3) CYCLE
+                        z3=j3-i3
+                        z33=z22+ze2*z3*z3                     
+                        w=1.d0-z33/h2
+                        sw=sw+w
+                        ssig=ssig+w*sigma2(j1,j2,j3)
+                     END DO
+                  END DO
+               END DO
+               sigma2h(i1,i2,i3)=ssig/sw
+            END DO
+         END DO
+      END DO
+      RETURN
+      END

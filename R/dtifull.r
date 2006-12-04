@@ -125,7 +125,17 @@ if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
   dim(z$anindex) <-dim(z$det) <- dimy[-1]
   dim(z$andirection) <- c(3,dimy[-1]) 
   z$s0hat <- s0
-  z$sigma2hat <- sigma2
+  sigmahat <- .Fortran("smsigma",
+                       as.double(sigma2),
+                       as.integer(n1),
+                       as.integer(n2),
+                       as.integer(n3),
+                       as.double(hsig),
+                       as.double(zext),
+                       sigmahat=double(n1*n2*n3),
+                       DUP=FALSE,
+                       PACKAGE="dti")$sigmahat
+  z$sigma2hat <- sigma2hat
 #
 #  initial state for h=1
 #
@@ -209,6 +219,10 @@ if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
                 as.double(eps),
                 DUP=FALSE,
                 PACKAGE="dti")[c("theta","bi","anindex","andirection","det","s0hat","sigma2hat")]
+     if(hakt<hsig){
+        eta <- (hsig^3 - hakt^3)/hsig^3
+        z$sigma2hat <- eta*sigma2hat+(1
+     }
      dim(z$s0hat) <- dim(z$bi) <- dim(z$anindex) <- dim(z$det) <- dimy[-1]
      dim(z$theta) <- dimy
      dim(z$andirection) <- c(3,dimy[-1]) 
