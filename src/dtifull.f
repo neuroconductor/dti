@@ -314,17 +314,17 @@ C
                sw=0.d0
                ssig=0.d0
                DO j1=i1-ih1,i1+ih1
-                  if(j1.le.1.or.j1.gt.n1) CYCLE
+                  if(j1.lt.1.or.j1.gt.n1) CYCLE
                   z1=j1-i1
                   z11=z1*z1
                   ih2=dsqrt(h2-z11)
                   DO j2=i2-ih2,i2+ih2
-                     if(j2.le.1.or.j2.gt.n2) CYCLE
+                     if(j2.lt.1.or.j2.gt.n2) CYCLE
                      z2=j2-i2
                      z22=z11+z2*z2
                      ih3=dsqrt(h2-z22)/zext
                      DO j3=i3-ih3,i3+ih3
-                        if(j3.le.1.or.j3.gt.n3) CYCLE
+                        if(j3.lt.1.or.j3.gt.n3) CYCLE
                         z3=j3-i3
                         z33=z22+ze2*z3*z3                     
                         w=1.d0-z33/h2

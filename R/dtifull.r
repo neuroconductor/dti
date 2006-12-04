@@ -82,7 +82,7 @@ invisible(dtobject)
 
 
 
-dtianiso2<-function(dtobject,hmax=5,lambda=25,rho=1,graph=FALSE,slice=NULL,quant=.8,minanindex=NULL,zext=1,eps=1e-6){
+dtianiso2<-function(dtobject,hmax=5,lambda=25,rho=1,graph=FALSE,slice=NULL,quant=.8,minanindex=NULL,zext=1,eps=1e-6,hsig=2.5){
 if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
   args <- match.call()
   btb<-dtobject$btb
@@ -125,7 +125,7 @@ if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
   dim(z$anindex) <-dim(z$det) <- dimy[-1]
   dim(z$andirection) <- c(3,dimy[-1]) 
   z$s0hat <- s0
-  sigmahat <- .Fortran("smsigma",
+  sigma2hat <- .Fortran("smsigma",
                        as.double(sigma2),
                        as.integer(n1),
                        as.integer(n2),
@@ -221,9 +221,9 @@ if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
                 PACKAGE="dti")[c("theta","bi","anindex","andirection","det","s0hat","sigma2hat")]
      if(hakt<hsig){
         eta <- (hsig^3 - hakt^3)/hsig^3
-        z$sigma2hat <- eta*sigma2hat+(1
+        z$sigma2hat <- eta*sigma2hat+(1-eta)*z$sigma2hat
      }
-     dim(z$s0hat) <- dim(z$bi) <- dim(z$anindex) <- dim(z$det) <- dimy[-1]
+     dim(z$s0hat) <- dim(z$bi) <- dim(z$anindex) <- dim(z$det) <- dim(z$sigma2hat) <- dimy[-1]
      dim(z$theta) <- dimy
      dim(z$andirection) <- c(3,dimy[-1]) 
      if(graph){
