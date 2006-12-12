@@ -82,7 +82,7 @@ invisible(dtobject)
 
 
 
-dtianiso2<-function(dtobject,hmax=5,lambda=25,rho=1,graph=FALSE,slice=NULL,quant=.8,minanindex=NULL,zext=1,eps=1e-6,hsig=2.5){
+dtianiso2<-function(dtobject,hmax=5,hinit=NULL,lambda=25,rho=1,graph=FALSE,slice=NULL,quant=.8,minanindex=NULL,zext=1,eps=1e-6,hsig=2.5){
 if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
   args <- match.call()
   btb<-dtobject$btb
@@ -181,8 +181,13 @@ if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
     cat("Corresponding bandwiths for specified correlation:",h0,"\n")
   }
   hincr <- 1.25^(1/3)
+  if(is.null(hinit)){
   hakt0 <- 1
   hakt <- hincr
+  } else {
+  hakt0 <- max(1,hinit/hincr)
+  hakt <- hinit
+  }
   lambda0 <- lambda
   while( hakt <= hmax) {
     if (scorr[1]>=0.1) {
