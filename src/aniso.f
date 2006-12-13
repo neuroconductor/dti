@@ -62,18 +62,18 @@ C  this is scale invariant sice sqrbii scales with dsqrt(sigma2) (standard devia
                   ew(1)=ew(1)/sew
                   ew(2)=ew(2)/sew
                   ew(3)=ew(3)/sew
-                  thi(1)=ev(1,1)*ev(1,1)*ew(1)+ev(1,2)*ev(1,2)*ew(2)+
-     1                   ev(1,3)*ev(1,3)*ew(3)
-                  thi(2)=ev(1,1)*ev(2,1)*ew(1)+ev(1,2)*ev(2,2)*ew(2)+
-     1                   ev(1,3)*ev(2,3)*ew(3)
-                  thi(3)=ev(1,1)*ev(3,1)*ew(1)+ev(1,2)*ev(3,2)*ew(2)+
-     1                   ev(1,3)*ev(3,3)*ew(3)
-                  thi(4)=ev(2,1)*ev(2,1)*ew(1)+ev(2,2)*ev(2,2)*ew(2)+
-     1                   ev(2,3)*ev(2,3)*ew(3)
-                  thi(5)=ev(2,1)*ev(3,1)*ew(1)+ev(2,2)*ev(3,2)*ew(2)+
-     1                   ev(2,3)*ev(3,3)*ew(3)
-                  thi(6)=ev(3,1)*ev(3,1)*ew(1)+ev(3,2)*ev(3,2)*ew(2)+
-     1                   ev(3,3)*ev(3,3)*ew(3)
+                  thi(1)=ev(1,1)*ev(1,1)/ew(1)+ev(1,2)*ev(1,2)/ew(2)+
+     1                   ev(1,3)*ev(1,3)/ew(3)
+                  thi(2)=ev(1,1)*ev(2,1)/ew(1)+ev(1,2)*ev(2,2)/ew(2)+
+     1                   ev(1,3)*ev(2,3)/ew(3)
+                  thi(3)=ev(1,1)*ev(3,1)/ew(1)+ev(1,2)*ev(3,2)/ew(2)+
+     1                   ev(1,3)*ev(3,3)/ew(3)
+                  thi(4)=ev(2,1)*ev(2,1)/ew(1)+ev(2,2)*ev(2,2)/ew(2)+
+     1                   ev(2,3)*ev(2,3)/ew(3)
+                  thi(5)=ev(2,1)*ev(3,1)/ew(1)+ev(2,2)*ev(3,2)/ew(2)+
+     1                   ev(2,3)*ev(3,3)/ew(3)
+                  thi(6)=ev(3,1)*ev(3,1)/ew(1)+ev(3,2)*ev(3,2)/ew(2)+
+     1                   ev(3,3)*ev(3,3)/ew(3)
                END IF
                anii=ani(i1,i2,i3)
                call rangex(thi,h,j1a,j1e)
