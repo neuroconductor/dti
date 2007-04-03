@@ -1,80 +1,86 @@
 create2.dti <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL){
-if(dim(gradient)[2]==3)  gradient<-t(gradient)
-if(dim(gradient)[1]!=3)  stop("Not a valid gradient matrix")
-ngrad <- dim(gradient)[2]
-if(!(file.exists(imagefile))) stop("Image file does not exist")
-zz<-file(imagefile,"rb")
-s0 <- readBin(zz,"integer",prod(ddim),2,FALSE)
-si <- readBin(zz,"integer",prod(ddim)*ngrad,2,FALSE)
-close(zz)
-cat("Data successfully read \n")
-if(is.null(xind)) xind<-1:ddim[1]
-if(is.null(yind)) yind<-1:ddim[2]
-if(is.null(zind)) zind<-1:ddim[3]
-dim(s0) <- ddim
-s0 <- s0[xind,yind,zind]
-dim(si) <- c(ddim,ngrad)
-si <- si[xind,yind,zind,]
-ddim0 <- ddim
-ddim <- dim(s0)
-dim(s0)<-dim(si)<-NULL
-ttt <- -log(si/s0)
-ttt[is.na(ttt)] <- 0
-ttt[(ttt==Inf)] <- 0
-ttt[(ttt==-Inf)] <- 0
-n <- prod(ddim)
-dim(ttt) <- c(n,ngrad)
-ttt<-t(ttt)
-cat("Data transformation completed \n")
-btb <- matrix(0,6,ngrad)
-btb[1,]<-gradient[1,]*gradient[1,]
-btb[4,]<-gradient[2,]*gradient[2,]
-btb[6,]<-gradient[3,]*gradient[3,]
-btb[2,]<-2*gradient[1,]*gradient[2,]
-btb[3,]<-2*gradient[1,]*gradient[3,]
-btb[5,]<-2*gradient[2,]*gradient[3,]
-btbsvd <- svd(btb)
-solvebtb <- btbsvd$u %*% diag(1/btbsvd$d) %*% t(btbsvd$v)
-theta <- solvebtb%*% ttt
-cat("Diffusion tensors generated \n")
-res <- ttt - t(btb) %*% theta
-mres2 <- res[1,]^2
-for(i in 2:ngrad) mres2 <- mres2 + res[i,]^2
-sigma2 <- array(mres2/(ngrad-6),ddim)
-cat("Variance estimates generated \n")
-rm(mres2)
-gc()
-z<-list(theta=array(theta,c(6,ddim)),sigma2=sigma2,btb=btb,
-        solvebtb=solvebtb,scorr=c(0,0),s0=array(s0,ddim),
-        ddim=ddim,ddim0=ddim0,xind=xind,yind=yind,zind=zind,
-        ngrad=ngrad,file=imagefile,si=si,res=res)
-class(z) <- "dti"
-invisible(z)
+  if (dim(gradient)[2]==3) gradient <- t(gradient)
+  if (dim(gradient)[1]!=3) stop("Not a valid gradient matrix")
+  ngrad <- dim(gradient)[2]
+
+  if (!(file.exists(imagefile))) stop("Image file does not exist")
+  zz <- file(imagefile,"rb")
+  s0 <- readBin(zz,"integer",prod(ddim),2,FALSE)
+  si <- readBin(zz,"integer",prod(ddim)*ngrad,2,FALSE)
+  close(zz)
+  cat("Data successfully read \n")
+
+  if (is.null(xind)) xind <- 1:ddim[1]
+  if (is.null(yind)) yind <- 1:ddim[2]
+  if (is.null(zind)) zind <- 1:ddim[3]
+  dim(s0) <- ddim
+  s0 <- s0[xind,yind,zind]
+  dim(si) <- c(ddim,ngrad)
+  si <- si[xind,yind,zind,]
+  ddim0 <- ddim
+  ddim <- dim(s0)
+  dim(s0) <- dim(si) <- NULL
+  ttt <- -log(si/s0)
+  ttt[is.na(ttt)] <- 0
+  ttt[(ttt==Inf)] <- 0
+  ttt[(ttt==-Inf)] <- 0
+  n <- prod(ddim)
+  dim(ttt) <- c(n,ngrad)
+  ttt <- t(ttt)
+  cat("Data transformation completed \n")
+
+  btb <- matrix(0,6,ngrad)
+  btb[1,] <- gradient[1,]*gradient[1,]
+  btb[4,] <- gradient[2,]*gradient[2,]
+  btb[6,] <- gradient[3,]*gradient[3,]
+  btb[2,] <- 2*gradient[1,]*gradient[2,]
+  btb[3,] <- 2*gradient[1,]*gradient[3,]
+  btb[5,] <- 2*gradient[2,]*gradient[3,]
+  btbsvd <- svd(btb)
+  solvebtb <- btbsvd$u %*% diag(1/btbsvd$d) %*% t(btbsvd$v)
+  theta <- solvebtb%*% ttt
+  cat("Diffusion tensors generated \n")
+
+  res <- ttt - t(btb) %*% theta
+  mres2 <- res[1,]^2
+  for(i in 2:ngrad) mres2 <- mres2 + res[i,]^2
+  sigma2 <- array(mres2/(ngrad-6),ddim)
+  cat("Variance estimates generated \n")
+
+  rm(mres2)
+  gc()
+  z <- list(theta=array(theta,c(6,ddim)),sigma2=sigma2,btb=btb,
+            solvebtb=solvebtb,scorr=c(0,0),s0=array(s0,ddim),
+            ddim=ddim,ddim0=ddim0,xind=xind,yind=yind,zind=zind,
+            ngrad=ngrad,file=imagefile,si=si,res=res)
+  class(z) <- "dti"
+  invisible(z)
 }
 
 getscorr2 <- function(dtobject,level=0){
-if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
-ddim <- dtobject$ddim
-mask <- dtobject$s0>level
-n <- prod(ddim)
-ngrad <- dtobject$ngrad
-scorr <- c(0,0)
-res <- dtobject$res
-dim(res) <- c(ngrad,ddim)
-res <- aperm(res,c(2:4,1))
-dim(res) <- c(n,ngrad)
-res1 <- as.vector(res[as.vector(mask),])
-scorr[1] <- mean(res1[-1]*res1[-length(res1)])/var(res1)
-cat("correlation in x-direction",signif(scorr[1],3),"\n")
-dim(res) <- c(ddim,ngrad)
-res <- aperm(res,c(2,1,3,4))
-dim(res) <- c(n,ngrad)
-res1 <- as.vector(res[as.vector(aperm(mask,c(2,1,3))),])
-scorr[2] <- mean(res1[-1]*res1[-length(res1)])/var(res1)
-cat("correlation in y-direction",signif(scorr[2],3),"\n")
-dtobject$scorr <- scorr
-dtobject$res <- NULL
-invisible(dtobject)
+  if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
+
+  ddim <- dtobject$ddim
+  mask <- dtobject$s0>level
+  n <- prod(ddim)
+  ngrad <- dtobject$ngrad
+  scorr <- c(0,0)
+  res <- dtobject$res
+  dim(res) <- c(ngrad,ddim)
+  res <- aperm(res,c(2:4,1))
+  dim(res) <- c(n,ngrad)
+  res1 <- as.vector(res[as.vector(mask),])
+  scorr[1] <- mean(res1[-1]*res1[-length(res1)])/var(res1)
+  cat("correlation in x-direction",signif(scorr[1],3),"\n")
+  dim(res) <- c(ddim,ngrad)
+  res <- aperm(res,c(2,1,3,4))
+  dim(res) <- c(n,ngrad)
+  res1 <- as.vector(res[as.vector(aperm(mask,c(2,1,3))),])
+  scorr[2] <- mean(res1[-1]*res1[-length(res1)])/var(res1)
+  cat("correlation in y-direction",signif(scorr[2],3),"\n")
+  dtobject$scorr <- scorr
+  dtobject$res <- NULL
+  invisible(dtobject)
 }
 
 
@@ -82,10 +88,13 @@ invisible(dtobject)
 
 
 
-dtianiso2<-function(dtobject,hmax=5,hinit=NULL,lambda=25,rho=1,graph=FALSE,slice=NULL,quant=.8,minanindex=NULL,zext=1,eps=1e-6,hsig=2.5){
-if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
+dtianiso2 <- function(dtobject,hmax=5,hinit=NULL,lambda=25,
+                      rho=1,graph=FALSE,slice=NULL,quant=.8,
+                      minanindex=NULL,zext=1,eps=1e-6,hsig=2.5){
+  if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
+
   args <- match.call()
-  btb<-dtobject$btb
+  btb <- dtobject$btb
   Bcov <- btb%*%t(btb)
   y <- dtobject$theta
   sigma2 <- dtobject$sigma2

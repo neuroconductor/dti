@@ -1,27 +1,109 @@
+  # solvebtb mit einfuegen??
+
+setClass("dti",
+         representation(theta = "numeric",
+                        sigma = "numeric",
+                        s0    = "numeric",
+                        si    = "numeric",
+                        btb   = "matrix",
+                        ngrad = "integer", # = dim(btb)[2]
+                        scorr = "integer",
+                        ddim  = "integer",
+                        ddim0 = "integer",
+                        xind  = "integer",
+                        yind  = "integer",
+                        zind  = "integer",
+                        file  = "character",
+                        res   = "numeric")
+         )
+
+dti <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL) {
+  if (dim(gradient)[2]==3) gradient <- t(gradient)
+  if (dim(gradient)[1]!=3) stop("Not a valid gradient matrix")
+  ngrad <- dim(gradient)[2]
+
+  if (!(file.exists(imagefile))) stop("Image file does not exist")
+  zz <- file(imagefile,"rb")
+  s0 <- readBin(zz,"integer",prod(ddim),2,FALSE)
+  si <- readBin(zz,"integer",prod(ddim)*ngrad,2,FALSE)
+  close(zz)
+  cat("Data successfully read \n")
+
+  if (is.null(xind)) xind <- 1:ddim[1]
+  if (is.null(yind)) yind <- 1:ddim[2]
+  if (is.null(zind)) zind <- 1:ddim[3]
+  dim(s0) <- ddim
+  s0 <- s0[xind,yind,zind]
+  dim(si) <- c(ddim,ngrad)
+  si <- si[xind,yind,zind,]
+  ddim0 <- ddim
+  ddim <- dim(s0)
+  dim(s0) <- dim(si) <- NULL
+  ttt <- -log(si/s0)
+  ttt[is.na(ttt)] <- 0
+  ttt[(ttt==Inf)] <- 0
+  ttt[(ttt==-Inf)] <- 0
+  n <- prod(ddim)
+  dim(ttt) <- c(n,ngrad)
+  ttt <- t(ttt)
+  cat("Data transformation completed \n")
+
+  btb <- create.designmatrix.dti(gradient)
+  btbsvd <- svd(btb)
+  solvebtb <- btbsvd$u %*% diag(1/btbsvd$d) %*% t(btbsvd$v)
+  theta <- solvebtb%*% ttt
+  cat("Diffusion tensors generated \n")
+
+  res <- ttt - t(btb) %*% theta
+  mres2 <- res[1,]^2
+  for(i in 2:ngrad) mres2 <- mres2 + res[i,]^2
+  sigma2 <- array(mres2/(ngrad-6),ddim)
+  cat("Variance estimates generated \n")
+
+  rm(mres2)
+  gc()
+
+  # solvebtb mit einfuegen??
+  invisible(new("dti",
+                theta = array(theta,c(6,ddim)),
+                sigma = sigma2,
+                s0    = array(s0,ddim),
+                si    = si,
+                btb   = btb,
+                ngrad = ngrad, # = dim(btb)[2]
+                scorr = c(0,0),
+                ddim  = ddim,
+                ddim0 = ddim0,
+                xind  = xind,
+                yind  = yind,
+                zind  = zind,
+                file  = imagefile,
+                res   = res)
+            )
+}
+
+
+
 ### CODE IN THIS FILE IS STILL EXPERIMENTAL ###
 
-create.designmatrix.dti <- function(bvec, bvalue=1) {
+create.designmatrix.dti <- function(gradient, bvalue=1) {
   cat("\nNOTE: This code is still experimental!\n") 
-  dimension <- dim(bvec)[2] # should be 3
+  dimension <- dim(gradient)[2] # should be 3
   if (dimension != 3) {
     warning("Error: gradient vectors do not have length 3")
     return(invisible(NULL))
   }
-  directions <- dim(bvec)[1] # number of measured directions
+  ngrad <- dim(gradient)[1] # number of measured directions
 
-  z <- matrix(0, directions, 6)
+  btb <- matrix(0,6,ngrad)
+  btb[1,] <- gradient[1,]*gradient[1,]
+  btb[4,] <- gradient[2,]*gradient[2,]
+  btb[6,] <- gradient[3,]*gradient[3,]
+  btb[2,] <- 2*gradient[1,]*gradient[2,]
+  btb[3,] <- 2*gradient[1,]*gradient[3,]
+  btb[5,] <- 2*gradient[2,]*gradient[3,]
 
-  for (d in 1:directions) {
-    z[d,1] <- bvec[d,1]^2
-    z[d,4] <- bvec[d,2]^2
-    z[d,6] <- bvec[d,3]^2
-    z[d,2] <- 2*bvec[d,1]*bvec[d,2]
-    z[d,3] <- 2*bvec[d,1]*bvec[d,3]
-    z[d,5] <- 2*bvec[d,2]*bvec[d,3]
-    z[d,] <- bvalue*z[d,]
-  }
-  
-  z
+  btb
 }
 
 calculate.lm.dti <- function(ttt,z,res=FALSE) {
@@ -115,6 +197,22 @@ anisotropy <- function(eigen) {
   dim(trc) <- dim(fa) <- dim(ra) <- dimdt[1:3]
   
   list(fa=fa, ra=ra, trace=trc)
+}
+
+barycentric <- function(eigen) {
+  cat("\nNOTE: This code is still experimental!\n") 
+  dimdt <- dim(eigen)
+  dim(eigen) <- c(prod(dimdt[1:3]),3)
+
+  trc <- as.vector(eigen %*% c(1,1,1))
+  cl <- (eigen[,1] - eigen[,2]) / trc
+  cp <- 2*(eigen[,2] - eigen[,3]) / trc
+  cs <- 3*eigen[,3] / trc
+  dim(bary$cl) <- dimdt[1:3]
+  dim(bary$cp) <- dimdt[1:3]
+  dim(bary$cs) <- dimdt[1:3]
+  
+  invisible(list(cl=cl,cp=cp,cs=cs))
 }
 
 theta.estimate <- function(y,dt=NULL,h) {
@@ -356,7 +454,7 @@ invisible(dtobject)
 
 
 dtianiso<-function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,quant=.8,minanindex=NULL,zext=1){
-if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
+  if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
   args <- match.call()
   btb<-dtobject$btb
   Bcov <- btb%*%t(btb)
@@ -395,37 +493,37 @@ if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
 #  initial state for h=1
 #
   if(graph){
-     require(adimpro)
-     oldpar <- par(mfrow=c(3,3),mar=c(1,1,3,.25),mgp=c(2,1,0))
-     on.exit(par(oldpar))
-     if(is.null(slice)) slice<-n3%/%2
-     class(z) <- "dti"
-     img<-z$theta[1,,,slice]
-     show.image(make.image(65535*img/max(img)))
-     title(paste("Dxx: min",signif(min(img),3),"max",signif(max(img),3)))
-     img<-z$theta[2,,,slice]
-     show.image(make.image(img))
-     title(paste("Dxy: min",signif(min(img),3),"max",signif(max(img),3)))
-     img<-z$theta[3,,,slice]
-     show.image(make.image(img))
-     title(paste("Dxz: min",signif(min(img),3),"max",signif(max(img),3)))
-     show.image(make.image(z$anindex[,,slice]))
-     title(paste("Anisotropy index  range:",signif(min(z$anindex[z$mask]),3),"-",
-                  signif(max(z$anindex[z$mask]),3)))
-     img<-z$theta[4,,,slice]
-     show.image(make.image(65535*img/max(img)))
-     title(paste("Dyy: min",signif(min(img),3),"max",signif(max(img),3)))
-     img<-z$theta[5,,,slice]
-     show.image(make.image(img))
-     title(paste("Dyz: min",signif(min(img),3),"max",signif(max(img),3)))
-     andir.image(z,slice,quant=quant,minanindex=minanindex)
-     title(paste("Directions (h=1), slice",slice))
-     ni<-z$bi[,,slice]*sigma2[,,slice]
-     show.image(make.image(65535*ni/max(ni)))
-     title(paste("sum of weights  mean=",signif(mean(z$bi[z$mask]*sigma2[z$mask]),3)))
-     img<-z$theta[6,,,slice]
-     show.image(make.image(65535*img/max(img)))
-     title(paste("Dzz: min",signif(min(img),3),"max",signif(max(img),3)))
+    require(adimpro)
+    oldpar <- par(mfrow=c(3,3),mar=c(1,1,3,.25),mgp=c(2,1,0))
+    on.exit(par(oldpar))
+    if(is.null(slice)) slice<-n3%/%2
+    class(z) <- "dti"
+    img<-z$theta[1,,,slice]
+    show.image(make.image(65535*img/max(img)))
+    title(paste("Dxx: min",signif(min(img),3),"max",signif(max(img),3)))
+    img<-z$theta[2,,,slice]
+    show.image(make.image(img))
+    title(paste("Dxy: min",signif(min(img),3),"max",signif(max(img),3)))
+    img<-z$theta[3,,,slice]
+    show.image(make.image(img))
+    title(paste("Dxz: min",signif(min(img),3),"max",signif(max(img),3)))
+    show.image(make.image(z$anindex[,,slice]))
+    title(paste("Anisotropy index  range:",signif(min(z$anindex[z$mask]),3),"-",
+                signif(max(z$anindex[z$mask]),3)))
+    img<-z$theta[4,,,slice]
+    show.image(make.image(65535*img/max(img)))
+    title(paste("Dyy: min",signif(min(img),3),"max",signif(max(img),3)))
+    img<-z$theta[5,,,slice]
+    show.image(make.image(img))
+    title(paste("Dyz: min",signif(min(img),3),"max",signif(max(img),3)))
+    andir.image(z,slice,quant=quant,minanindex=minanindex)
+    title(paste("Directions (h=1), slice",slice))
+    ni<-z$bi[,,slice]*sigma2[,,slice]
+    show.image(make.image(65535*ni/max(ni)))
+    title(paste("sum of weights  mean=",signif(mean(z$bi[z$mask]*sigma2[z$mask]),3)))
+    img<-z$theta[6,,,slice]
+    show.image(make.image(65535*img/max(img)))
+    title(paste("Dzz: min",signif(min(img),3),"max",signif(max(img),3)))
   }
   if (max(scorr)>0) {
     h0 <- numeric(length(scorr))
@@ -441,73 +539,72 @@ if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
   lambda0 <- lambda
   while( hakt <= hmax) {
     if (scorr[1]>=0.1) {
-       corrfactor <- Spatialvar.gauss(hakt0/0.42445/4,h0,3) /
+      corrfactor <- Spatialvar.gauss(hakt0/0.42445/4,h0,3) /
         Spatialvar.gauss(h0,1e-5,3) /
-        Spatialvar.gauss(hakt0/0.42445/4,1e-5,3)
-        lambda0 <- lambda * corrfactor
-     cat("Correction factor for spatial correlation",signif(corrfactor,3),"\n")
-}
-     z <- .Fortran("awsdti",
-                as.double(y),
-                as.double(z$theta),
-                bi=as.double(z$bi),
-                anindex=as.double(z$anindex),
-                andirection=as.double(z$andirection),
-                det=as.double(z$det),
-                as.double(Bcov),
-                as.double(sigma2),
-                as.integer(n1),
-                as.integer(n2),
-                as.integer(n3),
-                as.double(hakt),
-                as.double(zext),
-                as.double(rho),
-                as.double(lambda0),
-                theta=double(6*n),
-                mask=as.logical(z$mask),
-                DUP=FALSE,
-                PACKAGE="dti")[c("theta","bi","anindex","andirection","det","mask")]
-     dim(z$bi) <- dim(z$anindex) <- dim(z$det) <- dim(z$mask) <- dimy[-1]
-     dim(z$theta) <- dimy
-     dim(z$andirection) <- c(3,dimy[-1]) 
-     if(graph){
-     
-     class(z) <- "dti"
-     img<-z$theta[1,,,slice]
-     show.image(make.image(65535*img/max(img)))
-     title(paste("Dxx: min",signif(min(img),3),"max",signif(max(img),3)))
-     img<-z$theta[2,,,slice]
-     show.image(make.image(img))
-     title(paste("Dxy: min",signif(min(img),3),"max",signif(max(img),3)))
-     img<-z$theta[3,,,slice]
-     show.image(make.image(img))
-     title(paste("Dxz: min",signif(min(img),3),"max",signif(max(img),3)))
-     show.image(make.image(z$anindex[,,slice]))
-     title(paste("Anisotropy index  range:",signif(min(z$anindex[z$mask]),3),"-",
+          Spatialvar.gauss(hakt0/0.42445/4,1e-5,3)
+      lambda0 <- lambda * corrfactor
+      cat("Correction factor for spatial correlation",signif(corrfactor,3),"\n")
+    }
+    z <- .Fortran("awsdti",
+                  as.double(y),
+                  as.double(z$theta),
+                  bi=as.double(z$bi),
+                  anindex=as.double(z$anindex),
+                  andirection=as.double(z$andirection),
+                  det=as.double(z$det),
+                  as.double(Bcov),
+                  as.double(sigma2),
+                  as.integer(n1),
+                  as.integer(n2),
+                  as.integer(n3),
+                  as.double(hakt),
+                  as.double(zext),
+                  as.double(rho),
+                  as.double(lambda0),
+                  theta=double(6*n),
+                  mask=as.logical(z$mask),
+                  DUP=FALSE,
+                  PACKAGE="dti")[c("theta","bi","anindex","andirection","det","mask")]
+    dim(z$bi) <- dim(z$anindex) <- dim(z$det) <- dim(z$mask) <- dimy[-1]
+    dim(z$theta) <- dimy
+    dim(z$andirection) <- c(3,dimy[-1]) 
+    if(graph){
+      
+      class(z) <- "dti"
+      img<-z$theta[1,,,slice]
+      show.image(make.image(65535*img/max(img)))
+      title(paste("Dxx: min",signif(min(img),3),"max",signif(max(img),3)))
+      img<-z$theta[2,,,slice]
+      show.image(make.image(img))
+      title(paste("Dxy: min",signif(min(img),3),"max",signif(max(img),3)))
+      img<-z$theta[3,,,slice]
+      show.image(make.image(img))
+      title(paste("Dxz: min",signif(min(img),3),"max",signif(max(img),3)))
+      show.image(make.image(z$anindex[,,slice]))
+      title(paste("Anisotropy index  range:",signif(min(z$anindex[z$mask]),3),"-",
                   signif(max(z$anindex[z$mask]),3)))
-     img<-z$theta[4,,,slice]
-     show.image(make.image(65535*img/max(img)))
-     title(paste("Dyy: min",signif(min(img),3),"max",signif(max(img),3)))
-     img<-z$theta[5,,,slice]
-     show.image(make.image(img))
-     title(paste("Dyz: min",signif(min(img),3),"max",signif(max(img),3)))
-     andir.image(z,slice,quant=quant,minanindex=minanindex)
-     title(paste("Directions (h=",signif(hakt,3),"), slice",slice))
-     ni<-z$bi[,,slice]*sigma2[,,slice]
-     show.image(make.image(65535*ni/max(ni)))
-     title(paste("sum of weights  mean=",signif(mean(z$bi[z$mask]*sigma2[z$mask]),3)))
-     img<-z$theta[6,,,slice]
-     show.image(make.image(65535*img/max(img)))
-     title(paste("Dyy: min",signif(min(img),3),"max",signif(max(img),3)))
-     }
-     cat("h=",signif(hakt,3),"Quantiles (.5, .75, .9, .95, 1) of anisotropy index",signif(quantile(z$anindex[z$mask],c(.5, .75, .9, .95, 1)),3),"\n")
-     hakt0<-hakt
-     hakt <- hakt*hincr
+      img<-z$theta[4,,,slice]
+      show.image(make.image(65535*img/max(img)))
+      title(paste("Dyy: min",signif(min(img),3),"max",signif(max(img),3)))
+      img<-z$theta[5,,,slice]
+      show.image(make.image(img))
+      title(paste("Dyz: min",signif(min(img),3),"max",signif(max(img),3)))
+      andir.image(z,slice,quant=quant,minanindex=minanindex)
+      title(paste("Directions (h=",signif(hakt,3),"), slice",slice))
+      ni<-z$bi[,,slice]*sigma2[,,slice]
+      show.image(make.image(65535*ni/max(ni)))
+      title(paste("sum of weights  mean=",signif(mean(z$bi[z$mask]*sigma2[z$mask]),3)))
+      img<-z$theta[6,,,slice]
+      show.image(make.image(65535*img/max(img)))
+      title(paste("Dyy: min",signif(min(img),3),"max",signif(max(img),3)))
+    }
+    cat("h=",signif(hakt,3),"Quantiles (.5, .75, .9, .95, 1) of anisotropy index",signif(quantile(z$anindex[z$mask],c(.5, .75, .9, .95, 1)),3),"\n")
+    hakt0<-hakt
+    hakt <- hakt*hincr
   }
-z <- list(theta=z$theta,bi=z$bi,anindex=z$anindex,andirection=z$andirection,mask=z$mask,
-          ddim0=ddim0,xind=xind,yind=yind,zind=zind,InvCov=Bcov,call=args)
-class(z) <- "dti"
-invisible(z)
+  z <- list(theta=z$theta,bi=z$bi,anindex=z$anindex,andirection=z$andirection,mask=z$mask,InvCov=Bcov,call=args)
+  class(z) <- "dti"
+  invisible(z)
 }
 
 andir.image <- function(dtobject,slice=1,method=1,quant=0,minanindex=NULL,show=TRUE,...){
