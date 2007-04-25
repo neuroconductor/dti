@@ -1,23 +1,98 @@
   # solvebtb mit einfuegen??
 
 setClass("dti",
-         representation(theta = "numeric",
-                        sigma = "numeric",
-                        s0    = "numeric",
-                        si    = "numeric",
-                        btb   = "matrix",
-                        ngrad = "integer", # = dim(btb)[2]
-                        scorr = "integer",
-                        ddim  = "integer",
-                        ddim0 = "integer",
-                        xind  = "integer",
-                        yind  = "integer",
-                        zind  = "integer",
-                        file  = "character",
-                        res   = "numeric")
+         representation(btb    = "matrix",
+                        ngrad  = "integer", # = dim(btb)[2]
+                        ddim   = "integer",
+                        ddim0  = "integer",
+                        xind   = "integer",
+                        yind   = "integer",
+                        zind   = "integer",
+                        source = "character")
          )
 
-dti <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL) {
+setClass("dtiData",
+         representation(s0    = "array",
+                        si    = "array",
+                        level = "numeric"),
+         contains="dti")
+
+setClass("dtiTensor",
+         representation(theta = "array",
+                        sigma = "array",
+                        scorr = "numeric"),
+         contains="dti")
+
+setClass("dtiIndices",
+         representation(fa     = "array",
+                        ra     = "array",
+                        trc    = "array",
+                        bary   = "array",
+                        lambda = "array",
+                        eigenv = "array"),
+         contains="dti")
+
+
+
+
+setMethod("show", "dti",
+function(object){
+    cat("DTI object\n")
+    cat("  Dimension     :", paste(object@ddim, collapse="x"), "\n")
+    cat("  Filename      :", object@source, "\n")
+    cat("\n")
+})
+
+setMethod("plot", "dtiTensor", function(x, y, ...) cat("Not yet implemented yet for class dtiTensor\n"))
+setMethod("plot", "dtiData", function(x, y, ...) cat("Not yet implemented yet for class dtiData\n"))
+setMethod("plot", "dti", function(x, y, ...) cat("No implementation for class dti\n"))
+
+setMethod("plot", "dtiIndices", 
+function(x, y, slice=1, method=1, quant=0, minanindex=NULL, show=TRUE, ...) {
+  cat("Plot called with class",class(x),"\n")
+  if(is.null(x@fa)) cat("No anisotropy index yet")
+  adimpro <- require(adimpro)
+  anindex <- x@fa[,,slice]
+  dimg <- x@ddim[1:2]
+cat("A\n")
+  andirection <- x@eigenv[,,slice,,]
+  anindex[anindex>1]<-0
+  anindex[anindex<0]<-0
+  dim(andirection)<-c(prod(dimg),3,3)
+  if(is.null(minanindex)) minanindex <- quantile(anindex,quant,na.rm=TRUE)
+  if(method==1) {
+    andirection[,1,3] <- abs(andirection[,1,3])
+    andirection[,2,3] <- abs(andirection[,2,3])
+    andirection[,3,3] <- abs(andirection[,3,3])
+  } else {
+    ind<-andirection[,1,3]<0
+    andirection[ind,,] <- - andirection[ind,,]
+    andirection[,2,3] <- (1+andirection[,2,3])/2
+    andirection[,3,3] <- (1+andirection[,3,3])/2
+  }
+cat("B",dim(andirection),"\n")
+  andirection <- andirection[,,1]
+cat("C",dim(andirection),"\n")
+cat("D",length(anindex),"\n")
+  andirection <- andirection*as.vector(anindex)*as.numeric(anindex>minanindex)
+cat("E",dim(andirection),"\n")
+cat("F",dimg,"\n")
+  dim(andirection)<-c(dimg,3)
+  if(adimpro) {
+cat("G",range(andirection),"\n")
+cat("H",range(andirection,na.rm=TRUE),"\n")
+andirection[is.na(andirection)] <- 0
+    andirection <- make.image(andirection)
+    if(show) show.image(andirection,...)
+  } else if(show) {
+    dim(anindex) <- dimg
+    image(anindex,...)
+  }
+  invisible(andirection)
+})
+
+
+dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=0) {
   if (dim(gradient)[2]==3) gradient <- t(gradient)
   if (dim(gradient)[1]!=3) stop("Not a valid gradient matrix")
   ngrad <- dim(gradient)[2]
@@ -33,69 +108,192 @@ dti <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL) {
   if (is.null(yind)) yind <- 1:ddim[2]
   if (is.null(zind)) zind <- 1:ddim[3]
   dim(s0) <- ddim
-  s0 <- s0[xind,yind,zind]
+  s0 <- s0[xind,yind,zind] # really needed?
   dim(si) <- c(ddim,ngrad)
-  si <- si[xind,yind,zind,]
-  ddim0 <- ddim
+  si <- si[xind,yind,zind,] # really needed?
+  ddim0 <- as.integer(ddim)
   ddim <- dim(s0)
+
+  btb <- create.designmatrix.dti(gradient)
+
+  invisible(new("dtiData",
+                s0     = s0,
+                si     = si,
+                btb    = btb,
+                ngrad  = ngrad, # = dim(btb)[2]
+                ddim   = ddim,
+                ddim0  = ddim0,
+                xind   = xind,
+                yind   = yind,
+                zind   = zind,
+                level  = level,
+                source = imagefile)
+            )
+}
+
+# has to be re-implemented!!!!!!!!!!!!!!!!!!!!!!!!!!1
+createdata.dti <- function(file,dtensor,btb,s0,sigma,level=250){
+  ngrad <- dim(btb)[2]
+  ddim <- dim(s0)
+  dtensor[1,,,][s0<level] <- 1e-5
+  dtensor[4,,,][s0<level] <- 1e-5
+  dtensor[6,,,][s0<level] <- 1e-5
+  dtensor[2,,,][s0<level] <- 0
+  dtensor[3,,,][s0<level] <- 0
+  dtensor[5,,,][s0<level] <- 0
+  dim(dtensor)<-c(6,prod(ddim))
+  dtensor <- t(dtensor)
+  si <- exp(-dtensor%*%btb)*as.vector(s0)
+  rsi <- pmax(0,rnorm(si,si,pmin(s0/2.5,sigma)))
+  rs0 <- pmax(0,rnorm(s0,s0,pmin(s0/2.5,sigma)))
+  zz <- file(file,"wb")
+  writeBin(as.integer(rs0),zz,2)
+  writeBin(as.integer(rsi),zz,2)
+  close(zz)
+  dim(s0)<-ddim
+  dim(si)<-c(ddim,ngrad)
+  dtensor <- t(dtensor)
+  dim(dtensor)<-c(6,ddim)
+  list(s0=s0,si=si,dtensor=dtensor,sigma=sigma,level=level,btb=btb)
+}
+# END implementation needed!
+
+# really setAs() or setMethod?
+setAs("dtiData","dtiTensor",function(from,to) {
+  ngrad <- from@ngrad
+  ddim <- from@ddim
+
+  s0 <- from@s0
+  si <- from@si
   dim(s0) <- dim(si) <- NULL
   ttt <- -log(si/s0)
   ttt[is.na(ttt)] <- 0
   ttt[(ttt==Inf)] <- 0
   ttt[(ttt==-Inf)] <- 0
-  n <- prod(ddim)
-  dim(ttt) <- c(n,ngrad)
+  dim(ttt) <- c(prod(ddim),ngrad)
   ttt <- t(ttt)
   cat("Data transformation completed \n")
 
-  btb <- create.designmatrix.dti(gradient)
-  btbsvd <- svd(btb)
+  btbsvd <- svd(from@btb)
   solvebtb <- btbsvd$u %*% diag(1/btbsvd$d) %*% t(btbsvd$v)
   theta <- solvebtb%*% ttt
   cat("Diffusion tensors generated \n")
 
-  res <- ttt - t(btb) %*% theta
+  res <- ttt - t(from@btb) %*% theta
   mres2 <- res[1,]^2
   for(i in 2:ngrad) mres2 <- mres2 + res[i,]^2
   sigma2 <- array(mres2/(ngrad-6),ddim)
+  dim(theta) <- c(6,ddim)
+  dim(res) <- c(ngrad,ddim)
   cat("Variance estimates generated \n")
 
   rm(mres2)
   gc()
 
-  # solvebtb mit einfuegen??
-  invisible(new("dti",
-                theta = array(theta,c(6,ddim)),
+  dim(s0) <- ddim
+  mask <- s0>from@level
+  scorr <- c(0,0)
+  res <- aperm(res,c(2:4,1))
+  dim(res) <- c(prod(ddim),ngrad)
+  res1 <- as.vector(res[as.vector(mask),])
+  scorr[1] <- mean(res1[-1]*res1[-length(res1)])/var(res1)
+  cat("correlation in x-direction",signif(scorr[1],3),"\n")
+  dim(res) <- c(ddim,ngrad)
+  res <- aperm(res,c(2,1,3,4))
+  dim(res) <- c(prod(ddim),ngrad)
+  res1 <- as.vector(res[as.vector(aperm(mask,c(2,1,3))),])
+  scorr[2] <- mean(res1[-1]*res1[-length(res1)])/var(res1)
+  cat("correlation in y-direction",signif(scorr[2],3),"\n")
+
+
+  invisible(new(to,
+                theta = theta,
                 sigma = sigma2,
-                s0    = array(s0,ddim),
-                si    = si,
-                btb   = btb,
-                ngrad = ngrad, # = dim(btb)[2]
-                scorr = c(0,0),
-                ddim  = ddim,
-                ddim0 = ddim0,
-                xind  = xind,
-                yind  = yind,
-                zind  = zind,
-                file  = imagefile,
-                res   = res)
+                btb   = from@btb,
+                ngrad = from@ngrad, # = dim(btb)[2]
+                scorr = scorr,
+                ddim  = from@ddim,
+                ddim0 = from@ddim0,
+                xind  = from@xind,
+                yind  = from@yind,
+                zind  = from@zind,
+                source= from@source)
             )
-}
+})
+
+dtiTensor <- function(object, ...) cat("No DTI tensor calculation defined for this class:",class(object),"\n")
+
+setGeneric("dtiTensor", function(object, ...) standardGeneric("dtiTensor"))
+
+setMethod("dtiTensor","dtiData",
+function(object) {
+  ngrad <- object@ngrad
+  ddim <- object@ddim
+
+  s0 <- object@s0
+  si <- object@si
+  dim(s0) <- dim(si) <- NULL
+  ttt <- -log(si/s0)
+  ttt[is.na(ttt)] <- 0
+  ttt[(ttt==Inf)] <- 0
+  ttt[(ttt==-Inf)] <- 0
+  dim(ttt) <- c(prod(ddim),ngrad)
+  ttt <- t(ttt)
+  cat("Data transformation completed \n")
+
+  btbsvd <- svd(object@btb)
+  solvebtb <- btbsvd$u %*% diag(1/btbsvd$d) %*% t(btbsvd$v)
+  theta <- solvebtb%*% ttt
+  cat("Diffusion tensors generated \n")
+
+  res <- ttt - t(object@btb) %*% theta
+  mres2 <- res[1,]^2
+  for(i in 2:ngrad) mres2 <- mres2 + res[i,]^2
+  sigma2 <- array(mres2/(ngrad-6),ddim)
+  dim(theta) <- c(6,ddim)
+  dim(res) <- c(ngrad,ddim)
+  cat("Variance estimates generated \n")
+
+  rm(mres2)
+  gc()
+
+  dim(s0) <- ddim
+  mask <- s0>object@level
+  scorr <- c(0,0)
+  res <- aperm(res,c(2:4,1))
+  dim(res) <- c(prod(ddim),ngrad)
+  res1 <- as.vector(res[as.vector(mask),])
+  scorr[1] <- mean(res1[-1]*res1[-length(res1)])/var(res1)
+  cat("correlation in x-direction",signif(scorr[1],3),"\n")
+  dim(res) <- c(ddim,ngrad)
+  res <- aperm(res,c(2,1,3,4))
+  dim(res) <- c(prod(ddim),ngrad)
+  res1 <- as.vector(res[as.vector(aperm(mask,c(2,1,3))),])
+  scorr[2] <- mean(res1[-1]*res1[-length(res1)])/var(res1)
+  cat("correlation in y-direction",signif(scorr[2],3),"\n")
 
 
-
-### CODE IN THIS FILE IS STILL EXPERIMENTAL ###
+  invisible(new("dtiTensor",
+                theta = theta,
+                sigma = sigma2,
+                btb   = object@btb,
+                ngrad = object@ngrad, # = dim(btb)[2]
+                scorr = scorr,
+                ddim  = object@ddim,
+                ddim0 = object@ddim0,
+                xind  = object@xind,
+                yind  = object@yind,
+                zind  = object@zind,
+                source= object@source)
+            )
+})
 
 create.designmatrix.dti <- function(gradient, bvalue=1) {
-  cat("\nNOTE: This code is still experimental!\n") 
-  dimension <- dim(gradient)[2] # should be 3
-  if (dimension != 3) {
-    warning("Error: gradient vectors do not have length 3")
-    return(invisible(NULL))
-  }
-  ngrad <- dim(gradient)[1] # number of measured directions
+  dgrad <- dim(gradient)
+  if (dgrad[2]==3) gradient <- t(gradient)
+  if (dgrad[1]!=3) stop("Not a valid gradient matrix")
 
-  btb <- matrix(0,6,ngrad)
+  btb <- matrix(0,6,dgrad[2])
   btb[1,] <- gradient[1,]*gradient[1,]
   btb[4,] <- gradient[2,]*gradient[2,]
   btb[6,] <- gradient[3,]*gradient[3,]
@@ -103,646 +301,136 @@ create.designmatrix.dti <- function(gradient, bvalue=1) {
   btb[3,] <- 2*gradient[1,]*gradient[3,]
   btb[5,] <- 2*gradient[2,]*gradient[3,]
 
-  btb
+  btb * bvalue
 }
 
-calculate.lm.dti <- function(ttt,z,res=FALSE) {
-  cat("\nNOTE: This code is still experimental!\n") 
-  svdresult <- svd(z)
-  u <- svdresult$u
-  v <- svdresult$v
-  vt <- t(v)
-  lambda1 <- diag(1/svdresult$d)
-  lambda2 <- diag(1/svdresult$d^2)
-  xtx <- v %*% lambda2 %*% vt
-  # now we have z = u lambda1^(-1) vt
-  
-  # define some variables and make ttt a matrix
-  dy <- dim(ttt)
-  voxelcount <- prod(dy[1:3])
-  dim(ttt) <- c(prod(dy[1:3]),dy[4])
-  
-  # calculate the paramters and residuals for all voxels
-  beta <- ttt %*% u %*% lambda1 %*% vt
-  residuals <- ttt - beta %*% t(z)
-  b <- rep(1/dy[4],length=dy[4])
-  variance <- ((residuals^2 %*% b) * dim(z)[1] / (dim(z)[1]-dim(z)[2]))
-  dim(variance) <- c(dy[1:3])
-  dim(beta) <- c(dy[1:3],dim(z)[2])
-  dim(residuals) <- c(dy[1:3],dim(z)[1])
+# really setAs() or setMethod?
+setAs("dtiTensor","dtiIndices",function(from,to) {
+  ddim <- from@ddim
 
-  if (res) {
-    list(dt=beta,xtx=xtx,variance=variance,residuals=residuals)
-  } else {
-    list(dt=beta,xtx=xtx,variance=variance)    
-  }
-}
-  
-determine.eigenvalue <- function(y, reduced=FALSE) {
-  cat("\nNOTE: This code is still experimental!\n") 
+  ll <- array(0,c(ddim,3))
+  th <- array(0,c(ddim,9))
+  ierr <- array(0,ddim)
 
-  dy <- dim(y)
-  n <- prod(dy[-4]) # number of voxel
-
-  if (reduced) {
-    ll <- array(0,dy[1:3])
-    th <- array(0,c(dy[1:3],3))
-  } else {
-    ll <- array(0,c(dy[1:3],3))
-    th <- array(0,c(dy[1:3],9))
-  }
-  ierr <- array(0,dy[1:3])
-
-  for (i in 1:dy[1]) {
+  for (i in 1:ddim[1]) {
     cat(".")
-    for (j in 1:dy[2]) {
-      for (k in 1:dy[3]) {
-        if (reduced) {
-          z <- .Fortran("eigen3r",
-                        as.double(y[i,j,k,]),
-                        lambda = double(1),
-                        theta = double(3),
-                        ierr = integer(1),
-                        PACKAGE="dti")[c("lambda","theta","ierr")]
-          ll[i,j,k] <- z$lambda
-        } else {
-          z <- .Fortran("eigen3",
-                        as.double(y[i,j,k,]),
-                        lambda = double(3),
-                        theta = double(3*3),
-                        ierr = integer(1),
-                        PACKAGE="dti")[c("lambda","theta","ierr")]
-          ll[i,j,k,] <- z$lambda
-        }
+    for (j in 1:ddim[2]) {
+      for (k in 1:ddim[3]) {
+        z <- .Fortran("eigen3",
+                      as.double(from@theta[,i,j,k]),
+                      lambda = double(3),
+                      theta = double(3*3),
+                      ierr = integer(1),
+                      PACKAGE="dti")[c("lambda","theta","ierr")]
+        ll[i,j,k,] <- z$lambda
         th[i,j,k,] <- z$theta
         ierr[i,j,k] <- z$ierr
       }
     }
   }
+  cat("\ncalculated eigenvalues and -vectors\n")
 
-  if (!reduced) dim(th) <- c(dy[1:3],3,3)
-  
-  list(lambda = ll, theta = th, ierr = ierr)
-}
+  dim(th) <- c(ddim,3,3)
+  dim(ll) <- c(prod(ddim),3)
 
-anisotropy <- function(eigen) {
-  cat("\nNOTE: This code is still experimental!\n") 
-  dimdt <- dim(eigen)
-  dim(eigen) <- c(prod(dimdt[1:3]),3)
+  trc <- as.vector(ll %*% c(1,1,1))/3
+  fa <- sqrt(1.5*((sweep(ll,1,trc)^2)%*% c(1,1,1))/((ll^2)%*% c(1,1,1)))
+  ra <- sqrt(((sweep(ll,1,trc)^2)%*% c(1,1,1))/(3*trc))
 
-  trc <- as.vector(eigen %*% c(1,1,1))/3
-  fa <- sqrt(1.5*((sweep(eigen,1,trc)^2)%*% c(1,1,1))/((eigen^2)%*% c(1,1,1)))
-  ra <- sqrt(((sweep(eigen,1,trc)^2)%*% c(1,1,1))/(3*trc))
+  cat("calculated anisotropy indices\n")
 
-  dim(trc) <- dim(fa) <- dim(ra) <- dimdt[1:3]
-  
-  list(fa=fa, ra=ra, trace=trc)
-}
+  bary <- c((ll[,1] - ll[,2]) / trc , 2*(ll[,2] - ll[,3]) / trc , 3*ll[,3] / trc)
 
-barycentric <- function(eigen) {
-  cat("\nNOTE: This code is still experimental!\n") 
-  dimdt <- dim(eigen)
-  dim(eigen) <- c(prod(dimdt[1:3]),3)
+  dim(ll) <- c(ddim,3)
+  dim(trc) <- dim(fa) <- dim(ra) <- ddim
+  dim(bary) <- c(ddim,3)
 
-  trc <- as.vector(eigen %*% c(1,1,1))
-  cl <- (eigen[,1] - eigen[,2]) / trc
-  cp <- 2*(eigen[,2] - eigen[,3]) / trc
-  cs <- 3*eigen[,3] / trc
-  dim(bary$cl) <- dimdt[1:3]
-  dim(bary$cp) <- dimdt[1:3]
-  dim(bary$cs) <- dimdt[1:3]
-  
-  invisible(list(cl=cl,cp=cp,cs=cs))
-}
+  cat("calculated barycentric coordinates\n")
 
-theta.estimate <- function(y,dt=NULL,h) {
-  cat("\nNOTE: This code is still experimental!\n")
-
-  n1 <- dim(y)[1]
-  n2 <- dim(y)[2]
-  n3 <- dim(y)[3]
-
-  if (is.null(dt)) dt <- array(1,c(n1,n2,n3))
-  
-  z <- .Fortran("esttheta",
-                as.double(aperm(y,c(4,1,2,3))),
-                as.double(dt),
-                as.integer(n1),
-                as.integer(n2),
-                as.integer(n3),
-                as.double(h),
-                theta = double(3*n1*n2*n3),
-                PACKAGE="dti")[c("theta")]
-
-  dim(z$theta) <- c(3,n1,n2,n3)
-  z$theta
-}
-
-dt.estimate <- function(theta,y,hd,ht) {
-  cat("\nNOTE: This code is still experimental!\n") 
-
-  try <- dftr(y)
-  cat("Trace determined\n")
-  
-  n1 <- dim(try)[1]
-  n2 <- dim(try)[2]
-  n3 <- dim(try)[3]
-  
-  if (length(theta) == 3) theta <- aperm(array(theta,dim=c(3,n1,n2,n3)),c(2,3,4,1))
-  cat("Extended theta\n")
-  
-  z <- .Fortran("estimdt",
-                as.double(theta),
-                as.double(try),
-                as.double(hd),
-                as.double(ht),
-                as.integer(n1),
-                as.integer(n2),
-                as.integer(n3),
-                dt = double(n1*n2*n3),
-                PACKAGE="dti")[c("dt")]
-
-  dim(z$dt) <- c(n1,n2,n3)
-  z$dt
-}
-
-dftr <- function(y) {
-  dy <- dim(y)
-  dim(y) <- c(prod(dy[1:3]),6)
-  try <- y[,c(1,4,6)]%*%c(1,1,1)
-  dim(try) <- dy[1:3]
-  try
-}
-
-dt.estimate2 <- function(theta,y,ai,lmax,hd,ht) {
-  cat("\nNOTE: This code is still experimental!\n") 
-
-  try <- dftr(y)
-  cat("Trace determined\n")
-  
-  n1 <- dim(try)[1]
-  n2 <- dim(try)[2]
-  n3 <- dim(try)[3]
-  
-  if (length(theta) == 3) theta <- aperm(array(theta,dim=c(3,n1,n2,n3)),c(2,3,4,1))
-  cat("Extended theta\n")
-  
-  z <- .Fortran("estimdt2",
-                as.double(theta),
-                as.double(try),
-		as.double(ai),
-		as.double(lmax),
-                as.double(hd),
-                as.double(ht),
-                as.integer(n1),
-                as.integer(n2),
-                as.integer(n3),
-                dt = double(n1*n2*n3),
-                PACKAGE="dti")[c("dt")]
-
-  dim(z$dt) <- c(n1,n2,n3)
-  z$dt
-}
-
-tensor.estimate <- function(y,dt=NULL,h) {
-  cat("\nNOTE: This code is still experimental!\n")
-
-  n1 <- dim(y)[1]
-  n2 <- dim(y)[2]
-  n3 <- dim(y)[3]
-  n <- n1*n2*n3
-  if (is.null(dt)) dt <- array(1,c(n1,n2,n3))
-  
-  z <- .Fortran("esttens",
-                as.double(aperm(y,c(4,1,2,3))),
-                as.double(dt),
-                as.integer(n1),
-                as.integer(n2),
-                as.integer(n3),
-                as.double(h),
-                theta = double(3*n),
-		yhat = double(6*n),
-		aihat = double(n),
-		lmhat = double(n),
-                PACKAGE="dti")[c("theta","yhat","aihat","lmhat")]
-              
-  dim(z$theta) <- c(3,n1,n2,n3)
-  dim(z$yhat) <- c(6,n1,n2,n3)
-  z$yhat <- aperm(z$yhat,c(2:4,1))
-  dim(z$aihat) <- c(n1,n2,n3)
-  dim(z$lmhat) <- c(n1,n2,n3)
-  z
-}
-
-create.dti <- function(gradient,imagefile,ddim,residuals=TRUE,level=0,part=0){
-if(dim(gradient)[2]==3)  gradient<-t(gradient)
-if(dim(gradient)[1]!=3)  stop("Not a valid gradient matrix")
-ngrad <- dim(gradient)[2]
-if(!(file.exists(imagefile))) stop("Image file does not exist")
-zz<-file(imagefile,"rb")
-s0 <- readBin(zz,"integer",prod(ddim),2,FALSE)
-ttt <- readBin(zz,"integer",prod(ddim)*ngrad,2,FALSE)
-close(zz)
-dim(s0) <- ddim
-mask <- s0>level
-xind <- apply(mask,1,mean)
-xind <- (1:ddim[1])[xind>part]
-xind <- min(xind):max(xind)
-cat("range in x",range(xind),"\n")
-yind <- apply(mask,2,mean)
-yind <- (1:ddim[2])[yind>part]
-yind <- min(yind):max(yind)
-cat("range in y",range(yind),"\n")
-zind <- apply(mask,3,mean)
-zind <- (1:ddim[3])[zind>part]
-zind <- min(zind):max(zind)
-cat("range in z",range(zind),"\n")
-cat("Data successfully read \n")
-s0 <- s0[xind,yind,zind]
-mask <- mask[xind,yind,zind]
-ddim0 <- ddim
-ddim <- dim(s0)
-dim(ttt)<-c(ddim0,ngrad)
-ttt <- ttt[xind,yind,zind,]
-dim(s0)<-dim(ttt)<-NULL
-ttt <- -log(ttt/s0)
-ttt[is.na(ttt)] <- 0
-ttt[(ttt==Inf)] <- 0
-ttt[(ttt==-Inf)] <- 0
-n <- prod(ddim)
-dim(ttt) <- c(n,ngrad)
-ttt<-t(ttt)
-cat("Data transformation completed \n")
-btb <- matrix(0,6,ngrad)
-btb[1,]<-gradient[1,]*gradient[1,]
-btb[4,]<-gradient[2,]*gradient[2,]
-btb[6,]<-gradient[3,]*gradient[3,]
-btb[2,]<-2*gradient[1,]*gradient[2,]
-btb[3,]<-2*gradient[1,]*gradient[3,]
-btb[5,]<-2*gradient[2,]*gradient[3,]
-btbsvd <- svd(btb)
-theta <- btbsvd$u %*% diag(1/btbsvd$d) %*% t(btbsvd$v)%*% ttt
-cat("Diffusion tensors generated \n")
-res <- ttt - t(btb) %*% theta
-rm(ttt)
-gc()
-mres2 <- res[1,]^2
-for(i in 2:ngrad) mres2 <- mres2 + res[i,]^2
-sigma2 <- array(mres2/(ngrad-6),ddim)
-cat("Variance estimates generated \n")
-rm(mres2)
-gc()
-z<-list(theta=array(theta,c(6,ddim)),sigma2=sigma2,btb=btb,scorr=c(0,0),s0=array(s0,ddim),
-        ddim=ddim,ddim0=ddim0,xind=xind,yind=yind,zind=zind,mask=mask,level=level,
-        ngrad=ngrad,file=imagefile,res=if(residuals) res else NULL)
-class(z) <- "dti"
-invisible(z)
-}
-
-getscorr <- function(dtobject){
-if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
-ddim <- dtobject$ddim
-mask <- dtobject$mask
-n <- prod(ddim)
-ngrad <- dtobject$ngrad
-if(is.null(dtobject$res)) {
-imagefile <- dtobject$file
-level <- dtobject$level
-ddim0 <- dtobject$ddim0
-if(!(file.exists(imagefile))) stop("Image file does not exist")
-zz<-file(imagefile,"rb")
-s0 <- readBin(zz,"integer",prod(ddim0),2,FALSE)
-ttt <- readBin(zz,"integer",prod(ddim0)*ngrad,2,FALSE)
-close(zz)
-dim(s0) <- ddim0
-s0 <- s0[dtobject$xind,dtobject$yind,dtobject$zind]
-dim(ttt) <- c(ddim0,ngrad)
-ttt <- ttt[dtobject$xind,dtobject$yind,dtobject$zind,]
-dim(s0) <- dim(ttt) <- NULL
-ttt[is.na(ttt)] <- 0
-ttt[(ttt==Inf)] <- 0
-ttt[(ttt==-Inf)] <- 0
-n <- prod(ddim)
-dim(ttt) <- c(n,ngrad)
-ttt<-t(ttt)
-btb <- dtobject$btb
-res <- ttt - t(btb) %*% dtobject$theta
-} else {
-res <- dtobject$res
-}
-scorr <- dtobject$scorr
-dim(res) <- c(ngrad,ddim)
-res <- aperm(res,c(2:4,1))
-dim(res) <- c(n,ngrad)
-res1 <- as.vector(res[as.vector(mask),])
-scorr[1] <- mean(res1[-1]*res1[-length(res1)])/var(res1)
-cat("correlation in x-direction",signif(scorr[1],3),"\n")
-dim(res) <- c(ddim,ngrad)
-res <- aperm(res,c(2,1,3,4))
-dim(res) <- c(n,ngrad)
-res1 <- as.vector(res[as.vector(aperm(mask,c(2,1,3))),])
-scorr[2] <- mean(res1[-1]*res1[-length(res1)])/var(res1)
-cat("correlation in y-direction",signif(scorr[2],3),"\n")
-dtobject$scorr <- scorr
-dtobject$res <- NULL
-invisible(dtobject)
-}
+  invisible(new(to,
+                fa    = fa,
+                ra    = ra,
+                trc   = trc,
+                bary  = bary,
+                lambda= ll,
+                eigenv= th,
+                btb   = from@btb,
+                ngrad = from@ngrad, # = dim(btb)[2]
+                ddim  = from@ddim,
+                ddim0 = from@ddim0,
+                xind  = from@xind,
+                yind  = from@yind,
+                zind  = from@zind,
+                source= from@source)
+            )
 
 
+})
 
+dtiIndices <- function(object, ...) cat("No DTI indices calculation defined for this class:",class(object),"\n")
 
+setGeneric("dtiIndices", function(object, ...) standardGeneric("dtiIndices"))
 
+setMethod("dtiIndices","dtiTensor",
+function(object, which) {
+  ddim <- object@ddim
 
-dtianiso<-function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,quant=.8,minanindex=NULL,zext=1){
-  if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
-  args <- match.call()
-  btb<-dtobject$btb
-  Bcov <- btb%*%t(btb)
-  y <- dtobject$theta
-  sigma2 <- dtobject$sigma2
-  scorr <- dtobject$scorr
-  mask <- dtobject$mask
-  rm(dtobject)
-  gc()
-  dimy <- dim(y)
-  if(length(dimy)!=4||dimy[1]!=6) stop("y does not contain 3D diffusion tensor image")
-  n1<-dimy[2]
-  n2<-dimy[3]
-  n3<-dimy[4]
-  n<-n1*n2*n3
-  sigma2[sigma2<=mean(sigma2)*1e-5]<- mean(sigma2)*1e-5
-  z <- .Fortran("projdt",
-                as.double(y),
-                as.integer(n1),
-                as.integer(n2),
-                as.integer(n3),
-                theta=double(6*n),
-                anindex=double(n),
-                andirection=double(3*n),
-                det=double(n),
-                mask=as.logical(mask),
-                DUP=FALSE,
-                PACKAGE="dti")[c("theta","anindex","andirection","det","mask")]
-  y <- array(z$theta,dimy)
-  z$bi <- 1/sigma2
-  dim(z$theta) <- dimy
-  dim(z$anindex) <-dim(z$det) <-dim(z$mask) <- dimy[-1]
-  z$mask <- array(z$mask,dimy[-1])&mask
-  dim(z$andirection) <- c(3,dimy[-1]) 
-#
-#  initial state for h=1
-#
-  if(graph){
-    require(adimpro)
-    oldpar <- par(mfrow=c(3,3),mar=c(1,1,3,.25),mgp=c(2,1,0))
-    on.exit(par(oldpar))
-    if(is.null(slice)) slice<-n3%/%2
-    class(z) <- "dti"
-    img<-z$theta[1,,,slice]
-    show.image(make.image(65535*img/max(img)))
-    title(paste("Dxx: min",signif(min(img),3),"max",signif(max(img),3)))
-    img<-z$theta[2,,,slice]
-    show.image(make.image(img))
-    title(paste("Dxy: min",signif(min(img),3),"max",signif(max(img),3)))
-    img<-z$theta[3,,,slice]
-    show.image(make.image(img))
-    title(paste("Dxz: min",signif(min(img),3),"max",signif(max(img),3)))
-    show.image(make.image(z$anindex[,,slice]))
-    title(paste("Anisotropy index  range:",signif(min(z$anindex[z$mask]),3),"-",
-                signif(max(z$anindex[z$mask]),3)))
-    img<-z$theta[4,,,slice]
-    show.image(make.image(65535*img/max(img)))
-    title(paste("Dyy: min",signif(min(img),3),"max",signif(max(img),3)))
-    img<-z$theta[5,,,slice]
-    show.image(make.image(img))
-    title(paste("Dyz: min",signif(min(img),3),"max",signif(max(img),3)))
-    andir.image(z,slice,quant=quant,minanindex=minanindex)
-    title(paste("Directions (h=1), slice",slice))
-    ni<-z$bi[,,slice]*sigma2[,,slice]
-    show.image(make.image(65535*ni/max(ni)))
-    title(paste("sum of weights  mean=",signif(mean(z$bi[z$mask]*sigma2[z$mask]),3)))
-    img<-z$theta[6,,,slice]
-    show.image(make.image(65535*img/max(img)))
-    title(paste("Dzz: min",signif(min(img),3),"max",signif(max(img),3)))
-  }
-  if (max(scorr)>0) {
-    h0 <- numeric(length(scorr))
-    for (i in 1:length(h0)) h0[i] <- get.bw.gauss(scorr[i],interv=2)
-    if (length(h0)<2) h0 <- rep(h0[1],2)
-    h0 <- c(h0,1e-5)
-# no spatial correlation iz z-direction
-    cat("Corresponding bandwiths for specified correlation:",h0,"\n")
-  }
-  hincr <- 1.25^(1/3)
-  hakt0 <- 1
-  hakt <- hincr
-  lambda0 <- lambda
-  while( hakt <= hmax) {
-    if (scorr[1]>=0.1) {
-      corrfactor <- Spatialvar.gauss(hakt0/0.42445/4,h0,3) /
-        Spatialvar.gauss(h0,1e-5,3) /
-          Spatialvar.gauss(hakt0/0.42445/4,1e-5,3)
-      lambda0 <- lambda * corrfactor
-      cat("Correction factor for spatial correlation",signif(corrfactor,3),"\n")
-    }
-    z <- .Fortran("awsdti",
-                  as.double(y),
-                  as.double(z$theta),
-                  bi=as.double(z$bi),
-                  anindex=as.double(z$anindex),
-                  andirection=as.double(z$andirection),
-                  det=as.double(z$det),
-                  as.double(Bcov),
-                  as.double(sigma2),
-                  as.integer(n1),
-                  as.integer(n2),
-                  as.integer(n3),
-                  as.double(hakt),
-                  as.double(zext),
-                  as.double(rho),
-                  as.double(lambda0),
-                  theta=double(6*n),
-                  mask=as.logical(z$mask),
-                  DUP=FALSE,
-                  PACKAGE="dti")[c("theta","bi","anindex","andirection","det","mask")]
-    dim(z$bi) <- dim(z$anindex) <- dim(z$det) <- dim(z$mask) <- dimy[-1]
-    dim(z$theta) <- dimy
-    dim(z$andirection) <- c(3,dimy[-1]) 
-    if(graph){
-      
-      class(z) <- "dti"
-      img<-z$theta[1,,,slice]
-      show.image(make.image(65535*img/max(img)))
-      title(paste("Dxx: min",signif(min(img),3),"max",signif(max(img),3)))
-      img<-z$theta[2,,,slice]
-      show.image(make.image(img))
-      title(paste("Dxy: min",signif(min(img),3),"max",signif(max(img),3)))
-      img<-z$theta[3,,,slice]
-      show.image(make.image(img))
-      title(paste("Dxz: min",signif(min(img),3),"max",signif(max(img),3)))
-      show.image(make.image(z$anindex[,,slice]))
-      title(paste("Anisotropy index  range:",signif(min(z$anindex[z$mask]),3),"-",
-                  signif(max(z$anindex[z$mask]),3)))
-      img<-z$theta[4,,,slice]
-      show.image(make.image(65535*img/max(img)))
-      title(paste("Dyy: min",signif(min(img),3),"max",signif(max(img),3)))
-      img<-z$theta[5,,,slice]
-      show.image(make.image(img))
-      title(paste("Dyz: min",signif(min(img),3),"max",signif(max(img),3)))
-      andir.image(z,slice,quant=quant,minanindex=minanindex)
-      title(paste("Directions (h=",signif(hakt,3),"), slice",slice))
-      ni<-z$bi[,,slice]*sigma2[,,slice]
-      show.image(make.image(65535*ni/max(ni)))
-      title(paste("sum of weights  mean=",signif(mean(z$bi[z$mask]*sigma2[z$mask]),3)))
-      img<-z$theta[6,,,slice]
-      show.image(make.image(65535*img/max(img)))
-      title(paste("Dyy: min",signif(min(img),3),"max",signif(max(img),3)))
-    }
-    cat("h=",signif(hakt,3),"Quantiles (.5, .75, .9, .95, 1) of anisotropy index",signif(quantile(z$anindex[z$mask],c(.5, .75, .9, .95, 1)),3),"\n")
-    hakt0<-hakt
-    hakt <- hakt*hincr
-  }
-  z <- list(theta=z$theta,bi=z$bi,anindex=z$anindex,andirection=z$andirection,mask=z$mask,InvCov=Bcov,call=args)
-  class(z) <- "dti"
-  invisible(z)
-}
+  ll <- array(0,c(ddim,3))
+  th <- array(0,c(ddim,9))
+  ierr <- array(0,ddim)
 
-andir.image <- function(dtobject,slice=1,method=1,quant=0,minanindex=NULL,show=TRUE,...){
-if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
-if(is.null(dtobject$anindex)) stop("No anisotropy index yet")
-adimpro <- require(adimpro)
-anindex <- dtobject$anindex
-dimg <- dim(anindex)[1:2]
-if(is.null(slice)) slice <- 1
-anindex <- anindex[,,slice]
-andirection <- dtobject$andirection[,,,slice]
-mask <- dtobject$mask[,,slice]
-anindex[anindex>1]<-0
-anindex[anindex<0]<-0
-dim(andirection)<-c(3,prod(dimg))
-if(is.null(minanindex)) minanindex <- quantile(anindex[mask],quant)
-if(method==1) {
-andirection[1,] <- abs(andirection[1,])
-andirection[2,] <- abs(andirection[2,])
-andirection[3,] <- abs(andirection[3,])
-} else {
-ind<-andirection[1,]<0
-andirection[,ind] <- - andirection[,ind]
-andirection[2,] <- (1+andirection[2,])/2
-andirection[3,] <- (1+andirection[3,])/2
-}
-andirection <- t(andirection)
-andirection <- andirection*as.vector(anindex)*as.numeric(mask)*as.numeric(anindex>minanindex)
-dim(andirection)<-c(dimg,3)
-if(adimpro) {
-andirection <- make.image(andirection)
-if(show) show.image(andirection,...)
-} else if(show) {
-dim(anindex) <- dimg
-image(anindex,...)
-}
-invisible(andirection)
-} 
-
-Spatialvar.gauss<-function(h,h0,d,interv=1){
-#
-#   Calculates the factor of variance reduction obtained for Gaussian Kernel and bandwidth h in 
-#
-#   case of colored noise that was produced by smoothing with Gaussian kernel and bandwidth h0
-#
-#   Spatialvar.gauss(lkern,h,h0,d)/Spatialvar.gauss(lkern,h,1e-5,d) gives the 
-#   a factor for lambda to be used with bandwidth h 
-#
-#
-#  interv allows for further discretization of the Gaussian Kernel, result depends on
-#  interv for small bandwidths. interv=1  is correct for kernel smoothing, 
-#  interv>>1 should be used to handle intrinsic correlation (smoothing preceeding 
-#  discretisation into voxel) 
-#
-  h0 <- pmax(h0,1e-5)
-  h <- pmax(h,1e-5)
-  h<-h/2.3548*interv
-  if(length(h)==1) h<-rep(h,d)
-  ih<-trunc(4*h)
-  ih<-pmax(1,ih)
-  dx<-2*ih+1
-  penl<-dnorm(((-ih[1]):ih[1])/h[1])
-  if(d==2) penl<-outer(dnorm(((-ih[1]):ih[1])/h[1]),dnorm(((-ih[2]):ih[2])/h[2]),"*")
-  if(d==3) penl<-outer(dnorm(((-ih[1]):ih[1])/h[1]),outer(dnorm(((-ih[2]):ih[2])/h[2]),dnorm(((-ih[3]):ih[3])/h[3]),"*"),"*")
-  dim(penl)<-dx
-  h0<-h0/2.3548*interv
-  if(length(h0)==1) h0<-rep(h0,d)
-  ih<-trunc(4*h0)
-  ih<-pmax(1,ih)
-  dx0<-2*ih+1
-  x<- ((-ih[1]):ih[1])/h0[1]
-  penl0<-dnorm(((-ih[1]):ih[1])/h0[1])
-  if(d==2) penl0<-outer(dnorm(((-ih[1]):ih[1])/h0[1]),dnorm(((-ih[2]):ih[2])/h0[2]),"*")
-  if(d==3) penl0<-outer(dnorm(((-ih[1]):ih[1])/h0[1]),outer(dnorm(((-ih[2]):ih[2])/h0[2]),dnorm(((-ih[3]):ih[3])/h0[3]),"*"),"*")
-  dim(penl0)<-dx0
-  penl0<-penl0/sum(penl0)
-  dz<-dx+dx0-1
-  z<-array(0,dz)
-  if(d==1){
-    for(i1 in 1:dx0) {
-      ind1<-c(0:(i1-1),(dz-dx0+i1):dz+1)
-      ind1<-ind1[ind1<=dz][-1]
-      z[-ind1]<-z[-ind1]+penl*penl0[i1]
-    }
-  } else if(d==2){
-    for(i1 in 1:dx0[1]) for(i2 in 1:dx0[2]){
-      ind1<-c(0:(i1-1),(dz[1]-dx0[1]+i1):dz[1]+1)
-      ind1<-ind1[ind1<=dz[1]][-1]
-      ind2<-c(0:(i2-1),(dz[2]-dx0[2]+i2):dz[2]+1)
-      ind2<-ind2[ind2<=dz[2]][-1]
-      z[-ind1,-ind2]<-z[-ind1,-ind2]+penl*penl0[i1,i2]
-    }
-  } else if(d==3){
-    for(i1 in 1:dx0[1]) for(i2 in 1:dx0[2]) for(i3 in 1:dx0[3]){
-      ind1<-c(0:(i1-1),(dz[1]-dx0[1]+i1):dz[1]+1)
-      ind1<-ind1[ind1<=dz[1]][-1]
-      ind2<-c(0:(i2-1),(dz[2]-dx0[2]+i2):dz[2]+1)
-      ind2<-ind2[ind2<=dz[2]][-1]
-      ind3<-c(0:(i3-1),(dz[3]-dx0[3]+i3):dz[3]+1)
-      ind3<-ind3[ind3<=dz[3]][-1]
-      z[-ind1,-ind2,-ind3]<-z[-ind1,-ind2,-ind3]+penl*penl0[i1,i2,i3]
+  for (i in 1:ddim[1]) {
+    cat(".")
+    for (j in 1:ddim[2]) {
+      for (k in 1:ddim[3]) {
+        z <- .Fortran("eigen3",
+                      as.double(object@theta[,i,j,k]),
+                      lambda = double(3),
+                      theta = double(3*3),
+                      ierr = integer(1),
+                      PACKAGE="dti")[c("lambda","theta","ierr")]
+        ll[i,j,k,] <- z$lambda
+        th[i,j,k,] <- z$theta
+        ierr[i,j,k] <- z$ierr
+      }
     }
   }
-  sum(z^2)/sum(z)^2*interv^d
-}
-get.bw.gauss <- function(corr, step = 1.001,interv=2) {
-  
-  # get the   bandwidth for lkern corresponding to a given correlation
-  #  keep it simple result does not depend on d
+  cat("\ncalculated eigenvalues and -vectors\n")
 
-  #  interv allows for further discretization of the Gaussian Kernel, result depends on
-  #  interv for small bandwidths. interv=1  is correct for kernel smoothing, 
-  #  interv>>1 should be used to handle intrinsic correlation (smoothing preceeding 
-  #  discretisation into voxel)   
-  if (corr < 0.1) {
-    h <- 0
-  } else { 
-    h <- .5
-    z <- 0
-    while (z<corr) {
-      h <- h*step
-      z <- get.corr.gauss(h,interv)
-    }
-    h <- h/step
-  }
-  h
-}
+  dim(th) <- c(ddim,3,3)
+  dim(ll) <- c(prod(ddim),3)
 
-get.corr.gauss <- function(h,interv=1) {
-    #
-    #   Calculates the correlation of 
-    #   colored noise that was produced by smoothing with "gaussian" kernel and bandwidth h
-    #   Result does not depend on d for "Gaussian" kernel !!
-    h <- h/2.3548*interv
-    ih <- trunc(4*h+ 2*interv-1)
-    dx <- 2*ih+1
-    penl <- dnorm(((-ih):ih)/h)
-    sum(penl[-(1:interv)]*penl[-((dx-interv+1):dx)])/sum(penl^2)
-}
+  trc <- as.vector(ll %*% c(1,1,1))/3
+  fa <- sqrt(1.5*((sweep(ll,1,trc)^2)%*% c(1,1,1))/((ll^2)%*% c(1,1,1)))
+  ra <- sqrt(((sweep(ll,1,trc)^2)%*% c(1,1,1))/(3*trc))
 
+  cat("calculated anisotropy indices\n")
+
+  bary <- c((ll[,1] - ll[,2]) / trc , 2*(ll[,2] - ll[,3]) / trc , 3*ll[,3] / trc)
+
+  dim(ll) <- c(ddim,3)
+  dim(trc) <- dim(fa) <- dim(ra) <- ddim
+  dim(bary) <- c(ddim,3)
+
+  cat("calculated barycentric coordinates\n")
+
+  invisible(new("dtiIndices",
+                fa    = fa,
+                ra    = ra,
+                trc   = trc,
+                bary  = bary,
+                lambda= ll,
+                eigenv= th,
+                btb   = object@btb,
+                ngrad = object@ngrad, # = dim(btb)[2]
+                ddim  = object@ddim,
+                ddim0 = object@ddim0,
+                xind  = object@xind,
+                yind  = object@yind,
+                zind  = object@zind,
+                source= object@source)
+            )
+
+
+})
 

@@ -1,8 +1,6 @@
 useDynLib(dti)
-export(create.designmatrix.dti,calculate.lm.dti,determine.eigenvalue,anisotropy)
-export(theta.estimate,dt.estimate,tensor.estimate,dt.estimate2)
-export(create.dti,getscorr)
-export(dtianiso,rdtianiso,andir.image)
-#export(testaniso)
-export(create2.dti,getscorr2,dtianiso2,andir2.image,createdata.dti)
-export(barycentric)
+
+importFrom(graphics,plot)
+exportClasses("dtiData","dtiTensor","dtiIndices")
+exportMethods("show","plot","coerce","dti.smooth","dtiTensor","dtiIndices")
+export(dtiData,createdata.dti)
