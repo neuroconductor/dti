@@ -12,16 +12,56 @@ setClass("dti",
          )
 
 setClass("dtiData",
-         representation(s0    = "array",
-                        si    = "array",
-                        level = "numeric"),
-         contains="dti")
-
+         representation(level = "numeric"),
+         contains=c("list","dti"),
+         validity=function(object){
+          if (sum(c("s0","si") %in% names(object)) != 2) {
+            cat("s0 and/or si not in data\n")
+            return(invisible(FALSE))
+          }
+          if (!("array" %in% class(object$s0))) {
+            cat("s0 not an array\n")
+            return(invisible(FALSE))
+          }
+          if (!("array" %in% class(object$si))) {
+            cat("s0 not an array\n")
+            return(invisible(FALSE))
+          }
+          if (length(dim(object$s0)) != 3) {
+            cat("dimension of s0 is",dim(object$s0),", but we want 3 dimensions\n")
+            return(invisible(FALSE))
+          }
+          if (length(dim(object$si)) != 4) {
+            cat("dimension of si is",dim(object$si),", but we want 4 dimensions\n")
+            return(invisible(FALSE))
+          }
+          if (dim(object$s0) != object@ddim) {
+            cat("dimension of s0 is",dim(object$s0),", but we want",object@ddim,"\n")
+            return(invisible(FALSE))
+          }
+          if (!all(dim(object$si) != c(object@ddim,object@ngrad))) {
+            cat("dimension of si is",dim(object$si),", but we want",c(object@ddim,object@ngrad),"\n")
+            return(invisible(FALSE))
+          }
+         }
+         )
 setClass("dtiTensor",
-         representation(theta = "array",
-                        sigma = "array",
-                        scorr = "numeric"),
-         contains="dti")
+         contains=c("list","dti"),
+         validity=function(object){
+          if (sum(c("theta","sigma","scorr") %in% names(object)) != 3) {
+            cat("s0 and/or si not in data\n")
+            return(invisible(FALSE))
+          }
+          if (!("array" %in% class(object$theta))) {
+            cat("s0 not an array\n")
+            return(invisible(FALSE))
+          }
+          if (!("array" %in% class(object$sigma))) {
+            cat("s0 not an array\n")
+            return(invisible(FALSE))
+          }
+         }
+         )
 
 setClass("dtiIndices",
          representation(fa     = "array",
@@ -30,7 +70,14 @@ setClass("dtiIndices",
                         bary   = "array",
                         lambda = "array",
                         eigenv = "array"),
-         contains="dti")
+         contains=c("list","dti"),
+          validity=function(object){
+          if (sum(c("fa","ra","trc","lambda","eigenv") %in% names(object)) != 5) {
+            cat("fa,ra, trc, lambda, or eigenv not in data\n")
+            return(invisible(FALSE))
+          }
+         }
+        )
 
 
 
@@ -50,12 +97,12 @@ setMethod("plot", "dti", function(x, y, ...) cat("No implementation for class dt
 setMethod("plot", "dtiIndices", 
 function(x, y, slice=1, method=1, quant=0, minanindex=NULL, show=TRUE, ...) {
   cat("Plot called with class",class(x),"\n")
-  if(is.null(x@fa)) cat("No anisotropy index yet")
+  if(is.null(x$fa)) cat("No anisotropy index yet")
   adimpro <- require(adimpro)
-  anindex <- x@fa[,,slice]
+  anindex <- x$fa[,,slice]
   dimg <- x@ddim[1:2]
 cat("A\n")
-  andirection <- x@eigenv[,,slice,,]
+  andirection <- x$eigenv[,,slice,,]
   anindex[anindex>1]<-0
   anindex[anindex<0]<-0
   dim(andirection)<-c(prod(dimg),3,3)
@@ -117,8 +164,7 @@ dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=
   btb <- create.designmatrix.dti(gradient)
 
   invisible(new("dtiData",
-                s0     = s0,
-                si     = si,
+                list(s0 = s0, si = si),
                 btb    = btb,
                 ngrad  = ngrad, # = dim(btb)[2]
                 ddim   = ddim,
@@ -163,13 +209,13 @@ setAs("dtiData","dtiTensor",function(from,to) {
   ngrad <- from@ngrad
   ddim <- from@ddim
 
-  s0 <- from@s0
-  si <- from@si
+  s0 <- from$s0
+  si <- from$si
   dim(s0) <- dim(si) <- NULL
   ttt <- -log(si/s0)
   ttt[is.na(ttt)] <- 0
-  ttt[(ttt==Inf)] <- 0
-  ttt[(ttt==-Inf)] <- 0
+  ttt[(ttt == Inf)] <- 0
+  ttt[(ttt == -Inf)] <- 0
   dim(ttt) <- c(prod(ddim),ngrad)
   ttt <- t(ttt)
   cat("Data transformation completed \n")
@@ -207,11 +253,9 @@ setAs("dtiData","dtiTensor",function(from,to) {
 
 
   invisible(new(to,
-                theta = theta,
-                sigma = sigma2,
+                list(theta = theta, sigma = sigma2, scorr = scorr),
                 btb   = from@btb,
                 ngrad = from@ngrad, # = dim(btb)[2]
-                scorr = scorr,
                 ddim  = from@ddim,
                 ddim0 = from@ddim0,
                 xind  = from@xind,
@@ -230,13 +274,13 @@ function(object) {
   ngrad <- object@ngrad
   ddim <- object@ddim
 
-  s0 <- object@s0
-  si <- object@si
+  s0 <- object$s0
+  si <- object$si
   dim(s0) <- dim(si) <- NULL
   ttt <- -log(si/s0)
   ttt[is.na(ttt)] <- 0
-  ttt[(ttt==Inf)] <- 0
-  ttt[(ttt==-Inf)] <- 0
+  ttt[(ttt == Inf)] <- 0
+  ttt[(ttt == -Inf)] <- 0
   dim(ttt) <- c(prod(ddim),ngrad)
   ttt <- t(ttt)
   cat("Data transformation completed \n")
@@ -274,11 +318,9 @@ function(object) {
 
 
   invisible(new("dtiTensor",
-                theta = theta,
-                sigma = sigma2,
+                list(theta = theta, sigma = sigma2, scorr = scorr),
                 btb   = object@btb,
                 ngrad = object@ngrad, # = dim(btb)[2]
-                scorr = scorr,
                 ddim  = object@ddim,
                 ddim0 = object@ddim0,
                 xind  = object@xind,
@@ -317,7 +359,7 @@ setAs("dtiTensor","dtiIndices",function(from,to) {
     for (j in 1:ddim[2]) {
       for (k in 1:ddim[3]) {
         z <- .Fortran("eigen3",
-                      as.double(from@theta[,i,j,k]),
+                      as.double(from$theta[,i,j,k]),
                       lambda = double(3),
                       theta = double(3*3),
                       ierr = integer(1),
@@ -348,12 +390,7 @@ setAs("dtiTensor","dtiIndices",function(from,to) {
   cat("calculated barycentric coordinates\n")
 
   invisible(new(to,
-                fa    = fa,
-                ra    = ra,
-                trc   = trc,
-                bary  = bary,
-                lambda= ll,
-                eigenv= th,
+                list(fa = fa, ra = ra, trc = trc, bary = bary, lambda = ll, eigenv = th),
                 btb   = from@btb,
                 ngrad = from@ngrad, # = dim(btb)[2]
                 ddim  = from@ddim,
@@ -384,7 +421,7 @@ function(object, which) {
     for (j in 1:ddim[2]) {
       for (k in 1:ddim[3]) {
         z <- .Fortran("eigen3",
-                      as.double(object@theta[,i,j,k]),
+                      as.double(object$theta[,i,j,k]),
                       lambda = double(3),
                       theta = double(3*3),
                       ierr = integer(1),
@@ -415,12 +452,7 @@ function(object, which) {
   cat("calculated barycentric coordinates\n")
 
   invisible(new("dtiIndices",
-                fa    = fa,
-                ra    = ra,
-                trc   = trc,
-                bary  = bary,
-                lambda= ll,
-                eigenv= th,
+                list(fa = fa, ra = ra, trc = trc, bary = bary, lambda = ll, eigenv = th),
                 btb   = object@btb,
                 ngrad = object@ngrad, # = dim(btb)[2]
                 ddim  = object@ddim,

@@ -23,8 +23,8 @@ setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=25,
   Bcov <- btb%*%t(btb)
   btbsvd <- svd(btb)
   solvebtb <- btbsvd$u %*% diag(1/btbsvd$d) %*% t(btbsvd$v)
-  si <- object@si
-  s0 <- object@s0
+  si <- object$si
+  s0 <- object$s0
   ngrad <- object@ngrad
   ddim0 <- object@ddim0
   ddim <- object@ddim
@@ -34,9 +34,9 @@ setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=25,
   source <- object@source
 
   dtobject <- as(object,"dtiTensor")
-  y <- dtobject@theta
-  sigma2 <- dtobject@sigma
-  scorr <- dtobject@scorr
+  y <- dtobject$theta
+  sigma2 <- dtobject$sigma
+  scorr <- dtobject$scorr
 
   rm(object,dtobject)
   gc()
@@ -208,11 +208,9 @@ setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=25,
 #            ddim0=ddim0,xind=xind,yind=yind,zind=zind,InvCov=Bcov,s0hat=z$s0hat,call=args)
 
   invisible(new("dtiTensor",
-                theta = z$theta,
-                sigma = z$sigma2hat,
+                list(theta = z$theta, sigma = z$sigma2hat, scorr = scorr),
                 btb   = btb,
                 ngrad = ngrad, # = dim(btb)[2]
-                scorr = scorr,
                 ddim  = as.integer(ddim),
                 ddim0 = as.integer(ddim0),
                 xind  = xind,
@@ -244,9 +242,9 @@ dtianiso <- function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,quan
   args <- match.call()
   btb<-dtobject@btb
   Bcov <- btb%*%t(btb)
-  y <- dtobject@theta
-  sigma2 <- dtobject@sigma
-  scorr <- dtobject@scorr
+  y <- dtobject$theta
+  sigma2 <- dtobject$sigma
+  scorr <- dtobject$scorr
   mask <- array(1,dim=dtobject@ddim)
   ddim <- dtobject@ddim
   ddim0 <- dtobject@ddim0
@@ -396,11 +394,9 @@ dtianiso <- function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,quan
 #  class(z) <- "dti"
 
   invisible(new("dtiTensor",
-                theta = z$theta,
-                sigma = z$sigma2hat,
+                list(theta = z$theta, sigma = z$sigma2hat, scorr = scorr),
                 btb   = btb,
                 ngrad = ngrad, # = dim(btb)[2]
-                scorr = scorr,
                 ddim  = as.integer(ddim),
                 ddim0 = as.integer(ddim0),
                 xind  = xind,
@@ -421,9 +417,9 @@ rdtianiso <- function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,qua
   args <- match.call()
   btb<-dtobject@btb
   Bcov <- btb%*%t(btb)
-  y <- dtobject@theta
-  sigma2 <- dtobject@sigma
-  scorr <- dtobject@scorr
+  y <- dtobject$theta
+  sigma2 <- dtobject$sigma
+  scorr <- dtobject$scorr
   mask <- array(1,dim=dtobject@ddim)
   ddim <- dtobject@ddim
   ddim0 <- dtobject@ddim0
@@ -580,11 +576,9 @@ rdtianiso <- function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,qua
 #class(z) <- "dti"
 
   invisible(new("dtiTensor",
-                theta = z$theta,
-                sigma = NULL,
+                list(theta = z$theta, sigma = NULL, scorr = scorr),
                 btb   = btb,
                 ngrad = ngrad, # = dim(btb)[2]
-                scorr = scorr,
                 ddim  = as.integer(ddim),
                 ddim0 = as.integer(ddim0),
                 xind  = xind,
