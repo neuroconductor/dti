@@ -35,11 +35,11 @@ setClass("dtiData",
             cat("dimension of si is",dim(object$si),", but we want 4 dimensions\n")
             return(invisible(FALSE))
           }
-          if (dim(object$s0) != object@ddim) {
+          if (any(dim(object$s0) != object@ddim)) {
             cat("dimension of s0 is",dim(object$s0),", but we want",object@ddim,"\n")
             return(invisible(FALSE))
           }
-          if (!all(dim(object$si) != c(object@ddim,object@ngrad))) {
+          if (any(dim(object$si) != c(object@ddim,object@ngrad))) {
             cat("dimension of si is",dim(object$si),", but we want",c(object@ddim,object@ngrad),"\n")
             return(invisible(FALSE))
           }
@@ -316,6 +316,20 @@ function(object) {
   scorr[2] <- mean(res1[-1]*res1[-length(res1)])/var(res1)
   cat("correlation in y-direction",signif(scorr[2],3),"\n")
 
+  lags <- c(5,5,3)
+  corr <- .Fortran("mcorr",as.double(res),
+                   as.logical(mask),
+                   as.integer(ddim[1]),
+                   as.integer(ddim[2]),
+                   as.integer(ddim[3]),
+                   as.integer(ngrad),
+                   scorr = double(prod(lags)),
+                   as.integer(lags[1]),
+                   as.integer(lags[2]),
+                   as.integer(lags[3]),
+                   PACKAGE="dti",DUP=FALSE)$scorr
+  dim(corr) <- lags
+  cat("correlation", corr, "\n")
 
   invisible(new("dtiTensor",
                 list(theta = theta, sigma = sigma2, scorr = scorr),
