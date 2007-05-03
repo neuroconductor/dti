@@ -96,17 +96,16 @@ setMethod("plot", "dti", function(x, y, ...) cat("No implementation for class dt
 
 setMethod("plot", "dtiIndices", 
 function(x, y, slice=1, method=1, quant=0, minanindex=NULL, show=TRUE, ...) {
-  cat("Plot called with class",class(x),"\n")
   if(is.null(x$fa)) cat("No anisotropy index yet")
   adimpro <- require(adimpro)
   anindex <- x$fa[,,slice]
   dimg <- x@ddim[1:2]
-cat("A\n")
   andirection <- x$eigenv[,,slice,,]
   anindex[anindex>1]<-0
   anindex[anindex<0]<-0
   dim(andirection)<-c(prod(dimg),3,3)
   if(is.null(minanindex)) minanindex <- quantile(anindex,quant,na.rm=TRUE)
+  if (diff(range(anindex,na.rm=TRUE)) == 0) minanindex <- 0
   if(method==1) {
     andirection[,1,3] <- abs(andirection[,1,3])
     andirection[,2,3] <- abs(andirection[,2,3])
@@ -117,18 +116,11 @@ cat("A\n")
     andirection[,2,3] <- (1+andirection[,2,3])/2
     andirection[,3,3] <- (1+andirection[,3,3])/2
   }
-cat("B",dim(andirection),"\n")
-  andirection <- andirection[,,1]
-cat("C",dim(andirection),"\n")
-cat("D",length(anindex),"\n")
+  andirection <- andirection[,,3]
   andirection <- andirection*as.vector(anindex)*as.numeric(anindex>minanindex)
-cat("E",dim(andirection),"\n")
-cat("F",dimg,"\n")
   dim(andirection)<-c(dimg,3)
   if(adimpro) {
-cat("G",range(andirection),"\n")
-cat("H",range(andirection,na.rm=TRUE),"\n")
-andirection[is.na(andirection)] <- 0
+    andirection[is.na(andirection)] <- 0
     andirection <- make.image(andirection)
     if(show) show.image(andirection,...)
   } else if(show) {
@@ -329,7 +321,7 @@ function(object) {
                    as.integer(lags[3]),
                    PACKAGE="dti",DUP=FALSE)$scorr
   dim(corr) <- lags
-  cat("correlation", corr, "\n")
+  show(corr)
 
   invisible(new("dtiTensor",
                 list(theta = theta, sigma = sigma2, scorr = scorr),
@@ -395,7 +387,7 @@ setAs("dtiTensor","dtiIndices",function(from,to) {
 
   cat("calculated anisotropy indices\n")
 
-  bary <- c((ll[,1] - ll[,2]) / trc , 2*(ll[,2] - ll[,3]) / trc , 3*ll[,3] / trc)
+  bary <- c((ll[,3] - ll[,2]) / (3*trc) , 2*(ll[,2] - ll[,1]) / (3*trc) , ll[,1] / trc)
 
   dim(ll) <- c(ddim,3)
   dim(trc) <- dim(fa) <- dim(ra) <- ddim
