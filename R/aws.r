@@ -37,6 +37,8 @@ setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=25,
   y <- dtobject$theta
   sigma2 <- dtobject$sigma
   scorr <- dtobject$scorr
+  h0 <- dtobject$bw
+  cat("Corresponding bandwiths for specified correlation:",h0,"\n")
 
   rm(object,dtobject)
   gc()
@@ -111,14 +113,6 @@ setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=25,
      show.image(make.image(65535*img/max(img)))
      title(paste("Dzz: mean",signif(mean(img),3),"max",signif(max(img),3)))
   }
-  if (max(scorr)>0) {
-    h0 <- numeric(length(scorr))  
-    for (i in 1:length(h0)) h0[i] <- get.bw.gauss(scorr[i],interv=2)
-    if (length(h0)<2) h0 <- rep(h0[1],2)
-    h0 <- c(h0,1e-5)
-# no spatial correlation iz z-direction
-    cat("Corresponding bandwiths for specified correlation:",h0,"\n")
-  }
   hincr <- 1.25^(1/3)
   if(is.null(hinit)){
   hakt0 <- 1
@@ -129,13 +123,13 @@ setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=25,
   }
   lambda0 <- lambda
   while( hakt <= hmax) {
-    if (scorr[1]>=0.1) {
+    if (any(h0 >= 0.25) {
        corrfactor <- Spatialvar.gauss(hakt0/0.42445/4,h0,3) /
-        Spatialvar.gauss(h0,1e-5,3) /
-        Spatialvar.gauss(hakt0/0.42445/4,1e-5,3)
-        lambda0 <- lambda * corrfactor
-     cat("Correction factor for spatial correlation",signif(corrfactor,3),"\n")
-}
+       Spatialvar.gauss(h0,1e-5,3) /
+       Spatialvar.gauss(hakt0/0.42445/4,1e-5,3)
+       lambda0 <- lambda * corrfactor
+       cat("Correction factor for spatial correlation",signif(corrfactor,3),"\n")
+    }
      z <- .Fortran("awssidti",
                 as.double(s0),
                 as.double(si),
@@ -245,6 +239,7 @@ dtianiso <- function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,quan
   y <- dtobject$theta
   sigma2 <- dtobject$sigma
   scorr <- dtobject$scorr
+  h0 <- dtobject$bw
   mask <- array(1,dim=dtobject@ddim)
   ddim <- dtobject@ddim
   ddim0 <- dtobject@ddim0
@@ -314,20 +309,12 @@ dtianiso <- function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,quan
     show.image(make.image(65535*img/max(img)))
     title(paste("Dzz: min",signif(min(img),3),"max",signif(max(img),3)))
   }
-  if (max(scorr)>0) {
-    h0 <- numeric(length(scorr))
-    for (i in 1:length(h0)) h0[i] <- get.bw.gauss(scorr[i],interv=2)
-    if (length(h0)<2) h0 <- rep(h0[1],2)
-    h0 <- c(h0,1e-5)
-# no spatial correlation iz z-direction
-    cat("Corresponding bandwiths for specified correlation:",h0,"\n")
-  }
   hincr <- 1.25^(1/3)
   hakt0 <- 1
   hakt <- hincr
   lambda0 <- lambda
   while( hakt <= hmax) {
-    if (scorr[1]>=0.1) {
+    if (any(h0 >= 0.25)) {
       corrfactor <- Spatialvar.gauss(hakt0/0.42445/4,h0,3) /
         Spatialvar.gauss(h0,1e-5,3) /
           Spatialvar.gauss(hakt0/0.42445/4,1e-5,3)
@@ -420,6 +407,7 @@ rdtianiso <- function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,qua
   y <- dtobject$theta
   sigma2 <- dtobject$sigma
   scorr <- dtobject$scorr
+  h0 <- dtobject$bw
   mask <- array(1,dim=dtobject@ddim)
   ddim <- dtobject@ddim
   ddim0 <- dtobject@ddim0
@@ -489,20 +477,12 @@ rdtianiso <- function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,qua
      show.image(make.image(65535*img/max(img)))
      title(paste("Dzz: min",signif(min(img),3),"max",signif(max(img),3)))
   }
-  if (max(scorr)>0) {
-    h0 <- numeric(length(scorr))
-    for (i in 1:length(h0)) h0[i] <- get.bw.gauss(scorr[i],interv=2)
-    if (length(h0)<2) h0 <- rep(h0[1],2)
-    h0 <- c(h0,1e-5)
-# no spatial correlation iz z-direction
-    cat("Corresponding bandwiths for specified correlation:",h0,"\n")
-  }
   hincr <- 1.25^(1/3)
   hakt0 <- 1
   hakt <- hincr
   lambda0 <- lambda
   while( hakt <= hmax) {
-    if (scorr[1]>=0.1) {
+    if (any(h0 >= 0.25)) {
        corrfactor <- Spatialvar.gauss(hakt0/0.42445/4,h0,3) /
         Spatialvar.gauss(h0,1e-5,3) /
         Spatialvar.gauss(hakt0/0.42445/4,1e-5,3)

@@ -230,22 +230,28 @@ setAs("dtiData","dtiTensor",function(from,to) {
 
   dim(s0) <- ddim
   mask <- s0>from@level
-  scorr <- c(0,0)
-  res <- aperm(res,c(2:4,1))
-  dim(res) <- c(prod(ddim),ngrad)
-  res1 <- as.vector(res[as.vector(mask),])
-  scorr[1] <- mean(res1[-1]*res1[-length(res1)])/var(res1)
-  cat("correlation in x-direction",signif(scorr[1],3),"\n")
-  dim(res) <- c(ddim,ngrad)
-  res <- aperm(res,c(2,1,3,4))
-  dim(res) <- c(prod(ddim),ngrad)
-  res1 <- as.vector(res[as.vector(aperm(mask,c(2,1,3))),])
-  scorr[2] <- mean(res1[-1]*res1[-length(res1)])/var(res1)
-  cat("correlation in y-direction",signif(scorr[2],3),"\n")
+  lags <- c(5,5,3)
+  scorr <- .Fortran("mcorr",as.double(aperm(res,c(2:4,1))),
+                   as.logical(mask),
+                   as.integer(ddim[1]),
+                   as.integer(ddim[2]),
+                   as.integer(ddim[3]),
+                   as.integer(ngrad),
+                   scorr = double(prod(lags)),
+                   as.integer(lags[1]),
+                   as.integer(lags[2]),
+                   as.integer(lags[3]),
+                   PACKAGE="dti",DUP=FALSE)$scorr
+  dim(scorr) <- lags
+  cat("lag 1 correlation in x-direction",signif(scorr[2,1,1],3),"\n")
+  cat("lag 2 correlation in y-direction",signif(scorr[1,2,1],3),"\n")
+  cat("lag 3 correlation in z-direction",signif(scorr[1,1,2],3),"\n")
 
+  bw <- optim(c(2,2,2),corrrisk,method="L-BFGS-B",lower=c(.25,.25,.25),lag=lags,data=scorr)$par
+  bw[bw <= .25] <- 0
 
   invisible(new(to,
-                list(theta = theta, sigma = sigma2, scorr = scorr),
+                list(theta = theta, sigma = sigma2, scorr = scorr, bw = bw),
                 btb   = from@btb,
                 ngrad = from@ngrad, # = dim(btb)[2]
                 ddim  = from@ddim,
@@ -294,22 +300,9 @@ function(object) {
   gc()
 
   dim(s0) <- ddim
-  mask <- s0>object@level
-  scorr <- c(0,0)
-  res <- aperm(res,c(2:4,1))
-  dim(res) <- c(prod(ddim),ngrad)
-  res1 <- as.vector(res[as.vector(mask),])
-  scorr[1] <- mean(res1[-1]*res1[-length(res1)])/var(res1)
-  cat("correlation in x-direction",signif(scorr[1],3),"\n")
-  dim(res) <- c(ddim,ngrad)
-  res <- aperm(res,c(2,1,3,4))
-  dim(res) <- c(prod(ddim),ngrad)
-  res1 <- as.vector(res[as.vector(aperm(mask,c(2,1,3))),])
-  scorr[2] <- mean(res1[-1]*res1[-length(res1)])/var(res1)
-  cat("correlation in y-direction",signif(scorr[2],3),"\n")
-
+  mask <- s0 > object@level
   lags <- c(5,5,3)
-  corr <- .Fortran("mcorr",as.double(res),
+  scorr <- .Fortran("mcorr",as.double(aperm(res,c(2:4,1))),
                    as.logical(mask),
                    as.integer(ddim[1]),
                    as.integer(ddim[2]),
@@ -320,11 +313,16 @@ function(object) {
                    as.integer(lags[2]),
                    as.integer(lags[3]),
                    PACKAGE="dti",DUP=FALSE)$scorr
-  dim(corr) <- lags
-  show(corr)
+  dim(scorr) <- lags
+  cat("lag 1 correlation in x-direction",signif(scorr[2,1,1],3),"\n")
+  cat("lag 2 correlation in y-direction",signif(scorr[1,2,1],3),"\n")
+  cat("lag 3 correlation in z-direction",signif(scorr[1,1,2],3),"\n")
+
+  bw <- optim(c(2,2,2),corrrisk,method="L-BFGS-B",lower=c(.25,.25,.25),lag=lags,data=scorr)$par
+  bw[bw <= .25] <- 0
 
   invisible(new("dtiTensor",
-                list(theta = theta, sigma = sigma2, scorr = scorr),
+                list(theta = theta, sigma = sigma2, scorr = scorr, bw = bw),
                 btb   = object@btb,
                 ngrad = object@ngrad, # = dim(btb)[2]
                 ddim  = object@ddim,
