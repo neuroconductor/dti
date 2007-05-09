@@ -169,6 +169,7 @@ setAs("dtiData","dtiTensor",function(from,to) {
   cat("lag 2 correlation in y-direction",signif(scorr[1,2,1],3),"\n")
   cat("lag 3 correlation in z-direction",signif(scorr[1,1,2],3),"\n")
 
+  scorr[is.na(scorr)] <- 0
   bw <- optim(c(2,2,2),corrrisk,method="L-BFGS-B",lower=c(.25,.25,.25),lag=lags,data=scorr)$par
   bw[bw <= .25] <- 0
 
@@ -240,6 +241,7 @@ function(object) {
   cat("lag 2 correlation in y-direction",signif(scorr[1,2,1],3),"\n")
   cat("lag 3 correlation in z-direction",signif(scorr[1,1,2],3),"\n")
 
+  scorr[is.na(scorr)] <- 0
   bw <- optim(c(2,2,2),corrrisk,method="L-BFGS-B",lower=c(.25,.25,.25),lag=lags,data=scorr)$par
   bw[bw <= .25] <- 0
 
