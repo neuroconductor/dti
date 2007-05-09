@@ -19,10 +19,6 @@ setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=25,
     graph <- graph & adimpro
   }
   args <- match.call()
-  btb <- object@btb
-  Bcov <- btb%*%t(btb)
-  btbsvd <- svd(btb)
-  solvebtb <- btbsvd$u %*% diag(1/btbsvd$d) %*% t(btbsvd$v)
   si <- object$si
   s0 <- object$s0
   ngrad <- object@ngrad
@@ -32,6 +28,11 @@ setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=25,
   yind <- object@yind
   zind <- object@zind
   source <- object@source
+  btb <- object@btb
+  Bcov <- btb%*%t(btb)
+  btbsvd <- svd(btb)
+  solvebtb <- btbsvd$u %*% diag(1/btbsvd$d) %*% t(btbsvd$v)
+  projectmat <- diag(ngrad) - btbsvd$v %*% t(btbsvd$v)
 
   dtobject <- as(object,"dtiTensor")
   y <- dtobject$theta
@@ -67,17 +68,16 @@ setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=25,
   dim(z$anindex) <-dim(z$det) <- dimy[-1]
   dim(z$andirection) <- c(3,dimy[-1]) 
   z$s0hat <- s0
-  sigma2hat <- .Fortran("smsigma",
+  z <- .Fortran("smsigma",
                        as.double(sigma2),
                        as.integer(n1),
                        as.integer(n2),
                        as.integer(n3),
                        as.double(hsig),
                        as.double(zext),
-                       sigmahat=double(n1*n2*n3),
+                       sigma2hat=double(n1*n2*n3),
                        DUP=FALSE,
-                       PACKAGE="dti")$sigmahat
-  z$sigma2hat <- sigma2hat
+                       PACKAGE="dti")["sigma2hat"]
 #
 #  initial state for h=1
 #
@@ -122,8 +122,8 @@ setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=25,
   hakt <- hinit
   }
   lambda0 <- lambda
-  while( hakt <= hmax) {
-    if (any(h0 >= 0.25) {
+  while(hakt <= hmax) {
+    if (any(h0 >= 0.25)) {
        corrfactor <- Spatialvar.gauss(hakt0/0.42445/4,h0,3) /
        Spatialvar.gauss(h0,1e-5,3) /
        Spatialvar.gauss(hakt0/0.42445/4,1e-5,3)
@@ -140,6 +140,7 @@ setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=25,
                 det=as.double(z$det),
                 as.double(Bcov),
                 as.double(solvebtb),
+                as.double(projectmat),
                 as.double(sigma2),
                 as.double(z$sigma2hat),
                 as.integer(n1),
