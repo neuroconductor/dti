@@ -32,7 +32,6 @@ setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=25,
   Bcov <- btb%*%t(btb)
   btbsvd <- svd(btb)
   solvebtb <- btbsvd$u %*% diag(1/btbsvd$d) %*% t(btbsvd$v)
-  projectmat <- diag(ngrad) - btbsvd$v %*% t(btbsvd$v)
 
   dtobject <- as(object,"dtiTensor")
   y <- dtobject$theta
@@ -68,7 +67,7 @@ setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=25,
   dim(z$anindex) <-dim(z$det) <- dimy[-1]
   dim(z$andirection) <- c(3,dimy[-1]) 
   z$s0hat <- s0
-  z <- .Fortran("smsigma",
+  sigma2hat <- .Fortran("smsigma",
                        as.double(sigma2),
                        as.integer(n1),
                        as.integer(n2),
@@ -77,7 +76,8 @@ setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=25,
                        as.double(zext),
                        sigma2hat=double(n1*n2*n3),
                        DUP=FALSE,
-                       PACKAGE="dti")["sigma2hat"]
+                       PACKAGE="dti")$sigma2hat
+   z$sigma2hat <- sigma2hat
 #
 #  initial state for h=1
 #
@@ -140,7 +140,6 @@ setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=25,
                 det=as.double(z$det),
                 as.double(Bcov),
                 as.double(solvebtb),
-                as.double(projectmat),
                 as.double(sigma2),
                 as.double(z$sigma2hat),
                 as.integer(n1),
