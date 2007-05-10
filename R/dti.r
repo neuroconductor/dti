@@ -1,9 +1,5 @@
   # solvebtb mit einfuegen??
 
-
-
-
-
 setMethod("show", "dti",
 function(object){
     cat("DTI object\n")
@@ -165,11 +161,10 @@ setAs("dtiData","dtiTensor",function(from,to) {
                    as.integer(lags[3]),
                    PACKAGE="dti",DUP=FALSE)$scorr
   dim(scorr) <- lags
-  cat("lag 1 correlation in x-direction",signif(scorr[2,1,1],3),"\n")
-  cat("lag 2 correlation in y-direction",signif(scorr[1,2,1],3),"\n")
-  cat("lag 3 correlation in z-direction",signif(scorr[1,1,2],3),"\n")
-
   scorr[is.na(scorr)] <- 0
+  cat("first order  correlation in x-direction",signif(scorr[2,1,1],3),"\n")
+  cat("first order  correlation in y-direction",signif(scorr[1,2,1],3),"\n")
+  cat("first order  correlation in z-direction",signif(scorr[1,1,2],3),"\n")
   bw <- optim(c(2,2,2),corrrisk,method="L-BFGS-B",lower=c(.25,.25,.25),lag=lags,data=scorr)$par
   bw[bw <= .25] <- 0
 
@@ -237,9 +232,10 @@ function(object) {
                    as.integer(lags[3]),
                    PACKAGE="dti",DUP=FALSE)$scorr
   dim(scorr) <- lags
-  cat("lag 1 correlation in x-direction",signif(scorr[2,1,1],3),"\n")
-  cat("lag 2 correlation in y-direction",signif(scorr[1,2,1],3),"\n")
-  cat("lag 3 correlation in z-direction",signif(scorr[1,1,2],3),"\n")
+  scorr[is.na(scorr)] <- 0
+  cat("first order  correlation in x-direction",signif(scorr[2,1,1],3),"\n")
+  cat("first order  correlation in y-direction",signif(scorr[1,2,1],3),"\n")
+  cat("first order  correlation in z-direction",signif(scorr[1,1,2],3),"\n")
 
   scorr[is.na(scorr)] <- 0
   bw <- optim(c(2,2,2),corrrisk,method="L-BFGS-B",lower=c(.25,.25,.25),lag=lags,data=scorr)$par
