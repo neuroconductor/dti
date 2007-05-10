@@ -11,7 +11,7 @@
       l2=lag(2)
       l3=lag(3)
       z=0.d0
-      k=0.d0
+      k=0
 C  correlation in x
       do i1=1,n1-l1
          do i2=1,n2-l2
@@ -37,7 +37,11 @@ C  correlation in x
             enddo
          enddo
       enddo
-      scorr=z/k
+      if( k.gt.0 ) then
+         scorr=z/k
+      ELSE
+         scorr=0
+      END IF
       return
       end
 

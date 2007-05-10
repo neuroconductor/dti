@@ -362,9 +362,12 @@ function(object, which) {
   dim(ll) <- c(prod(ddim),3)
 
   trc <- as.vector(ll %*% c(1,1,1))/3
-  fa <- sqrt(1.5*((sweep(ll,1,trc)^2)%*% c(1,1,1))/((ll^2)%*% c(1,1,1)))
-  ra <- sqrt(((sweep(ll,1,trc)^2)%*% c(1,1,1))/(3*trc))
-
+  cat("voxel with negative trace",sum(trc<=0),"\n")
+  ind <- trc > 0
+  fa <- ra <- numeric(prod(ddim))
+  fa[ind] <- sqrt((1.5*((sweep(ll,1,trc)^2)%*% c(1,1,1))/((ll^2)%*% c(1,1,1)))[ind])
+  ra[ind] <- sqrt(((sweep(ll,1,trc)^2)%*% c(1,1,1))[ind]/(3*trc[ind]))
+# set fa, ra to zero if trc <= 0
   cat("calculated anisotropy indices\n")
 
   bary <- c((ll[,1] - ll[,2]) / trc , 2*(ll[,2] - ll[,3]) / trc , 3*ll[,3] / trc)

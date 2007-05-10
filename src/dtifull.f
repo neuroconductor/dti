@@ -4,8 +4,8 @@ C   3D anisotropic smoothing of diffusion tensor data
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine awssidti(s0,si,th,bi,ani,andir,det,bcov,solvebtb,
-     1                    projmat,sigma2,sigma2h,n1,n2,n3,ngrad,h,
-     2                   zext,rho,lambda,thnew,s0new,sigma2n,swsi,eps)
+     1 sigma2,sigma2h,n1,n2,n3,ngrad,h,zext,rho,lambda,thnew,s0new,
+     2                             sigma2n,swsi,eps)
 C
 C   y        -  observed diffusion tensor data
 C   th       -  smoothed diffusion tensor data
@@ -24,13 +24,11 @@ C   thnew    -  new smoothed diffusion tensor data
      1       lambda,bi(n1,n2,n3),ani(n1,n2,n3),andir(3,n1,n2,n3),
      2       det(n1,n2,n3),bcov(6,6),sigma2(n1,n2,n3),zext,
      3       si(n1,n2,n3,ngrad),solvebtb(6,ngrad),swsi(ngrad),
-     4       s0new(n1,n2,n3),sigma2h(n1,n2,n3),sigma2n(n1,n2,n3),
-     5       projmat(ngrad,ngrad)
+     4       s0new(n1,n2,n3),sigma2h(n1,n2,n3),sigma2n(n1,n2,n3)
       integer i1,j1,j1a,j1e,jj1,i2,j2,j2a,j2e,jj2,i3,j3,j3a,j3e,jj3,
      1        ierr,k,l
       real*8 wij,adist,sw,sws0,h3,thi(6),bii,sqrbii,ew(3),ev(3,3),
-     1       mew,z1,z2,z3,dtidist2,sij,deti,z,sew,eps,eps3,ss2,sw0,
-     2       res,sres2
+     1       mew,z1,z2,z3,dtidist2,sij,deti,z,sew,eps,eps3,ss2,sw0
       external adist,dtidist2
       logical aws
       aws=lambda.lt.1e20
@@ -90,7 +88,7 @@ C  this is scale invariant sice sqrbii scales with dsqrt(sigma2) (standard devia
                   jj1=i1+j1
                   if(jj1.le.0.or.jj1.gt.n1) CYCLE
                   call rangey(thi,j1,h,j2a,j2e)
-                  DO j2=j2a,j2e
+                 DO j2=j2a,j2e
                      jj2=i2+j2
                      if(jj2.le.0.or.jj2.gt.n2) CYCLE
                      call rangez(thi,j1,j2,h,j3a,j3e,zext)
@@ -123,7 +121,7 @@ C     triangular location kernel
                   IF(sw.gt.0.d0.and.sw.lt.1.d20) THEN
                      s0new(i1,i2,i3)=sws0/sw
                      sigma2n(i1,i2,i3)=ss2/sw0
-                  ELSE
+                   ELSE
                      s0new(i1,i2,i3)=s0(i1,i2,i3)
                      sigma2n(i1,i2,i3)=sigma2h(i1,i2,i3)
                   END IF
@@ -149,16 +147,6 @@ C     triangular location kernel
                   END DO
                   thnew(k,i1,i2,i3)=z
                END DO
-C       Variance estimation
-               sres2=0.d0
-               DO k=1,ngrad
-                  res=0.d0
-                  DO l=1,ngrad
-                     res=res+projmat(k,l)*swsi(l)
-                  END DO 
-                  sres2=sres2+res*res
-               END DO
-               sigma2n(i1,i2,i3)=sres2/ngrad
                call eigen3(thnew(1,i1,i2,i3),ew,ev,ierr)
                IF(ierr.ne.0) THEN
 C

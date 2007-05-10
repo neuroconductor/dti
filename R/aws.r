@@ -184,8 +184,7 @@ setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=25,
      img<-z$theta[5,,,slice]
      show.image(make.image(img))
      title(paste("Dyz: min",signif(min(img),3),"max",signif(max(img),3)))
-#     andir2.image(z,slice,quant=quant,minanindex=minanindex)
-     plot(c(0,1),c(0,1))
+     andir2.image(z,slice,quant=quant,minanindex=minanindex)
      title(paste("Directions (h=",signif(hakt,3),"), slice",slice))
      ni<-z$bi[,,slice]*z$sigma2hat[,,slice]
      show.image(make.image(65535*ni/max(ni)))

@@ -129,3 +129,41 @@ thcorr3D <- function(bw,lag=rep(5,3)){
   scorr
 }
 
+andir2.image <- function(dtobject,slice=1,method=1,quant=0,minanindex=NULL,show=TRUE,xind=NULL,yind=NULL,...){
+if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
+if(is.null(dtobject$anindex)) stop("No anisotropy index yet")
+adimpro <- require(adimpro)
+anindex <- dtobject$anindex
+dimg <- dim(anindex)[1:2]
+if(is.null(xind)) xind <- 1:dimg[1]
+if(is.null(yind)) yind <- 1:dimg[2]
+if(is.null(slice)) slice <- 1
+anindex <- anindex[xind,yind,slice]
+dimg <- dim(anindex)[1:2]
+andirection <- dtobject$andirection[,xind,yind,slice]
+anindex[anindex>1]<-0
+anindex[anindex<0]<-0
+dim(andirection)<-c(3,prod(dimg))
+if(is.null(minanindex)) minanindex <- quantile(anindex,quant)
+if(method==1) {
+andirection[1,] <- abs(andirection[1,])
+andirection[2,] <- abs(andirection[2,])
+andirection[3,] <- abs(andirection[3,])
+} else {
+ind<-andirection[1,]<0
+andirection[,ind] <- - andirection[,ind]
+andirection[2,] <- (1+andirection[2,])/2
+andirection[3,] <- (1+andirection[3,])/2
+}
+andirection <- t(andirection)
+andirection <- andirection*as.vector(anindex)*as.numeric(anindex>minanindex)
+dim(andirection)<-c(dimg,3)
+if(adimpro) {
+andirection <- make.image(andirection)
+if(show) show.image(andirection,...)
+} else if(show) {
+dim(anindex) <- dimg
+image(anindex,...)
+}
+invisible(andirection)
+} 
