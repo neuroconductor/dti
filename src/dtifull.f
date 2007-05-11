@@ -47,7 +47,7 @@ C  now anisotropic smoothing
                END DO
                deti=dexp(dlog(det(i1,i2,i3))/3)
                bii=bi(i1,i2,i3)
-               sqrbii=dsqrt(bii)*sigma2h(i1,i2,i3)
+               sqrbii=sigma2h(i1,i2,i3)/dsqrt(bii)
                DO k=1,6
                   thi(k)=th(k,i1,i2,i3)/deti
                END DO
