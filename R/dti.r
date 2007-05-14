@@ -18,34 +18,46 @@ function(x, y, slice=1, method=1, quant=0, minanindex=NULL, show=TRUE, ...) {
   adimpro <- require(adimpro)
   anindex <- x$fa[,,slice]
   dimg <- x@ddim[1:2]
-  andirection <- x$eigenv[,,slice,,]
-  anindex[anindex>1]<-0
-  anindex[anindex<0]<-0
-  dim(andirection)<-c(prod(dimg),3,3)
-  if(is.null(minanindex)) minanindex <- quantile(anindex,quant,na.rm=TRUE)
-  if (diff(range(anindex,na.rm=TRUE)) == 0) minanindex <- 0
-  if(method==1) {
-    andirection[,1,3] <- abs(andirection[,1,3])
-    andirection[,2,3] <- abs(andirection[,2,3])
-    andirection[,3,3] <- abs(andirection[,3,3])
+  if ((method==1) || (method==2)) {
+    andirection <- x$eigenv[,,slice,,]
+    anindex[anindex>1]<-0
+    anindex[anindex<0]<-0
+    dim(andirection)<-c(prod(dimg),3,3)
+    if(is.null(minanindex)) minanindex <- quantile(anindex,quant,na.rm=TRUE)
+    if (diff(range(anindex,na.rm=TRUE)) == 0) minanindex <- 0
+    if(method==1) {
+      andirection[,1,3] <- abs(andirection[,1,3])
+      andirection[,2,3] <- abs(andirection[,2,3])
+      andirection[,3,3] <- abs(andirection[,3,3])
+    } else {
+      ind<-andirection[,1,3]<0
+      andirection[ind,,] <- - andirection[ind,,]
+      andirection[,2,3] <- (1+andirection[,2,3])/2
+      andirection[,3,3] <- (1+andirection[,3,3])/2
+    }
+    andirection <- andirection[,,3]
+    andirection <- andirection*as.vector(anindex)*as.numeric(anindex>minanindex)
+    dim(andirection)<-c(dimg,3)
+    if(adimpro) {
+      andirection[is.na(andirection)] <- 0
+      andirection <- make.image(andirection)
+      if(show) show.image(andirection,...)
+    } else if(show) {
+      dim(anindex) <- dimg
+      image(anindex,...)
+    }
+    invisible(andirection)
   } else {
-    ind<-andirection[,1,3]<0
-    andirection[ind,,] <- - andirection[ind,,]
-    andirection[,2,3] <- (1+andirection[,2,3])/2
-    andirection[,3,3] <- (1+andirection[,3,3])/2
+    bary <- x$bary[,,slice,]
+    if(adimpro) {
+      bary[is.na(bary)] <- 0
+      bary <- make.image(bary)
+      if(show) show.image(bary,...)
+    } else if(show) {
+      image(bary[,,1],...)
+    }
+    invisible(bary)
   }
-  andirection <- andirection[,,3]
-  andirection <- andirection*as.vector(anindex)*as.numeric(anindex>minanindex)
-  dim(andirection)<-c(dimg,3)
-  if(adimpro) {
-    andirection[is.na(andirection)] <- 0
-    andirection <- make.image(andirection)
-    if(show) show.image(andirection,...)
-  } else if(show) {
-    dim(anindex) <- dimg
-    image(anindex,...)
-  }
-  invisible(andirection)
 })
 
 
@@ -370,7 +382,7 @@ function(object, which) {
 # set fa, ra to zero if trc <= 0
   cat("calculated anisotropy indices\n")
 
-  bary <- c((ll[,1] - ll[,2]) / trc , 2*(ll[,2] - ll[,3]) / trc , 3*ll[,3] / trc)
+  bary <- c((ll[,3] - ll[,2]) / (3*trc) , 2*(ll[,2] - ll[,1]) / (3*trc) , ll[,1] / trc)
 
   dim(ll) <- c(ddim,3)
   dim(trc) <- dim(fa) <- dim(ra) <- ddim
