@@ -33,6 +33,8 @@ setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=52,
   zind <- object@zind
   source <- object@source
   btb <- object@btb
+  voxelext <- object@voxelext
+  if(is.null(voxelext)) zext <- 1 else zext <- voxelext[3]/voxelext[1]
   Bcov <- btb%*%t(btb)
   btbsvd <- svd(btb)
   solvebtb <- btbsvd$u %*% diag(1/btbsvd$d) %*% t(btbsvd$v)
