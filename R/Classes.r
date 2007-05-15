@@ -6,6 +6,7 @@ setClass("dti",
                         xind   = "integer",
                         yind   = "integer",
                         zind   = "integer",
+                        voxelext = "numeric",
                         source = "character")
          )
 

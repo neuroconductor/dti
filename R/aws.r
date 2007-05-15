@@ -10,9 +10,13 @@ dti.smooth <- function(object, ...) cat("No DTI smoothing defined for this class
 
 setGeneric("dti.smooth", function(object, ...) standardGeneric("dti.smooth"))
 
-setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=40,
+setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=52,
                                             rho=1,graph=FALSE,slice=NULL,quant=.8,
-                                            minanindex=NULL,zext=1,eps=1e-6,hsig=2.5,lseq=1) {
+                                            minanindex=NULL,zext=1,eps=1e-6,hsig=2.5,lseq=NULL) {
+
+#
+#     lambda and lseq adjusted for alpha=0.2
+#
   if (graph) {
     adimpro <- require(adimpro)
     if (!adimpro) cat("No graphical output! Install package adimpro from CRAN!\n")
@@ -117,6 +121,7 @@ setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=40,
   if(is.null(hinit)){
   hakt0 <- 1
   hakt <- hincr
+  hinit <- 1
   } else {
   hakt0 <- max(1,hinit/hincr)
   hakt <- hinit
@@ -126,7 +131,7 @@ setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=40,
   # define lseq
   if (is.null(lseq)) {
 # this is optimized for lkern="Gaussian" such that alpha approx 0.04 -- 0.1 and probability of separated points is approx. 1e-4
-    lseq <- c(rep(1.286,11), 1.21, 1.21, 1.14, 1.14, 1.07, 1.07)# alpha=0.1       prob: .36e-4
+    lseq <- c(1.5,.9,.8,.85,.8,0.85,.85,0.95,1.25,1.15)# alpha=0.2    abs. deviation in S0
   }
   if (length(lseq)<steps) lseq <- c(lseq,rep(1,steps-length(lseq)))
   lseq <- lseq[1:steps]
@@ -208,8 +213,9 @@ setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=40,
      hakt <- hakt*hincr
     c1 <- (prod(h0+1))^(1/3)
     c1 <- 2.7214286 - 3.9476190*c1 + 1.6928571*c1*c1 - 0.1666667*c1*c1*c1
-    x <- (prod(1.25^(k-1)/c(1,wghts)))^(1/3)
+    x <- (prod(1.25^(k-1)/c(1,1,1)))^(1/3)
     scorrfactor <- (c1+x)/(c1*prod(h0+1)+x)
+    k <- k+1
     lambda0 <- lambda*lseq[k]*scorrfactor     
   }
   dim(z$s0hat) <- c(n1,n2,n3)

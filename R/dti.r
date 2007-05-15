@@ -61,7 +61,7 @@ function(x, y, slice=1, method=1, quant=0, minanindex=NULL, show=TRUE, ...) {
 })
 
 
-dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=0) {
+dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=0,voxelext=c(1,1,1)) {
   if (dim(gradient)[2]==3) gradient <- t(gradient)
   if (dim(gradient)[1]!=3) stop("Not a valid gradient matrix")
   ngrad <- dim(gradient)[2]
@@ -95,6 +95,7 @@ dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=
                 yind   = yind,
                 zind   = zind,
                 level  = level,
+                voxelext = voxelext,
                 source = imagefile)
             )
 }
