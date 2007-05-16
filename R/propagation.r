@@ -259,11 +259,12 @@ dti.propagation <- function(object,hmax=5,hinit=NULL,lambda=47,
 risks <- function(z0,z,sbtb){
 theta <- z$theta
 theta0 <- z0$theta
-theta <- sweep(theta,2:4,apply(theta0,1,mean),"-")
-theta0 <- sweep(theta0,2:4,apply(theta0,1,mean),"-")
+theta <- sweep(theta,1,apply(theta0,1,mean),"-")
+theta0 <- sweep(theta0,1,apply(theta0,1,mean),"-")
 dim(theta) <- dim(theta0) <- c(6,prod(dim(theta)[-1]))
 theta <- sbtb%*%theta
 theta0 <- sbtb%*%theta0
+cat(mean(apply(theta^2,1,sum)),mean(apply(theta0^2,1,sum)),"\n")
 alpha <- mean(theta^2)/mean(theta0^2)-1
 alpha
 }

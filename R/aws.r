@@ -12,7 +12,7 @@ setGeneric("dti.smooth", function(object, ...) standardGeneric("dti.smooth"))
 
 setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=52,
                                             rho=1,graph=FALSE,slice=NULL,quant=.8,
-                                            minanindex=NULL,zext=1,eps=1e-6,hsig=2.5,lseq=NULL) {
+                                            minanindex=NULL,eps=1e-6,hsig=2.5,lseq=NULL) {
 
 #
 #     lambda and lseq adjusted for alpha=0.2
