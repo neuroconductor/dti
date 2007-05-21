@@ -47,7 +47,7 @@ function(x, y, slice=1, method=1, quant=0, minanindex=NULL, show=TRUE, ...) {
       image(anindex,...)
     }
     invisible(andirection)
-  } else {
+  } else if (method==3) {
     bary <- x$bary[,,slice,]
     if(adimpro) {
       bary[is.na(bary)] <- 0
@@ -57,6 +57,28 @@ function(x, y, slice=1, method=1, quant=0, minanindex=NULL, show=TRUE, ...) {
       image(bary[,,1],...)
     }
     invisible(bary)
+  } else {
+    andirection <- x$eigenv[,,slice,,]
+    anindex[anindex>1]<-0
+    anindex[anindex<0]<-0
+    dim(andirection)<-c(prod(dimg),3,3)
+    if(is.null(minanindex)) minanindex <- quantile(anindex,quant,na.rm=TRUE)
+    if (diff(range(anindex,na.rm=TRUE)) == 0) minanindex <- 0
+    andirection[,1,2] <- abs(andirection[,1,2])
+    andirection[,2,2] <- abs(andirection[,2,2])
+    andirection[,3,2] <- abs(andirection[,3,2])
+    andirection <- andirection[,,2]
+    andirection <- andirection*as.vector(anindex)*as.numeric(anindex>minanindex)
+    dim(andirection)<-c(dimg,3)
+    if(adimpro) {
+      andirection[is.na(andirection)] <- 0
+      andirection <- make.image(andirection)
+      if(show) show.image(andirection,...)
+    } else if(show) {
+      dim(anindex) <- dimg
+      image(anindex,...)
+    }
+    invisible(andirection)
   }
 })
 
