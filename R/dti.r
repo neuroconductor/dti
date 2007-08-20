@@ -13,7 +13,7 @@ setMethod("plot", "dtiData", function(x, y, ...) cat("Not yet implemented yet fo
 setMethod("plot", "dti", function(x, y, ...) cat("No implementation for class dti\n"))
 
 setMethod("plot", "dtiIndices", 
-function(x, y, slice=1, method=1, quant=0, minanindex=NULL, show=TRUE, ...) {
+function(x, y, slice=1, method=1, quant=0, minanindex=NULL, show=TRUE, fa.exp = 1, ...) {
   if(is.null(x$fa)) cat("No anisotropy index yet")
   adimpro <- require(adimpro)
   anindex <- x$fa[,,slice]
@@ -22,13 +22,14 @@ function(x, y, slice=1, method=1, quant=0, minanindex=NULL, show=TRUE, ...) {
     andirection <- x$eigenv[,,slice,,]
     anindex[anindex>1]<-0
     anindex[anindex<0]<-0
+    if ((fa.exp != 1) & (fa.exp>0)) anindex <- anindex^fa.exp
     dim(andirection)<-c(prod(dimg),3,3)
     if(is.null(minanindex)) minanindex <- quantile(anindex,quant,na.rm=TRUE)
     if (diff(range(anindex,na.rm=TRUE)) == 0) minanindex <- 0
     if(method==1) {
-      andirection[,1,3] <- abs(andirection[,1,3])
-      andirection[,2,3] <- abs(andirection[,2,3])
-      andirection[,3,3] <- abs(andirection[,3,3])
+      andirection[,1,3] <- andirection[,1,3]^2
+      andirection[,2,3] <- andirection[,2,3]^2
+      andirection[,3,3] <- andirection[,3,3]^2
     } else {
       ind<-andirection[,1,3]<0
       andirection[ind,,] <- - andirection[ind,,]
@@ -61,12 +62,13 @@ function(x, y, slice=1, method=1, quant=0, minanindex=NULL, show=TRUE, ...) {
     andirection <- x$eigenv[,,slice,,]
     anindex[anindex>1]<-0
     anindex[anindex<0]<-0
+    if ((fa.exp != 1) & (fa.exp>0)) anindex <- anindex^fa.exp
     dim(andirection)<-c(prod(dimg),3,3)
     if(is.null(minanindex)) minanindex <- quantile(anindex,quant,na.rm=TRUE)
     if (diff(range(anindex,na.rm=TRUE)) == 0) minanindex <- 0
-    andirection[,1,2] <- abs(andirection[,1,2])
-    andirection[,2,2] <- abs(andirection[,2,2])
-    andirection[,3,2] <- abs(andirection[,3,2])
+    andirection[,1,2] <- andirection[,1,2]^2
+    andirection[,2,2] <- andirection[,2,2]^2
+    andirection[,3,2] <- andirection[,3,2]^2
     andirection <- andirection[,,2]
     andirection <- andirection*as.vector(anindex)*as.numeric(anindex>minanindex)
     dim(andirection)<-c(dimg,3)
