@@ -82,6 +82,7 @@ C
             maxabsdg=max(maxabsdg,abs(dg(j)))
          END DO
          IF(maxabsdg.lt.eps) THEN
+C  prepare things for return if gradient is close to 0
             th0=theta(1)
             i=1
             DO j=1,6
@@ -93,6 +94,8 @@ C
             END DO
             RETURN
          END IF
+         gamma=min(gamma/alpha,1.d0)
+C  End of step 3
          notacc=.TRUE.
          DO WHILE (notacc) 
             IF(gamma.lt.1.d0) THEN
@@ -119,10 +122,15 @@ C               ak(j,k)=ak(k,j)
 C            END DO
 C         END DO         
 C   Now solve  ak%*%dtheta= dg
-	    call dposv("U",7,1,ck,7,pk,7,info) 
+	    call dposv("U",7,1,ck,7,pk,7,info)
+C  Step 4 we have pk 
             IF(info.ne.0) THEN
                gamma=alpha*gamma
-            ELSE 
+C  thats step 6
+            ELSE
+C  comute things needed for decision in step 5 
+C  if successful F, nrss, and theta will be reused in the  
+C  next iteration
                DO j=1,7
                   ntheta(j)=theta(j)-gamma*pk(j)
                END DO
@@ -141,8 +149,10 @@ C   Now solve  ak%*%dtheta= dg
                crss=rss-delta*gamma*crss
                IF(nrss.le.crss) THEN
                   notacc=.FALSE.
+C  accept new estimate, prepare for next iteration
                ELSE
                   gamma=alpha*gamma
+C  decrease gamma and try new regularization
                END IF
             END IF
          END DO
