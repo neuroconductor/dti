@@ -64,8 +64,8 @@ C
 	       p12=-thi1*thi2/hd
 	       p13=-thi1*thi3/hd
 	       p23=-thi2*thi3/hd
-	       j1a=max0(1,i1-ih1)
-	       j1e=min0(n1,i1+ih1)
+	       j1a=max(1,i1-ih1)
+	       j1e=min(n1,i1+ih1)
 	       DO j1=j1a,j1e
 	          d1=i1-j1
 	          DO j2=1,n2
@@ -127,20 +127,20 @@ C
 	       DO k=1,6
 	          swy(k)=0.d0
 	       END DO
-	       j1a=max0(1,i1-ih1)
-	       j1e=min0(n1,i1+ih1)
+	       j1a=max(1,i1-ih1)
+	       j1e=min(n1,i1+ih1)
 	       DO j1=j1a,j1e
 	          d1=i1-j1
 		  z1=d1*d1
-		  ih2=dsqrt(h2-z1)
-	          j2a=max0(1,i2-ih2)
-	          j2e=min0(n2,i2+ih2)
+		  ih2=sqrt(h2-z1)
+	          j2a=max(1,i2-ih2)
+	          j2e=min(n2,i2+ih2)
 	          DO j2=j2a,j2e
 		     d2=i2-j2
 		     z2=d2*d2
-		     ih3=dsqrt(h2-z1-z2)
-	             j3a=max0(1,i3-ih3)
-	             j3e=min0(n3,i3+ih3)
+		     ih3=sqrt(h2-z1-z2)
+	             j3a=max(1,i3-ih3)
+	             j3e=min(n3,i3+ih3)
 		     DO j3=j3a,j3e
 		        d3=i3-j3
 			z=1.d0-(z1+z2+d3*d3)/h2
@@ -192,7 +192,7 @@ C
       real*8 sw,swy,thi1,thi2,thi3,p11,p12,p13,p22,p23,p33,zd,zt,z,
      1     d,d1,d2,d3,ht2
       ht2=ht*ht
-      ih1=dsqrt(2*hd*hd+ht2)  
+      ih1=sqrt(2*hd*hd+ht2)  
       DO i1=1,n1
          DO i2=1,n2
 	    DO i3=1,n3
@@ -207,8 +207,8 @@ C
 	       p12=-thi1*thi2/hd
 	       p13=-thi1*thi3/hd
 	       p23=-thi2*thi3/hd
-	       j1a=max0(1,i1-ih1)
-	       j1e=min0(n1,i1+ih1)
+	       j1a=max(1,i1-ih1)
+	       j1e=min(n1,i1+ih1)
 	       DO j1=j1a,j1e
 	          d1=i1-j1
 	          DO j2=1,n2
@@ -272,20 +272,20 @@ C
 	       DO k=1,6
 	          swy(k)=0.d0
 	       END DO
-	       j1a=max0(1,i1-ih1)
-	       j1e=min0(n1,i1+ih1)
+	       j1a=max(1,i1-ih1)
+	       j1e=min(n1,i1+ih1)
 	       DO j1=j1a,j1e
 	          d1=i1-j1
 		  z1=d1*d1
-		  ih2=dsqrt(h2-z1)
-	          j2a=max0(1,i2-ih2)
-	          j2e=min0(n2,i2+ih2)
+		  ih2=sqrt(h2-z1)
+	          j2a=max(1,i2-ih2)
+	          j2e=min(n2,i2+ih2)
 	          DO j2=j2a,j2e
 		     d2=i2-j2
 		     z2=d2*d2
-		     ih3=dsqrt(h2-z1-z2)
-	             j3a=max0(1,i3-ih3)
-	             j3e=min0(n3,i3+ih3)
+		     ih3=sqrt(h2-z1-z2)
+	             j3a=max(1,i3-ih3)
+	             j3e=min(n3,i3+ih3)
 		     DO j3=j3a,j3e
 		        d3=i3-j3
 			z=1.d0-(z1+z2+d3*d3)/h2
@@ -324,7 +324,7 @@ C               call eigen3(swy,lambda,theta(1,i1,i2,i3),ierr)
 	       z=z+z1*z1
 	       z=1.5d0*z/(lambda(1)*lambda(1)+lambda(2)*lambda(2)+
      1                    lambda(3)*lambda(3))
-	       aihat(i1,i2,i3)=dsqrt(z)
+	       aihat(i1,i2,i3)=sqrt(z)
 C   largest eigenvalue in lambda, corresponding EV in theta(1,i1,i2,i3)
                call rchkusr()
 	    END DO

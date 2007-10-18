@@ -38,9 +38,9 @@ C  now anisotropic smoothing
                lw=0
                if(mask(i1,i2,i3)) THEN
                   sw=0.d0
-                  deti=dexp(dlog(det(i1,i2,i3))/3)
+                  deti=exp(log(det(i1,i2,i3))/3)
                   bii=bi(i1,i2,i3)
-                  sqrbii=dsqrt(bii)*sigma2(i1,i2,i3)
+                  sqrbii=sqrt(bii)*sigma2(i1,i2,i3)
                   thw(1,1)=th(1,i1,i2,i3)
                   thw(2,2)=th(4,i1,i2,i3)
                   thw(3,3)=th(6,i1,i2,i3)
@@ -65,7 +65,7 @@ C  this is scale invariant sice sqrbii scales with dsqrt(sigma2) (standard devia
                      thi(6)=1
                   ELSE
                      sew=ew(1)*ew(2)*ew(3)
-                     sew=dexp(dlog(sew)/3.d0)
+                     sew=exp(log(sew)/3.d0)
                      ew(1)=ew(1)/sew
                      ew(2)=ew(2)/sew
                      ew(3)=ew(3)/sew
@@ -200,7 +200,7 @@ C   don't smooth, keep original data
                   z3=ew(3)
                   mew=2.d0*(z1*z1+z2*z2+z3*z3)
                   if(mew.le.1d-20) mew=1.d0
-                  ani(i1,i2,i3)=dsqrt(z/mew)
+                  ani(i1,i2,i3)=sqrt(z/mew)
                   det(i1,i2,i3)=ew(1)*ew(2)*ew(3)
                   DO k=1,3
                      andir(k,i1,i2,i3)=ev(k,3)
@@ -234,7 +234,7 @@ C  get u and lambda
      1            u,3,ISUPPZ,work,104,iwork,50,ierr)
       if(ierr.ne.0) call intpr("ierr1",5,ierr,1)
       DO i=1,3
-         rtlam(i)=dsqrt(lam(i))
+         rtlam(i)=sqrt(lam(i))
          DO j=1,3
             g(j,i)=u(j,i)*rtlam(i)
             ginv(i,j)=u(j,i)/rtlam(i)
@@ -280,7 +280,7 @@ C     get result in rem
             ierr=1
             RETURN
          ELSE
-            sig(i)=dexp(sig(i))
+            sig(i)=exp(sig(i))
             ierr=0
          END IF
       END DO  
@@ -321,7 +321,7 @@ C  get u and lambda
       if(nl.lt.3) call dblepr("rlp3nl",6,lam,3)
 C  get g and ginv
       DO i=1,3
-         rtlam(i)=dsqrt(lam(i))
+         rtlam(i)=sqrt(lam(i))
          DO j=1,3
             g(j,i)=u(j,i)*rtlam(i)
             ginv(i,j)=u(j,i)/rtlam(i)
@@ -367,7 +367,7 @@ C     get u=g%*%v
          END DO
 C     get result in rlm
          DO i=1,3
-            sig(i)=dlog(sig(i))
+            sig(i)=log(sig(i))
          END DO  
          DO i=1,3
             DO j=i,3

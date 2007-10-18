@@ -72,7 +72,6 @@ setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=52,
   dim(z$theta) <- dimy
   dim(z$anindex) <-dim(z$det) <- dimy[-1]
   dim(z$andirection) <- c(3,dimy[-1]) 
-  z$s0hat <- s0
   sigma2hat <- .Fortran("smsigma",
                        as.double(sigma2),
                        as.integer(n1),
@@ -168,12 +167,11 @@ setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=52,
                 as.double(rho),
                 as.double(lambda0),
                 theta=double(6*n),
-                s0hat=double(n),
                 sigma2hat=double(n),
                 double(ngrad),
                 as.double(eps),
                 DUP=FALSE,
-                PACKAGE="dti")[c("theta","bi","anindex","andirection","det","s0hat","sigma2hat")]
+                PACKAGE="dti")[c("theta","bi","anindex","andirection","det","sigma2hat")]
      if(hakt<hsig){
         eta <- (hsig^3 - hakt^3)/hsig^3
         z$sigma2hat <- eta*sigma2hat+(1-eta)*z$sigma2hat
@@ -220,9 +218,6 @@ setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=52,
     k <- k+1
     lambda0 <- lambda*lseq[k]*scorrfactor     
   }
-  dim(z$s0hat) <- c(n1,n2,n3)
-#  z <- list(theta=z$theta,bi=z$bi,anindex=z$anindex,andirection=z$andirection,
-#            ddim0=ddim0,xind=xind,yind=yind,zind=zind,InvCov=Bcov,s0hat=z$s0hat,call=args)
 
   invisible(new("dtiTensor",
                 list(theta = z$theta, sigma = z$sigma2hat, scorr = scorr),

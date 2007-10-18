@@ -36,9 +36,9 @@ C  now anisotropic smoothing
             DO i3=1,n3
                if(.not.mask(i1,i2,i3)) CYCLE
                sw=0.d0
-               deti=dexp(dlog(det(i1,i2,i3))/3)
+               deti=exp(log(det(i1,i2,i3))/3)
                bii=bi(i1,i2,i3)
-               sqrbii=dsqrt(bii)*sigma2(i1,i2,i3)
+               sqrbii=sqrt(bii)*sigma2(i1,i2,i3)
                DO k=1,6
                   swy(k)=0.d0
                   thi(k)=th(k,i1,i2,i3)/deti
@@ -58,7 +58,7 @@ C  this is scale invariant sice sqrbii scales with dsqrt(sigma2) (standard devia
                   thi(6)=1
                ELSE
                   sew=ew(1)*ew(2)*ew(3)
-                  sew=dexp(dlog(sew)/3.d0)
+                  sew=exp(log(sew)/3.d0)
                   ew(1)=ew(1)/sew
                   ew(2)=ew(2)/sew
                   ew(3)=ew(3)/sew
@@ -129,7 +129,7 @@ C     triangular location kernel
                   z3=ew(3)
                   mew=2.d0*(z1*z1+z2*z2+z3*z3)
                   if(mew.le.1d-20) mew=1.d0
-                  ani(i1,i2,i3)=dsqrt(z/mew)
+                  ani(i1,i2,i3)=sqrt(z/mew)
                   det(i1,i2,i3)=ew(1)*ew(2)*ew(3)
                   DO k=1,3
                      andir(k,i1,i2,i3)=ev(k,3)
@@ -180,7 +180,7 @@ C  compute anisotropy index and direction of main anisotropy (nneded in statisti
                   z3=ew(3)
                   mew=2.d0*(z1*z1+z2*z2+z3*z3)
                   if(mew.le.1d-20) mew=1.d0
-                  ani(i1,i2,i3)=dsqrt(z/mew)
+                  ani(i1,i2,i3)=sqrt(z/mew)
                   DO k=1,3
                      dir(k,i1,i2,i3)=ev(k,3)
                   END DO
@@ -228,12 +228,12 @@ C
                         thnew(k,i1,i2,i3)=0.d0
                      END DO
                      mask(i1,i2,i3)=.FALSE.
-                  ELSE IF(dmin1(ew(1),ew(2)).lt.1d-5*ew(3)) THEN
+                  ELSE IF(min(ew(1),ew(2)).lt.1d-5*ew(3)) THEN
 C
 C       negative eigenvalue of tensor, project to space of positive definite tensors
 C
-                     ew(1)=dmax1(ew(1),1d-5*ew(3))
-                     ew(2)=dmax1(ew(2),1d-5*ew(3))
+                     ew(1)=max(ew(1),1d-5*ew(3))
+                     ew(2)=max(ew(2),1d-5*ew(3))
                      thnew(1,i1,i2,i3)=ew(1)*ev(1,1)*ev(1,1)+
      1                     ew(2)*ev(1,2)*ev(1,2)+ew(3)*ev(1,3)*ev(1,3)
                      thnew(2,i1,i2,i3)=ew(1)*ev(1,1)*ev(2,1)+
@@ -269,7 +269,7 @@ C
                      z3=ew(3)
                      mew=2.d0*(z1*z1+z2*z2+z3*z3)
                      if(mew.le.1d-20) mew=1.d0
-                     ani(i1,i2,i3)=dsqrt(z/mew)
+                     ani(i1,i2,i3)=sqrt(z/mew)
                      DO k=1,3
                         dir(k,i1,i2,i3)=ev(k,3)
                      END DO
@@ -409,7 +409,7 @@ C    ia,ie -  rane of x values (restricted to the grid)
       t=p5*p4/p2/p3
       z=(p1-p44/p2-p55/p3+2.d0*p6*t)*s-p66*p55/p3-p66*p44/p2+
      1                                             2.d0*p66*p6*t
-      if(dabs(z).le.1e-40) THEN
+      if(abs(z).le.1e-40) THEN
          call dblepr("denominator in rangex",21,z,1)
          z=1
       END IF
