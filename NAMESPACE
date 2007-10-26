@@ -6,3 +6,4 @@ exportMethods("show","plot","coerce","dti.smooth","dti.smoothext","dtiTensor","d
 export(dtiData,createdata.dti)
 export(dti.propagation)
 export(rician)
+export(testnlrdti,create.voxel.data)

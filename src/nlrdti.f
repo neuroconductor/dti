@@ -29,7 +29,8 @@ C
      1       theta(7)
       integer i,j,k,info,iter
       real*8 ntheta(7),Vtheta(7,7),z,thcorr,gamma,alpha,delta,
-     1       dg(7),pk(7),ak(7,7),ck(7,7),rss,nrss,crss,maxabsdg
+     1       dg(7),pk(7),ak(7,7),ck(7,7),rss,nrss,crss,maxabsdg,
+     2       oldrss,relrss
       alpha=0.5D0
       delta=0.25D0
       theta(1)=th0
@@ -39,16 +40,20 @@ C
       theta(5)=D(4)
       theta(6)=D(5)
       theta(7)=D(6)
+      call dblepr("theta",5,theta,7)
       gamma=1.d0
       alpha=0.7d0
+      oldrss=1.d50
       rss=0.d0
       DO i=1,nb
          z=b(i,1)*theta(2)+b(i,2)*theta(3)+b(i,3)*theta(4)+
      1     b(i,4)*theta(5)+b(i,5)*theta(6)+b(i,6)*theta(7)
          z=exp(-z)
          F(i)=s(i)-theta(1)*z
+         res(i)=F(i)
          rss=rss+F(i)*F(i)
       END DO
+      call dblepr("rss",3,rss,1)
       DO iter=1,niter
          DO i=1,nb
             z=b(i,1)*theta(2)+b(i,2)*theta(3)+b(i,3)*theta(4)+
@@ -81,20 +86,22 @@ C
          DO j=2,7
             maxabsdg=max(maxabsdg,abs(dg(j)))
          END DO
-         IF(maxabsdg.lt.eps) THEN
+         relrss = (oldrss-rss)/rss
+         IF(maxabsdg.lt.eps.or.relrss.lt.1d-8) THEN
 C  prepare things for return if gradient is close to 0
             th0=theta(1)
             i=1
             DO j=1,6
                D(j)=theta(j+1)
                DO k=j,6
-                  VarD(i)=ak(j,k)
+                  VarD(i)=ak(j+1,k+1)
                   i=i+1
                END DO
             END DO
             RETURN
          END IF
          gamma=min(gamma/alpha,1.d0)
+         call dblepr("gamma",5,gamma,1)
 C  End of step 3
          notacc=.TRUE.
          DO WHILE (notacc) 
@@ -126,6 +133,7 @@ C   Now solve  ak%*%dtheta= dg
 C  Step 4 we have pk 
             IF(info.ne.0) THEN
                gamma=alpha*gamma
+         call dblepr("gamma",5,gamma,1)
 C  thats step 6
             ELSE
 C  comute things needed for decision in step 5 
@@ -140,6 +148,7 @@ C  next iteration
      1             b(i,4)*ntheta(5)+b(i,5)*ntheta(6)+b(i,6)*ntheta(7)
                   z=exp(-z)
                   F(i)=s(i)-ntheta(1)*z
+                  res(i)=F(i)
                   nrss=nrss+F(i)*F(i)
                END DO
                crss=dg(1)*pk(1)
@@ -152,6 +161,7 @@ C  next iteration
 C  accept new estimate, prepare for next iteration
                ELSE
                   gamma=alpha*gamma
+                  call dblepr("gamma",5,gamma,1)
 C  decrease gamma and try new regularization
                END IF
             END IF
@@ -159,15 +169,19 @@ C  decrease gamma and try new regularization
          DO j=1,7
             theta(j)=ntheta(j)
          END DO
+         call dblepr("theta",5,theta,7)
+         oldrss=rss
          rss=nrss
+      call dblepr("rss",3,rss,1)
          call rchkusr()
+      call intpr("iter",4,iter,1)
       END DO
       th0=theta(1)
       i=1
       DO j=1,6
          D(j)=theta(j+1)
          DO k=j,6
-            VarD(i)=ak(j,k)
+            VarD(i)=ak(j+1,k+1)
             i=i+1
          END DO
       END DO
