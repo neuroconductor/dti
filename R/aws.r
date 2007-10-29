@@ -176,7 +176,7 @@ setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=52,
         eta <- (hsig^3 - hakt^3)/hsig^3
         z$sigma2hat <- eta*sigma2hat+(1-eta)*z$sigma2hat
      }
-     dim(z$s0hat) <- dim(z$bi) <- dim(z$anindex) <- dim(z$det) <- dim(z$sigma2hat) <- dimy[-1]
+     dim(z$bi) <- dim(z$anindex) <- dim(z$det) <- dim(z$sigma2hat) <- dimy[-1]
      dim(z$theta) <- dimy
      dim(z$andirection) <- c(3,dimy[-1]) 
      if(graph){

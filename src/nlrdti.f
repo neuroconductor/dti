@@ -101,7 +101,6 @@ C  prepare things for return if gradient is close to 0
             RETURN
          END IF
          gamma=min(gamma/alpha,1.d0)
-         call dblepr("gamma",5,gamma,1)
 C  End of step 3
          notacc=.TRUE.
          DO WHILE (notacc) 
@@ -123,17 +122,11 @@ C   we may still need ak and dg so copy them to pk and ck
             DO j=1,7
                pk(j)=dg(j)
             END DO
-C         DO j=2,7
-C            DO k=1,j-1
-C               ak(j,k)=ak(k,j)
-C            END DO
-C         END DO         
 C   Now solve  ak%*%dtheta= dg
 	    call dposv("U",7,1,ck,7,pk,7,info)
 C  Step 4 we have pk 
             IF(info.ne.0) THEN
                gamma=alpha*gamma
-         call dblepr("gamma",5,gamma,1)
 C  thats step 6
             ELSE
 C  comute things needed for decision in step 5 
@@ -161,7 +154,6 @@ C  next iteration
 C  accept new estimate, prepare for next iteration
                ELSE
                   gamma=alpha*gamma
-                  call dblepr("gamma",5,gamma,1)
 C  decrease gamma and try new regularization
                END IF
             END IF
