@@ -26,7 +26,7 @@ if(df<1) {
 warning("No replications available")
 return(NULL)
 }
-lind <- sort(unique(replvar))
+lind <- sort(unique(ind))
 dx <- dim(x)
 .Fortran("replvar",
               as.integer(x),
@@ -41,6 +41,31 @@ dx <- dim(x)
               sigma2=double(prod(dx[2:4])),
               double(prod(dx[2:4])),
               PACKAGE="dti",DUP=FALSE)$sigma2/df
+}
+
+gkernsm <- function(y,h=1) {
+#
+# h in SD
+#
+  grid <- function(d) {
+    d0 <- d%/%2+1
+    gd <- seq(0,1,length=d0)
+    if (2*d0==d+1) gd <- c(gd,-gd[d0:2]) else gd <- c(gd,-gd[(d0-1):2])
+    gd
+  }
+  dy <- dim(y)
+  if (is.null(dy)) dy<-length(y)
+  ldy <- length(dy)
+  if (length(h)!=ldy) h <- rep(h[1],ldy)
+  kern <- switch(ldy,dnorm(grid(dy),0,2*h/dy),
+                 outer(dnorm(grid(dy[1]),0,2*h[1]/dy[1]),
+                       dnorm(grid(dy[2]),0,2*h[2]/dy[2]),"*"),
+                 outer(outer(dnorm(grid(dy[1]),0,2*h[1]/dy[1]),
+                             dnorm(grid(dy[2]),0,2*h[2]/dy[2]),"*"),
+                       dnorm(grid(dy[3]),0,2*h[3]/dy[3]),"*"))
+  kern <- kern/sum(kern)
+  kernsq <- sum(kern^2)
+  list(gkernsm=convolve(y,kern,conj=TRUE),kernsq=kernsq)
 }
 
 Spatialvar.gauss<-function(h,h0,d,interv=1){

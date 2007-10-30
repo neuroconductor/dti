@@ -1,4 +1,4 @@
-      subroutine nlrdti(s,nb,n1,n2,n3,b,th0,D,niter,eps,Varth,res,X,F,
+      subroutine nlrdti(s,nb,n1,n2,n3,b,th0,D,niter,eps,Varth,res,X,
      1                  rss)
       implicit logical (a-z)
       integer nb,n1,n2,n3,s(nb,n1,n2,n3),niter
@@ -7,25 +7,26 @@
       integer i1,i2,i3,j
       real*8 theta(7)
       DO i1=1,n1
+         call intpr("i1",2,i1,1)
          DO i2=1,n2
             DO i3=1,n3
                call solvedti(s(1,i1,i2,i3),nb,b,th0(i1,i2,i3),
      1                       D(1,i1,i2,i3),Varth(1,i1,i2,i3),
-     2                       res(1,i1,i2,i3),niter,eps,X,F,
+     2                       res(1,i1,i2,i3),niter,eps,X,
      3                       rss(n1,n2,n3))
             END DO
          END DO
       END DO
       RETURN
       END
-      subroutine solvedti(s,nb,b,th0,D,Varth,res,niter,eps,X,F,rss)
+      subroutine solvedti(s,nb,b,th0,D,Varth,F,niter,eps,X,rss)
 C
 C  Implements the regularized Gauss-Newton Algortithm (10.2.8)
 C  from Schwetlick (1979)
 C
       implicit logical (a-z)
       integer nb,s(nb),niter
-      real*8 D(6),b(6,nb),th0,Varth(28),res(nb),X(nb,7),F(nb),eps,
+      real*8 D(6),b(6,nb),th0,Varth(28),X(nb,7),F(nb),eps,
      1       theta(7)
       integer i,j,k,info,iter
       real*8 ntheta(7),Vtheta(7,7),z,thcorr,gamma,alpha,delta,
@@ -50,7 +51,6 @@ C      call dblepr("theta",5,theta,7)
      1     b(4,i)*theta(5)+b(5,i)*theta(6)+b(6,i)*theta(7)
          z=exp(-z)
          F(i)=s(i)-theta(1)*z
-         res(i)=F(i)
          rss=rss+F(i)*F(i)
       END DO
 C      call dblepr("rss",3,rss,1)
@@ -87,7 +87,7 @@ C      call dblepr("rss",3,rss,1)
             maxabsdg=max(maxabsdg,abs(dg(j)))
          END DO
          relrss = (oldrss-rss)/rss
-         IF(maxabsdg.lt.eps.or.relrss.lt.1d-8) THEN
+         IF(maxabsdg.lt.eps.or.relrss.lt.1d-5) THEN
 C  prepare things for return if gradient is close to 0
             th0=theta(1)
             DO j=1,6
@@ -111,7 +111,7 @@ C  End of step 3
                   DO k=j,7
                      ck(j,k)=gamma*ak(j,k)
                   END DO
-                  ck(j,j)=ck(j,j)+1-gamma
+                  ck(j,j)=ck(j,j)+1.d0-gamma
                END DO
             ELSE
 C   we may still need ak and dg so copy them to pk and ck
@@ -141,9 +141,7 @@ C  next iteration
                DO i=1,nb
                  z=b(i,1)*ntheta(2)+b(i,2)*ntheta(3)+b(i,3)*ntheta(4)+
      1             b(i,4)*ntheta(5)+b(i,5)*ntheta(6)+b(i,6)*ntheta(7)
-                  z=exp(-z)
-                  F(i)=s(i)-ntheta(1)*z
-                  res(i)=F(i)
+                  F(i)=s(i)-ntheta(1)*exp(-z)
                   nrss=nrss+F(i)*F(i)
                END DO
                crss=dg(1)*pk(1)

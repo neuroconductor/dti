@@ -218,13 +218,13 @@ function(object, method="nonlinear",varmethod="replicates") {
                 th0=as.double(th0),
                 D=double(6*prod(ddim)),
                 as.integer(100),
-                as.double(1e-6),
+                as.double(1e-4),
                 Varth=double(28*prod(ddim)),
                 res=double(ngrad*prod(ddim)),
                 double(7*ngrad),
-                double(ngrad),
                 rss=double(prod(ddim)),
                 PACKAGE="dti",DUP=FALSE)[c("th0","D","Varth","res","rss")]
+  cat("successfully completed nonlinear regression \n")
   dim(z$th0) <- ddim
   dim(z$D) <- c(6,ddim)
   dim(z$Varth) <- c(28,ddim)
