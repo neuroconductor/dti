@@ -14,7 +14,7 @@ replind <- function(gradient){
      ind <- (1:ngrad)[apply(abs(gradient-gradient[,i]),2,max)==0]
      replind[ind] <- i
   }
-  replind
+  as.integer(replind)
 }
 
 replvar <- function(x,ind){

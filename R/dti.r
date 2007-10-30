@@ -107,21 +107,20 @@ dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=
   if (is.null(xind)) xind <- 1:ddim[1]
   if (is.null(yind)) yind <- 1:ddim[2]
   if (is.null(zind)) zind <- 1:ddim[3]
-  dim(s0) <- ddim
-  s0 <- s0[xind,yind,zind] # really needed?
   dim(si) <- c(ddim,ngrad)
   si <- si[xind,yind,zind,] # really needed?
   ddim0 <- as.integer(ddim)
-  ddim <- dim(s0)
+  ddim <- as.integer(dim(si)[1:3])
 
   btb <- create.designmatrix.dti(gradient)
-
+  rind <- replind(gradient)
+  
   invisible(new("dtiData",
                 list(si = si),
                 btb    = btb,
                 ngrad  = ngrad, # = dim(btb)[2]
                 s0ind  = s0ind, # indices of S_0 images
-                replind = replind(gradient),
+                replind = rind,
                 ddim   = ddim,
                 ddim0  = ddim0,
                 xind   = xind,
