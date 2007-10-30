@@ -1,3 +1,6 @@
+#
+#
+#
   # solvebtb mit einfuegen??
 
 setMethod("show", "dti",
@@ -8,7 +11,7 @@ function(object){
     cat("\n")
 })
 
-setMethod("plot", "dtiTensor", function(x, y, ...) cat("Not yet implemented yet for class dtiTensor\n"))
+#setMethod("plot", "dtiTensor", function(x, y, ...) cat("Not yet #implemented yet for class dtiTensor\n"))
 setMethod("plot", "dtiData", function(x, y, ...) cat("Not yet implemented yet for class dtiData\n"))
 setMethod("plot", "dti", function(x, y, ...) cat("No implementation for class dti\n"))
 
@@ -84,15 +87,19 @@ function(x, y, slice=1, method=1, quant=0, minanindex=NULL, show=TRUE, fa.thresh
   }
 })
 
+#
+#
+#
 
 dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=0,voxelext=c(1,1,1)) {
   if (dim(gradient)[2]==3) gradient <- t(gradient)
   if (dim(gradient)[1]!=3) stop("Not a valid gradient matrix")
   ngrad <- dim(gradient)[2]
-
+  s0ind <- (1:ngrad)[apply(abs(gradient),2,max)==0] 
   if (!(file.exists(imagefile))) stop("Image file does not exist")
   zz <- file(imagefile,"rb")
-  s0 <- readBin(zz,"integer",prod(ddim),2,FALSE)
+#  si now contains all images (S_0 and S_I), ngrad includes 
+#  number of zero gradients
   si <- readBin(zz,"integer",prod(ddim)*ngrad,2,FALSE)
   close(zz)
   cat("Data successfully read \n")
@@ -110,9 +117,11 @@ dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=
   btb <- create.designmatrix.dti(gradient)
 
   invisible(new("dtiData",
-                list(s0 = s0, si = si),
+                list(si = si),
                 btb    = btb,
                 ngrad  = ngrad, # = dim(btb)[2]
+                s0ind  = s0ind, # indices of S_0 images
+                replind = replind(gradient),
                 ddim   = ddim,
                 ddim0  = ddim0,
                 xind   = xind,
@@ -124,8 +133,13 @@ dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=
             )
 }
 
+#
+#
+#
+
 # has to be re-implemented!!!!!!!!!!!!!!!!!!!!!!!!!!1
 createdata.dti <- function(file,dtensor,btb,s0,sigma,level=250){
+#  btb should include zero gradients !!!
   ngrad <- dim(btb)[2]
   ddim <- dim(s0)
   dtensor[1,,,][s0<level] <- 1e-5
@@ -138,12 +152,9 @@ createdata.dti <- function(file,dtensor,btb,s0,sigma,level=250){
   dtensor <- t(dtensor)
   si <- exp(-dtensor%*%btb)*as.vector(s0)
   rsi <- pmax(0,rnorm(si,si,pmin(s0/2.5,sigma)))
-  rs0 <- pmax(0,rnorm(s0,s0,pmin(s0/2.5,sigma)))
   zz <- file(file,"wb")
-  writeBin(as.integer(rs0),zz,2)
   writeBin(as.integer(rsi),zz,2)
   close(zz)
-  dim(s0)<-ddim
   dim(si)<-c(ddim,ngrad)
   dtensor <- t(dtensor)
   dim(dtensor)<-c(6,ddim)
@@ -151,109 +162,95 @@ createdata.dti <- function(file,dtensor,btb,s0,sigma,level=250){
 }
 # END implementation needed!
 
-# really setAs() or setMethod?
-setAs("dtiData","dtiTensor",function(from,to) {
-  ngrad <- from@ngrad
-  ddim <- from@ddim
+#
+#
+#
 
-  s0 <- from$s0
-  si <- from$si
-  dim(s0) <- dim(si) <- NULL
-  ttt <- -log(si/s0)
-  ttt[is.na(ttt)] <- 0
-  ttt[(ttt == Inf)] <- 0
-  ttt[(ttt == -Inf)] <- 0
-  dim(ttt) <- c(prod(ddim),ngrad)
-  ttt <- t(ttt)
-  cat("Data transformation completed \n")
+dtiTensor <- function(object, method="nonlinear",varmethod="replicates") cat("No DTI tensor calculation defined for this class:",class(object),"\n")
 
-  btbsvd <- svd(from@btb)
-  solvebtb <- btbsvd$u %*% diag(1/btbsvd$d) %*% t(btbsvd$v)
-  theta <- solvebtb%*% ttt
-  cat("Diffusion tensors generated \n")
-
-  res <- ttt - t(from@btb) %*% theta
-  mres2 <- res[1,]^2
-  for(i in 2:ngrad) mres2 <- mres2 + res[i,]^2
-  sigma2 <- array(mres2/(ngrad-6),ddim)
-  dim(theta) <- c(6,ddim)
-  dim(res) <- c(ngrad,ddim)
-  cat("Variance estimates generated \n")
-
-  rm(mres2)
-  gc()
-
-  dim(s0) <- ddim
-  mask <- s0>from@level
-  lags <- c(5,5,3)
-  scorr <- .Fortran("mcorr",as.double(aperm(res,c(2:4,1))),
-                   as.logical(mask),
-                   as.integer(ddim[1]),
-                   as.integer(ddim[2]),
-                   as.integer(ddim[3]),
-                   as.integer(ngrad),
-                   scorr = double(prod(lags)),
-                   as.integer(lags[1]),
-                   as.integer(lags[2]),
-                   as.integer(lags[3]),
-                   PACKAGE="dti",DUP=FALSE)$scorr
-  dim(scorr) <- lags
-  scorr[is.na(scorr)] <- 0
-  cat("first order  correlation in x-direction",signif(scorr[2,1,1],3),"\n")
-  cat("first order  correlation in y-direction",signif(scorr[1,2,1],3),"\n")
-  cat("first order  correlation in z-direction",signif(scorr[1,1,2],3),"\n")
-  bw <- optim(c(2,2,2),corrrisk,method="L-BFGS-B",lower=c(.25,.25,.25),lag=lags,data=scorr)$par
-  bw[bw <= .25] <- 0
-
-  invisible(new(to,
-                list(theta = theta, sigma = sigma2, scorr = scorr, bw = bw),
-                btb   = from@btb,
-                ngrad = from@ngrad, # = dim(btb)[2]
-                ddim  = from@ddim,
-                ddim0 = from@ddim0,
-                xind  = from@xind,
-                yind  = from@yind,
-                zind  = from@zind,
-                source= from@source)
-            )
-})
-
-dtiTensor <- function(object, ...) cat("No DTI tensor calculation defined for this class:",class(object),"\n")
-
-setGeneric("dtiTensor", function(object, ...) standardGeneric("dtiTensor"))
+setGeneric("dtiTensor", function(object, method="nonlinear",varmethod="replicates", ...) standardGeneric("dtiTensor"))
 
 setMethod("dtiTensor","dtiData",
-function(object) {
+function(object, method="nonlinear",varmethod="replicates") {
   ngrad <- object@ngrad
   ddim <- object@ddim
-
-  s0 <- object$s0
-  si <- object$si
+  if(method=="linear"){
+     s0ind <- object@s0ind
+  ngrad0 <- ngrad - length(s0ind)
+  s0 <- object$si[,,,s0ind]
+  si <- object$si[,,,-s0ind]
+  if(length(s0ind)>1) s0 <- apply(s0,1:3,mean) 
   dim(s0) <- dim(si) <- NULL
   ttt <- -log(si/s0)
   ttt[is.na(ttt)] <- 0
   ttt[(ttt == Inf)] <- 0
   ttt[(ttt == -Inf)] <- 0
-  dim(ttt) <- c(prod(ddim),ngrad)
+  dim(ttt) <- c(prod(ddim),ngrad0)
   ttt <- t(ttt)
   cat("Data transformation completed \n")
 
-  btbsvd <- svd(object@btb)
+  btbsvd <- svd(object@btb[,-s0ind])
   solvebtb <- btbsvd$u %*% diag(1/btbsvd$d) %*% t(btbsvd$v)
   theta <- solvebtb%*% ttt
   cat("Diffusion tensors generated \n")
 
   res <- ttt - t(object@btb) %*% theta
   mres2 <- res[1,]^2
-  for(i in 2:ngrad) mres2 <- mres2 + res[i,]^2
-  sigma2 <- array(mres2/(ngrad-6),ddim)
+  for(i in 2:ngrad0) mres2 <- mres2 + res[i,]^2
+  sigma2 <- array(mres2/(ngrad0-6),ddim)
   dim(theta) <- c(6,ddim)
   dim(res) <- c(ngrad,ddim)
   cat("Variance estimates generated \n")
-
+  Varth <- NULL
   rm(mres2)
   gc()
-
+  } else {
+#  method == "nonlinear"
+  ngrad0 <- ngrad
+  si <- aperm(object$si,c(4,1:3))
+  th0 <- apply(si,2:4,max)
+  z <- .Fortran("nlrdti",
+                as.integer(si),
+                as.integer(ngrad),
+                as.integer(ddim[1]),
+                as.integer(ddim[2]),
+                as.integer(ddim[3]),
+                as.double(object@btb),
+                th0=as.double(th0),
+                D=double(6*prod(ddim)),
+                as.integer(100),
+                as.double(1e-6),
+                Varth=double(28*prod(ddim)),
+                res=double(ngrad*prod(ddim)),
+                double(7*ngrad),
+                double(ngrad),
+                rss=double(prod(ddim)),
+                PACKAGE="dti",DUP=FALSE)[c("th0","D","Varth","res","rss")]
+  dim(z$th0) <- ddim
+  dim(z$D) <- c(6,ddim)
+  dim(z$Varth) <- c(28,ddim)
+  dim(z$res) <- c(ngrad,ddim)
+  dim(z$rss) <- ddim
+  df <- sum(table(object@replind)-1)
+  if(df<1||varmethod!="replicates"){
+     sigma2 <- z$rss/(ngrad-7)
+  } else {
+#
+#  We may want something more sophisticated here in case of
+#  replicated designs !!!
+#
+     df <- sum(table(object@replind)-1)
+     hmax <- max(1,(125/df)^(1/3))
+     z <- replvar(si,object@replind)
+     if(require(aws)) {
+#  adaptive bw to achive approx. 200 degrees of freedom
+        sigma2 <- aws(z/df,family="Variance",graph=TRUE,shape=df,hmax=pmax(1,(125/df)^(1/3)))
+     } else {
+#  nonadaptive bw to achive approx. 200 degrees of freedom
+        sigma2 <- gkernsm(z,1.76/df^(1/3))
+     }
+  }
+  }
   dim(s0) <- ddim
   mask <- s0 > object@level
   lags <- c(5,5,3)
@@ -262,7 +259,7 @@ function(object) {
                    as.integer(ddim[1]),
                    as.integer(ddim[2]),
                    as.integer(ddim[3]),
-                   as.integer(ngrad),
+                   as.integer(ngrad0),
                    scorr = double(prod(lags)),
                    as.integer(lags[1]),
                    as.integer(lags[2]),
@@ -279,17 +276,23 @@ function(object) {
   bw[bw <= .25] <- 0
 
   invisible(new("dtiTensor",
-                list(theta = theta, sigma = sigma2, scorr = scorr, bw = bw),
+                list(theta = theta, Varth = Varth, sigma = sigma2, scorr = scorr, bw = bw),
                 btb   = object@btb,
                 ngrad = object@ngrad, # = dim(btb)[2]
+                s0ind = object@s0ind,
                 ddim  = object@ddim,
                 ddim0 = object@ddim0,
                 xind  = object@xind,
                 yind  = object@yind,
                 zind  = object@zind,
-                source= object@source)
+                source= object@source,
+                method= method)
             )
 })
+
+#
+#
+#
 
 create.designmatrix.dti <- function(gradient, bvalue=1) {
   dgrad <- dim(gradient)
@@ -364,6 +367,10 @@ setAs("dtiTensor","dtiIndices",function(from,to) {
 
 
 })
+
+#
+#
+#
 
 dtiIndices <- function(object, ...) cat("No DTI indices calculation defined for this class:",class(object),"\n")
 

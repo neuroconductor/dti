@@ -1,6 +1,48 @@
 fwhm2bw <- function(hfwhm) hfwhm/sqrt(8*log(2))
 bw2fwhm <- function(h) h*sqrt(8*log(2))
 
+replind <- function(gradient){
+#
+#  determine replications in the design that may be used for 
+#  variance estimates
+#
+  if (dim(gradient)[1]!=3) stop("Not a valid gradient matrix")
+  ngrad <- dim(gradient)[2]
+  replind <- numeric(ngrad)
+  while(any(replind==0)){
+     i <- (1:ngrad)[replind==0][1]
+     ind <- (1:ngrad)[apply(abs(gradient-gradient[,i]),2,max)==0]
+     replind[ind] <- i
+  }
+  replind
+}
+
+replvar <- function(x,ind){
+# Estimate voxelwise variances using replications
+# of gradients
+tind <- table(ind)
+df <- sum(tind-1)
+if(df<1) {
+warning("No replications available")
+return(NULL)
+}
+lind <- sort(unique(replvar))
+dx <- dim(x)
+.Fortran("replvar",
+              as.integer(x),
+              as.integer(dx[1]),
+              as.integer(dx[2]),
+              as.integer(dx[3]),
+              as.integer(dx[4]),
+              as.integer(ind),
+              as.integer(tind),
+              as.integer(lind),
+              as.integer(length(tind)),
+              sigma2=double(prod(dx[2:4])),
+              double(prod(dx[2:4])),
+              PACKAGE="dti",DUP=FALSE)$sigma2/df
+}
+
 Spatialvar.gauss<-function(h,h0,d,interv=1){
 #
 #   Calculates the factor of variance reduction obtained for Gaussian Kernel and bandwidth h in 
