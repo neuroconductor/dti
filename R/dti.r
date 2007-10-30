@@ -11,7 +11,7 @@ function(object){
     cat("\n")
 })
 
-#setMethod("plot", "dtiTensor", function(x, y, ...) cat("Not yet #implemented yet for class dtiTensor\n"))
+setMethod("plot", "dtiTensor", function(x, y, ...) cat("Not yet implemented yet for class dtiTensor\n"))
 setMethod("plot", "dtiData", function(x, y, ...) cat("Not yet implemented yet for class dtiData\n"))
 setMethod("plot", "dti", function(x, y, ...) cat("No implementation for class dti\n"))
 
@@ -166,9 +166,9 @@ createdata.dti <- function(file,dtensor,btb,s0,sigma,level=250){
 #
 #
 
-dtiTensor <- function(object, method="nonlinear",varmethod="replicates") cat("No DTI tensor calculation defined for this class:",class(object),"\n")
+dtiTensor <- function(object,  ...) cat("No DTI tensor calculation defined for this class:",class(object),"\n")
 
-setGeneric("dtiTensor", function(object, method="nonlinear",varmethod="replicates", ...) standardGeneric("dtiTensor"))
+setGeneric("dtiTensor", function(object,  ...) standardGeneric("dtiTensor"))
 
 setMethod("dtiTensor","dtiData",
 function(object, method="nonlinear",varmethod="replicates") {

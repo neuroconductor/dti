@@ -220,7 +220,7 @@ setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=52,
   }
 
   invisible(new("dtiTensor",
-                list(theta = z$theta, sigma = z$sigma2hat, scorr = scorr),
+                list(theta = z$theta, sigma = z$sigma2hat, scorr = scorr, s0hat = z$s0hat),
                 btb   = btb,
                 ngrad = ngrad, # = dim(btb)[2]
                 ddim  = as.integer(ddim),
