@@ -246,6 +246,7 @@ function(object, method="nonlinear",varmethod="replicates") {
      th0 <- z$th0
      rm(z)
      gc()
+     cat("Start variance estimation ",date(),proc.time(),"\n")
      if(df<1||varmethod!="replicates"){
         sigma2 <- z$rss/(ngrad-7)
      } else {
@@ -259,10 +260,10 @@ function(object, method="nonlinear",varmethod="replicates") {
         dim(z) <- ddim
         if(require(aws)) {
 #  adaptive bw to achive approx. 200 degrees of freedom
-           sigma2 <- aws(z/df,family="Variance",graph=TRUE,shape=df,hmax=pmax(1,(125/df)^(1/3)))
+           sigma2 <- aws(z/df,family="Variance",graph=TRUE,shape=df,hmax=pmax(1,(125/df)^(1/3)))$theta
         } else {
 #  nonadaptive bw to achive approx. 200 degrees of freedom
-           sigma2 <- gkernsm(z,1.76/df^(1/3))
+           sigma2 <- gkernsm(z,1.76/df^(1/3))$gkernsm
         }
      }
   }
@@ -274,6 +275,8 @@ function(object, method="nonlinear",varmethod="replicates") {
                    as.integer(ddim[2]),
                    as.integer(ddim[3]),
                    as.integer(ngrad0),
+                   double(prod(ddim)),
+                   double(prod(ddim)),
                    scorr = double(prod(lags)),
                    as.integer(lags[1]),
                    as.integer(lags[2]),

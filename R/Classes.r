@@ -60,8 +60,8 @@ setClass("dtiTensor",
           }
           if (object@method=="nonlinear"&&(is.null(object$Varth)
                ||length(dim(object$Varth))!=4||
-                 any(dim(object$Varth)[1:3]!=object@ddim)||
-                 dim(object$Varth)[4]!=28)) {
+                 any(dim(object$Varth)[2:4]!=object@ddim)||
+                 dim(object$Varth)[1]!=28)) {
             cat("no or incorrect component Varth in list \n")
             return(invisible(FALSE))
           }
