@@ -109,9 +109,11 @@ dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=
   if (is.null(zind)) zind <- 1:ddim[3]
   dim(si) <- c(ddim,ngrad)
   si <- si[xind,yind,zind,] # really needed?
+  level <- quantile(si[,,,s0ind],level) # set level to quantile of s_0 values
   ddim0 <- as.integer(ddim)
   ddim <- as.integer(dim(si)[1:3])
 
+  cat("Create auxiliary statistics \n")
   btb <- create.designmatrix.dti(gradient)
   rind <- replind(gradient)
   
@@ -173,47 +175,54 @@ setMethod("dtiTensor","dtiData",
 function(object, method="nonlinear",varmethod="replicates") {
   ngrad <- object@ngrad
   ddim <- object@ddim
+  s0ind <- object@s0ind
   if(method=="linear"){
-     s0ind <- object@s0ind
-  ngrad0 <- ngrad - length(s0ind)
-  s0 <- object$si[,,,s0ind]
-  si <- object$si[,,,-s0ind]
-  if(length(s0ind)>1) s0 <- apply(s0,1:3,mean) 
-  dim(s0) <- dim(si) <- NULL
-  ttt <- -log(si/s0)
-  ttt[is.na(ttt)] <- 0
-  ttt[(ttt == Inf)] <- 0
-  ttt[(ttt == -Inf)] <- 0
-  dim(ttt) <- c(prod(ddim),ngrad0)
-  ttt <- t(ttt)
-  cat("Data transformation completed \n")
+     ngrad0 <- ngrad - length(s0ind)
+     s0 <- object$si[,,,s0ind]
+     si <- object$si[,,,-s0ind]
+     if(length(s0ind)>1) s0 <- apply(s0,1:3,mean) 
+     mask <- s0 > object@level
+     dim(s0) <- dim(si) <- NULL
+     ttt <- -log(si/s0)
+     ttt[is.na(ttt)] <- 0
+     ttt[(ttt == Inf)] <- 0
+     ttt[(ttt == -Inf)] <- 0
+     dim(ttt) <- c(prod(ddim),ngrad0)
+     ttt <- t(ttt)
+     cat("Data transformation completed \n")
 
-  btbsvd <- svd(object@btb[,-s0ind])
-  solvebtb <- btbsvd$u %*% diag(1/btbsvd$d) %*% t(btbsvd$v)
-  theta <- solvebtb%*% ttt
-  cat("Diffusion tensors generated \n")
+     btbsvd <- svd(object@btb[,-s0ind])
+     solvebtb <- btbsvd$u %*% diag(1/btbsvd$d) %*% t(btbsvd$v)
+     D <- solvebtb%*% ttt
+     cat("Diffusion tensors generated \n")
 
-  res <- ttt - t(object@btb) %*% theta
-  mres2 <- res[1,]^2
-  for(i in 2:ngrad0) mres2 <- mres2 + res[i,]^2
-  sigma2 <- array(mres2/(ngrad0-6),ddim)
-  dim(theta) <- c(6,ddim)
-  dim(res) <- c(ngrad,ddim)
-  cat("Variance estimates generated \n")
-  Varth <- NULL
-  rm(mres2)
-  gc()
+     res <- ttt - t(object@btb) %*% D
+     mres2 <- res[1,]^2
+     for(i in 2:ngrad0) mres2 <- mres2 + res[i,]^2
+     sigma2 <- array(mres2/(ngrad0-6),ddim)
+     dim(theta) <- c(6,ddim)
+     dim(res) <- c(ngrad,ddim)
+     cat("Variance estimates generated \n")
+     Varth <- NULL
+     rm(mres2)
+     gc()
   } else {
 #  method == "nonlinear"
-  ngrad0 <- ngrad
-  si <- aperm(object$si,c(4,1:3))
-  th0 <- apply(si,2:4,max)
-  z <- .Fortran("nlrdti",
+     ngrad0 <- ngrad
+     si <- aperm(object$si,c(4,1:3))
+     s0 <- si[s0ind,,,]
+     if(length(s0ind)>1) s0 <- apply(s0,2:4,mean)
+     dim(s0) <- ddim
+     mask <- s0 > object@level
+     th0 <- s0
+     cat("start nonlinear regression",date(),proc.time(),"\n")
+     z <- .Fortran("nlrdti",
                 as.integer(si),
                 as.integer(ngrad),
                 as.integer(ddim[1]),
                 as.integer(ddim[2]),
                 as.integer(ddim[3]),
+                as.logical(mask),
                 as.double(object@btb),
                 th0=as.double(th0),
                 D=double(6*prod(ddim)),
@@ -224,34 +233,41 @@ function(object, method="nonlinear",varmethod="replicates") {
                 double(7*ngrad),
                 rss=double(prod(ddim)),
                 PACKAGE="dti",DUP=FALSE)[c("th0","D","Varth","res","rss")]
-  cat("successfully completed nonlinear regression \n")
-  dim(z$th0) <- ddim
-  dim(z$D) <- c(6,ddim)
-  dim(z$Varth) <- c(28,ddim)
-  dim(z$res) <- c(ngrad,ddim)
-  dim(z$rss) <- ddim
-  df <- sum(table(object@replind)-1)
-  if(df<1||varmethod!="replicates"){
-     sigma2 <- z$rss/(ngrad-7)
-  } else {
+     cat("successfully completed nonlinear regression ",date(),proc.time(),"\n")
+     dim(z$th0) <- ddim
+     dim(z$D) <- c(6,ddim)
+     dim(z$Varth) <- c(28,ddim)
+     dim(z$res) <- c(ngrad,ddim)
+     dim(z$rss) <- ddim
+     df <- sum(table(object@replind)-1)
+     res <- z$res
+     D <- z$D
+     Varth <- z$Varth
+     rss <- z$rss
+     th0 <- z$th0
+     rm(z)
+     gc()
+     if(df<1||varmethod!="replicates"){
+        sigma2 <- z$rss/(ngrad-7)
+     } else {
 #
 #  We may want something more sophisticated here in case of
 #  replicated designs !!!
 #
-     df <- sum(table(object@replind)-1)
-     hmax <- max(1,(125/df)^(1/3))
-     z <- replvar(si,object@replind)
-     if(require(aws)) {
+        df <- sum(table(object@replind)-1)
+        hmax <- max(1,(125/df)^(1/3))
+        z <- replvar(si,object@replind)
+        dim(z) <- ddim
+        if(require(aws)) {
 #  adaptive bw to achive approx. 200 degrees of freedom
-        sigma2 <- aws(z/df,family="Variance",graph=TRUE,shape=df,hmax=pmax(1,(125/df)^(1/3)))
-     } else {
+           sigma2 <- aws(z/df,family="Variance",graph=TRUE,shape=df,hmax=pmax(1,(125/df)^(1/3)))
+        } else {
 #  nonadaptive bw to achive approx. 200 degrees of freedom
-        sigma2 <- gkernsm(z,1.76/df^(1/3))
+           sigma2 <- gkernsm(z,1.76/df^(1/3))
+        }
      }
   }
-  }
-  dim(s0) <- ddim
-  mask <- s0 > object@level
+     cat("successfully completed variance estimation ",date(),proc.time(),"\n")
   lags <- c(5,5,3)
   scorr <- .Fortran("mcorr",as.double(aperm(res,c(2:4,1))),
                    as.logical(mask),
@@ -275,7 +291,7 @@ function(object, method="nonlinear",varmethod="replicates") {
   bw[bw <= .25] <- 0
 
   invisible(new("dtiTensor",
-                list(theta = theta, Varth = Varth, sigma = sigma2, scorr = scorr, bw = bw),
+                list(D = D, th0 = th0, Varth = Varth, sigma = sigma2, scorr = scorr, bw = bw, mask = maks),
                 btb   = object@btb,
                 ngrad = object@ngrad, # = dim(btb)[2]
                 s0ind = object@s0ind,

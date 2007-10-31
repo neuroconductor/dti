@@ -1,7 +1,8 @@
-      subroutine nlrdti(s,nb,n1,n2,n3,b,th0,D,niter,eps,Varth,res,X,
-     1                  rss)
+      subroutine nlrdti(s,nb,n1,n2,n3,mask,b,th0,D,niter,eps,Varth,
+     1                  res,X,rss)
       implicit logical (a-z)
       integer nb,n1,n2,n3,s(nb,n1,n2,n3),niter
+      logical mask(n1,n2,n3)
       real*8 D(6,n1,n2,n3),b(6,nb),Varth(28,n1,n2,n3),res(nb,n1,n2,n3),
      1    th0(n1,n2,n3),X(nb,7),F(nb),eps,rss(n1,n2,n3)
       integer i1,i2,i3,j
@@ -10,10 +11,17 @@
          call intpr("i1",2,i1,1)
          DO i2=1,n2
             DO i3=1,n3
+               if(mask(i1,i2,i3)) THEN
                call solvedti(s(1,i1,i2,i3),nb,b,th0(i1,i2,i3),
      1                       D(1,i1,i2,i3),Varth(1,i1,i2,i3),
      2                       res(1,i1,i2,i3),niter,eps,X,
      3                       rss(n1,n2,n3))
+               ELSE
+                  DO j=1,6
+                     D(j,i1,i2,i3)=0.d0
+                  END DO
+                  rss(i1,i2,i3)=0.d0
+               END IF
             END DO
          END DO
       END DO

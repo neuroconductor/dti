@@ -42,16 +42,16 @@ setClass("dtiTensor",
          representation(method = "character"),
          contains=c("list","dti"),
          validity=function(object){
-          if (sum(c("theta","sigma","scorr") %in% names(object)) != 3) {
+          if (sum(c("D","sigma","scorr") %in% names(object)) != 3) {
             cat("s0 and/or si not in data\n")
             return(invisible(FALSE))
           }
-          if (!("array" %in% class(object$theta))) {
-            cat("s0 not an array\n")
+          if (!("array" %in% class(object$D))) {
+            cat("D not an array\n")
             return(invisible(FALSE))
           }
           if (!("array" %in% class(object$sigma))) {
-            cat("s0 not an array\n")
+            cat("sigma not an array\n")
             return(invisible(FALSE))
           }
           if (!(object@method %in% c("linear","nonlinear"))) {
