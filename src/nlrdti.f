@@ -63,7 +63,6 @@ C      call dblepr("theta",5,theta,7)
          rss=rss+res*res
          F(i)=res
       END DO
-      call dblepr("rss",3,rss,1)
       DO iter=1,niter
          DO j=1,7
             dg(j)=0.d0
@@ -137,12 +136,9 @@ C   we may still need ak and dg so copy them to pk and ck
             END DO
 C   Now solve  ak%*%dtheta= dg
 	    call dposv("U",7,1,ck,7,pk,7,info)
-            call dblepr("pk",2,pk,7)
-            call dblepr("dg",2,dg,7)
 C  Step 4 we have pk 
             IF(info.ne.0) THEN
                gamma=alpha*gamma
-               call dblepr("gamma1",6,gamma,1)
 C  thats step 6
             ELSE
 C  comute things needed for decision in step 5 
@@ -162,12 +158,10 @@ C  next iteration
                ntheta(5)=nth5
                ntheta(6)=nth6
                ntheta(7)=nth7
-               call dblepr("ntheta",6,ntheta,7)
-               call intpr("s",1,s,nb)
                nrss=0.d0
                DO i=1,nb
-                 z=b(i,1)*nth2+b(i,2)*nth3+b(i,3)*nth4+
-     1             b(i,4)*nth5+b(i,5)*nth6+b(i,6)*nth7
+                 z=b(1,i)*nth2+b(2,i)*nth3+b(3,i)*nth4+
+     1             b(4,i)*nth5+b(5,i)*nth6+b(6,i)*nth7
                   res=s(i)-nth1*exp(-z)
                   nrss=nrss+res*res
                   F(i)=res
@@ -177,16 +171,12 @@ C  next iteration
                   crss=crss+dg(j)*pk(j)
                END DO
                crss=rss-delta*gamma*crss
-               call dblepr("crss",4,crss,1)
-               call dblepr("nrss",4,nrss,1)
-               call dblepr("F",1,F,nb)
                IF(nrss.le.crss) THEN
                   notacc=.FALSE.
 C  accept new estimate, prepare for next iteration
                ELSE
                   gamma=alpha*gamma
                   IF(gamma.lt.0.1) return
-               call dblepr("gamma2",6,gamma,1)
 C  decrease gamma and try new regularization
                END IF
             END IF
@@ -200,9 +190,7 @@ C  decrease gamma and try new regularization
          th7=nth7
          oldrss=rss
          rss=nrss
-      call dblepr("rss",3,rss,1)
          call rchkusr()
-      call intpr("iter",4,iter,1)
       END DO
       th0=th1
       D(1)=th2
