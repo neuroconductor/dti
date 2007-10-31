@@ -2,7 +2,7 @@
 
       implicit logical(a-z)
       integer n1,n2,n3,nv,lag(3)
-      real*8 scorr,res(n1,n2,n3,nv)
+      real*8 scorr,res(nv,n1,n2,n3)
       logical mask(n1,n2,n3)
       real*8 z2,y2,resi,resip1,vrm,vrmp1,zk,zcorr,z
       integer i1,i2,i3,i4,l1,l2,l3,k
@@ -21,8 +21,8 @@ C  correlation in x
                y2=0.d0
                zcorr=0.d0
                do i4=1,nv
-                  resi=res(i1,i2,i3,i4)
-                  resip1=res(i1+l1,i2+l2,i3+l3,i4)
+                  resi=res(i4,i1,i2,i3)
+                  resip1=res(i4,i1+l1,i2+l2,i3+l3)
                   z2=z2+resi*resi
                   y2=y2+resip1*resip1
                   zcorr=zcorr+resi*resip1
@@ -49,7 +49,7 @@ C  correlation in x
 
       implicit logical(a-z)
       integer n1,n2,n3,nv,l1,l2,l3,lag(3)
-      real*8 scorr(l1,l2,l3),res(n1,n2,n3,nv)
+      real*8 scorr(l1,l2,l3),res(nv,n1,n2,n3)
       logical mask(n1,n2,n3)
       integer i1,i2,i3
       Do i1=1,l1

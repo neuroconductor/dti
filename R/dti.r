@@ -102,7 +102,7 @@ dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=
 #  number of zero gradients
   si <- readBin(zz,"integer",prod(ddim)*ngrad,2,FALSE)
   close(zz)
-  cat("Data successfully read \n")
+  cat("Data successfully read",date(),proc.time(), "\n")
 
   if (is.null(xind)) xind <- 1:ddim[1]
   if (is.null(yind)) yind <- 1:ddim[2]
@@ -113,7 +113,7 @@ dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=
   ddim0 <- as.integer(ddim)
   ddim <- as.integer(dim(si)[1:3])
 
-  cat("Create auxiliary statistics \n")
+  cat("Create auxiliary statistics",date(),proc.time(), " \n")
   btb <- create.designmatrix.dti(gradient)
   rind <- replind(gradient)
   
@@ -214,7 +214,6 @@ function(object, method="nonlinear",varmethod="replicates") {
      if(length(s0ind)>1) s0 <- apply(s0,2:4,mean)
      dim(s0) <- ddim
      mask <- s0 > object@level
-     th0 <- s0
      cat("start nonlinear regression",date(),proc.time(),"\n")
      z <- .Fortran("nlrdti",
                 as.integer(si),
@@ -224,7 +223,7 @@ function(object, method="nonlinear",varmethod="replicates") {
                 as.integer(ddim[3]),
                 as.logical(mask),
                 as.double(object@btb),
-                th0=as.double(th0),
+                th0=as.double(s0),
                 D=double(6*prod(ddim)),
                 as.integer(100),
                 as.double(1e-4),
@@ -269,7 +268,7 @@ function(object, method="nonlinear",varmethod="replicates") {
   }
      cat("successfully completed variance estimation ",date(),proc.time(),"\n")
   lags <- c(5,5,3)
-  scorr <- .Fortran("mcorr",as.double(aperm(res,c(2:4,1))),
+  scorr <- .Fortran("mcorr",as.double(res),
                    as.logical(mask),
                    as.integer(ddim[1]),
                    as.integer(ddim[2]),
@@ -282,16 +281,20 @@ function(object, method="nonlinear",varmethod="replicates") {
                    PACKAGE="dti",DUP=FALSE)$scorr
   dim(scorr) <- lags
   scorr[is.na(scorr)] <- 0
+  cat("estimated spatial correlations",date(),proc.time(),"\n")
   cat("first order  correlation in x-direction",signif(scorr[2,1,1],3),"\n")
   cat("first order  correlation in y-direction",signif(scorr[1,2,1],3),"\n")
   cat("first order  correlation in z-direction",signif(scorr[1,1,2],3),"\n")
+print(scorr)
 
   scorr[is.na(scorr)] <- 0
-  bw <- optim(c(2,2,2),corrrisk,method="L-BFGS-B",lower=c(.25,.25,.25),lag=lags,data=scorr)$par
+  bw <- optim(c(2,2,2),corrrisk,method="L-BFGS-B",lower=c(.25,.25,.25),
+  upper=c(3,3,3),lag=lags,data=scorr)$par
   bw[bw <= .25] <- 0
+  cat("estimated corresponding bandwidths",date(),proc.time(),"\n")
 
   invisible(new("dtiTensor",
-                list(D = D, th0 = th0, Varth = Varth, sigma = sigma2, scorr = scorr, bw = bw, mask = maks),
+                list(D = D, th0 = th0, Varth = Varth, sigma = sigma2, scorr = scorr, bw = bw, mask = mask),
                 btb   = object@btb,
                 ngrad = object@ngrad, # = dim(btb)[2]
                 s0ind = object@s0ind,

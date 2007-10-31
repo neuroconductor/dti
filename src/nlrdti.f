@@ -7,10 +7,10 @@
      1    th0(n1,n2,n3),X(nb,7),F(nb),eps,rss(n1,n2,n3)
       integer i1,i2,i3,j
       real*8 theta(7)
-      DO i1=1,n1
-         call intpr("i1",2,i1,1)
+      DO i3=1,n3
+         call intpr("Nonlinear regression for slice No:",34,i3,1)
          DO i2=1,n2
-            DO i3=1,n3
+            DO i1=1,n1
                if(mask(i1,i2,i3)) THEN
                call solvedti(s(1,i1,i2,i3),nb,b,th0(i1,i2,i3),
      1                       D(1,i1,i2,i3),Varth(1,i1,i2,i3),
