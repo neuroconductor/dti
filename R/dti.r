@@ -109,7 +109,7 @@ dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=
   if (is.null(zind)) zind <- 1:ddim[3]
   dim(si) <- c(ddim,ngrad)
   si <- si[xind,yind,zind,] # really needed?
-  level <- quantile(si[,,,s0ind],level) # set level to quantile of s_0 values
+  level <- level*mean(si[,,,s0ind][si[,,,s0ind]>0]) # set level to level*mean  of positive s_0 values
   ddim0 <- as.integer(ddim)
   ddim <- as.integer(dim(si)[1:3])
 
@@ -229,7 +229,6 @@ function(object, method="nonlinear",varmethod="replicates") {
                 as.double(1e-4),
                 Varth=double(28*prod(ddim)),
                 res=double(ngrad*prod(ddim)),
-                double(7*ngrad),
                 rss=double(prod(ddim)),
                 PACKAGE="dti",DUP=FALSE)[c("th0","D","Varth","res","rss")]
      cat("successfully completed nonlinear regression ",date(),proc.time(),"\n")
@@ -410,7 +409,7 @@ function(object, which) {
     for (j in 1:ddim[2]) {
       for (k in 1:ddim[3]) {
         z <- .Fortran("eigen3",
-                      as.double(object$theta[,i,j,k]),
+                      as.double(object$D[,i,j,k]),
                       lambda = double(3),
                       theta = double(3*3),
                       ierr = integer(1),
