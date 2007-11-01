@@ -15,7 +15,7 @@
                call solvedti(s(1,i1,i2,i3),nb,b,th0(i1,i2,i3),
      1                       D(1,i1,i2,i3),Varth(1,i1,i2,i3),
      2                       res(1,i1,i2,i3),niter,eps,
-     3                       rss(n1,n2,n3))
+     3                       rss(i1,i2,i3))
                ELSE
                   DO j=1,6
                      D(j,i1,i2,i3)=0.d0

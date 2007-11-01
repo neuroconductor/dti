@@ -23,9 +23,11 @@ setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=52,
     graph <- graph & adimpro
   }
   args <- match.call()
-  si <- object$si
-  s0 <- object$s0
-  ngrad <- object@ngrad
+  s0ind <- object@s0ind
+  s0 <- object$si[,,,s0ind]
+  if(length(s0ind)>1) s0 <- apply(s0,1:3,mean) 
+  si <- object$si[,,,-s0ind]
+  ngrad <- object@ngrad-length(s0ind)
   ddim0 <- object@ddim0
   ddim <- object@ddim
   xind <- object@xind
@@ -38,9 +40,10 @@ setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=52,
   Bcov <- btb%*%t(btb)
   btbsvd <- svd(btb)
   solvebtb <- btbsvd$u %*% diag(1/btbsvd$d) %*% t(btbsvd$v)
-
-  dtobject <- as(object,"dtiTensor")
-  y <- dtobject$theta
+  
+  dtobject <- dtiTensor(object,method="linear",varmethod="residuals")
+  mask <- dtobject$mask
+  y <- dtobject$D
   sigma2 <- dtobject$sigma
   scorr <- dtobject$scorr
   h0 <- dtobject$bw
@@ -149,6 +152,7 @@ setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=52,
      z <- .Fortran("awssidti",
                 as.double(s0),
                 as.double(si),
+                as.logical(mask),
                 as.double(z$theta),
                 bi=as.double(z$bi),
                 anindex=as.double(z$anindex),
@@ -220,15 +224,17 @@ setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=52,
   }
 
   invisible(new("dtiTensor",
-                list(theta = z$theta, sigma = z$sigma2hat, scorr = scorr, s0hat = z$s0hat),
+                list(D = z$theta, sigma = z$sigma2hat, scorr = scorr, s0hat = z$s0hat, bw = dtobject@bw, hmax = hmax, mask = mask, th0 = th0, Varth = Varth),
                 btb   = btb,
-                ngrad = ngrad, # = dim(btb)[2]
+                ngrad = ngrad+length(s0ind), # = dim(btb)[2]
+                s0ind = object@s0ind,
                 ddim  = as.integer(ddim),
                 ddim0 = as.integer(ddim0),
                 xind  = xind,
                 yind  = yind,
                 zind  = zind,
-                source= source)
+                source= object@source,
+                method= dtobject@method)
             )
 
 })
