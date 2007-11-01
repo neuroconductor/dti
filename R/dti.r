@@ -189,22 +189,23 @@ function(object, method="nonlinear",varmethod="replicates") {
      ttt[(ttt == -Inf)] <- 0
      dim(ttt) <- c(prod(ddim),ngrad0)
      ttt <- t(ttt)
-     cat("Data transformation completed \n")
+     cat("Data transformation completed ",date(),proc.time(),"\n")
 
      btbsvd <- svd(object@btb[,-s0ind])
      solvebtb <- btbsvd$u %*% diag(1/btbsvd$d) %*% t(btbsvd$v)
      D <- solvebtb%*% ttt
-     cat("Diffusion tensors generated \n")
+     cat("Diffusion tensors generated ",date(),proc.time(),"\n")
 
-     res <- ttt - t(object@btb) %*% D
-     mres2 <- res[1,]^2
-     for(i in 2:ngrad0) mres2 <- mres2 + res[i,]^2
-     sigma2 <- array(mres2/(ngrad0-6),ddim)
-     dim(theta) <- c(6,ddim)
-     dim(res) <- c(ngrad,ddim)
-     cat("Variance estimates generated \n")
+     res <- ttt - t(object@btb[,-s0ind]) %*% D
+     rss <- res[1,]^2
+     for(i in 2:ngrad0) rss <- rss + res[i,]^2
+     dim(rss) <- ddim
+     sigma2 <- rss/(ngrad0-6)
+     dim(D) <- c(6,ddim)
+     dim(res) <- c(ngrad0,ddim)
+     cat("Variance estimates generated ",date(),proc.time(),"\n")
      Varth <- NULL
-     rm(mres2)
+     th0 <- NULL
      gc()
   } else {
 #  method == "nonlinear"
@@ -247,7 +248,7 @@ function(object, method="nonlinear",varmethod="replicates") {
      gc()
      cat("Start variance estimation ",date(),proc.time(),"\n")
      if(df<1||varmethod!="replicates"){
-        sigma2 <- z$rss/(ngrad-7)
+        sigma2 <- rss/(ngrad-7)
      } else {
 #
 #  We may want something more sophisticated here in case of
@@ -287,7 +288,6 @@ function(object, method="nonlinear",varmethod="replicates") {
   cat("first order  correlation in x-direction",signif(scorr[2,1,1],3),"\n")
   cat("first order  correlation in y-direction",signif(scorr[1,2,1],3),"\n")
   cat("first order  correlation in z-direction",signif(scorr[1,1,2],3),"\n")
-print(scorr)
 
   scorr[is.na(scorr)] <- 0
   bw <- optim(c(2,2,2),corrrisk,method="L-BFGS-B",lower=c(.25,.25,.25),
