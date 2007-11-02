@@ -207,7 +207,7 @@ C
       integer ngrad,n1,n2,n3,nind
       integer x(ngrad,n1,n2,n3),rind(ngrad),tind(nind),lind(nind)
       real*8 sigma2(n1,n2,n3),mean(n1,n2,n3)
-      integer i,j,k,l,m,r
+      integer i,j,k,l,m,r,s
       real*8 z
       DO i=1,n1
          DO j=1,n2
@@ -226,8 +226,10 @@ C
             END DO
          END DO
          m=lind(l)
+         s=0
          DO r=1,ngrad
             if(rind(r).ne.m) CYCLE
+            s=s+1
             DO i=1,n1
                DO j=1,n2
                   DO k=1,n3

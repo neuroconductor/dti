@@ -28,7 +28,7 @@ return(NULL)
 }
 lind <- sort(unique(ind))
 dx <- dim(x)
-.Fortran("replvar",
+z<-.Fortran("replvar",
               as.integer(x),
               as.integer(dx[1]),
               as.integer(dx[2]),
@@ -40,7 +40,8 @@ dx <- dim(x)
               as.integer(length(tind)),
               sigma2=double(prod(dx[2:4])),
               double(prod(dx[2:4])),
-              PACKAGE="dti",DUP=FALSE)$sigma2/df
+              PACKAGE="dti",DUP=FALSE)$sigma2
+z/df
 }
 
 gkernsm <- function(y,h=1) {

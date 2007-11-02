@@ -257,10 +257,16 @@ function(object, method="nonlinear",varmethod="replicates") {
         df <- sum(table(object@replind)-1)
         hmax <- max(1,(125/df)^(1/3))
         z <- replvar(si,object@replind)
+#
+#   need to correct for underestimtion of variances due to 
+#   truncation of si to integer
+#   standard deviation is underestimated by about 0.385 for sd > 2
+#
+        z[z>0] <- (sqrt(z[z>0])+0.385)^2
         dim(z) <- ddim
         if(require(aws)) {
 #  adaptive bw to achive approx. 200 degrees of freedom
-           sigma2 <- aws(z/df,family="Variance",graph=TRUE,shape=df,hmax=pmax(1,(125/df)^(1/3)))$theta
+           sigma2 <- aws(z,family="Variance",graph=TRUE,shape=df,hmax=pmax(1,(125/df)^(1/3)))$theta
         } else {
 #  nonadaptive bw to achive approx. 200 degrees of freedom
            sigma2 <- gkernsm(z,1.76/df^(1/3))$gkernsm
