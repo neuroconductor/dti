@@ -12,7 +12,7 @@ setGeneric("dti.smooth", function(object, ...) standardGeneric("dti.smooth"))
 
 setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=52,
                                             rho=1,graph=FALSE,slice=NULL,quant=.8,
-                                            minanindex=NULL,eps=1e-6,hsig=2.5,lseq=NULL) {
+                                            minanindex=NULL,eps=1e-6,hsig=2.5,lseq=NULL, method="nonlinear",varmethod="replicates") {
 
 #
 #     lambda and lseq adjusted for alpha=0.2
@@ -41,7 +41,7 @@ setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=52,
   btbsvd <- svd(btb)
   solvebtb <- btbsvd$u %*% diag(1/btbsvd$d) %*% t(btbsvd$v)
   
-  dtobject <- dtiTensor(object,method="linear",varmethod="residuals")
+  dtobject <- dtiTensor(object,method=method,varmethod=varmethod)
   mask <- dtobject$mask
   y <- dtobject$D
   sigma2 <- dtobject$sigma
@@ -150,8 +150,8 @@ setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=52,
        cat("Correction factor for spatial correlation",signif(corrfactor,3),"\n")
     }
      z <- .Fortran("awssidti",
-                as.double(s0),
-                as.double(si),
+                as.integer(s0),
+                as.integer(si),
                 as.logical(mask),
                 as.double(z$theta),
                 bi=as.double(z$bi),

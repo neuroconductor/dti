@@ -4,7 +4,7 @@
       integer nb,n1,n2,n3,s(nb,n1,n2,n3),niter
       logical mask(n1,n2,n3)
       real*8 D(6,n1,n2,n3),b(6,nb),Varth(28,n1,n2,n3),res(nb,n1,n2,n3),
-     1    th0(n1,n2,n3),F(nb),eps,rss(n1,n2,n3)
+     1    th0(n1,n2,n3),eps,rss(n1,n2,n3)
       integer i1,i2,i3,j
       real*8 theta(7)
       DO i3=1,n3
@@ -90,7 +90,7 @@ C      call dblepr("rss",3,rss,1)
             maxabsdg=max(maxabsdg,abs(dg(j)))
          END DO
          relrss = (oldrss-rss)/rss
-         IF(maxabsdg.lt.eps.or.relrss.lt.1d-5) THEN
+         IF(maxabsdg.lt.eps.or.relrss.lt.1d-6) THEN
 C  prepare things for return if gradient is close to 0
             DO j=1,6
                D(j)=theta(j)
