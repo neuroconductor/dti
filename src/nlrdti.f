@@ -189,8 +189,8 @@ C      call intpr("iter",4,iter,1)
       END DO
       i=1
       DO j=1,7
-         DO k=j,7
-            Varth(i)=ak(j,k)
+         DO k=1,j
+            Varth(i)=ak(k,j)
             i=i+1
          END DO
       END DO
