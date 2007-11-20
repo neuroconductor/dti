@@ -6,7 +6,6 @@
       real*8 D(6,n1,n2,n3),b(6,nb),Varth(28,n1,n2,n3),res(nb,n1,n2,n3),
      1    th0(n1,n2,n3),eps,rss(n1,n2,n3)
       integer i1,i2,i3,j
-      real*8 theta(7)
       DO i3=1,n3
          call intpr("Nonlinear regression for slice No:",34,i3,1)
          DO i2=1,n2
@@ -36,7 +35,7 @@ C
       integer nb,s(nb),niter
       real*8 D(6),b(6,nb),th0,Varth(28),F(nb),eps
       integer i,j,k,info,iter
-      real*8 Vtheta(7,7),z,thcorr,gamma,alpha,delta,
+      real*8 z,gamma,alpha,delta,
      1       dg(7),pk(7),ak(7,7),ck(7,7),rss,nrss,crss,maxabsdg,
      2       oldrss,relrss,theta(6),ntheta(6),res,X(7),nth0
       alpha=0.5D0

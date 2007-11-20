@@ -12,8 +12,17 @@ setGeneric("dti.smooth", function(object, ...) standardGeneric("dti.smooth"))
 
 setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=52,
                                             rho=1,graph=FALSE,slice=NULL,quant=.8,
-                                            minanindex=NULL,eps=1e-6,hsig=2.5,lseq=NULL, method="nonlinear",varmethod="replicates") {
-
+                                            minanindex=NULL,eps=1e-6,hsig=2.5,lseq=NULL, method="nonlinear",varmethod="residuals") {
+if(method=="nonlinear"){
+   dtinl.smooth(object,hmax,hinit,lambda,rho,graph,slice,quant,minanindex,eps,hsig,lseq,varmethod)
+} else {
+   dtilin.smooth(object,hmax,hinit,lambda,rho,graph,slice,quant,minanindex,eps,hsig,lseq,varmethod)
+}
+}
+)
+dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
+                                            rho=1,graph=FALSE,slice=NULL,quant=.8,
+                                            minanindex=NULL,eps=1e-6,hsig=2.5,lseq=NULL,varmethod="residuals"){
 #
 #     lambda and lseq adjusted for alpha=0.2
 #
@@ -41,7 +50,7 @@ setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=52,
   btbsvd <- svd(btb)
   solvebtb <- btbsvd$u %*% diag(1/btbsvd$d) %*% t(btbsvd$v)
   
-  dtobject <- dtiTensor(object,method=method,varmethod=varmethod)
+  dtobject <- dtiTensor(object,method="linear",varmethod=varmethod)
   mask <- dtobject$mask
   y <- dtobject$D
   sigma2 <- dtobject$sigma
@@ -237,7 +246,7 @@ setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=52,
                 method= dtobject@method)
             )
 
-})
+}
 
 setMethod("dti.smooth", "dtiTensor", function(object,method="riemann",hmax=5,lambda=20,rho=1,graph=FALSE,
                                             slice=NULL,quant=.8,minanindex=NULL,zext=1){

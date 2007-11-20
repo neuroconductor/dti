@@ -4,7 +4,7 @@
       integer n1,n2,n3,nv,lag(3)
       real*8 scorr,res(nv,n1,n2,n3),sigma(n1,n2,n3),mean(n1,n2,n3)
       logical mask(n1,n2,n3)
-      real*8 vrm,zcorr,z,zm
+      real*8 vrm,zcorr,z
       integer i1,i2,i3,i4,l1,l2,l3,k,j1,j2,j3
       l1=lag(1)
       l2=lag(2)
