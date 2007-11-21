@@ -1,5 +1,5 @@
 dtinl.smooth <- function(object,hmax=5,hinit=1,lambda=52,rho=1,graph=FALSE,slice=NULL,quant=.8,
-                         minanindex=NULL,eps=1e-6,hsig=2.5,lseq=NULL,varmethod="residuals"){
+                         minanindex=NULL,eps=1e-6,hsig=2.5,lseq=NULL,varmethod="residuals",niter=5){
 #
 #     lambda and lseq adjusted for alpha=0.2
 #
@@ -10,7 +10,7 @@ dtinl.smooth <- function(object,hmax=5,hinit=1,lambda=52,rho=1,graph=FALSE,slice
   }
   args <- match.call()
   s0ind <- object@s0ind
-  si <- object$si
+  si <- aperm(object$si,c(4,1:3))
   ngrad <- object@ngrad
   ddim0 <- object@ddim0
   ddim <- object@ddim
@@ -51,10 +51,11 @@ dtinl.smooth <- function(object,hmax=5,hinit=1,lambda=52,rho=1,graph=FALSE,slice
                 as.double(eps),
                 DUP=FALSE,
                 PACKAGE="dti")[c("D","anindex","andirection","det")]
-  D <- array(z$theta,dimy)
+  dim(z$D) <- dimy
   z$bi <- 1/sigma2
   z$rss <- array(ngrad*sigma2,dimy[-1])
   z$Varth <- Varth
+  z$th0 <- th0
   dim(z$anindex) <-dim(z$det) <- dimy[-1]
   dim(z$andirection) <- c(3,dimy[-1]) 
   sigma2hat <- .Fortran("smsigma",
@@ -76,22 +77,22 @@ dtinl.smooth <- function(object,hmax=5,hinit=1,lambda=52,rho=1,graph=FALSE,slice
      on.exit(par(oldpar))
      if(is.null(slice)) slice<-n3%/%2
      class(z) <- "dti"
-     img<-z$theta[1,,,slice]
+     img<-z$D[1,,,slice]
      show.image(make.image(65535*img/max(img)))
      title(paste("Dxx: mean",signif(mean(img),3),"max",signif(max(img),3)))
-     img<-z$theta[2,,,slice]
+     img<-z$D[2,,,slice]
      show.image(make.image(img))
      title(paste("Dxy: min",signif(min(img),3),"max",signif(max(img),3)))
-     img<-z$theta[3,,,slice]
+     img<-z$D[3,,,slice]
      show.image(make.image(img))
      title(paste("Dxz: min",signif(min(img),3),"max",signif(max(img),3)))
      show.image(make.image(z$anindex[,,slice]))
      title(paste("Anisotropy index  range:",signif(min(z$anindex),3),"-",
                   signif(max(z$anindex),3)))
-     img<-z$theta[4,,,slice]
+     img<-z$D[4,,,slice]
      show.image(make.image(65535*img/max(img)))
      title(paste("Dyy: mean",signif(mean(img),3),"max",signif(max(img),3)))
-     img<-z$theta[5,,,slice]
+     img<-z$D[5,,,slice]
      show.image(make.image(img))
      title(paste("Dyz: min",signif(min(img),3),"max",signif(max(img),3)))
      andir2.image(z,slice,quant=quant,minanindex=minanindex)
@@ -99,7 +100,7 @@ dtinl.smooth <- function(object,hmax=5,hinit=1,lambda=52,rho=1,graph=FALSE,slice
      ni<-z$bi[,,slice]*sigma2[,,slice]
      show.image(make.image(65535*ni/max(ni)))
      title(paste("sum of weights  mean=",signif(mean(z$bi*sigma2),3)))
-     img<-z$theta[6,,,slice]
+     img<-z$D[6,,,slice]
      show.image(make.image(65535*img/max(img)))
      title(paste("Dzz: mean",signif(mean(img),3),"max",signif(max(img),3)))
   }
@@ -152,11 +153,11 @@ dtinl.smooth <- function(object,hmax=5,hinit=1,lambda=52,rho=1,graph=FALSE,slice
                     det=as.double(z$det),
                     as.double(z$sigma2hat),
                     sigma2hat=double(n),
-                    as.double(h),
+                    as.double(hakt),
                     as.integer(niter),
                     as.double(zext),
                     as.double(rho),
-                    as.double(lambda),
+                    as.double(lambda0),
                     double(ngrad),#swsi
                     double(ngrad),#F
                     as.double(eps),

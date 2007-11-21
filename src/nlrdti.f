@@ -34,10 +34,11 @@ C
       implicit logical (a-z)
       integer nb,s(nb),niter
       real*8 D(6),b(6,nb),th0,Varth(28),F(nb),eps
-      integer i,j,k,info,iter
+      integer i,j,k,info,iter,indvar
       real*8 z,gamma,alpha,delta,
      1       dg(7),pk(7),ak(7,7),ck(7,7),rss,nrss,crss,maxabsdg,
      2       oldrss,relrss,theta(6),ntheta(6),res,X(7),nth0
+      external indvar
       alpha=0.5D0
       delta=0.25D0
       DO j=1,6
@@ -186,11 +187,9 @@ C      call intpr("iter",4,iter,1)
       DO j=1,6
          D(j)=theta(j)
       END DO
-      i=1
       DO j=1,7
          DO k=1,j
-            Varth(i)=ak(k,j)
-            i=i+1
+            Varth(indvar(k,j))=ak(k,j)
          END DO
       END DO
       RETURN

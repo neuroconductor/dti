@@ -45,16 +45,21 @@ C   eps      -  something small and positive
       integer i1,j1,j1a,j1e,jj1,i2,j2,j2a,j2e,jj2,i3,j3,j3a,j3e,jj3,
      1        ierr,k
       real*8 wij,adist,sw,sws0,h3,thi(7),bii,sqrbii,ew(3),ev(3,3),
-     1       mew,z1,z2,z3,sij,deti,z,sew,eps3,ss2,sw0,Di(6),dtidisnr
+     1       mew,z1,z2,z3,sij,deti,z,sew,eps3,ss2,sw0,Di(6),dtidisnr,
+     2       vth(28),th0i
       external adist,dtidisnr
-      logical aws
+      logical aws,lprint
       aws=lambda.lt.1e20
       h3=h*h*h
       eps3=eps*eps*eps
 C  now anisotropic smoothing 
       DO i1=1,n1
+C         call intpr("i1",2,i1,1)
          DO i2=1,n2
+C            call intpr("i2",2,i2,1)
             DO i3=1,n3
+               lprint=(i1*i2*i3).eq.4913
+C               call intpr("i3",2,i3,1)
                if(.not.mask(i1,i2,i3)) CYCLE
                sw=0.d0
                sw0=0.d0
@@ -63,10 +68,14 @@ C  now anisotropic smoothing
                DO k=1,nb
                   swsi(k)=0.d0
                END DO
+               DO k=1,28
+                  vth(k)=Varth(k,i1,i2,i3)
+               END DO
                deti=exp(log(det(i1,i2,i3))/3)
                bii=bi(i1,i2,i3)
                sqrbii=sigma2h(i1,i2,i3)/sqrt(bii)
-               th0n(i1,i2,i3)=th0(i1,i2,i3)
+               th0i=th0(i1,i2,i3)
+               th0n(i1,i2,i3)=th0i
 C    used as initial values
                DO k=1,6
                   Di(k)=D(k,i1,i2,i3)
@@ -110,15 +119,18 @@ C  this is scale invariant sice sqrbii scales with sqrt(sigma2) (standard deviat
                DO j1=j1a,j1e
                   jj1=i1+j1
                   if(jj1.le.0.or.jj1.gt.n1) CYCLE
+C                  call intpr("jj1",3,jj1,1)
                   call rangey(thi,j1,h,j2a,j2e)
                  DO j2=j2a,j2e
                      jj2=i2+j2
                      if(jj2.le.0.or.jj2.gt.n2) CYCLE
+C                     call intpr("jj2",3,jj2,1)
                      call rangez(thi,j1,j2,h,j3a,j3e,zext)
                       DO j3=j3a,j3e
                         jj3=i3+j3
                         if(jj3.le.0.or.jj3.gt.n3) CYCLE
                         if(.not.mask(jj1,jj2,jj3)) CYCLE
+C                        call intpr("jj3",3,jj3,1)
                         wij=adist(thi,j1,j2,j3,zext)
 C     triangular location kernel
                         if(wij.gt.h3) CYCLE
@@ -127,17 +139,26 @@ C     triangular location kernel
 C                           sij=
 C          dtidist2(th(1,i1,i2,i3),
 C     1                          th(1,jj1,jj2,jj3),bcov)*bii/lambda
+C                        call dblepr("th0i",4,th0i,1)
+C                        call dblepr("th0j",4,th0(jj1,jj2,jj3),1)
+C                        call dblepr("Di",2,Di,6)
+C                        call dblepr("Dj",2,D(1,jj1,jj2,jj3),6)
+C                        call dblepr("Vth",3,Vth,28)
                            sij = dtidisnr(th0i,Di,th0(jj1,jj2,jj3),
      1                                    D(1,jj1,jj2,jj3),Vth)/lambda
+                     if(lprint)   call dblepr("sij",3,sij,1)
                            if(sij.gt.1.d0) CYCLE
                            wij=wij*(1.d0-sij)
                         END IF
+C                        call dblepr("A",1,wij,1)
                         ss2=ss2+wij*sigma2(jj1,jj2,jj3)
+C                        call dblepr("ss2",3,ss2,1)
                         sw0=sw0+wij
                         wij=wij/sigma2h(jj1,jj2,jj3)
+C                        call dblepr("wij",3,wij,1)
                         sw=sw+wij
                         DO k=1,nb
-                           swsi(k)=swsi(k)+wij*si(jj1,jj2,jj3,k)
+                           swsi(k)=swsi(k)+wij*si(k,jj1,jj2,jj3)
                         END DO
                      END DO
                   END DO
@@ -148,9 +169,14 @@ C     1                          th(1,jj1,jj2,jj3),bcov)*bii/lambda
                   Do k=1,nb
                      swsi(k)=swsi(k)/sw
                   END DO
+                  if(lprint) call dblepr("sw",2,sw,1)
+                  if(lprint) call dblepr("swsi",4,swsi,nb)
+                  if(lprint) call dblepr("vth",3,Varth(1,i1,i2,i3),28)
                   call solvedti(swsi,nb,btb,th0n(i1,i2,i3),
      1                          Dn(1,i1,i2,i3),Varth(1,i1,i2,i3),F,
      2                          niter,eps,rss(i1,i2,i3))
+                  if(lprint) call dblepr("th0n",4,th0n(i1,i2,i3),1)
+                  if(lprint) call dblepr("vth",3,Varth(1,i1,i2,i3),28)
                ELSE
                   sigma2n(i1,i2,i3)=sigma2h(i1,i2,i3)
                END IF
