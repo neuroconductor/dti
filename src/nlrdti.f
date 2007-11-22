@@ -21,6 +21,8 @@
                   END DO
                   rss(i1,i2,i3)=0.d0
                END IF
+               if((i1*i2*i3).eq.4913) THEN
+               END IF
             END DO
          END DO
       END DO
@@ -37,14 +39,10 @@ C
       integer i,j,k,info,iter,indvar
       real*8 z,gamma,alpha,delta,
      1       dg(7),pk(7),ak(7,7),ck(7,7),rss,nrss,crss,maxabsdg,
-     2       oldrss,relrss,theta(6),ntheta(6),res,X(7),nth0
+     2       oldrss,relrss,Dn(6),res,X(7),th0n
       external indvar
       alpha=0.5D0
       delta=0.25D0
-      DO j=1,6
-         theta(j)=D(j)
-      END DO
-C      call dblepr("theta",5,theta,7)
       gamma=1.d0
       alpha=0.7d0
       oldrss=1.d50
@@ -52,14 +50,13 @@ C      call dblepr("theta",5,theta,7)
       DO i=1,nb
          z=0.d0
          DO j=1,6
-            z=z+b(j,i)*theta(j)
+            z=z+b(j,i)*D(j)
          END DO
          z=exp(-z)
          res=s(i)-th0*z
          rss=rss+res*res
          F(i)=res
       END DO
-C      call dblepr("rss",3,rss,1)
       DO iter=1,niter
          DO j=1,7
             dg(j)=0.d0
@@ -70,7 +67,7 @@ C      call dblepr("rss",3,rss,1)
          DO i=1,nb
             z=0.d0
             DO j=1,6
-               z=z+b(j,i)*theta(j)
+               z=z+b(j,i)*D(j)
             END DO
             z=exp(-z)
             X(7)= -z
@@ -92,14 +89,9 @@ C      call dblepr("rss",3,rss,1)
          relrss = (oldrss-rss)/rss
          IF(maxabsdg.lt.eps.or.relrss.lt.1d-6) THEN
 C  prepare things for return if gradient is close to 0
-            DO j=1,6
-               D(j)=theta(j)
-            END DO
-            i=1
             DO j=1,7
                DO k=j,7
-                  Varth(i)=ak(j,k)
-                  i=i+1
+                  Varth(indvar(j,k))=ak(j,k)
                END DO
             END DO
             RETURN
@@ -128,31 +120,25 @@ C   we may still need ak and dg so copy them to pk and ck
             END DO
 C   Now solve  ak%*%dtheta= dg
 	    call dposv("U",7,1,ck,7,pk,7,info)
-C            call dblepr("pk",2,pk,7)
-C            call dblepr("dg",2,dg,7)
 C  Step 4 we have pk 
             IF(info.ne.0) THEN
                gamma=alpha*gamma
-C               call dblepr("gamma1",6,gamma,1)
 C  thats step 6
             ELSE
 C  comute things needed for decision in step 5 
 C  if successful F, nrss, and theta will be reused in the  
 C  next iteration
                DO j=1,6
-                  ntheta(j)=theta(j)-gamma*pk(j)
+                  Dn(j)=D(j)-gamma*pk(j)
                END DO
-               nth0=th0-gamma*pk(7)
-C               call dblepr("ntheta",6,ntheta,6)
-C               call dblepr("nth0",4,nth0,1)
-C               call intpr("s",1,s,nb)
+               th0n=th0-gamma*pk(7)
                nrss=0.d0
                DO i=1,nb
                   z=0.d0
                   DO j=1,6
-                     z=z+b(j,i)*ntheta(j)
+                     z=z+b(j,i)*Dn(j)
                   END DO
-                  res=s(i)-nth0*exp(-z)
+                  res=s(i)-th0n*exp(-z)
                   nrss=nrss+res*res
                   F(i)=res
                END DO
@@ -161,35 +147,26 @@ C               call intpr("s",1,s,nb)
                   crss=crss+dg(j)*pk(j)
                END DO
                crss=rss-delta*gamma*crss
-C               call dblepr("F",1,F,nb)
-C               call dblepr("crss",4,crss,1)
-C               call dblepr("nrss",4,nrss,1)
                IF(nrss.le.crss) THEN
                   notacc=.FALSE.
 C  accept new estimate, prepare for next iteration
                ELSE
                   gamma=alpha*gamma
-C               call dblepr("gamma2",6,gamma,1)
 C  decrease gamma and try new regularization
                END IF
             END IF
          END DO
-         th0=nth0
+         th0=th0n
          DO j=1,6
-            theta(j)=ntheta(j)
+            D(j)=Dn(j)
          END DO
          oldrss=rss
          rss=nrss
-C      call dblepr("rss",3,rss,1)
          call rchkusr()
-C      call intpr("iter",4,iter,1)
-      END DO
-      DO j=1,6
-         D(j)=theta(j)
       END DO
       DO j=1,7
-         DO k=1,j
-            Varth(indvar(k,j))=ak(k,j)
+         DO k=j,7
+            Varth(indvar(j,k))=ak(j,k)
          END DO
       END DO
       RETURN

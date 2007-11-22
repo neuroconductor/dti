@@ -30,7 +30,6 @@ dtinl.smooth <- function(object,hmax=5,hinit=1,lambda=52,rho=1,graph=FALSE,slice
   scorr <- dtobject$scorr
   h0 <- dtobject$bw
   cat("Corresponding bandwiths for specified correlation:",h0,"\n")
-  rm(object,dtobject)
   gc()
   dimy <- dim(D)
   if(length(dimy)!=4||dimy[1]!=6) stop("D does not contain 3D diffusion tensor image")
@@ -52,7 +51,7 @@ dtinl.smooth <- function(object,hmax=5,hinit=1,lambda=52,rho=1,graph=FALSE,slice
                 DUP=FALSE,
                 PACKAGE="dti")[c("D","anindex","andirection","det")]
   dim(z$D) <- dimy
-  z$bi <- 1/sigma2
+#  z$bi <- 1/sigma2
   z$rss <- array(ngrad*sigma2,dimy[-1])
   z$Varth <- Varth
   z$th0 <- th0
@@ -69,6 +68,8 @@ dtinl.smooth <- function(object,hmax=5,hinit=1,lambda=52,rho=1,graph=FALSE,slice
                        DUP=FALSE,
                        PACKAGE="dti")$sigma2hat
    z$sigma2hat <- sigma2hat
+   z$bi <- 1/sigma2hat
+   dim(z$bi) <- dim(z$sigma2hat) <- dimy[-1]
 #
 #  initial state for h=1
 #
@@ -210,7 +211,7 @@ dtinl.smooth <- function(object,hmax=5,hinit=1,lambda=52,rho=1,graph=FALSE,slice
     lambda0 <- lambda*lseq[k]*scorrfactor     
   }
   invisible(new("dtiTensor",
-                list(D = z$D, th0= z$th0, Varth= z$Varth, sigma = z$sigma2hat, scorr = scorr, s0hat = z$th0, bw = dtobject@bw, hmax = hmax, mask = mask),
+                list(D = z$D, th0= z$th0, Varth= z$Varth, sigma = z$sigma2hat, scorr = scorr, s0hat = z$th0, bw = dtobject$bw, hmax = hmax, mask = mask),
                 btb   = btb,
                 ngrad = ngrad+length(s0ind), # = dim(btb)[2]
                 s0ind = object@s0ind,

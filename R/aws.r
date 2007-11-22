@@ -12,11 +12,11 @@ setGeneric("dti.smooth", function(object, ...) standardGeneric("dti.smooth"))
 
 setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=52,
                                             rho=1,graph=FALSE,slice=NULL,quant=.8,
-                                            minanindex=NULL,eps=1e-6,hsig=2.5,lseq=NULL, method="nonlinear",varmethod="residuals") {
+                                            minanindex=NULL,eps=1e-6,hsig=2.5,lseq=NULL, method="nonlinear",varmethod="residuals",niter=5) {
 if(method=="nonlinear"){
    dtinl.smooth(object,hmax,hinit,lambda,rho,graph,slice,quant,minanindex,eps,hsig,lseq,varmethod)
 } else {
-   dtilin.smooth(object,hmax,hinit,lambda,rho,graph,slice,quant,minanindex,eps,hsig,lseq,varmethod)
+   dtilin.smooth(object,hmax,hinit,lambda,rho,graph,slice,quant,minanindex,eps,hsig,lseq,varmethod,niter)
 }
 }
 )

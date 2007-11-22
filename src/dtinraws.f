@@ -54,12 +54,9 @@ C   eps      -  something small and positive
       eps3=eps*eps*eps
 C  now anisotropic smoothing 
       DO i1=1,n1
-C         call intpr("i1",2,i1,1)
          DO i2=1,n2
-C            call intpr("i2",2,i2,1)
             DO i3=1,n3
                lprint=(i1*i2*i3).eq.4913
-C               call intpr("i3",2,i3,1)
                if(.not.mask(i1,i2,i3)) CYCLE
                sw=0.d0
                sw0=0.d0
@@ -119,43 +116,28 @@ C  this is scale invariant sice sqrbii scales with sqrt(sigma2) (standard deviat
                DO j1=j1a,j1e
                   jj1=i1+j1
                   if(jj1.le.0.or.jj1.gt.n1) CYCLE
-C                  call intpr("jj1",3,jj1,1)
                   call rangey(thi,j1,h,j2a,j2e)
                  DO j2=j2a,j2e
                      jj2=i2+j2
                      if(jj2.le.0.or.jj2.gt.n2) CYCLE
-C                     call intpr("jj2",3,jj2,1)
                      call rangez(thi,j1,j2,h,j3a,j3e,zext)
                       DO j3=j3a,j3e
                         jj3=i3+j3
                         if(jj3.le.0.or.jj3.gt.n3) CYCLE
                         if(.not.mask(jj1,jj2,jj3)) CYCLE
-C                        call intpr("jj3",3,jj3,1)
                         wij=adist(thi,j1,j2,j3,zext)
 C     triangular location kernel
                         if(wij.gt.h3) CYCLE
                         wij = (1.d0 - wij/h3)
                         IF(aws) THEN
-C                           sij=
-C          dtidist2(th(1,i1,i2,i3),
-C     1                          th(1,jj1,jj2,jj3),bcov)*bii/lambda
-C                        call dblepr("th0i",4,th0i,1)
-C                        call dblepr("th0j",4,th0(jj1,jj2,jj3),1)
-C                        call dblepr("Di",2,Di,6)
-C                        call dblepr("Dj",2,D(1,jj1,jj2,jj3),6)
-C                        call dblepr("Vth",3,Vth,28)
-                           sij = dtidisnr(th0i,Di,th0(jj1,jj2,jj3),
-     1                                    D(1,jj1,jj2,jj3),Vth)/lambda
-                     if(lprint)   call dblepr("sij",3,sij,1)
+                           sij = bi(i1,i2,i3)*dtidisnr(th0i,Di,
+     1               th0(jj1,jj2,jj3),D(1,jj1,jj2,jj3),Vth)/lambda
                            if(sij.gt.1.d0) CYCLE
                            wij=wij*(1.d0-sij)
                         END IF
-C                        call dblepr("A",1,wij,1)
                         ss2=ss2+wij*sigma2(jj1,jj2,jj3)
-C                        call dblepr("ss2",3,ss2,1)
                         sw0=sw0+wij
                         wij=wij/sigma2h(jj1,jj2,jj3)
-C                        call dblepr("wij",3,wij,1)
                         sw=sw+wij
                         DO k=1,nb
                            swsi(k)=swsi(k)+wij*si(k,jj1,jj2,jj3)
@@ -169,14 +151,9 @@ C                        call dblepr("wij",3,wij,1)
                   Do k=1,nb
                      swsi(k)=swsi(k)/sw
                   END DO
-                  if(lprint) call dblepr("sw",2,sw,1)
-                  if(lprint) call dblepr("swsi",4,swsi,nb)
-                  if(lprint) call dblepr("vth",3,Varth(1,i1,i2,i3),28)
-                  call solvedti(swsi,nb,btb,th0n(i1,i2,i3),
+                  call dsolvdti(swsi,nb,btb,th0n(i1,i2,i3),
      1                          Dn(1,i1,i2,i3),Varth(1,i1,i2,i3),F,
      2                          niter,eps,rss(i1,i2,i3))
-                  if(lprint) call dblepr("th0n",4,th0n(i1,i2,i3),1)
-                  if(lprint) call dblepr("vth",3,Varth(1,i1,i2,i3),28)
                ELSE
                   sigma2n(i1,i2,i3)=sigma2h(i1,i2,i3)
                END IF
@@ -260,5 +237,149 @@ C
          END DO
       END DO
       dtidisnr=z
+      RETURN
+      END
+      subroutine dsolvdti(s,nb,b,th0,D,Varth,F,niter,eps,rss)
+C
+C  Implements the regularized Gauss-Newton Algortithm (10.2.8)
+C  from Schwetlick (1979)
+C  same as solvedti except that s is double
+C
+      implicit logical (a-z)
+      integer nb,niter
+      real*8 s(nb),D(6),b(6,nb),th0,Varth(28),F(nb),eps
+      integer i,j,k,info,iter,indvar
+      real*8 z,gamma,alpha,delta,
+     1       dg(7),pk(7),ak(7,7),ck(7,7),rss,nrss,crss,maxabsdg,
+     2       oldrss,relrss,Dn(6),res,X(7),th0n
+      external indvar
+      alpha=0.5D0
+      delta=0.25D0
+      gamma=1.d0
+      alpha=0.7d0
+      oldrss=1.d50
+      rss=0.d0
+      DO i=1,nb
+         z=0.d0
+         DO j=1,6
+            z=z+b(j,i)*D(j)
+         END DO
+         z=exp(-z)
+         res=s(i)-th0*z
+         rss=rss+res*res
+         F(i)=res
+      END DO
+      DO iter=1,niter
+         DO j=1,7
+            dg(j)=0.d0
+            DO k=j,7
+               ak(j,k)=0.d0
+            END DO
+         END DO            
+         DO i=1,nb
+            z=0.d0
+            DO j=1,6
+               z=z+b(j,i)*D(j)
+            END DO
+            z=exp(-z)
+            X(7)= -z
+            z=z*th0
+            DO j=1,6
+               X(j)=b(j,i)*z
+            END DO
+            DO j=1,7
+               dg(j)=dg(j)+X(j)*F(i)
+               DO k=j,7
+                  ak(j,k)=ak(j,k)+X(j)*X(k)
+               END DO
+            END DO 
+         END DO
+         maxabsdg=0.d0
+         DO j=1,7
+            maxabsdg=max(maxabsdg,abs(dg(j)))
+         END DO
+         relrss = (oldrss-rss)/rss
+         IF(maxabsdg.lt.eps.or.relrss.lt.1d-6) THEN
+C  prepare things for return if gradient is close to 0
+            DO j=1,7
+               DO k=j,7
+                  Varth(indvar(j,k))=ak(j,k)
+               END DO
+            END DO
+            RETURN
+         END IF
+         gamma=min(gamma/alpha,1.d0)
+C  End of step 3
+         notacc=.TRUE.
+         DO WHILE (notacc) 
+            IF(gamma.lt.1.d0) THEN
+               DO j=1,7
+                  DO k=j,7
+                     ck(j,k)=gamma*ak(j,k)
+                  END DO
+                  ck(j,j)=ck(j,j)+1.d0-gamma
+               END DO
+            ELSE
+C   we may still need ak and dg so copy them to pk and ck
+               DO j=1,7
+                  DO k=j,7
+                     ck(j,k)=ak(j,k)
+                  END DO
+               END DO
+            END IF
+            DO j=1,7
+               pk(j)=dg(j)
+            END DO
+C   Now solve  ak%*%dtheta= dg
+	    call dposv("U",7,1,ck,7,pk,7,info)
+C  Step 4 we have pk 
+            IF(info.ne.0) THEN
+               gamma=alpha*gamma
+C  thats step 6
+            ELSE
+C  comute things needed for decision in step 5 
+C  if successful F, nrss, and theta will be reused in the  
+C  next iteration
+               DO j=1,6
+                  Dn(j)=D(j)-gamma*pk(j)
+               END DO
+               th0n=th0-gamma*pk(7)
+               nrss=0.d0
+               DO i=1,nb
+                  z=0.d0
+                  DO j=1,6
+                     z=z+b(j,i)*Dn(j)
+                  END DO
+                  res=s(i)-th0n*exp(-z)
+                  nrss=nrss+res*res
+                  F(i)=res
+               END DO
+               crss=0.d0
+               DO j=1,7
+                  crss=crss+dg(j)*pk(j)
+               END DO
+               crss=rss-delta*gamma*crss
+               IF(nrss.le.crss) THEN
+                  notacc=.FALSE.
+C  accept new estimate, prepare for next iteration
+               ELSE
+                  gamma=alpha*gamma
+C  decrease gamma and try new regularization
+               END IF
+            END IF
+         END DO
+         th0=th0n
+         DO j=1,6
+            D(j)=Dn(j)
+         END DO
+         oldrss=rss
+         rss=nrss
+         call rchkusr()
+      END DO
+      DO j=1,7
+         DO k=j,7
+            Varth(indvar(j,k))=ak(j,k)
+         END DO
+      END DO
       RETURN
       END
