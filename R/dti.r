@@ -262,7 +262,7 @@ function(object, method="nonlinear",varmethod="replicates") {
 #   truncation of si to integer
 #   standard deviation is underestimated by about 0.385 for sd > 2
 #
-        z[z>0] <- (sqrt(z[z>0])+0.385)^2
+        z <- (sqrt(z)+0.385)^2
         dim(z) <- ddim
         if(require(aws)) {
 #  adaptive bw to achive approx. 200 degrees of freedom
