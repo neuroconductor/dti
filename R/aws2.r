@@ -1,4 +1,4 @@
-dtinl.smooth <- function(object,hmax=5,hinit=1,lambda=52,rho=1,graph=FALSE,slice=NULL,quant=.8,
+dtinl.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slice=NULL,quant=.8,
                          minanindex=NULL,eps=1e-6,hsig=2.5,lseq=NULL,varmethod="residuals",niter=5){
 #
 #     lambda and lseq adjusted for alpha=0.2
