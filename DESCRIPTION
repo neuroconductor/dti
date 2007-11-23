@@ -9,7 +9,7 @@ Suggests: adimpro
 Description: The library contains R-functions to perform an dti analysis
      based on the adaptive weights smoothing (AWS) procedure devoloped in 
      Polzehl und Spokoiny (2006).
-License: GPL version 2 or newer
-     This library is Copyright (C) 2005 Weierstrass Institute for 
+License: GPL (>=2)
+Copyright: This packge is Copyright (C) 2005-2007 Weierstrass Institute for 
                                    Applied Analysis and Stochastics.
 URL: http://www.wias-berlin.de/project-areas/stat/a3
