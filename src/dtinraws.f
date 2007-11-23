@@ -5,7 +5,8 @@ C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine awsnrdti(si,nb,n1,n2,n3,mask,btb,sigma2,th0,th0n,
      1                    D,Dn,Varth,rss,bi,ani,andir,det,sigma2h,
-     2                    sigma2n,h,niter,zext,rho,lambda,swsi,F,eps)
+     2                    sigma2n,h,niter,zext,rho,lambda,swsi,F,eps,
+     3                    rician,besselq)
 C
 C   si       -  observed diffusion weighted images
 C   nb       -  number of gradients (including zero gradients)
@@ -40,13 +41,14 @@ C   eps      -  something small and positive
      1       D(6,n1,n2,n3),Dn(6,n1,n2,n3),Varth(28,n1,n2,n3),
      2       bi(n1,n2,n3),ani(n1,n2,n3),andir(3,n1,n2,n3),
      3       det(n1,n2,n3),sigma2h(n1,n2,n3),sigma2n(n1,n2,n3),h,rho,
-     1       zext,lambda,swsi(nb),F(nb),eps,rss(n1,n2,n3)
-      logical mask(n1,n2,n3)
+     1       zext,lambda,swsi(nb),F(nb),eps,
+     2       rss(n1,n2,n3),besselq(1001)
+      logical mask(n1,n2,n3),rician
       integer i1,j1,j1a,j1e,jj1,i2,j2,j2a,j2e,jj2,i3,j3,j3a,j3e,jj3,
-     1        ierr,k
+     1        ierr,k,iz
       real*8 wij,adist,sw,sws0,h3,thi(7),bii,sqrbii,ew(3),ev(3,3),
      1       mew,z1,z2,z3,sij,deti,z,sew,eps3,ss2,sw0,Di(6),dtidisnr,
-     2       vth(28),th0i
+     2       vth(28),th0i,abessel,az
       external adist,dtidisnr
       logical aws,lprint
       aws=lambda.lt.1e20
@@ -85,8 +87,8 @@ C    used as initial values
                thi(6)=thi(6)+rho*sqrbii
 C  this is scale invariant sice sqrbii scales with sqrt(sigma2) (standard deviation)
                call eigen3(thi,ew,ev,ierr)
-               if(ierr.ne.0) THEN
-                  call intpr("ierr",4,ierr,1)
+               if(ierr.ne.0.or.ew(1).le.eps) THEN
+C                  call intpr("ierr",4,ierr,1)
                   thi(1)=1
                   thi(2)=0
                   thi(3)=0
@@ -112,12 +114,14 @@ C  this is scale invariant sice sqrbii scales with sqrt(sigma2) (standard deviat
                   thi(6)=ev(3,1)*ev(3,1)/ew(1)+ev(3,2)*ev(3,2)/ew(2)+
      1                   ev(3,3)*ev(3,3)/ew(3)
                END IF
+               IF(rician) call sihat(th0i,Di,btb,F,nb)
+C   create needed estimates of s_i
                call rangex(thi,h,j1a,j1e)
                DO j1=j1a,j1e
                   jj1=i1+j1
                   if(jj1.le.0.or.jj1.gt.n1) CYCLE
                   call rangey(thi,j1,h,j2a,j2e)
-                 DO j2=j2a,j2e
+                  DO j2=j2a,j2e
                      jj2=i2+j2
                      if(jj2.le.0.or.jj2.gt.n2) CYCLE
                      call rangez(thi,j1,j2,h,j3a,j3e,zext)
@@ -139,9 +143,26 @@ C     triangular location kernel
                         sw0=sw0+wij
                         wij=wij/sigma2h(jj1,jj2,jj3)
                         sw=sw+wij
-                        DO k=1,nb
-                           swsi(k)=swsi(k)+wij*si(k,jj1,jj2,jj3)
-                        END DO
+                        if(rician) THEN
+                           DO k=1,nb
+                              z=si(k,jj1,jj2,jj3)/
+     1                             sigma2h(jj1,jj2,jj3)*F(k)
+                              z1=1.d1*z
+C   this depends on the discretization of besselI(.,1)/besselI(.,0)
+                              iz=z1
+                              if(iz.le.1000) THEN
+                                 az=z1-iz
+                         z=(1.d0-az)*besselq(iz)+az*besselq(iz+1)
+                              swsi(k)=swsi(k)+wij*z*si(k,jj1,jj2,jj3)
+                              ELSE
+                              swsi(k)=swsi(k)+wij*si(k,jj1,jj2,jj3)
+                              END IF
+                           END DO
+                        ELSE
+                           DO k=1,nb
+                              swsi(k)=swsi(k)+wij*si(k,jj1,jj2,jj3)
+                           END DO
+                        END IF
                      END DO
                   END DO
                END DO
@@ -380,6 +401,21 @@ C  decrease gamma and try new regularization
          DO k=j,7
             Varth(indvar(j,k))=ak(j,k)
          END DO
+      END DO
+      RETURN
+      END
+      subroutine sihat(th0i,Di,btb,F,nb)
+      implicit logical (a-z)
+      integer nb
+      real*8 th0i,Di(6),btb(6,nb),F(nb)
+      integer j,k
+      real*8 z
+      DO k=1,nb
+         z=0.d0
+         DO j=1,6
+            z=z+btb(j,k)*Di(j)
+         END DO
+         F(k)=th0i*exp(-z)
       END DO
       RETURN
       END

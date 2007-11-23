@@ -1,5 +1,5 @@
 dtinl.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slice=NULL,quant=.8,
-                         minanindex=NULL,eps=1e-6,hsig=2.5,lseq=NULL,varmethod="residuals",niter=5){
+                         minanindex=NULL,eps=1e-6,hsig=2.5,lseq=NULL,varmethod="residuals",rician=TRUE,niter=5){
 #
 #     lambda and lseq adjusted for alpha=0.2
 #
@@ -100,7 +100,7 @@ dtinl.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slice
      title(paste("Directions (h=1), slice",slice))
      ni<-z$bi[,,slice]*sigma2[,,slice]
      show.image(make.image(65535*ni/max(ni)))
-     title(paste("sum of weights  mean=",signif(mean(z$bi*sigma2),3)))
+     title(paste("sum of weights  mean=",signif(mean(z$bi[mask]*sigma2),3)))
      img<-z$D[6,,,slice]
      show.image(make.image(65535*img/max(img)))
      title(paste("Dzz: mean",signif(mean(img),3),"max",signif(max(img),3)))
@@ -125,6 +125,11 @@ dtinl.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slice
   lseq <- lseq[1:steps]
   k <- 1
   lambda0 <- lambda*lseq[k]
+#  prepare for a one step fixpoint correction for rician bias
+  x <- seq(0,100,.1)
+  besselq <- besselI(x,1)/besselI(x,0)
+  besselq <- besselq/besselq[1001]
+#  just to make it smooth at the end of the grid
   while(hakt <= hmax) {
     if (any(h0 >= 0.25)) {
        corrfactor <- Spatialvar.gauss(hakt0/0.42445/4,h0,3) /
@@ -162,6 +167,8 @@ dtinl.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slice
                     double(ngrad),#swsi
                     double(ngrad),#F
                     as.double(eps),
+                    as.logical(rician),
+                    as.double(besselq), # based on x <- seq(0,100,.1) !!!
                     DUP=FALSE,PACKAGE="dti")[c("th0","D","Varth","rss","bi","anindex","andirection","det","sigma2hat")]
      if(hakt<hsig){
         eta <- (hsig^3 - hakt^3)/hsig^3
@@ -195,7 +202,7 @@ dtinl.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slice
      title(paste("Directions (h=",signif(hakt,3),"), slice",slice))
      ni<-z$bi[,,slice]*z$sigma2hat[,,slice]
      show.image(make.image(65535*ni/max(ni)))
-     title(paste("sum of weights  mean=",signif(mean(z$bi*z$sigma2hat),3)))
+     title(paste("sum of weights  mean=",signif(mean(z$bi[mask]*z$sigma2hat),3)))
      img<-z$D[6,,,slice]
      show.image(make.image(65535*img/max(img)))
      title(paste("Dyy: mean",signif(mean(img),3),"max",signif(max(img),3)))
