@@ -10,19 +10,19 @@ dti.smooth <- function(object, ...) cat("No DTI smoothing defined for this class
 
 setGeneric("dti.smooth", function(object, ...) standardGeneric("dti.smooth"))
 
-setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=52,
+setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=30,
                                             rho=1,graph=FALSE,slice=NULL,quant=.8,
-                                            minanindex=NULL,eps=1e-6,hsig=2.5,lseq=NULL, method="nonlinear",varmethod="residuals",rician=TRUE,niter=5) {
+                                            minanindex=NULL,eps=1e-6,hsig=2.5,lseq=NULL, method="nonlinear",varmethod="residuals",rician=TRUE,niter=5,varmodel="local") {
 if(method=="nonlinear"){
-   dtinl.smooth(object,hmax,hinit,lambda,rho,graph,slice,quant,minanindex,eps,hsig,lseq,varmethod)
+   dtinl.smooth(object,hmax,hinit,lambda,rho,graph,slice,quant,minanindex,eps,hsig,lseq,varmethod,rician,niter,varmodel)
 } else {
-   dtilin.smooth(object,hmax,hinit,lambda,rho,graph,slice,quant,minanindex,eps,hsig,lseq,varmethod,niter)
+   dtilin.smooth(object,hmax,hinit,lambda,rho,graph,slice,quant,minanindex,eps,hsig,lseq,varmethod,varmodel)
 }
 }
 )
 dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
                                             rho=1,graph=FALSE,slice=NULL,quant=.8,
-                                            minanindex=NULL,eps=1e-6,hsig=2.5,lseq=NULL,varmethod="residuals"){
+                                            minanindex=NULL,eps=1e-6,hsig=2.5,lseq=NULL,varmethod="residuals",varmodel="local"){
 #
 #     lambda and lseq adjusted for alpha=0.2
 #

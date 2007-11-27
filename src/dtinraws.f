@@ -114,7 +114,9 @@ C                  call intpr("ierr",4,ierr,1)
                   thi(6)=ev(3,1)*ev(3,1)/ew(1)+ev(3,2)*ev(3,2)/ew(2)+
      1                   ev(3,3)*ev(3,3)/ew(3)
                END IF
-               IF(rician) call sihat(th0i,Di,btb,F,nb)
+               IF(rician) THEN
+                  call sihat(th0i,Di,btb,F,nb)
+               END IF
 C   create needed estimates of s_i
                call rangex(thi,h,j1a,j1e)
                DO j1=j1a,j1e
@@ -147,10 +149,10 @@ C     triangular location kernel
                            DO k=1,nb
                               z=si(k,jj1,jj2,jj3)/
      1                             sigma2h(jj1,jj2,jj3)*F(k)
-                              z1=1.d1*z
+                              if(z.le.1d2) THEN
+                              z1=10*z
 C   this depends on the discretization of besselI(.,1)/besselI(.,0)
-                              iz=z1
-                              if(iz.le.1000) THEN
+                              iz=z1                  
                                  az=z1-iz
                          z=(1.d0-az)*besselq(iz)+az*besselq(iz+1)
                               swsi(k)=swsi(k)+wij*z*si(k,jj1,jj2,jj3)

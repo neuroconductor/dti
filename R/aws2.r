@@ -1,5 +1,5 @@
 dtinl.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slice=NULL,quant=.8,
-                         minanindex=NULL,eps=1e-6,hsig=2.5,lseq=NULL,varmethod="residuals",rician=TRUE,niter=5){
+                         minanindex=NULL,eps=1e-6,hsig=2.5,lseq=NULL,varmethod="residuals",rician=TRUE,niter=5,varmodel="local"){
 #
 #     lambda and lseq adjusted for alpha=0.2
 #
@@ -21,7 +21,7 @@ dtinl.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slice
   btb <- object@btb
   voxelext <- object@voxelext
   if(is.null(voxelext)) zext <- 1 else zext <- voxelext[3]/voxelext[1]
-  dtobject <- dtiTensor(object,method="nonlinear",varmethod=varmethod)
+  dtobject <- dtiTensor(object,method="nonlinear",varmethod=varmethod,varmodel=varmodel)
   mask <- dtobject$mask
   th0 <- dtobject$th0
   D <- dtobject$D
@@ -68,6 +68,8 @@ dtinl.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slice
                        DUP=FALSE,
                        PACKAGE="dti")$sigma2hat
    z$sigma2hat <- sigma2hat
+   maxsigma2 <- median(z$sigma2hat[mask])
+   z$sigma2hat[z$sigma2hat>4*maxsigma2] <- 4*maxsigma2
    z$bi <- 1/sigma2hat
    dim(z$bi) <- dim(z$sigma2hat) <- dimy[-1]
 #
@@ -79,31 +81,46 @@ dtinl.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slice
      if(is.null(slice)) slice<-n3%/%2
      class(z) <- "dti"
      img<-z$D[1,,,slice]
+     rg<-quantile(img,c(.01,.99))
+     img[img>rg[2]]<-rg[2]
      show.image(make.image(65535*img/max(img)))
-     title(paste("Dxx: mean",signif(mean(img),3),"max",signif(max(img),3)))
+     title(paste("Dxx: mean",signif(mean(z$D[1,,,][mask]),3),"max",signif(max(z$D[1,,,][mask]),3)))
      img<-z$D[2,,,slice]
+     rg<-quantile(img,c(.01,.99))
+     img[img>rg[2]]<-rg[2]
+     img[img<rg[1]]<-rg[1]
      show.image(make.image(img))
-     title(paste("Dxy: min",signif(min(img),3),"max",signif(max(img),3)))
+     title(paste("Dxy: min",signif(min(z$D[2,,,][mask]),3),"max",signif(max(z$D[2,,,][mask]),3)))
      img<-z$D[3,,,slice]
+     rg<-quantile(img,c(.01,.99))
+     img[img>rg[2]]<-rg[2]
+     img[img<rg[1]]<-rg[1]
      show.image(make.image(img))
-     title(paste("Dxz: min",signif(min(img),3),"max",signif(max(img),3)))
+     title(paste("Dxz: min",signif(min(z$D[3,,,][mask]),3),"max",signif(max(z$D[3,,,][mask]),3)))
      show.image(make.image(z$anindex[,,slice]))
-     title(paste("Anisotropy index  range:",signif(min(z$anindex),3),"-",
-                  signif(max(z$anindex),3)))
+     title(paste("Anisotropy index  range:",signif(min(z$anindex[mask]),3),"-",
+                  signif(max(z$anindex[mask]),3)))
      img<-z$D[4,,,slice]
+     rg<-quantile(img,c(.01,.99))
+     img[img>rg[2]]<-rg[2]
      show.image(make.image(65535*img/max(img)))
-     title(paste("Dyy: mean",signif(mean(img),3),"max",signif(max(img),3)))
+     title(paste("Dyy: mean",signif(mean(z$D[4,,,][mask]),3),"max",signif(max(z$D[4,,,][mask]),3)))
      img<-z$D[5,,,slice]
+     rg<-quantile(img,c(.01,.99))
+     img[img>rg[2]]<-rg[2]
+     img[img<rg[1]]<-rg[1]
      show.image(make.image(img))
-     title(paste("Dyz: min",signif(min(img),3),"max",signif(max(img),3)))
+     title(paste("Dyz: min",signif(min(z$D[5,,,][mask]),3),"max",signif(max(z$D[5,,,][mask]),3)))
      andir2.image(z,slice,quant=quant,minanindex=minanindex)
      title(paste("Directions (h=1), slice",slice))
      ni<-z$bi[,,slice]*sigma2[,,slice]
      show.image(make.image(65535*ni/max(ni)))
-     title(paste("sum of weights  mean=",signif(mean(z$bi[mask]*sigma2),3)))
+     title(paste("sum of weights  mean=",signif(mean((z$bi*z$sigma2hat)[mask]),3)))
      img<-z$D[6,,,slice]
+     rg<-quantile(img,c(.01,.99))
+     img[img>rg[2]]<-rg[2]
      show.image(make.image(65535*img/max(img)))
-     title(paste("Dzz: mean",signif(mean(img),3),"max",signif(max(img),3)))
+     title(paste("Dzz: mean",signif(mean(z$D[6,,,][mask]),3),"max",signif(max(z$D[6,,,][mask]),3)))
   }
   hincr <- 1.25^(1/3)
   if(is.null(hinit)){
@@ -173,6 +190,8 @@ dtinl.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slice
      if(hakt<hsig){
         eta <- (hsig^3 - hakt^3)/hsig^3
         z$sigma2hat <- eta*sigma2hat+(1-eta)*z$sigma2hat
+        maxsigma2 <- median(z$sigma2hat[mask])
+        z$sigma2hat[z$sigma2hat>4*maxsigma2] <- 4*maxsigma2
      }
      dim(z$th0) <- dim(z$rss) <- dim(z$bi) <- dim(z$anindex) <- dim(z$det) <- dim(z$sigma2hat) <- dimy[-1]
      dim(z$D) <- dimy
@@ -181,33 +200,46 @@ dtinl.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slice
      if(graph){
      class(z) <- "dti"
      img<-z$D[1,,,slice]
+     rg<-quantile(img,c(.01,.99))
+     img[img>rg[2]]<-rg[2]
      show.image(make.image(65535*img/max(img)))
-     title(paste("Dxx: mean",signif(mean(img),3),"max",signif(max(img),3)))
+     title(paste("Dxx: mean",signif(mean(z$D[1,,,][mask]),3),"max",signif(max(z$D[1,,,][mask]),3)))
      img<-z$D[2,,,slice]
+     rg<-quantile(img,c(.01,.99))
+     img[img>rg[2]]<-rg[2]
+     img[img<rg[1]]<-rg[1]
      show.image(make.image(img))
-     title(paste("Dxy: min",signif(min(img),3),"max",signif(max(img),3)))
+     title(paste("Dxy: min",signif(min(z$D[2,,,][mask]),3),"max",signif(max(z$D[2,,,][mask]),3)))
      img<-z$D[3,,,slice]
+     rg<-quantile(img,c(.01,.99))
+     img[img>rg[2]]<-rg[2]
+     img[img<rg[1]]<-rg[1]
      show.image(make.image(img))
-     title(paste("Dxz: min",signif(min(img),3),"max",signif(max(img),3)))
+     title(paste("Dxz: min",signif(min(z$D[3,,,][mask]),3),"max",signif(max(z$D[3,,,][mask]),3)))
      show.image(make.image(z$anindex[,,slice]))
-     title(paste("Anisotropy index  range:",signif(min(z$anindex),3),"-",
-                  signif(max(z$anindex),3)))
+     title(paste("Anisotropy index  range:",signif(min(z$anindex[mask]),3),"-",
+                  signif(max(z$anindex[mask]),3)))
      img<-z$D[4,,,slice]
+     rg<-quantile(img,c(.01,.99))
+     img[img>rg[2]]<-rg[2]
      show.image(make.image(65535*img/max(img)))
-     title(paste("Dyy: mean",signif(mean(img),3),"max",signif(max(img),3)))
+     title(paste("Dyy: mean",signif(mean(z$D[3,,,][mask]),3),"max",signif(max(z$D[3,,,][mask]),3)))
      img<-z$D[5,,,slice]
+     rg<-quantile(img,c(.01,.99))
+     img[img>rg[2]]<-rg[2]
+     img[img<rg[1]]<-rg[1]
      show.image(make.image(img))
-     title(paste("Dyz: min",signif(min(img),3),"max",signif(max(img),3)))
+     title(paste("Dyz: min",signif(min(z$D[5,,,][mask]),3),"max",signif(max(z$D[5,,,][mask]),3)))
      andir2.image(z,slice,quant=quant,minanindex=minanindex)
      title(paste("Directions (h=",signif(hakt,3),"), slice",slice))
      ni<-z$bi[,,slice]*z$sigma2hat[,,slice]
      show.image(make.image(65535*ni/max(ni)))
-     title(paste("sum of weights  mean=",signif(mean(z$bi[mask]*z$sigma2hat),3)))
+     title(paste("sum of weights  mean=",signif(mean((z$bi*z$sigma2hat)[mask]),3)))
      img<-z$D[6,,,slice]
      show.image(make.image(65535*img/max(img)))
-     title(paste("Dyy: mean",signif(mean(img),3),"max",signif(max(img),3)))
+     title(paste("Dzz: mean",signif(mean(z$D[6,,,][mask]),3),"max",signif(max(z$D[6,,,][mask]),3)))
      }
-     cat("h=",signif(hakt,3),"Quantiles (.5, .75, .9, .95, 1) of anisotropy index",signif(quantile(z$anindex,c(.5, .75, .9, .95, 1)),3),"\n")
+     cat("h=",signif(hakt,3),"Quantiles (.5, .75, .9, .95, 1) of anisotropy index",signif(quantile(z$anindex[mask],c(.5, .75, .9, .95, 1)),3),"\n")
      hakt0<-hakt
      hakt <- hakt*hincr
     c1 <- (prod(h0+1))^(1/3)

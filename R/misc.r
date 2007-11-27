@@ -172,7 +172,8 @@ get.corr.gauss <- function(h,interv=1) {
 }
 
 corrrisk <- function(bw,lag,data){
-  mean((data-thcorr3D(bw,lag))^2)
+  z <- thcorr3D(bw,lag)
+  mean((data-z)^2/outer(outer(1:lag[1],1:lag[2],"*"),1:lag(3),"*"))
 }
 
 thcorr3D <- function(bw,lag=rep(5,3)){

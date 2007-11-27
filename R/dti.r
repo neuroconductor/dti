@@ -91,7 +91,8 @@ function(x, y, slice=1, method=1, quant=0, minanindex=NULL, show=TRUE, fa.thresh
 #
 #
 
-dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=0,voxelext=c(1,1,1)) {
+dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=0,
+                    mins0value=0,maxvalue=10000,voxelext=c(1,1,1)) {
   if (dim(gradient)[2]==3) gradient <- t(gradient)
   if (dim(gradient)[1]!=3) stop("Not a valid gradient matrix")
   ngrad <- dim(gradient)[2]
@@ -109,7 +110,15 @@ dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=
   if (is.null(zind)) zind <- 1:ddim[3]
   dim(si) <- c(ddim,ngrad)
   si <- si[xind,yind,zind,] # really needed?
-  level <- level*mean(si[,,,s0ind][si[,,,s0ind]>0]) # set level to level*mean  of positive s_0 values
+  if(max(si)>maxvalue){
+     dimsi <- dim(si)
+     dim(si) <- c(prod(dimsi[1:3]),dimsi[4])
+     ind <- apply(si>maxvalue,1,any)
+     warning(paste("replaced values in",sum(ind),"voxel with entries >",maxvalue,"by 0")) 
+     si[ind,] <- 0
+     dim(si) <- dimsi
+  }
+  level <- max(mins0value,level*mean(si[,,,s0ind][si[,,,s0ind]>0])) # set level to level*mean  of positive s_0 values
   ddim0 <- as.integer(ddim)
   ddim <- as.integer(dim(si)[1:3])
 
@@ -172,7 +181,7 @@ dtiTensor <- function(object,  ...) cat("No DTI tensor calculation defined for t
 setGeneric("dtiTensor", function(object,  ...) standardGeneric("dtiTensor"))
 
 setMethod("dtiTensor","dtiData",
-function(object, method="nonlinear",varmethod="replicates") {
+function(object, method="nonlinear",varmethod="replicates",varmodel="local") {
   ngrad <- object@ngrad
   ddim <- object@ddim
   s0ind <- object@s0ind
@@ -273,6 +282,7 @@ function(object, method="nonlinear",varmethod="replicates") {
         }
      }
   }
+  if(varmodel=="global") sigma2 <- array(median(sigma2[sigma2>0]),dim(sigma2))
      cat("successfully completed variance estimation ",date(),proc.time(),"\n")
   lags <- c(5,5,3)
   scorr <- .Fortran("mcorr",as.double(res),
@@ -296,7 +306,7 @@ function(object, method="nonlinear",varmethod="replicates") {
   cat("first order  correlation in z-direction",signif(scorr[1,1,2],3),"\n")
 
   scorr[is.na(scorr)] <- 0
-  bw <- optim(c(2,2,2),corrrisk,method="L-BFGS-B",lower=c(.25,.25,.25),
+  bw <- optim(c(2,2,2),corrrisk,method="L-BFGS-B",lower=c(.2,.2,.2),
   upper=c(3,3,3),lag=lags,data=scorr)$par
   bw[bw <= .25] <- 0
   cat("estimated corresponding bandwidths",date(),proc.time(),"\n")
