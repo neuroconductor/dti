@@ -273,13 +273,8 @@ function(object, method="nonlinear",varmethod="replicates",varmodel="local") {
 #
         z <- (sqrt(z)+0.385)^2
         dim(z) <- ddim
-        if(require(aws)) {
 #  adaptive bw to achive approx. 200 degrees of freedom
-           sigma2 <- aws(z,family="Variance",graph=TRUE,shape=df,hmax=pmax(1,(125/df)^(1/3)))$theta
-        } else {
-#  nonadaptive bw to achive approx. 200 degrees of freedom
-           sigma2 <- gkernsm(z,1.76/df^(1/3))$gkernsm
-        }
+           sigma2 <- awsvar(z,shape=df,hmax=pmax(1,(125/df)^(1/3)),mask=mask)
      }
   }
   if(varmodel=="global") sigma2 <- array(median(sigma2[sigma2>0]),dim(sigma2))

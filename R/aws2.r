@@ -57,20 +57,21 @@ dtinl.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slice
   z$th0 <- th0
   dim(z$anindex) <-dim(z$det) <- dimy[-1]
   dim(z$andirection) <- c(3,dimy[-1]) 
-  sigma2hat <- .Fortran("smsigma",
-                       as.double(sigma2),
-                       as.integer(n1),
-                       as.integer(n2),
-                       as.integer(n3),
-                       as.double(hsig),
-                       as.double(zext),
-                       sigma2hat=double(n1*n2*n3),
-                       DUP=FALSE,
-                       PACKAGE="dti")$sigma2hat
-   z$sigma2hat <- sigma2hat
-   maxsigma2 <- median(z$sigma2hat[mask])
-   z$sigma2hat[z$sigma2hat>4*maxsigma2] <- 4*maxsigma2
-   z$bi <- 1/sigma2hat
+#  sigma2hat <- .Fortran("smsigma",
+#                       as.double(sigma2),
+#                       as.integer(n1),
+#                       as.integer(n2),
+#                       as.integer(n3),
+#                       as.double(hsig),
+#                       as.double(zext),
+#                       sigma2hat=double(n1*n2*n3),
+#                       DUP=FALSE,
+#                       PACKAGE="dti")$sigma2hat
+#   z$sigma2hat <- sigma2hat
+   z$sigma2hat <- sigma2
+#   maxsigma2 <- median(z$sigma2hat[mask])
+#   z$sigma2hat[z$sigma2hat>4*maxsigma2] <- 4*maxsigma2
+   z$bi <- 1/z$sigma2hat
    dim(z$bi) <- dim(z$sigma2hat) <- dimy[-1]
 #
 #  initial state for h=1
@@ -189,9 +190,9 @@ dtinl.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slice
                     DUP=FALSE,PACKAGE="dti")[c("th0","D","Varth","rss","bi","anindex","andirection","det","sigma2hat")]
      if(hakt<hsig){
         eta <- (hsig^3 - hakt^3)/hsig^3
-        z$sigma2hat <- eta*sigma2hat+(1-eta)*z$sigma2hat
-        maxsigma2 <- median(z$sigma2hat[mask])
-        z$sigma2hat[z$sigma2hat>4*maxsigma2] <- 4*maxsigma2
+        z$sigma2hat <- eta*sigma2+(1-eta)*z$sigma2hat
+#        maxsigma2 <- median(z$sigma2hat[mask])
+#        z$sigma2hat[z$sigma2hat>4*maxsigma2] <- 4*maxsigma2
      }
      dim(z$th0) <- dim(z$rss) <- dim(z$bi) <- dim(z$anindex) <- dim(z$det) <- dim(z$sigma2hat) <- dimy[-1]
      dim(z$D) <- dimy
