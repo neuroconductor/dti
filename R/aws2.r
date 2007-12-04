@@ -1,5 +1,5 @@
 dtinl.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slice=NULL,quant=.8,
-                         minanindex=NULL,eps=1e-6,hsig=2.5,lseq=NULL,varmethod="residuals",rician=TRUE,niter=5,varmodel="local"){
+                         minanindex=NULL,eps=1e-6,hsig=2.5,lseq=NULL,varmethod="residuals",rician=TRUE,niter=5,varmodel="local",wlse=TRUE){
 #
 #     lambda and lseq adjusted for alpha=0.2
 #
@@ -71,8 +71,8 @@ dtinl.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slice
    z$sigma2hat <- sigma2
 #   maxsigma2 <- median(z$sigma2hat[mask])
 #   z$sigma2hat[z$sigma2hat>4*maxsigma2] <- 4*maxsigma2
-   z$bi <- 1/z$sigma2hat
-   dim(z$bi) <- dim(z$sigma2hat) <- dimy[-1]
+   z$bi <- array(1,dimy[-1])#/z$sigma2hat
+   dim(z$sigma2hat) <- dimy[-1]
 #
 #  initial state for h=1
 #
@@ -114,9 +114,9 @@ dtinl.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slice
      title(paste("Dyz: min",signif(min(z$D[5,,,][mask]),3),"max",signif(max(z$D[5,,,][mask]),3)))
      andir2.image(z,slice,quant=quant,minanindex=minanindex)
      title(paste("Directions (h=1), slice",slice))
-     ni<-z$bi[,,slice]*sigma2[,,slice]
+     ni<-z$bi[,,slice]*if(wlse) sigma2[,,slice] else 1
      show.image(make.image(65535*ni/max(ni)))
-     title(paste("sum of weights  mean=",signif(mean((z$bi*z$sigma2hat)[mask]),3)))
+     title(paste("sum of weights  mean=",signif(mean((z$bi*if(wlse) z$sigma2hat else 1)[mask]),3)))
      img<-z$D[6,,,slice]
      rg<-quantile(img,c(.01,.99))
      img[img>rg[2]]<-rg[2]
@@ -144,9 +144,9 @@ dtinl.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slice
   k <- 1
   lambda0 <- lambda*lseq[k]
 #  prepare for a one step fixpoint correction for rician bias
-  x <- seq(0,100,.1)
-  besselq <- besselI(x,1)/besselI(x,0)
-  besselq <- besselq/besselq[1001]
+#  x <- seq(0,100,.1)
+#  besselq <- besselI(x,1)/besselI(x,0)
+#  besselq <- besselq/besselq[1001]
 #  just to make it smooth at the end of the grid
   while(hakt <= hmax) {
     if (any(h0 >= 0.25)) {
@@ -165,6 +165,7 @@ dtinl.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slice
                     as.logical(mask),
                     as.double(btb),
                     as.double(sigma2),
+                    as.logical(wlse),
                     as.double(z$th0),
                     th0=double(n),
                     as.double(z$D),
@@ -177,24 +178,26 @@ dtinl.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slice
                     det=as.double(z$det),
                     as.double(z$sigma2hat),
                     sigma2hat=double(n),
+                    sigma2r=double(n),
                     as.double(hakt),
                     as.integer(niter),
                     as.double(zext),
                     as.double(rho),
                     as.double(lambda0),
                     double(ngrad),#swsi
+                    double(ngrad),#swsi2
+                    double(ngrad),#swsi4
                     double(ngrad),#F
                     as.double(eps),
-                    as.logical(rician),
-                    as.double(besselq), # based on x <- seq(0,100,.1) !!!
-                    DUP=FALSE,PACKAGE="dti")[c("th0","D","Varth","rss","bi","anindex","andirection","det","sigma2hat")]
+                    as.logical(rician), # based on x <- seq(0,100,.1) !!!
+                    DUP=FALSE,PACKAGE="dti")[c("th0","D","Varth","rss","bi","anindex","andirection","det","sigma2hat","sigma2r")]
      if(hakt<hsig){
         eta <- (hsig^3 - hakt^3)/hsig^3
         z$sigma2hat <- eta*sigma2+(1-eta)*z$sigma2hat
 #        maxsigma2 <- median(z$sigma2hat[mask])
 #        z$sigma2hat[z$sigma2hat>4*maxsigma2] <- 4*maxsigma2
      }
-     dim(z$th0) <- dim(z$rss) <- dim(z$bi) <- dim(z$anindex) <- dim(z$det) <- dim(z$sigma2hat) <- dimy[-1]
+     dim(z$th0) <- dim(z$rss) <- dim(z$bi) <- dim(z$anindex) <- dim(z$det) <- dim(z$sigma2hat) <- dim(z$sigma2r) <- dimy[-1]
      dim(z$D) <- dimy
      dim(z$Varth) <- c(28,dimy[-1]) 
      dim(z$andirection) <- c(3,dimy[-1]) 
@@ -233,9 +236,9 @@ dtinl.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slice
      title(paste("Dyz: min",signif(min(z$D[5,,,][mask]),3),"max",signif(max(z$D[5,,,][mask]),3)))
      andir2.image(z,slice,quant=quant,minanindex=minanindex)
      title(paste("Directions (h=",signif(hakt,3),"), slice",slice))
-     ni<-z$bi[,,slice]*z$sigma2hat[,,slice]
+     ni<-z$bi[,,slice]*if(wlse) z$sigma2hat[,,slice] else 1
      show.image(make.image(65535*ni/max(ni)))
-     title(paste("sum of weights  mean=",signif(mean((z$bi*z$sigma2hat)[mask]),3)))
+     title(paste("sum of weights  mean=",signif(mean((z$bi*if(wlse) z$sigma2hat else 1)[mask]),3)))
      img<-z$D[6,,,slice]
      show.image(make.image(65535*img/max(img)))
      title(paste("Dzz: mean",signif(mean(z$D[6,,,][mask]),3),"max",signif(max(z$D[6,,,][mask]),3)))
@@ -251,7 +254,7 @@ dtinl.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slice
     lambda0 <- lambda*lseq[k]*scorrfactor     
   }
   invisible(new("dtiTensor",
-                list(D = z$D, th0= z$th0, Varth= z$Varth, sigma = z$sigma2hat, scorr = scorr, s0hat = z$th0, bw = dtobject$bw, hmax = hmax, mask = mask),
+                list(D = z$D, th0= z$th0, Varth= z$Varth, sigma = z$sigma2hat, scorr = scorr, s0hat = z$th0, bw = dtobject$bw, hmax = hmax, mask = mask, s2rician=if(rician) z$sigma2r else NULL),
                 btb   = btb,
                 ngrad = ngrad+length(s0ind), # = dim(btb)[2]
                 s0ind = object@s0ind,

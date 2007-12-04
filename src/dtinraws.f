@@ -3,10 +3,10 @@ C
 C   3D anisotropic smoothing of diffusion tensor data
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-      subroutine awsnrdti(si,nb,n1,n2,n3,mask,btb,sigma2,th0,th0n,
-     1                    D,Dn,Varth,rss,bi,ani,andir,det,sigma2h,
-     2                    sigma2n,h,niter,zext,rho,lambda,swsi,F,eps,
-     3                    rician,besselq)
+      subroutine awsnrdti(si,nb,n1,n2,n3,mask,btb,sigma2,wlse,
+     1                    th0,th0n,D,Dn,Varth,rss,bi,ani,andir,det,
+     2                    sigma2h,sigma2n,sigma2r,h,niter,zext,rho,
+     3                    lambda,swsi,swsi2,swsi4,F,eps,rician)
 C
 C   si       -  observed diffusion weighted images
 C   nb       -  number of gradients (including zero gradients)
@@ -37,18 +37,20 @@ C   F        -  auxiliary for function values in LSE
 C   eps      -  something small and positive
       implicit logical (a-z)
       integer n1,n2,n3,nb,si(nb,n1,n2,n3),niter
-      real*8 btb(6,nb),sigma2(n1,n2,n3),th0(n1,n2,n3),th0n(n1,n2,n3),
-     1       D(6,n1,n2,n3),Dn(6,n1,n2,n3),Varth(28,n1,n2,n3),
-     2       bi(n1,n2,n3),ani(n1,n2,n3),andir(3,n1,n2,n3),
-     3       det(n1,n2,n3),sigma2h(n1,n2,n3),sigma2n(n1,n2,n3),h,rho,
-     1       zext,lambda,swsi(nb),F(nb),eps,
-     2       rss(n1,n2,n3),besselq(1001)
-      logical mask(n1,n2,n3),rician
+      real*8 btb(6,nb),sigma2(n1,n2,n3),swsi2(nb),swsi4(nb),
+     1       th0(n1,n2,n3),th0n(n1,n2,n3),sigma2r(n1,n2,n3),
+     2       D(6,n1,n2,n3),Dn(6,n1,n2,n3),Varth(28,n1,n2,n3),
+     3       bi(n1,n2,n3),ani(n1,n2,n3),andir(3,n1,n2,n3),
+     4       det(n1,n2,n3),sigma2h(n1,n2,n3),sigma2n(n1,n2,n3),h,rho,
+     5       zext,lambda,swsi(nb),F(nb),eps,
+     6       rss(n1,n2,n3)
+      logical mask(n1,n2,n3),rician,wlse
       integer i1,j1,j1a,j1e,jj1,i2,j2,j2a,j2e,jj2,i3,j3,j3a,j3e,jj3,
      1        ierr,k,iz
       real*8 wij,adist,sw,sws0,h3,thi(7),bii,sqrbii,ew(3),ev(3,3),
      1       mew,z1,z2,z3,sij,deti,z,sew,eps3,ss2,sw0,Di(6),dtidisnr,
-     2       vth(28),th0i,abessel,az
+     2       vth(28),th0i,abessel,az,mswsi2,mswsi2q,mswsi4,s2hat,
+     3       rhosw0,crhosw0
       external adist,dtidisnr
       logical aws,lprint
       aws=lambda.lt.1e20
@@ -66,13 +68,21 @@ C  now anisotropic smoothing
                ss2=0.d0
                DO k=1,nb
                   swsi(k)=0.d0
-               END DO
+                  swsi2(k)=0.d0
+                  swsi4(k)=0.d0
+              END DO
                DO k=1,28
                   vth(k)=Varth(k,i1,i2,i3)
                END DO
+               s2hat = sigma2h(i1,i2,i3)
                deti=exp(log(det(i1,i2,i3))/3)
                bii=bi(i1,i2,i3)
-               sqrbii=sigma2h(i1,i2,i3)/sqrt(bii)
+               if(wlse) THEN
+                  sqrbii=sigma2h(i1,i2,i3)/sqrt(bii)
+               ELSE
+                  bii=bii/s2hat
+                  sqrbii=sqrt(1.d0/bii)
+               END IF
                th0i=th0(i1,i2,i3)
                th0n(i1,i2,i3)=th0i
 C    used as initial values
@@ -114,9 +124,6 @@ C                  call intpr("ierr",4,ierr,1)
                   thi(6)=ev(3,1)*ev(3,1)/ew(1)+ev(3,2)*ev(3,2)/ew(2)+
      1                   ev(3,3)*ev(3,3)/ew(3)
                END IF
-               IF(rician) THEN
-                  call sihat(th0i,Di,btb,F,nb)
-               END IF
 C   create needed estimates of s_i
                call rangex(thi,h,j1a,j1e)
                DO j1=j1a,j1e
@@ -136,29 +143,23 @@ C     triangular location kernel
                         if(wij.gt.h3) CYCLE
                         wij = (1.d0 - wij/h3)
                         IF(aws) THEN
-                           sij = bi(i1,i2,i3)*dtidisnr(th0i,Di,
+                           sij = bii*dtidisnr(th0i,Di,
      1               th0(jj1,jj2,jj3),D(1,jj1,jj2,jj3),Vth)/lambda
                            if(sij.gt.1.d0) CYCLE
                            wij=wij*(1.d0-sij)
                         END IF
                         ss2=ss2+wij*sigma2(jj1,jj2,jj3)
                         sw0=sw0+wij
-                        wij=wij/sigma2h(jj1,jj2,jj3)
+                        if(wlse) wij=wij/sigma2h(jj1,jj2,jj3)
+                        if(wij.lt.0.d0) call dblepr("wij",3,wij,1)
                         sw=sw+wij
                         if(rician) THEN
                            DO k=1,nb
-                              z=si(k,jj1,jj2,jj3)/
-     1                             sigma2h(jj1,jj2,jj3)*F(k)
-                              if(z.le.1d2) THEN
-                              z1=10*z
-C   this depends on the discretization of besselI(.,1)/besselI(.,0)
-                              iz=z1                  
-                                 az=z1-iz
-                         z=(1.d0-az)*besselq(iz)+az*besselq(iz+1)
-                              swsi(k)=swsi(k)+wij*z*si(k,jj1,jj2,jj3)
-                              ELSE
-                              swsi(k)=swsi(k)+wij*si(k,jj1,jj2,jj3)
-                              END IF
+                              z=si(k,jj1,jj2,jj3)
+                              swsi(k)=swsi(k)+wij*z
+                              z=z*z
+                              swsi2(k)=swsi2(k)+wij*z
+                              swsi4(k)=swsi4(k)+wij*z*z
                            END DO
                         ELSE
                            DO k=1,nb
@@ -169,11 +170,44 @@ C   this depends on the discretization of besselI(.,1)/besselI(.,0)
                   END DO
                END DO
                bi(i1,i2,i3)=sw
-               IF(sw.gt.0.d0.and.sw.lt.1.d20) THEN
-                  sigma2n(i1,i2,i3)=ss2/sw0
+               if(sw0.lt.1.d0) call dblepr("sw0",3,sw0,1)
+               if(rician.and.sw0.gt.1.d0) THEN
+                  mswsi2=0.d0
+                  mswsi2q=0.d0
+                  mswsi4=0.d0
+                  DO k=1,nb
+                     z = swsi2(k)/sw
+                     mswsi2=mswsi2+z
+                     mswsi2q=mswsi2q+z*z
+                     mswsi4=mswsi4+swsi4(k)
+                  END DO
+                  mswsi2=mswsi2/nb
+                  mswsi2q=mswsi2q/nb
+                  mswsi4=mswsi4/nb/sw
+                  s2hat = mswsi2q+mswsi2*mswsi2-mswsi4
+                  if(s2hat.lt.0.d0) THEN
+                     call dblepr("mswsi2",6,mswsi2,1)
+                     call dblepr("mswsi2q",7,mswsi2q,1)
+                     call dblepr("mswsi4",6,mswsi4,1)
+                     call dblepr("s2arg",5,s2hat,1)
+                     s2hat=0.d0
+                  END IF
+                  s2hat = 0.5d0*(mswsi2-sqrt(s2hat))
+                  sigma2r(i1,i2,i3)=s2hat
+C  thats the joint moment estimate of the Rice variance based on the 2nd and 4th moment
+                  rhosw0=sqrt((sw0-1)/sw0)
+                  crhosw0=1.d0-rhosw0
+                  DO k=1,nb
+                  swsi(k)=rhosw0*sqrt(max(0.d0,swsi2(k)/sw-2*s2hat))+
+     1                       crhosw0*swsi(k)/sw
+                  END DO
+               ELSE
                   Do k=1,nb
                      swsi(k)=swsi(k)/sw
-                  END DO
+                  END DO                  
+               END IF
+               IF(sw.gt.0.d0.and.sw.lt.1.d20) THEN
+                  sigma2n(i1,i2,i3)=ss2/sw0
                   call dsolvdti(swsi,nb,btb,th0n(i1,i2,i3),
      1                          Dn(1,i1,i2,i3),Varth(1,i1,i2,i3),F,
      2                          niter,eps,rss(i1,i2,i3))
@@ -419,5 +453,16 @@ C  decrease gamma and try new regularization
          END DO
          F(k)=th0i*exp(-z)
       END DO
+      RETURN
+      END
+      real*8 function besselq(z,bq)
+      real*8 z,bq(1001)
+      integer iz
+      real*8 az,z1
+      z1=10*z
+C   this depends on the discretization of besselI(.,1)/besselI(.,0)
+      iz=z1                  
+      az=z1-iz
+      besselq=(1.d0-az)*bq(iz)+az*bq(iz+1)
       RETURN
       END
