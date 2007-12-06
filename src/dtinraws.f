@@ -50,7 +50,7 @@ C   eps      -  something small and positive
       real*8 wij,adist,sw,sws0,h3,thi(7),bii,sqrbii,ew(3),ev(3,3),
      1       mew,z1,z2,z3,sij,deti,z,sew,eps3,ss2,sw0,Di(6),dtidisnr,
      2       vth(28),th0i,abessel,az,mswsi2,mswsi2q,mswsi4,s2hat,
-     3       rhosw0,crhosw0
+     3       rhosw0,crhosw0,minswsi2
       external adist,dtidisnr
       logical aws,lprint
       aws=lambda.lt.1e20
@@ -175,8 +175,10 @@ C     triangular location kernel
                   mswsi2=0.d0
                   mswsi2q=0.d0
                   mswsi4=0.d0
+                  minswsi2=1.d40
                   DO k=1,nb
                      z = swsi2(k)/sw
+                     minswsi2=min(z,minswsi2)
                      mswsi2=mswsi2+z
                      mswsi2q=mswsi2q+z*z
                      mswsi4=mswsi4+swsi4(k)
@@ -186,13 +188,20 @@ C     triangular location kernel
                   mswsi4=mswsi4/nb/sw
                   s2hat = mswsi2q+mswsi2*mswsi2-mswsi4
                   if(s2hat.lt.0.d0) THEN
-                     call dblepr("mswsi2",6,mswsi2,1)
-                     call dblepr("mswsi2q",7,mswsi2q,1)
-                     call dblepr("mswsi4",6,mswsi4,1)
-                     call dblepr("s2arg",5,s2hat,1)
-                     s2hat=0.d0
+C                     call dblepr("mswsi2",6,mswsi2,1)
+C                     call dblepr("mswsi2q",7,mswsi2q,1)
+C                     call dblepr("mswsi4",6,mswsi4,1)
+C                     call dblepr("s2arg",5,s2hat,1)
+C                     call dblepr("minswsi2",8,minswsi2,1)
+                     s2hat = minswsi2/2
+                  ELSE
+                     s2hat = 0.5d0*(mswsi2-sqrt(s2hat))
+                     if(minswsi2/2.d0.lt.s2hat) THEN
+C                        call dblepr("s2hat",5,s2hat,1)
+C                        call dblepr("minswsi2",8,minswsi2,1)
+                        s2hat = minswsi2/2.d0
+                     ENDIF
                   END IF
-                  s2hat = 0.5d0*(mswsi2-sqrt(s2hat))
                   sigma2r(i1,i2,i3)=s2hat
 C  thats the joint moment estimate of the Rice variance based on the 2nd and 4th moment
                   rhosw0=sqrt((sw0-1)/sw0)
