@@ -236,3 +236,29 @@ image(anindex,...)
 }
 invisible(andirection)
 } 
+
+tensor2medinria <- function(obj, filename, voxelext=c(1,1,1), xind=NULL, yind=NULL, zind=NULL) {
+  if (!require(fmri)) stop("cannot execute function without package fmri, because of missing write.NIFTI() function")
+
+  if (is.null(xind)) xind <- 1:obj@ddim[1]
+  if (is.null(yind)) yind <- 1:obj@ddim[2]
+  if (is.null(zind)) zind <- 1:obj@ddim[3]
+
+  header <- list()
+  header$dimension <- c(5,length(xind),length(yind),length(zind),1,6,0,0)
+  header$pixdim[2:4] <- c(-1, voxelext[1:3], 0, 0, 0)
+  header$intentcode <- 1007
+  header$datatype <- 16
+  header$bitpix <- 192
+  header$sclslope <- 1
+  header$xyztunits <- "\002" # ???
+  header$qform <- 1
+  header$sform <- 1
+  header$quaternd <- 1
+  header$srowx <- c(-2,0,0,0)
+  header$srowy <- c(0,2,0,0)
+  header$srowz <- c(0,0,2,0)
+
+  write.NIFTI(aperm(obj$D,c(2:4,1))[xind,yind,zind,c(1,2,4,3,5,6)],header,filename)
+  return(NULL)
+}
