@@ -242,6 +242,7 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
                 xind  = xind,
                 yind  = yind,
                 zind  = zind,
+                voxelext = object@voxelext,
                 source= object@source,
                 method= dtobject@method)
             )
@@ -422,6 +423,7 @@ dtianiso <- function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,quan
                 xind  = xind,
                 yind  = yind,
                 zind  = zind,
+                voxelext = object@voxelext,
                 source= source)
             )
 }

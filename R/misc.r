@@ -246,7 +246,7 @@ tensor2medinria <- function(obj, filename, voxelext=c(1,1,1), xind=NULL, yind=NU
 
   header <- list()
   header$dimension <- c(5,length(xind),length(yind),length(zind),1,6,0,0)
-  header$pixdim <- c(-1, voxelext[1:3], 0, 0, 0)
+  header$pixdim <- c(-1, obj@voxelext[1:3], 0, 0, 0, 0)
   header$intentcode <- 1007
   header$datatype <- 16
   header$bitpix <- 192

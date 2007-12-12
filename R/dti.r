@@ -316,6 +316,7 @@ function(object, method="nonlinear",varmethod="replicates",varmodel="local") {
                 xind  = object@xind,
                 yind  = object@yind,
                 zind  = object@zind,
+                voxelext = object@voxelext,
                 source= object@source,
                 method= method)
             )

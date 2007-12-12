@@ -263,6 +263,7 @@ dtinl.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slice
                 xind  = xind,
                 yind  = yind,
                 zind  = zind,
+                voxelext = object@voxelext,
                 source= object@source,
                 method= dtobject@method)
             )
