@@ -43,7 +43,7 @@ setClass("dtiTensor",
          contains=c("list","dti"),
          validity=function(object){
           if (sum(c("D","sigma","scorr") %in% names(object)) != 3) {
-            cat("s0 and/or si not in data\n")
+            cat("D, sigma or scorr not in data\n")
             return(invisible(FALSE))
           }
           if (!("array" %in% class(object$D))) {
