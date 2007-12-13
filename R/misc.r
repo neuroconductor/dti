@@ -278,7 +278,7 @@ medinria2tensor <- function(filename) {
                 xind  = 1:data$dim[1],
                 yind  = 1:data$dim[2],
                 zind  = 1:data$dim[3],
-                voxelext = c(0,0,0),
+                voxelext = data$delta,
                 source= "unknown",
                 method= "linear")
             )
