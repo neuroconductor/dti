@@ -21,8 +21,6 @@
                   END DO
                   rss(i1,i2,i3)=0.d0
                END IF
-               if((i1*i2*i3).eq.4913) THEN
-               END IF
             END DO
          END DO
       END DO
@@ -41,7 +39,6 @@ C
      1       dg(7),pk(7),ak(7,7),ck(7,7),rss,nrss,crss,maxabsdg,
      2       oldrss,relrss,Dn(6),res,X(7),th0n
       external indvar
-      alpha=0.5D0
       delta=0.25D0
       gamma=1.d0
       alpha=0.7d0

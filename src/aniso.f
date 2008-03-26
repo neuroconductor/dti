@@ -320,8 +320,6 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       liwork=50
       call dsyevr('V','A','U',n,a,n,vl,vu,1,n,eps,m,lambda,
      1            theta,n,ISUPPZ,work,lwork,iwork,liwork,ierr)
-C      if(lambda(3).lt.dmax1(lambda(2),lambda(1)))
-C     1       call dblepr("reverse ev",10,lambda,3)
       RETURN
       END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC

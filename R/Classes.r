@@ -54,8 +54,8 @@ setClass("dtiTensor",
             cat("sigma not an array\n")
             return(invisible(FALSE))
           }
-          if (!(object@method %in% c("linear","nonlinear"))) {
-            cat("method should specify either linear or nonlinear \n")
+          if (!(object@method %in% c("linear","nonlinear","regularized"))) {
+            cat("method should specify either linear or nonlinear or regularized\n")
             return(invisible(FALSE))
           }
           if (object@method=="nonlinear"&&(is.null(object$Varth)

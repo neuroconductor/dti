@@ -110,14 +110,17 @@ dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=
   if (is.null(zind)) zind <- 1:ddim[3]
   dim(si) <- c(ddim,ngrad)
   si <- si[xind,yind,zind,] # really needed?
-  if(max(si)>maxvalue){
-     dimsi <- dim(si)
-     dim(si) <- c(prod(dimsi[1:3]),dimsi[4])
-     ind <- apply(si>maxvalue,1,any)
-     warning(paste("replaced values in",sum(ind),"voxel with entries >",maxvalue,"by 0")) 
-     si[ind,] <- 0
+  dimsi <- dim(si)
+  si <- .Fortran("initdata",
+                 si=as.integer(si),
+                 as.integer(dimsi[1]),
+                 as.integer(dimsi[2]),
+                 as.integer(dimsi[3]),
+                 as.integer(dimsi[4]),
+                 as.integer(maxvalue),
+                 PACKAGE="dti")$si
+#  this replaces the content off all voxel with elements <=0 or >maxvalue by 0
      dim(si) <- dimsi
-  }
   level <- max(mins0value,level*mean(si[,,,s0ind][si[,,,s0ind]>0])) # set level to level*mean  of positive s_0 values
   ddim0 <- as.integer(ddim)
   ddim <- as.integer(dim(si)[1:3])
@@ -182,6 +185,10 @@ setGeneric("dtiTensor", function(object,  ...) standardGeneric("dtiTensor"))
 
 setMethod("dtiTensor","dtiData",
 function(object, method="nonlinear",varmethod="replicates",varmodel="local") {
+#  available methods are 
+#  "linear" - use linearized model (log-transformed)
+#  "nonlinear" - use nonlinear model directly
+#  "regularized" - use nonlinear model with parametrization according to Koay et.al. (2006)
   ngrad <- object@ngrad
   ddim <- object@ddim
   s0ind <- object@s0ind
@@ -217,7 +224,7 @@ function(object, method="nonlinear",varmethod="replicates",varmodel="local") {
      th0 <- NULL
      gc()
   } else {
-#  method == "nonlinear"
+#  method == "nonlinear" || "regularized"
      ngrad0 <- ngrad
      si <- aperm(object$si,c(4,1:3))
      s0 <- si[s0ind,,,]
@@ -225,6 +232,7 @@ function(object, method="nonlinear",varmethod="replicates",varmodel="local") {
      dim(s0) <- ddim
      mask <- s0 > object@level
      cat("start nonlinear regression",date(),proc.time(),"\n")
+     if(method == "nonlinear") {
      z <- .Fortran("nlrdti",
                 as.integer(si),
                 as.integer(ngrad),
@@ -241,15 +249,35 @@ function(object, method="nonlinear",varmethod="replicates",varmodel="local") {
                 res=double(ngrad*prod(ddim)),
                 rss=double(prod(ddim)),
                 PACKAGE="dti",DUP=FALSE)[c("th0","D","Varth","res","rss")]
+        dim(z$Varth) <- c(28,ddim)
+     } else { 
+# method == "regularized"
      cat("successfully completed nonlinear regression ",date(),proc.time(),"\n")
+     z <- .Fortran("nlrdtirg",
+                as.integer(si),
+                as.integer(ngrad),
+                as.integer(ddim[1]),
+                as.integer(ddim[2]),
+                as.integer(ddim[3]),
+                as.logical(mask),
+                as.double(object@btb),
+                th0=as.double(s0),
+                D=double(6*prod(ddim)),
+                as.integer(200),
+                as.double(1e-6),
+                res=double(ngrad*prod(ddim)),
+                rss=double(prod(ddim)),
+                PACKAGE="dti",DUP=FALSE)[c("th0","D","res","rss")]
+     z$Varth <- NULL
+     }
      dim(z$th0) <- ddim
      dim(z$D) <- c(6,ddim)
-     dim(z$Varth) <- c(28,ddim)
      dim(z$res) <- c(ngrad,ddim)
      dim(z$rss) <- ddim
      df <- sum(table(object@replind)-1)
      res <- z$res
      D <- z$D
+     rho <- z$rho
      Varth <- z$Varth
      rss <- z$rss
      th0 <- z$th0
@@ -307,7 +335,7 @@ function(object, method="nonlinear",varmethod="replicates",varmodel="local") {
   cat("estimated corresponding bandwidths",date(),proc.time(),"\n")
 
   invisible(new("dtiTensor",
-                list(D = D, th0 = th0, Varth = Varth, sigma = sigma2, scorr = scorr, bw = bw, mask = mask),
+                list(D = D, rho = rho, th0 = th0, Varth = Varth, sigma = sigma2, scorr = scorr, bw = bw, mask = mask),
                 btb   = object@btb,
                 ngrad = object@ngrad, # = dim(btb)[2]
                 s0ind = object@s0ind,
