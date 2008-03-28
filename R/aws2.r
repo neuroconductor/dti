@@ -114,9 +114,11 @@ dtinl.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slice
      title(paste("Dyz: min",signif(min(z$D[5,,,][mask]),3),"max",signif(max(z$D[5,,,][mask]),3)))
      andir2.image(z,slice,quant=quant,minanindex=minanindex)
      title(paste("Directions (h=1), slice",slice))
-     ni<-z$bi[,,slice]*if(wlse) sigma2[,,slice] else 1
+#     ni<-z$bi[,,slice]*if(wlse) sigma2[,,slice] else 1
+     ni <- array(1,dimy[-1])*as.integer(mask)
      show.image(make.image(65535*ni/max(ni)))
-     title(paste("sum of weights  mean=",signif(mean((z$bi*if(wlse) z$sigma2hat else 1)[mask]),3)))
+#     title(paste("sum of weights  mean=",signif(mean((z$bi*if(wlse) z$sigma2hat else 1)[mask]),3)))
+     title(paste("sum of weights  mean=",signif(1,3)))
      img<-z$D[6,,,slice]
      rg<-quantile(img,c(.01,.99))
      img[img>rg[2]]<-rg[2]
@@ -376,9 +378,11 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
      title(paste("Dyz: min",signif(min(z$D[5,,,][mask]),3),"max",signif(max(z$D[5,,,][mask]),3)))
      andir2.image(z,slice,quant=quant,minanindex=minanindex)
      title(paste("Directions (h=1), slice",slice))
-     ni<-z$bi[,,slice]*if(wlse) sigma2[,,slice] else 1
+ #    ni<-z$bi[,,slice]*if(wlse) sigma2[,,slice] else 1
+     ni <- array(1,dimy[-1])*as.integer(mask)
      show.image(make.image(65535*ni/max(ni)))
-     title(paste("sum of weights  mean=",signif(mean((z$bi*if(wlse) z$sigma2hat else 1)[mask]),3)))
+#     title(paste("sum of weights  mean=",signif(mean((z$bi*if(wlse) z$sigma2hat else 1)[mask]),3)))
+     title(paste("sum of weights  mean=",signif(1,3)))
      img<-z$D[6,,,slice]
      rg<-quantile(img,c(.01,.99))
      img[img>rg[2]]<-rg[2]
@@ -432,9 +436,8 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
                     as.logical(wlse),
                     as.double(z$th0),
                     th0=double(n),
-                    as.double(z$D), # we may compute this internally
-                    D=double(6*n), # we may compute this externally
-#                    Varth=as.double(z$Varth),
+                    as.double(z$D), 
+                    D=double(6*n),
                     rss=as.double(z$rss),
                     bi=as.double(z$bi),
                     anindex=as.double(z$anindex),
@@ -488,7 +491,7 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
      rg<-quantile(img,c(.01,.99))
      img[img>rg[2]]<-rg[2]
      show.image(make.image(65535*img/max(img)))
-     title(paste("Dyy: mean",signif(mean(z$D[3,,,][mask]),3),"max",signif(max(z$D[3,,,][mask]),3)))
+     title(paste("Dyy: mean",signif(mean(z$D[4,,,][mask]),3),"max",signif(max(z$D[4,,,][mask]),3)))
      img<-z$D[5,,,slice]
      rg<-quantile(img,c(.01,.99))
      img[img>rg[2]]<-rg[2]
