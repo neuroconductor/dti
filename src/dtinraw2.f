@@ -217,7 +217,6 @@ C   eps      -  something small and positive
      1       mew,z1,z2,z3,sij,deti,z,sew,eps3,ss2,sw0,Di(6),dtidisrg,
      2       vth(28),th0i,abessel,az,mswsi2,mswsi2q,mswsi4,s2hat,
      3       rhosw0,crhosw0,minswsi2,rssi
-      integer icoord(3),jcoord(3)
       external adist,dtidisrg
       logical aws
       aws=lambda.lt.1e20
@@ -234,11 +233,8 @@ C  first fill predicted
       END DO
 C  now anisotropic smoothing 
       DO i1=1,n1
-               icoord(1)=i1
          DO i2=1,n2
-               icoord(2)=i2
             DO i3=1,n3
-               icoord(3)=i3
                if(.not.mask(i1,i2,i3)) CYCLE
                rssi = dtidisrg(siest(1,i1,i2,i3),
      1                         sipred(1,i1,i2,i3),nb)
@@ -308,22 +304,15 @@ C  this is scale invariant sice sqrbii scales with sqrt(sigma2) (standard deviat
                END IF
 C   create needed estimates of s_i
                call rangex(thi,h,j1a,j1e)
-               if(i1.eq.32.and.i3.eq.15) THEN
-                  call intpr("icoord",6,icoord,3)
-                  call dblepr("thi",3,thi,6)
-               END IF
                DO j1=j1a,j1e
-                  jcoord(1)=j1
                   jj1=i1+j1
                   if(jj1.le.0.or.jj1.gt.n1) CYCLE
                   call rangey(thi,j1,h,j2a,j2e)
                   DO j2=j2a,j2e
-                     jcoord(2)=j2
-                     jj2=i2+j2
+                      jj2=i2+j2
                      if(jj2.le.0.or.jj2.gt.n2) CYCLE
                      call rangez(thi,j1,j2,h,j3a,j3e,zext)
                      DO j3=j3a,j3e
-                        jcoord(3)=j3
                         jj3=i3+j3
                         if(jj3.le.0.or.jj3.gt.n3) CYCLE
                         if(.not.mask(jj1,jj2,jj3)) CYCLE
@@ -331,16 +320,12 @@ C   create needed estimates of s_i
 C     triangular location kernel
                         if(wij.ge.h3) CYCLE
                         wij = (1.d0 - wij/h3)
-                        if(i1.eq.32.and.i3.eq.15) THEN 
-                            call intpr("jcoord",6,jcoord,3)
-                            call dblepr("wij0",4,wij,1)
-                        END IF
                         IF(aws) THEN
-                        sij = bii*max(0.d0,dtidisrg(siest(1,i1,i2,i3),
-     1                          sipred(1,jj1,jj2,jj3),nb)-rssi)/lambda
+                        sij = dtidisrg(siest(1,i1,i2,i3),
+     1                          sipred(1,jj1,jj2,jj3),nb)
+                        sij = bii*max(0.d0,sij-rssi)/lambda
                            if(sij.gt.1.d0) CYCLE
                            wij=wij*(1.d0-sij)
-                 if(i1.eq.32.and.i3.eq.15) call dblepr("wij",3,wij,1)
                         END IF
                         ss2=ss2+wij*sigma2(jj1,jj2,jj3)
                         sw0=sw0+wij
@@ -408,7 +393,7 @@ C  thats the joint moment estimate of the Rice variance based on the 2nd and 4th
      1                          Dn(1,i1,i2,i3),F,
      2                          niter,eps,rss(i1,i2,i3))
                   DO k=1,nb
-                     siest(i1,i2,i3,k)=swsi(k)
+                     siest(k,i1,i2,i3)=swsi(k)
                   END DO
                ELSE
                   sigma2n(i1,i2,i3)=sigma2h(i1,i2,i3)

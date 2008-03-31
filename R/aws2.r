@@ -1,5 +1,6 @@
 dtinl.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slice=NULL,quant=.8,
-                         minanindex=NULL,eps=1e-6,hsig=2.5,lseq=NULL,varmethod="residuals",rician=TRUE,niter=5,varmodel="local",wlse=TRUE){
+                         minanindex=NULL,eps=1e-6,hsig=2.5,lseq=NULL,varmethod="residuals",
+                         rician=TRUE,niter=10,varmodel="local",wlse=TRUE){
 #
 #     lambda and lseq adjusted for alpha=0.2
 #
@@ -302,7 +303,6 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
   mask <- dtobject$mask
   th0 <- dtobject$th0
   D <- dtobject$D
-  rho <- dtobject$rho
   sigma2 <- dtobject$sigma
   scorr <- dtobject$scorr
   h0 <- dtobject$bw
