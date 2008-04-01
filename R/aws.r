@@ -230,7 +230,7 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
   }
 
   invisible(new("dtiTensor",
-                list(D = z$theta, sigma = z$sigma2hat, scorr = scorr, s0hat = z$s0hat, bw = dtobject@bw, hmax = hmax, mask = mask, th0 = th0, Varth = Varth),
+                list(D = z$theta, sigma = z$sigma2hat, scorr = scorr, s0hat = z$s0hat, bw = dtobject@bw, hmax = hmax, mask = mask, th0 = NULL, Varth = NULL),
                 btb   = btb,
                 ngrad = ngrad+length(s0ind), # = dim(btb)[2]
                 s0ind = object@s0ind,
@@ -283,6 +283,8 @@ dtianiso <- function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,quan
   yind <- dtobject@yind
   zind <- dtobject@zind
   source <- dtobject@source
+  voxelext <- dtobject@voxelext
+  ngrad <- dtobject@ngrad
   rm(dtobject)
   gc()
   dimy <- dim(y)
@@ -336,7 +338,7 @@ dtianiso <- function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,quan
     img<-z$theta[5,,,slice]
     show.image(make.image(img))
     title(paste("Dyz: min",signif(min(img),3),"max",signif(max(img),3)))
-    andir.image(z,slice,quant=quant,minanindex=minanindex)
+    andir2.image(z,slice,quant=quant,minanindex=minanindex)
     title(paste("Directions (h=1), slice",slice))
     ni<-z$bi[,,slice]*sigma2[,,slice]
     show.image(make.image(65535*ni/max(ni)))
@@ -400,7 +402,7 @@ dtianiso <- function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,quan
       img<-z$theta[5,,,slice]
       show.image(make.image(img))
       title(paste("Dyz: min",signif(min(img),3),"max",signif(max(img),3)))
-      andir.image(z,slice,quant=quant,minanindex=minanindex)
+      andir2.image(z,slice,quant=quant,minanindex=minanindex)
       title(paste("Directions (h=",signif(hakt,3),"), slice",slice))
       ni<-z$bi[,,slice]*sigma2[,,slice]
       show.image(make.image(65535*ni/max(ni)))
@@ -425,7 +427,7 @@ dtianiso <- function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,quan
                 xind  = xind,
                 yind  = yind,
                 zind  = zind,
-                voxelext = object@voxelext,
+                voxelext = voxelext,
                 source= source)
             )
 }
@@ -451,6 +453,8 @@ rdtianiso <- function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,qua
   xind <- dtobject@xind
   yind <- dtobject@yind
   zind <- dtobject@zind
+  ngrad <- dtobject@ngrad
+  voxelext <- dtobject@voxelext
   source <- dtobject@source
   rm(dtobject)
   gc()
@@ -505,7 +509,7 @@ rdtianiso <- function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,qua
      img<-z$theta[5,,,slice]
      show.image(make.image(img))
      title(paste("Dyz: min",signif(min(img),3),"max",signif(max(img),3)))
-     andir.image(z,slice,quant=quant,minanindex=minanindex)
+     andir2.image(z,slice,quant=quant,minanindex=minanindex)
      title(paste("Directions (h=1), slice",slice))
      ni<-z$bi[,,slice]*sigma2[,,slice]
      show.image(make.image(65535*ni/max(ni)))
@@ -576,7 +580,7 @@ rdtianiso <- function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,qua
      img<-z$theta[5,,,slice]
      show.image(make.image(img))
      title(paste("Dyz: min",signif(min(img),3),"max",signif(max(img),3)))
-     andir.image(z,slice,quant=quant,minanindex=minanindex)
+     andir2.image(z,slice,quant=quant,minanindex=minanindex)
      title(paste("Directions (h=",signif(hakt,3),"), slice",slice))
      ni<-z$bi[,,slice]*sigma2[,,slice]
      show.image(make.image(65535*ni/max(ni)))
@@ -601,6 +605,7 @@ rdtianiso <- function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,qua
                 xind  = xind,
                 yind  = yind,
                 zind  = zind,
+                voxelext = voxelext,
                 source= source)
             )
 }

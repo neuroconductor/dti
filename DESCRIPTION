@@ -1,11 +1,11 @@
 Package: dti
 Version: 0.5-1
-Date: 2008-3-31
+Date: 2008-4-1
 Title: DTI Analysis
 Author: Karsten Tabelow <tabelow@wias-berlin.de>
         Joerg Polzehl <polzehl@wias-berlin.de>
 Maintainer: Karsten Tabelow <tabelow@wias-berlin.de>
-Suggests: adimpro
+Depends: R (>= 2.5.0),adimpro,fmri
 Description: The library contains R-functions to perform an dti analysis
      based on the adaptive weights smoothing (AWS) procedure devoloped in 
      Polzehl und Spokoiny (2006).

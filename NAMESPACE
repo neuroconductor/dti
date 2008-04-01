@@ -1,9 +1,10 @@
 useDynLib(dti)
 
 importFrom(graphics,plot)
+importFrom(fmri,read.NIFTI,write.NIFTI)
+importFrom(adimpro,make.image,show.image)
 exportClasses("dtiData","dtiTensor","dtiIndices")
 exportMethods("show","plot","coerce","dti.smooth","dtiTensor","dtiIndices")
-export(dtiData,createdata.dti)
-export(dti.propagation)
-export(awsvar)
+export(dtiData)
+#export(dti.propagation,createdata.dti)
 export(tensor2medinria,medinria2tensor)

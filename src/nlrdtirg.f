@@ -39,9 +39,9 @@ C
       integer nb,s(nb),niter
       real*8 D(6),rho(6),b(6,nb),th0,F(nb),eps
       integer i,j,k,info,iter,indvar
-      real*8 z,gamma,alpha,delta,det,
+      real*8 z,gamma,alpha,delta,
      1       dg(7),pk(7),ak(7,7),ck(7,7),rss,nrss,crss,maxabsdg,
-     2       oldrss,relrss,rhon(6),Dn(6),res,X(7),th0n,XX(6),D0(6)
+     2       oldrss,relrss,rhon(6),Dn(6),res,X(7),th0n,XX(6)
       external indvar
 C      call intpr("slvdtirg",8,1,1)
       delta=0.25D0

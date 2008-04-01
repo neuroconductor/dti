@@ -39,28 +39,8 @@ C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine D2rho(D,rho)
       implicit logical(a-z)
-      real*8 D(6),rho(6),ew(3),ev(3,3),eps
-      integer ierr
+      real*8 D(6),rho(6),eps
       eps=0.d0
-C      call eigen3(D,ew,ev,ierr)
-C      if(ew(1).le.1.d-6) THEN
-C  first regularize
-C         ew(1)=max(1.d-6,ew(1))
-C         ew(2)=max(1.d-6,ew(2))
-C         ew(3)=max(1.d-6,ew(3))
-C         D(1)=ew(1)*ev(1,1)*ev(1,1)+ew(2)*ev(1,2)*ev(1,2)+
-C     1        ew(3)*ev(1,3)*ev(1,3)
-C         D(2)=ew(1)*ev(1,1)*ev(2,1)+ew(2)*ev(1,2)*ev(2,2)+
-C     1        ew(3)*ev(1,3)*ev(2,3)
-C         D(3)=ew(1)*ev(1,1)*ev(3,1)+ew(2)*ev(1,2)*ev(3,2)+
-C     1        ew(3)*ev(1,3)*ev(3,3)
-C         D(4)=ew(1)*ev(2,1)*ev(2,1)+ew(2)*ev(2,2)*ev(2,2)+
-C     1        ew(3)*ev(2,3)*ev(2,3)
-C         D(5)=ew(1)*ev(2,1)*ev(3,1)+ew(2)*ev(2,2)*ev(3,2)+
-C     1        ew(3)*ev(2,3)*ev(3,3)
-C         D(6)=ew(1)*ev(3,1)*ev(3,1)+ew(2)*ev(3,2)*ev(3,2)+
-C     1        ew(3)*ev(3,3)*ev(3,3)
-C      END IF
       rho(1)=sqrt(D(1)-eps)
       rho(2)=D(2)/rho(1)
       rho(3)=D(3)/rho(1)
@@ -135,10 +115,10 @@ C   eps      -  something small and positive
      5       zext,lambda,swsi(nb),F(nb),eps,rss(n1,n2,n3)
       logical mask(n1,n2,n3),rician,wlse
       integer i1,j1,j1a,j1e,jj1,i2,j2,j2a,j2e,jj2,i3,j3,j3a,j3e,jj3,
-     1        ierr,k,iz
+     1        ierr,k
       real*8 wij,adist,sw,sws0,h3,thi(7),bii,sqrbii,ew(3),ev(3,3),
      1       mew,z1,z2,z3,sij,deti,z,sew,eps3,ss2,sw0,Di(6),dtidisrg,
-     2       vth(28),th0i,abessel,az,mswsi2,mswsi2q,mswsi4,s2hat,
+     2       th0i,mswsi2,mswsi2q,mswsi4,s2hat,
      3       rhosw0,crhosw0,minswsi2,rssi
       external adist,dtidisrg
       logical aws
@@ -371,11 +351,11 @@ C
       implicit logical (a-z)
       integer nb,s(nb),niter
       real*8 D(6),b(6,nb),th0,F(nb),eps
-      integer i,j,k,info,iter,ierr
+      integer i,j,k,info,iter
       logical negdefin
       real*8 z,gamma,alpha,delta,
      1       dg(7),pk(7),ak(7,7),ck(7,7),rss,nrss,crss,maxabsdg,
-     2       oldrss,relrss,Dn(6),res,X(7),th0n,ew(3),ev(3,3)
+     2       oldrss,relrss,Dn(6),res,X(7),th0n
 C  first check if D defines a positive definite densor
       call regularD(D,negdefin)
 C      if(negdefin) call dblepr("neg. definite",13,D,6)
@@ -518,11 +498,11 @@ C
       implicit logical (a-z)
       integer nb,niter
       real*8 s(nb),D(6),b(6,nb),th0,F(nb),eps
-      integer i,j,k,info,iter,ierr
+      integer i,j,k,info,iter
       logical negdefin
       real*8 z,gamma,alpha,delta,
      1       dg(7),pk(7),ak(7,7),ck(7,7),rss,nrss,crss,maxabsdg,
-     2       oldrss,relrss,Dn(6),res,X(7),th0n,ew(3),ev(3,3)
+     2       oldrss,relrss,Dn(6),res,X(7),th0n
 C  first check if D defines a positive definite densor
       call regularD(D,negdefin)
 C      if(negdefin) call dblepr("neg. definite",13,D,6)
