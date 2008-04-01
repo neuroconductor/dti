@@ -1,5 +1,4 @@
 fwhm2bw <- function(hfwhm) hfwhm/sqrt(8*log(2))
-bw2fwhm <- function(h) h*sqrt(8*log(2))
 
 replind <- function(gradient){
 #
@@ -44,30 +43,6 @@ z<-.Fortran("replvar",
 z/df
 }
 
-gkernsm <- function(y,h=1) {
-#
-# h in SD
-#
-  grid <- function(d) {
-    d0 <- d%/%2+1
-    gd <- seq(0,1,length=d0)
-    if (2*d0==d+1) gd <- c(gd,-gd[d0:2]) else gd <- c(gd,-gd[(d0-1):2])
-    gd
-  }
-  dy <- dim(y)
-  if (is.null(dy)) dy<-length(y)
-  ldy <- length(dy)
-  if (length(h)!=ldy) h <- rep(h[1],ldy)
-  kern <- switch(ldy,dnorm(grid(dy),0,2*h/dy),
-                 outer(dnorm(grid(dy[1]),0,2*h[1]/dy[1]),
-                       dnorm(grid(dy[2]),0,2*h[2]/dy[2]),"*"),
-                 outer(outer(dnorm(grid(dy[1]),0,2*h[1]/dy[1]),
-                             dnorm(grid(dy[2]),0,2*h[2]/dy[2]),"*"),
-                       dnorm(grid(dy[3]),0,2*h[3]/dy[3]),"*"))
-  kern <- kern/sum(kern)
-  kernsq <- sum(kern^2)
-  list(gkernsm=convolve(y,kern,conj=TRUE),kernsq=kernsq)
-}
 
 Spatialvar.gauss<-function(h,h0,d,interv=1){
 #
@@ -136,40 +111,7 @@ Spatialvar.gauss<-function(h,h0,d,interv=1){
   sum(z^2)/sum(z)^2*interv^d
 }
 
-get.bw.gauss <- function(corr, step = 1.001,interv=2) {
-  
-  # get the   bandwidth for lkern corresponding to a given correlation
-  #  keep it simple result does not depend on d
 
-  #  interv allows for further discretization of the Gaussian Kernel, result depends on
-  #  interv for small bandwidths. interv=1  is correct for kernel smoothing, 
-  #  interv>>1 should be used to handle intrinsic correlation (smoothing preceeding 
-  #  discretisation into voxel)   
-  if (corr < 0.1) {
-    h <- 0
-  } else { 
-    h <- .5
-    z <- 0
-    while (z<corr) {
-      h <- h*step
-      z <- get.corr.gauss(h,interv)
-    }
-    h <- h/step
-  }
-  h
-}
-
-get.corr.gauss <- function(h,interv=1) {
-    #
-    #   Calculates the correlation of 
-    #   colored noise that was produced by smoothing with "gaussian" kernel and bandwidth h
-    #   Result does not depend on d for "Gaussian" kernel !!
-    h <- h/2.3548*interv
-    ih <- trunc(4*h+ 2*interv-1)
-    dx <- 2*ih+1
-    penl <- dnorm(((-ih):ih)/h)
-    sum(penl[-(1:interv)]*penl[-((dx-interv+1):dx)])/sum(penl^2)
-}
 
 corrrisk <- function(bw,lag,data){
   z <- thcorr3D(bw,lag)

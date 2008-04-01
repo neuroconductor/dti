@@ -1,80 +1,3 @@
-      subroutine testreg(D,i)
-      implicit logical(a-z)
-      real*8 D(6),ew(3),ev(3,3)
-      integer ierr,i
-      logical negdefin
-      call eigen3(D,ew,ev,ierr)
-      if(ew(1).lt.0.d0) THEN
-         call dblepr("Init-ew",7,ew,3)
-         call regularD(D,negdefin)
-      ENDIF
-      call eigen3(D,ew,ev,ierr)
-      if(ew(1).le.0.d0) THEN
-         call intpr("test-nr",7,i,1)
-         call dblepr("D",1,D,6)
-         call dblepr("ew",2,ew,3)
-         call regularD(D,negdefin)
-         call eigen3(D,ew,ev,ierr)
-         call dblepr("Dreg",4,D,6)
-         call dblepr("ew-reg",6,ew,3)
-      END IF
-      RETURN
-      END   
-      subroutine testreg2(D,rho,i)
-      implicit logical(a-z)
-      real*8 D(6),ew(3),ev(3,3)
-      integer ierr,i
-      logical negdefin
-      call eigen3(D,ew,ev,ierr)
-      if(ew(1).le.0.d0) THEN
-         call intpr("test-nr",7,i,1)
-         call dblepr("D",1,D,6)
-         call dblepr("ew",2,ew,3)
-         call dblepr("rho",3,rho,6)
-         call regularD(D,negdefin)
-         call eigen3(D,ew,ev,ierr)
-         call dblepr("Dreg",4,D,6)
-         call dblepr("ew-reg",6,ew,3)
-      END IF
-      RETURN
-      END   
-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-C
-C     regularize D 
-C
-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-      subroutine regD(D,Dn)
-      implicit logical(a-z)
-      real*8 D(6),Dn(6),ew(3),ev(3,3)
-      integer ierr
-      call eigen3(D,ew,ev,ierr)
-      if(ew(1).le.1.d-6) THEN
-C  first regularize
-         ew(1)=max(1.d-6,ew(1))
-         ew(2)=max(1.d-6,ew(2))
-         ew(3)=max(1.d-6,ew(3))
-         Dn(1)=ew(1)*ev(1,1)*ev(1,1)+ew(2)*ev(1,2)*ev(1,2)+
-     1         ew(3)*ev(1,3)*ev(1,3)
-         Dn(2)=ew(1)*ev(1,1)*ev(2,1)+ew(2)*ev(1,2)*ev(2,2)+
-     1         ew(3)*ev(1,3)*ev(2,3)
-         Dn(3)=ew(1)*ev(1,1)*ev(3,1)+ew(2)*ev(1,2)*ev(3,2)+
-     1         ew(3)*ev(1,3)*ev(3,3)
-         Dn(4)=ew(1)*ev(2,1)*ev(2,1)+ew(2)*ev(2,2)*ev(2,2)+
-     1         ew(3)*ev(2,3)*ev(2,3)
-         Dn(5)=ew(1)*ev(2,1)*ev(3,1)+ew(2)*ev(2,2)*ev(3,2)+
-     1         ew(3)*ev(2,3)*ev(3,3)
-         Dn(6)=ew(1)*ev(3,1)*ev(3,1)+ew(2)*ev(3,2)*ev(3,2)+
-     1         ew(3)*ev(3,3)*ev(3,3)
-      ELSE
-         Dn(1)=D(1)
-         Dn(2)=D(2)
-         Dn(3)=D(3)
-         Dn(4)=D(4)
-         Dn(5)=D(5)
-         Dn(6)=D(6)
-      END IF
-      RETURN
-      END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 C
 C     regularize D 
@@ -448,12 +371,11 @@ C
       implicit logical (a-z)
       integer nb,s(nb),niter
       real*8 D(6),b(6,nb),th0,F(nb),eps
-      integer i,j,k,info,iter,indvar,ierr
+      integer i,j,k,info,iter,ierr
       logical negdefin
       real*8 z,gamma,alpha,delta,
      1       dg(7),pk(7),ak(7,7),ck(7,7),rss,nrss,crss,maxabsdg,
      2       oldrss,relrss,Dn(6),res,X(7),th0n,ew(3),ev(3,3)
-      external indvar
 C  first check if D defines a positive definite densor
       call regularD(D,negdefin)
 C      if(negdefin) call dblepr("neg. definite",13,D,6)
@@ -596,12 +518,11 @@ C
       implicit logical (a-z)
       integer nb,niter
       real*8 s(nb),D(6),b(6,nb),th0,F(nb),eps
-      integer i,j,k,info,iter,indvar,ierr
+      integer i,j,k,info,iter,ierr
       logical negdefin
       real*8 z,gamma,alpha,delta,
      1       dg(7),pk(7),ak(7,7),ck(7,7),rss,nrss,crss,maxabsdg,
      2       oldrss,relrss,Dn(6),res,X(7),th0n,ew(3),ev(3,3)
-      external indvar
 C  first check if D defines a positive definite densor
       call regularD(D,negdefin)
 C      if(negdefin) call dblepr("neg. definite",13,D,6)

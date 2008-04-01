@@ -187,8 +187,7 @@ setMethod("dtiTensor","dtiData",
 function(object, method="nonlinear",varmethod="replicates",varmodel="local") {
 #  available methods are 
 #  "linear" - use linearized model (log-transformed)
-#  "nonlinear" - use nonlinear model directly
-#  "regularized" - use nonlinear model with parametrization according to Koay et.al. (2006)
+#  "nonlinear" - use nonlinear model with parametrization according to Koay et.al. (2006)
   ngrad <- object@ngrad
   ddim <- object@ddim
   s0ind <- object@s0ind
@@ -224,7 +223,7 @@ function(object, method="nonlinear",varmethod="replicates",varmodel="local") {
      th0 <- NULL
      gc()
   } else {
-#  method == "nonlinear" || "regularized"
+#  method == "nonlinear" 
      ngrad0 <- ngrad
      si <- aperm(object$si,c(4,1:3))
      s0 <- si[s0ind,,,]
@@ -232,27 +231,6 @@ function(object, method="nonlinear",varmethod="replicates",varmodel="local") {
      dim(s0) <- ddim
      mask <- s0 > object@level
      cat("start nonlinear regression",date(),proc.time(),"\n")
-     if(method == "nonlinear") {
-     z <- .Fortran("nlrdti",
-                as.integer(si),
-                as.integer(ngrad),
-                as.integer(ddim[1]),
-                as.integer(ddim[2]),
-                as.integer(ddim[3]),
-                as.logical(mask),
-                as.double(object@btb),
-                th0=as.double(s0),
-                D=double(6*prod(ddim)),
-                as.integer(200),
-                as.double(1e-6),
-                Varth=double(28*prod(ddim)),
-                res=double(ngrad*prod(ddim)),
-                rss=double(prod(ddim)),
-                PACKAGE="dti",DUP=FALSE)[c("th0","D","Varth","res","rss")]
-        dim(z$Varth) <- c(28,ddim)
-     } else { 
-# method == "regularized"
-     cat("successfully completed nonlinear regression ",date(),proc.time(),"\n")
      z <- .Fortran("nlrdtirg",
                 as.integer(si),
                 as.integer(ngrad),
@@ -268,8 +246,8 @@ function(object, method="nonlinear",varmethod="replicates",varmodel="local") {
                 res=double(ngrad*prod(ddim)),
                 rss=double(prod(ddim)),
                 PACKAGE="dti",DUP=FALSE)[c("th0","D","res","rss")]
+     cat("successfully completed nonlinear regression ",date(),proc.time(),"\n")
      z$Varth <- NULL
-     }
      dim(z$th0) <- ddim
      dim(z$D) <- c(6,ddim)
      dim(z$res) <- c(ngrad,ddim)

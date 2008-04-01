@@ -14,8 +14,7 @@ setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=30,
                                             rho=1,graph=FALSE,slice=NULL,quant=.8,
                                             minanindex=NULL,eps=1e-6,hsig=2.5,lseq=NULL, method="nonlinear",varmethod="residuals",rician=TRUE,niter=5,varmodel="local") {
 switch(method,"linear" = dtilin.smooth(object,hmax,hinit,lambda,rho,graph,slice,quant,minanindex,eps,hsig,lseq,varmethod,varmodel),
-              "nonlinear" = dtinl.smooth(object,hmax,hinit,lambda,rho,graph,slice,quant,minanindex,eps,hsig,lseq,varmethod,rician,niter,varmodel),
-              "regularized" = dtireg.smooth(object,hmax,hinit,lambda,rho,graph,slice,quant,minanindex,eps,hsig,lseq,varmethod,rician,niter,varmodel))
+              "nonlinear" =  dtireg.smooth(object,hmax,hinit,lambda,rho,graph,slice,quant,minanindex,eps,hsig,lseq,varmethod,rician,niter,varmodel))
 }
 )
 dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
@@ -249,6 +248,11 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
 
 setMethod("dti.smooth", "dtiTensor", function(object,method="riemann",hmax=5,lambda=20,rho=1,graph=FALSE,
                                             slice=NULL,quant=.8,minanindex=NULL,zext=1){
+#
+#
+cat("Functionality for smoothing the diffusion tensor is only included for demonstartion purposes.\n
+We do not advise to smooth the tensor, neither using a Rimannian, log-Euclidian or Euclidian metric.\n
+Please use function dti.smooth on a dtiData-object ... .\n")
   if (method == "riemann") {
     rdtianiso(object,hmax=hmax,lambda=lambda,rho=rho,graph=graph,
               slice=slice,quant=quant,minanindex=minanindex,zext=zext)

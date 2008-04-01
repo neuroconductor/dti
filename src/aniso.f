@@ -146,63 +146,6 @@ C
 C   Initialize anisotropy index and direction of main anisotropy
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-      subroutine initdti(th,n1,n2,n3,ani,dir,det,mask)
-C
-C   th       -  smoothed diffusion tensor data
-C   bi       -  voxelwise sum of weights 
-C   n1,n2,n3 -  spatial dimensions
-C   rho      -  regularization parameter for anisotropic neighborhoods
-C               (X,y,z) ( A(theta)+ rho/bi I ) (X,y,z)^T  = h^2  defines the elloispid 
-C   lambda   -  scale factor in the statistical penalty
-C   thnew    -  new smoothed diffusion tensor data
-C   ani      -  anisotropy index (computed internally)
-C   dir      -  direction of main anisotropy (computed internally)
-C   det      -  det(A)
-      implicit logical (a-z)
-      integer n1,n2,n3
-      real*8 th(6,n1,n2,n3),ani(n1,n2,n3),dir(3,n1,n2,n3),det(n1,n2,n3)
-      integer i1,i2,i3,ierr,k
-      real*8 ew(3),ev(3,3),mew,z1,z2,z3,z
-      logical mask(n1,n2,n3)
-C  compute anisotropy index and direction of main anisotropy (nneded in statistical penalty)
-      DO i1=1,n1
-         DO i2=1,n2
-            DO i3=1,n3
-               IF(mask(i1,i2,i3)) THEN
-                  call eigen3(th(1,i1,i2,i3),ew,ev,ierr)
-                  mew=(ew(1)+ew(2)+ew(3))/3.d0
-                  z1=ew(1)-mew
-                  z2=ew(2)-mew
-                  z3=ew(3)-mew
-                  z=3.d0*(z1*z1+z2*z2+z3*z3)
-                  z1=ew(1)
-                  z2=ew(2)
-                  z3=ew(3)
-                  mew=2.d0*(z1*z1+z2*z2+z3*z3)
-                  if(mew.le.1d-20) mew=1.d0
-                  ani(i1,i2,i3)=sqrt(z/mew)
-                  DO k=1,3
-                     dir(k,i1,i2,i3)=ev(k,3)
-                  END DO
-                  z=ew(1)*ew(2)*ew(3)
-                  IF(z.le.1d-30) THEN
-                     det(i1,i2,i3)=0.d0
-                     mask(i1,i2,i3)=.FALSE.
-                  ELSE
-                     det(i1,i2,i3)=z
-                  END IF
-               ENDIF
-               call rchkusr()
-            END DO
-         END DO
-      END DO
-      RETURN
-      END
-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-C
-C   Initialize anisotropy index and direction of main anisotropy
-C
-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine projdt(th,n1,n2,n3,thnew,ani,dir,det,mask)
 C
 C   th       -  observed diffusion tensor data
@@ -341,18 +284,6 @@ C    ia,ie -  rane of x values (restricted to the grid)
       zz=z*zext
       adist=a(1)*x*x+a(4)*y*y+a(6)*zz*zz+
      1               2.d0*(a(2)*x*y+a(3)*x*zz+a(5)*y*zz)
-      RETURN
-      END
-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-C
-C    Compute statistical penalty for dti
-C
-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-      real*8 function dtidist(diri,dirj,ani)
-      implicit logical (a-z)
-      real*8 diri(3),dirj(3),ani,z
-      z=(diri(1)*dirj(1)+diri(2)*dirj(2)+diri(3)*dirj(3))
-      dtidist=ani*ani*(1.d0-z*z)
       RETURN
       END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
