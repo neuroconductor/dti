@@ -1,26 +1,22 @@
 \name{medinria2tensor}
 \alias{medinria2tensor}
 %- Also NEED an '\alias' for EACH other topic documented here.
-\title{ ~~function to do ... ~~ }
+\title{ Read Tensor-Data from NIFTI File }
 \description{
-  ~~ A concise (1-5 lines) description of what the function does. ~~
+  Read Tensor-Data from NIFTI File. Interface function to MedINRIA 
 }
 \usage{
 medinria2tensor(filename)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{filename}{ ~~Describe \code{filename} here~~ }
+  \item{filename}{ name of the file containing the tensor data. }
 }
 \details{
-  ~~ If necessary, more details than the description above ~~
+The function allows to read tensor data written as NIFTY-Files by MedINRIA.
 }
 \value{
-  ~Describe the value returned
-  If it is a LIST, use
-  \item{comp1 }{Description of 'comp1'}
-  \item{comp2 }{Description of 'comp2'}
-  ...
+  Object of class \code{dtiTensor}.
 }
 \references{ K. Tabelow, J. Polzehl, H.U. Voss, and V. Spokoiny. \emph{Diffusion Tensor Imaging: Structural adaptive smoothing}, NeuroImage 39(4), 1763-1773 (2008).
 

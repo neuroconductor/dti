@@ -1,5 +1,6 @@
 setClass("dti",
-         representation(btb    = "matrix",
+         representation(.Data = "list",
+                        btb    = "matrix",
                         ngrad  = "integer", # = dim(btb)[2]
                         s0ind  = "integer", # indices of s0 images
                         replind = "integer", # replications in gradient design
@@ -9,27 +10,15 @@ setClass("dti",
                         yind   = "integer",
                         zind   = "integer",
                         voxelext = "numeric",
-                        source = "character")
+                        source = "character"),
          )
 
 setClass("dtiData",
-         representation(level = "numeric"),
+         representation(si = "array", level = "numeric"),
          contains=c("list","dti"),
          validity=function(object){
-          if (!("si") %in% names(object)) {
-            cat("si not in data\n")
-            return(invisible(FALSE))
-          }
-          if (!("array" %in% class(object$si))) {
-            cat("s0 not an array\n")
-            return(invisible(FALSE))
-          }
-          if (length(dim(object$si)) != 4) {
-            cat("dimension of si is",dim(object$si),", but we want 4 dimensions\n")
-            return(invisible(FALSE))
-          }
-          if (any(dim(object$si) != c(object@ddim,object@ngrad))) {
-            cat("dimension of si is",dim(object$si),", but we want",c(object@ddim,object@ngrad),"\n")
+          if (any(dim(object@si)!=c(object@ddim,object@ngrad))) {
+            cat("incorrect dimension of image data\n")
             return(invisible(FALSE))
           }
           if (length(object@s0ind)<1) {
@@ -39,30 +28,46 @@ setClass("dtiData",
          }
          )
 setClass("dtiTensor",
-         representation(method = "character"),
+         representation(method = "character",
+                        D      = "array",
+                        th0    = "array",
+                        sigma  = "array",
+                        scorr  = "numeric",
+                        bw     = "numeric",
+                        mask   = "array",
+                        hmax   = "numeric"),
          contains=c("list","dti"),
          validity=function(object){
-          if (sum(c("D","sigma","scorr") %in% names(object)) != 3) {
-            cat("D, sigma or scorr not in data\n")
+          if (any(dim(object@D)!=c(6,object@ddim))) {
+            cat("invalid dimension of tensor array D \n")
             return(invisible(FALSE))
           }
-          if (!("array" %in% class(object$D))) {
-            cat("D not an array\n")
+          if (any(dim(object@th0)!=object@ddim)) {
+            cat("invalid dimension of array th0\n")
             return(invisible(FALSE))
           }
-          if (!("array" %in% class(object$sigma))) {
-            cat("sigma not an array\n")
+          if (any(dim(object@sigma)!=object@ddim)) {
+            cat("invalid dimension of array sigma\n")
             return(invisible(FALSE))
           }
-          if (!(object@method %in% c("linear","nonlinear","regularized"))) {
-            cat("method should specify either linear or nonlinear or regularized\n")
+          if (any(dim(object@mask)!=object@ddim)) {
+            cat("invalid dimension of array mask\n")
             return(invisible(FALSE))
           }
-          if (object@method=="nonlinear"&&(is.null(object$Varth)
-               ||length(dim(object$Varth))!=4||
-                 any(dim(object$Varth)[2:4]!=object@ddim)||
-                 dim(object$Varth)[1]!=28)) {
-            cat("no or incorrect component Varth in list \n")
+          if (!is.logical(object@mask)) {
+            cat("invalid type of array mask, should be logical\n")
+            return(invisible(FALSE))
+          }
+          if (length(object@scorr)!=3) {
+            cat("invalid length of scorr\n")
+            return(invisible(FALSE))
+          }
+          if (length(object@bw)!=3) {
+            cat("invalid length of bw\n")
+            return(invisible(FALSE))
+          }
+          if (!(object@method %in% c("linear","nonlinear","unknown"))) {
+            cat("method should specify either linear or nonlinear or unknown\n")
             return(invisible(FALSE))
           }
          }
@@ -77,8 +82,28 @@ setClass("dtiIndices",
                         eigenv = "array"),
          contains=c("list","dti"),
           validity=function(object){
-          if (sum(c("fa","ra","trc","lambda","eigenv") %in% names(object)) != 5) {
-            cat("fa,ra, trc, lambda, or eigenv not in data\n")
+          if (any(dim(object@fa)!=object@ddim)) {
+            cat("invalid dimension of array fa\n")
+            return(invisible(FALSE))
+          }
+          if (any(dim(object@ra)!=object@ddim)) {
+            cat("invalid dimension of array ra\n")
+            return(invisible(FALSE))
+          }
+          if (any(dim(object@trc)!=object@ddim)) {
+            cat("invalid dimension of array trc\n")
+            return(invisible(FALSE))
+          }
+          if (any(dim(object@bary)!=c(object@ddim,3))) {
+            cat("invalid dimension of array bary\n")
+            return(invisible(FALSE))
+          }
+          if (any(dim(object@lambda)!=c(object@ddim,3))) {
+            cat("invalid dimension of array bary\n")
+            return(invisible(FALSE))
+          }
+          if (any(dim(object@eigenv)!=c(object@ddim,9))) {
+            cat("invalid dimension of array eigenv\n")
             return(invisible(FALSE))
           }
          }

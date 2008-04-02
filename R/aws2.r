@@ -26,12 +26,12 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
   voxelext <- object@voxelext
   if(is.null(voxelext)) zext <- 1 else zext <- voxelext[3]/voxelext[1]
   dtobject <- dtiTensor(object,method="regularized",varmethod=varmethod,varmodel=varmodel)
-  mask <- dtobject$mask
+  mask <- dtobject@mask
   th0 <- dtobject$th0
-  D <- dtobject$D
-  sigma2 <- dtobject$sigma
-  scorr <- dtobject$scorr
-  h0 <- dtobject$bw
+  D <- dtobject@D
+  sigma2 <- dtobject@sigma
+  scorr <- dtobject@scorr
+  h0 <- dtobject@bw
   cat("Corresponding bandwiths for specified correlation:",h0,"\n")
   gc()
   dimy <- dim(D)
@@ -236,9 +236,16 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
     lambda0 <- lambda*lseq[k]*scorrfactor     
   }
   invisible(new("dtiTensor",
-                list(D = z$D, th0= z$th0, Varth= NULL, sigma = z$sigma2hat, scorr = scorr, s0hat = z$th0, bw = dtobject$bw, hmax = hmax, mask = mask, s2rician=if(rician) z$sigma2r else NULL, ni=z$bi*if(wlse) z$sigma2hat else 1),
-                btb   = btb,
-                ngrad = ngrad+length(s0ind), # = dim(btb)[2]
+                list(s2rician=if(rician) z$sigma2r else NULL, ni=z$bi*if(wlse) z$sigma2hat else 1),
+                D = z$D,
+                th0 = z$th0,
+                sigma = z$sigma2hat,
+                scorr = dtobject@scorr,
+                bw = dtobject@bw,
+                mask = dtobject@mask,
+                btb   = dtobject@btb,
+                hmax  = hmax,
+                ngrad = ngrad, # = dim(btb)[2]
                 s0ind = object@s0ind,
                 ddim  = as.integer(ddim),
                 ddim0 = as.integer(ddim0),

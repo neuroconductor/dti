@@ -1,28 +1,37 @@
 \name{plot}
-\alias{plot}
+\alias{plot.dtiIndices}
+\alias{plot.dtiData}
+\alias{plot.dtiTensor}
 %- Also NEED an '\alias' for EACH other topic documented here.
-\title{ ~~function to do ... ~~ }
+\title{Visualizing of dtiIndices}
 \description{
-  ~~ A concise (1-5 lines) description of what the function does. ~~
+Generic plot function for visualization of objects of class
+\code{dtiIndices}. 
 }
 \usage{
 plot(x, y, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{x}{ ~~Describe \code{x} here~~ }
-  \item{y}{ ~~Describe \code{y} here~~ }
-  \item{\dots}{ ~~Describe \code{\dots} here~~ }
+  \item{x}{ object of class \code{dtiIndices}, \code{dtiData} or \code{dtiTensor}}
+  \item{y}{ not used }
+  \item{\dots}{ additional arguments such as
+   \item{slice }{Slice number}
+   \item{method }{\code{method==1} and \code{method==2} specify two difefrent color schemes for 
+    directional FA-maps. \code{method==3} specifies visualization of dtiIndices using color coded bary coordinates}
+   \item{quant }{if \code{is.null(minanindex)} specify \code{minanindex} as corresponding quantile of the fractal anisotropy (FA) index.}
+   \item{minanindex }{display only information for voxel with \code{FA>minanindex}}
+   \item{show }{Visualize information in a graphics device}
+   \item{contrast.enh}{ enhance image contrast using \code{min(1,x$anindex/contrast.enh} instead
+    of the anisotropy index itself. Effective values are within the interval (0,1).
+ }
 }
 \details{
-  ~~ If necessary, more details than the description above ~~
+This function will be extended to visualize objects of class \code{dtiData}
+and \code{dtiTensor}.
 }
 \value{
-  ~Describe the value returned
-  If it is a LIST, use
-  \item{comp1 }{Description of 'comp1'}
-  \item{comp2 }{Description of 'comp2'}
-  ...
+an image of class \code{adimpro}.
 }
 \references{ K. Tabelow, J. Polzehl, H.U. Voss, and V. Spokoiny. \emph{Diffusion Tensor Imaging: Structural adaptive smoothing}, NeuroImage 39(4), 1763-1773 (2008).
 

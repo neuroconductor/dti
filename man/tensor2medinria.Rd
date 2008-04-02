@@ -1,31 +1,25 @@
 \name{tensor2medinria}
 \alias{tensor2medinria}
 %- Also NEED an '\alias' for EACH other topic documented here.
-\title{ ~~function to do ... ~~ }
+\title{Write Tensor-Data as NIFTI File }
 \description{
-  ~~ A concise (1-5 lines) description of what the function does. ~~
+  Write Tensor-Data as NIFTI File. Interface function to MedINRIA
 }
 \usage{
-tensor2medinria(obj, filename, voxelext = c(1, 1, 1), xind = NULL, yind = NULL, zind = NULL)
+tensor2medinria(obj, filename, xind = NULL, yind = NULL, zind = NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{obj}{ ~~Describe \code{obj} here~~ }
-  \item{filename}{ ~~Describe \code{filename} here~~ }
-  \item{voxelext}{ ~~Describe \code{voxelext} here~~ }
-  \item{xind}{ ~~Describe \code{xind} here~~ }
-  \item{yind}{ ~~Describe \code{yind} here~~ }
-  \item{zind}{ ~~Describe \code{zind} here~~ }
+  \item{obj}{ object of class \code{dtiTensor} }
+  \item{filename}{ Filename }
+  \item{xind}{ index to define a subcube in x-direction. If \code{is.null(xind} all voxel indices are used. }
+  \item{yind}{ index to define a subcube in y-direction. If \code{is.null(yind} all voxel indices are used. }
+  \item{zind}{ index to define a subcube in z-direction. If \code{is.null(zind} all voxel indices are used. }
 }
 \details{
-  ~~ If necessary, more details than the description above ~~
+The function allows to write tensor data as NIFTY-Files readable by MedINRIA. 
 }
-\value{
-  ~Describe the value returned
-  If it is a LIST, use
-  \item{comp1 }{Description of 'comp1'}
-  \item{comp2 }{Description of 'comp2'}
-  ...
+\value{\code{NULL}
 }
 \references{ K. Tabelow, J. Polzehl, H.U. Voss, and V. Spokoiny. \emph{Diffusion Tensor Imaging: Structural adaptive smoothing}, NeuroImage 39(4), 1763-1773 (2008).
 

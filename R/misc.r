@@ -179,7 +179,7 @@ image(anindex,...)
 invisible(andirection)
 } 
 
-tensor2medinria <- function(obj, filename, voxelext=c(1,1,1), xind=NULL, yind=NULL, zind=NULL) {
+tensor2medinria <- function(obj, filename, xind=NULL, yind=NULL, zind=NULL) {
   if (!require(fmri)) stop("cannot execute function without package fmri, because of missing write.NIFTI() function")
 
   if (is.null(xind)) xind <- 1:obj@ddim[1]
@@ -201,7 +201,7 @@ tensor2medinria <- function(obj, filename, voxelext=c(1,1,1), xind=NULL, yind=NU
   header$srowy <- c(0,2,0,0)
   header$srowz <- c(0,0,2,0)
 
-  write.NIFTI(aperm(obj$D,c(2:4,1))[xind,yind,zind,c(1,2,4,3,5,6)],header,filename)
+  write.NIFTI(aperm(obj@D,c(2:4,1))[xind,yind,zind,c(1,2,4,3,5,6)],header,filename)
   return(NULL)
 }
 
@@ -211,7 +211,14 @@ medinria2tensor <- function(filename) {
   data <- read.NIFTI(filename)
  
   invisible(new("dtiTensor",
-                list(D = aperm(data$ttt,c(4,1:3))[c(1,2,4,3,5,6),,,], sigma = array(0,dim=c(1,1,1)), scorr = 0),
+                D     = aperm(data$ttt,c(4,1:3))[c(1,2,4,3,5,6),,,],
+                sigma = array(0,data$ttt[1:3]),
+                scorr = rep(0,3),
+                bw    = rep(0,3),
+                mask  = array(TRUE,data$ttt[1:3]),
+                method = "unknown",
+                hmax  = 1,
+                th0   = array(0,dim=c(1,1,1)),
                 btb   = matrix(0,1,1),
                 ngrad = as.integer(0), # = dim(btb)[2]
                 s0ind = as.integer(0),
@@ -221,8 +228,7 @@ medinria2tensor <- function(filename) {
                 yind  = 1:data$dim[2],
                 zind  = 1:data$dim[3],
                 voxelext = data$delta,
-                source= "unknown",
-                method= "linear")
+                source= "unknown")
             )
 
 }

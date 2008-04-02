@@ -1,29 +1,34 @@
 \name{dtiTensor}
 \alias{dtiTensor}
 %- Also NEED an '\alias' for EACH other topic documented here.
-\title{ ~~function to do ... ~~ }
+\title{ Estimate the diffusion tensor from DWI data }
 \description{
-  ~~ A concise (1-5 lines) description of what the function does. ~~
+  generic function that estimates, in each voxel, the diffusion tensor from
+the DWI data contained in an object of class \code{dtiData}
 }
 \usage{
 dtiTensor(object, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{object}{ ~~Describe \code{object} here~~ }
-  \item{\dots}{ ~~Describe \code{\dots} here~~ }
+  \item{object}{ object of class \code{dtiData}}
+  \item{\dots}{ Additional arguments specifying the model
+\item{method}{ if \code{model=="linear"} estimates are obtained using a linearization of the tensor model. This was the estimate used in Tabelow et.al (2008). \code{model=="nonlinear"} uses a 
+nonlinear regression model with reparametrization that ensures the tensor to be  positive semidefinite, see  Koay et.al (2006).
+\item{varmethod}{specifies the method for estimating the error  variance. If \code{varmethod=="replicates"} the error variance is estimated from replicated 
+gradient directions if possible. Otherwise an estimate is obtained from the residual sum of squares.
+\item{varmodel}{if \code{varmodel=="global"} a homogeneous variance estimate is assumed and estimated as the median of the local variance estimates.}
+ }
 }
 \details{
-  ~~ If necessary, more details than the description above ~~
 }
-\value{
-  ~Describe the value returned
-  If it is a LIST, use
-  \item{comp1 }{Description of 'comp1'}
-  \item{comp2 }{Description of 'comp2'}
-  ...
+\value{ an object of class \code{dtiTensor}.
 }
 \references{ K. Tabelow, J. Polzehl, H.U. Voss, and V. Spokoiny. \emph{Diffusion Tensor Imaging: Structural adaptive smoothing}, NeuroImage 39(4), 1763-1773 (2008).
+
+Koay, C. G.; Carew, J. D.; Alexander, A. L.; Basser, P. J. & Meyerand, M. E. Investigation of Anomalous Estimates of Tensor-Derived
+Quantities in Diffusion Tensor Imaging Magnetic Resonance in Medicine, 2006, 55, 930–936
+
 
 \url{http://www.wias-berlin.de/projects/matheon_a3/} }
 \author{Karsten Tabelow tabelow@wias-berlin.de, J\"org Polzehl polzehl@wias-berlin.de}

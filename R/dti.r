@@ -16,16 +16,16 @@ setMethod("plot", "dtiData", function(x, y, ...) cat("Not yet implemented yet fo
 setMethod("plot", "dti", function(x, y, ...) cat("No implementation for class dti\n"))
 
 setMethod("plot", "dtiIndices", 
-function(x, y, slice=1, method=1, quant=0, minanindex=NULL, show=TRUE, fa.thresh=1, ...) {
-  if(is.null(x$fa)) cat("No anisotropy index yet")
+function(x, y, slice=1, method=1, quant=0, minanindex=NULL, show=TRUE, contrast.enh=1, ...) {
+  if(is.null(x@fa)) cat("No anisotropy index yet")
   adimpro <- require(adimpro)
-  anindex <- x$fa[,,slice]
+  anindex <- x@fa[,,slice]
   dimg <- x@ddim[1:2]
   if ((method==1) || (method==2)) {
-    andirection <- x$eigenv[,,slice,,]
+    andirection <- x@eigenv[,,slice,,]
     anindex[anindex>1]<-0
     anindex[anindex<0]<-0
-    if(fa.thresh<1&&fa.thresh>0) anindex <- pmin(anindex/fa.thresh,1)
+    if(contrast.enh<1&&fa.contrast.enh>0) anindex <- pmin(anindex/contrast.enh,1)
     dim(andirection)<-c(prod(dimg),3,3)
     if(is.null(minanindex)) minanindex <- quantile(anindex,quant,na.rm=TRUE)
     if (diff(range(anindex,na.rm=TRUE)) == 0) minanindex <- 0
@@ -52,7 +52,7 @@ function(x, y, slice=1, method=1, quant=0, minanindex=NULL, show=TRUE, fa.thresh
     }
     invisible(andirection)
   } else if (method==3) {
-    bary <- x$bary[,,slice,]
+    bary <- x@bary[,,slice,]
     if(adimpro) {
       bary[is.na(bary)] <- 0
       bary <- make.image(bary)
@@ -62,10 +62,10 @@ function(x, y, slice=1, method=1, quant=0, minanindex=NULL, show=TRUE, fa.thresh
     }
     invisible(bary)
   } else {
-    andirection <- x$eigenv[,,slice,,]
+    andirection <- x@eigenv[,,slice,,]
     anindex[anindex>1]<-0
     anindex[anindex<0]<-0
-    if(fa.thresh<1&&fa.thresh>0) anindex <- pmin(anindex/fa.thresh,1)
+    if(contrast.enh<1&&contrast.enh>0) anindex <- pmin(anindex/contrast.enh,1)
     dim(andirection)<-c(prod(dimg),3,3)
     if(is.null(minanindex)) minanindex <- quantile(anindex,quant,na.rm=TRUE)
     if (diff(range(anindex,na.rm=TRUE)) == 0) minanindex <- 0
@@ -130,7 +130,7 @@ dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=
   rind <- replind(gradient)
   
   invisible(new("dtiData",
-                list(si = si),
+                si     = si,
                 btb    = btb,
                 ngrad  = ngrad, # = dim(btb)[2]
                 s0ind  = s0ind, # indices of S_0 images
@@ -179,7 +179,13 @@ createdata.dti <- function(file,dtensor,btb,s0,sigma,level=250){
 #
 #
 
+dti <- function(object,  ...) cat("This object has class",class(object),"\n")
+setGeneric("dti", function(object,  ...) 
+standardGeneric("dti"))
+
+
 dtiTensor <- function(object,  ...) cat("No DTI tensor calculation defined for this class:",class(object),"\n")
+
 
 setGeneric("dtiTensor", function(object,  ...) standardGeneric("dtiTensor"))
 
@@ -219,7 +225,6 @@ function(object, method="nonlinear",varmethod="replicates",varmodel="local") {
      dim(D) <- c(6,ddim)
      dim(res) <- c(ngrad0,ddim)
      cat("Variance estimates generated ",date(),proc.time(),"\n")
-     Varth <- NULL
      th0 <- NULL
      gc()
   } else {
@@ -247,7 +252,6 @@ function(object, method="nonlinear",varmethod="replicates",varmodel="local") {
                 rss=double(prod(ddim)),
                 PACKAGE="dti",DUP=FALSE)[c("th0","D","res","rss")]
      cat("successfully completed nonlinear regression ",date(),proc.time(),"\n")
-     z$Varth <- NULL
      dim(z$th0) <- ddim
      dim(z$D) <- c(6,ddim)
      dim(z$res) <- c(ngrad,ddim)
@@ -255,8 +259,6 @@ function(object, method="nonlinear",varmethod="replicates",varmodel="local") {
      df <- sum(table(object@replind)-1)
      res <- z$res
      D <- z$D
-     rho <- z$rho
-     Varth <- z$Varth
      rss <- z$rss
      th0 <- z$th0
      rm(z)
@@ -313,7 +315,13 @@ function(object, method="nonlinear",varmethod="replicates",varmodel="local") {
   cat("estimated corresponding bandwidths",date(),proc.time(),"\n")
 
   invisible(new("dtiTensor",
-                list(D = D, rho = rho, th0 = th0, Varth = Varth, sigma = sigma2, scorr = scorr, bw = bw, mask = mask),
+                D     = D,
+                th0   = th0,
+                sigma = sigma2,
+                scorr = scorr, 
+                bw = bw, 
+                mask = mask,
+                hmax = 1,
                 btb   = object@btb,
                 ngrad = object@ngrad, # = dim(btb)[2]
                 s0ind = object@s0ind,
@@ -348,63 +356,6 @@ create.designmatrix.dti <- function(gradient, bvalue=1) {
   btb * bvalue
 }
 
-# really setAs() or setMethod?
-setAs("dtiTensor","dtiIndices",function(from,to) {
-  ddim <- from@ddim
-
-  ll <- array(0,c(ddim,3))
-  th <- array(0,c(ddim,9))
-  ierr <- array(0,ddim)
-
-  for (i in 1:ddim[1]) {
-    cat(".")
-    for (j in 1:ddim[2]) {
-      for (k in 1:ddim[3]) {
-        z <- .Fortran("eigen3",
-                      as.double(from$theta[,i,j,k]),
-                      lambda = double(3),
-                      theta = double(3*3),
-                      ierr = integer(1),
-                      PACKAGE="dti")[c("lambda","theta","ierr")]
-        ll[i,j,k,] <- z$lambda
-        th[i,j,k,] <- z$theta
-        ierr[i,j,k] <- z$ierr
-      }
-    }
-  }
-  cat("\ncalculated eigenvalues and -vectors\n")
-
-  dim(th) <- c(ddim,3,3)
-  dim(ll) <- c(prod(ddim),3)
-
-  trc <- as.vector(ll %*% c(1,1,1))/3
-  fa <- sqrt(1.5*((sweep(ll,1,trc)^2)%*% c(1,1,1))/((ll^2)%*% c(1,1,1)))
-  ra <- sqrt(((sweep(ll,1,trc)^2)%*% c(1,1,1))/(3*trc))
-
-  cat("calculated anisotropy indices\n")
-
-  bary <- c((ll[,3] - ll[,2]) / (3*trc) , 2*(ll[,2] - ll[,1]) / (3*trc) , ll[,1] / trc)
-
-  dim(ll) <- c(ddim,3)
-  dim(trc) <- dim(fa) <- dim(ra) <- ddim
-  dim(bary) <- c(ddim,3)
-
-  cat("calculated barycentric coordinates\n")
-
-  invisible(new(to,
-                list(fa = fa, ra = ra, trc = trc, bary = bary, lambda = ll, eigenv = th),
-                btb   = from@btb,
-                ngrad = from@ngrad, # = dim(btb)[2]
-                ddim  = from@ddim,
-                ddim0 = from@ddim0,
-                xind  = from@xind,
-                yind  = from@yind,
-                zind  = from@zind,
-                source= from@source)
-            )
-
-
-})
 
 #
 #
@@ -427,7 +378,7 @@ function(object, which) {
     for (j in 1:ddim[2]) {
       for (k in 1:ddim[3]) {
         z <- .Fortran("eigen3",
-                      as.double(object$D[,i,j,k]),
+                      as.double(object@D[,i,j,k]),
                       lambda = double(3),
                       theta = double(3*3),
                       ierr = integer(1),
@@ -461,7 +412,12 @@ function(object, which) {
   cat("calculated barycentric coordinates\n")
 
   invisible(new("dtiIndices",
-                list(fa = fa, ra = ra, trc = trc, bary = bary, lambda = ll, eigenv = th),
+                fa = fa,
+                ra = ra, 
+                trc = trc, 
+                bary = bary, 
+                lambda = ll, 
+                eigenv = th,
                 btb   = object@btb,
                 ngrad = object@ngrad, # = dim(btb)[2]
                 ddim  = object@ddim,
