@@ -16,13 +16,27 @@ setMethod("plot", "dtiData", function(x, y, ...) cat("Not yet implemented yet fo
 setMethod("plot", "dti", function(x, y, ...) cat("No implementation for class dti\n"))
 
 setMethod("plot", "dtiIndices", 
-function(x, y, slice=1, method=1, quant=0, minanindex=NULL, show=TRUE, contrast.enh=1, ...) {
-  if(is.null(x@fa)) cat("No anisotropy index yet")
+function(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=TRUE, contrast.enh=1, ...) {
+  if(is.null(x$fa)) cat("No anisotropy index yet")
   adimpro <- require(adimpro)
-  anindex <- x@fa[,,slice]
-  dimg <- x@ddim[1:2]
+  if (view == "sagittal") {
+    anindex <- x$fa[slice,,]
+    dimg <- x@ddim[2:3]
+  } else if (view == "coronal") {
+    anindex <- x$fa[,slice,]
+    dimg <- x@ddim[c(1,3)]
+  } else {
+    anindex <- x$fa[,,slice]
+    dimg <- x@ddim[1:2]
+  }
   if ((method==1) || (method==2)) {
-    andirection <- x@eigenv[,,slice,,]
+    if (view == "sagittal") {
+      andirection <- x$eigenv[slice,,,,]
+    } else if (view == "coronal") {
+      andirection <- x$eigenv[,slice,,,]
+    } else {
+      andirection <- x$eigenv[,,slice,,]
+    }
     anindex[anindex>1]<-0
     anindex[anindex<0]<-0
     if(contrast.enh<1&&fa.contrast.enh>0) anindex <- pmin(anindex/contrast.enh,1)
@@ -52,7 +66,13 @@ function(x, y, slice=1, method=1, quant=0, minanindex=NULL, show=TRUE, contrast.
     }
     invisible(andirection)
   } else if (method==3) {
-    bary <- x@bary[,,slice,]
+    if (view == "sagittal") {
+      bary <- x$bary[slice,,,]
+    } else if (view == "coronal") {
+      bary <- x$bary[,slice,,]
+    } else {
+      bary <- x$bary[,,slice,]
+    }
     if(adimpro) {
       bary[is.na(bary)] <- 0
       bary <- make.image(bary)
@@ -62,7 +82,13 @@ function(x, y, slice=1, method=1, quant=0, minanindex=NULL, show=TRUE, contrast.
     }
     invisible(bary)
   } else {
-    andirection <- x@eigenv[,,slice,,]
+    if (view == "sagittal") {
+      andirection <- x$eigenv[slice,,,,]
+    } else if (view == "coronal") {
+      andirection <- x$eigenv[,slice,,,]
+    } else {
+      andirection <- x$eigenv[,,slice,,]
+    }
     anindex[anindex>1]<-0
     anindex[anindex<0]<-0
     if(contrast.enh<1&&contrast.enh>0) anindex <- pmin(anindex/contrast.enh,1)
