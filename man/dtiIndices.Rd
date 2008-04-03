@@ -1,27 +1,23 @@
 \name{dtiIndices}
 \alias{dtiIndices}
 %- Also NEED an '\alias' for EACH other topic documented here.
-\title{ ~~function to do ... ~~ }
+\title{ Create estimates of anisotropy indices from diffusion tensors  }
 \description{
-  ~~ A concise (1-5 lines) description of what the function does. ~~
+  The function creates estimates of the fractional anisotropy (FA) and relative anisotropy (RA) indices, the main directions of anisotropy and several statistics used for visualization.
 }
 \usage{
 dtiIndices(object, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{object}{ ~~Describe \code{object} here~~ }
-  \item{\dots}{ ~~Describe \code{\dots} here~~ }
+  \item{object}{ object of class \code{dtiTensor} }
+  \item{\dots}{ Additional arguments specifying the model:
+   currently none.
+}
 }
 \details{
-  ~~ If necessary, more details than the description above ~~
 }
-\value{
-  ~Describe the value returned
-  If it is a LIST, use
-  \item{comp1 }{Description of 'comp1'}
-  \item{comp2 }{Description of 'comp2'}
-  ...
+\value{an object of class \code{dtiIndices}.
 }
 \references{ K. Tabelow, J. Polzehl, H.U. Voss, and V. Spokoiny. \emph{Diffusion Tensor Imaging: Structural adaptive smoothing}, NeuroImage 39(4), 1763-1773 (2008).
 

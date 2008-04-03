@@ -248,7 +248,7 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
                 zind  = zind,
                 voxelext = voxelext,
                 source= source,
-                method= method)
+                method= "linear")
             )
 
 }

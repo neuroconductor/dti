@@ -59,7 +59,6 @@ Class \code{"\linkS4class{vector}"}, by class "list", distance 2.
 \url{http://www.wias-berlin.de/projects/matheon_a3/} 
  }
 \author{ Karsten Tabelow tabelow@wias-berlin.de, J\"org Polzehl polzehl@wias-berlin.de  }
-\seealso{
 \seealso{\code{\link{dtiData}},\code{\link{dtiTensor}},\code{\link{dtiIndices}},\code{\link{dti.smooth}}, \code{\linkS4class{dti}}, \code{\linkS4class{dtiData}}, \code{\linkS4class{dtiIndices}}
 }
 \examples{

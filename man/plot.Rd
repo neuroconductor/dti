@@ -1,7 +1,5 @@
 \name{plot}
-\alias{plot.dtiIndices}
-\alias{plot.dtiData}
-\alias{plot.dtiTensor}
+\alias{plot}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{Visualizing of dtiIndices}
 \description{
@@ -25,6 +23,7 @@ plot(x, y, ...)
    \item{contrast.enh}{ enhance image contrast using \code{min(1,x$anindex/contrast.enh} instead
     of the anisotropy index itself. Effective values are within the interval (0,1).
  }
+}
 }
 \details{
 This function will be extended to visualize objects of class \code{dtiData}
