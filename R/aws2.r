@@ -14,7 +14,7 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
   }
   args <- match.call()
   s0ind <- object@s0ind
-  si <- aperm(object$si,c(4,1:3))
+  si <- aperm(object@si,c(4,1:3))
   ngrad <- object@ngrad
   ddim0 <- object@ddim0
   ddim <- object@ddim
@@ -25,9 +25,9 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
   btb <- object@btb
   voxelext <- object@voxelext
   if(is.null(voxelext)) zext <- 1 else zext <- voxelext[3]/voxelext[1]
-  dtobject <- dtiTensor(object,method="regularized",varmethod=varmethod,varmodel=varmodel)
+  dtobject <- dtiTensor(object,method="nonlinear",varmethod=varmethod,varmodel=varmodel)
   mask <- dtobject@mask
-  th0 <- dtobject$th0
+  th0 <- dtobject@th0
   D <- dtobject@D
   sigma2 <- dtobject@sigma
   scorr <- dtobject@scorr

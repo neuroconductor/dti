@@ -32,7 +32,7 @@ setClass("dtiTensor",
                         D      = "array",
                         th0    = "array",
                         sigma  = "array",
-                        scorr  = "numeric",
+                        scorr  = "array",
                         bw     = "numeric",
                         mask   = "array",
                         hmax   = "numeric"),
@@ -58,8 +58,8 @@ setClass("dtiTensor",
             cat("invalid type of array mask, should be logical\n")
             return(invisible(FALSE))
           }
-          if (length(object@scorr)!=3) {
-            cat("invalid length of scorr\n")
+          if (length(dim(object@scorr))!=3) {
+            cat("invalid dimension of scorr\n")
             return(invisible(FALSE))
           }
           if (length(object@bw)!=3) {

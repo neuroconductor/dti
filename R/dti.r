@@ -225,8 +225,8 @@ function(object, method="nonlinear",varmethod="replicates",varmodel="local") {
   s0ind <- object@s0ind
   if(method=="linear"){
      ngrad0 <- ngrad - length(s0ind)
-     s0 <- object$si[,,,s0ind]
-     si <- object$si[,,,-s0ind]
+     s0 <- object@si[,,,s0ind]
+     si <- object@si[,,,-s0ind]
      if(length(s0ind)>1) s0 <- apply(s0,1:3,mean) 
      mask <- s0 > object@level
      dim(s0) <- dim(si) <- NULL
@@ -256,7 +256,7 @@ function(object, method="nonlinear",varmethod="replicates",varmodel="local") {
   } else {
 #  method == "nonlinear" 
      ngrad0 <- ngrad
-     si <- aperm(object$si,c(4,1:3))
+     si <- aperm(object@si,c(4,1:3))
      s0 <- si[s0ind,,,]
      if(length(s0ind)>1) s0 <- apply(s0,2:4,mean)
      dim(s0) <- ddim
