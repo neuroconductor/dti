@@ -4,7 +4,7 @@ C   3D anisotropic smoothing of diffusion tensor data
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine rawsdti(y,th,bi,ani,andir,det,bcov,sigma2,n1,n2,n3,h,
-     1                  zext,rho,lambda,thnew,mask,wghts,yw,nw,rlm)
+     1                  vext,rho,lambda,thnew,mask,wghts,yw,nw,rlm)
 C
 C   y        -  observed diffusion tensor data
 C   th       -  smoothed diffusion tensor data
@@ -21,7 +21,7 @@ C   thnew    -  new smoothed diffusion tensor data
       integer n1,n2,n3,nw
       real*8 y(6,n1,n2,n3),th(6,n1,n2,n3),thnew(6,n1,n2,n3),h,rho,
      1       lambda,bi(n1,n2,n3),ani(n1,n2,n3),andir(3,n1,n2,n3),
-     2       det(n1,n2,n3),bcov(6,6),sigma2(n1,n2,n3),zext,wghts(nw),
+     2       det(n1,n2,n3),bcov(6,6),sigma2(n1,n2,n3),vext(3),wghts(nw),
      3       yw(3,3,nw),thw(3,3),rem(3,3),rlm(3,3,nw)
       integer i1,j1,j1a,j1e,jj1,i2,j2,j2a,j2e,jj2,i3,j3,j3a,j3e,jj3,
      1        ierr,k,lw
@@ -83,20 +83,20 @@ C  this is scale invariant sice sqrbii scales with dsqrt(sigma2) (standard devia
      1                   ev(3,3)*ev(3,3)/ew(3)
                   END IF
                   anii=ani(i1,i2,i3)
-                  call rangex(thi,h,j1a,j1e)
+                  call rangex(thi,h,j1a,j1e,vext)
                   DO j1=j1a,j1e
                      jj1=i1+j1
                      if(jj1.le.0.or.jj1.gt.n1) CYCLE
-                     call rangey(thi,j1,h,j2a,j2e)
+                     call rangey(thi,j1,h,j2a,j2e,vext)
                      DO j2=j2a,j2e
                         jj2=i2+j2
                         if(jj2.le.0.or.jj2.gt.n2) CYCLE
-                        call rangez(thi,j1,j2,h,j3a,j3e,zext)
+                        call rangez(thi,j1,j2,h,j3a,j3e,vext)
                         DO j3=j3a,j3e
                            jj3=i3+j3
                            if(jj3.le.0.or.jj3.gt.n3) CYCLE
                            if(.not.mask(jj1,jj2,jj3)) CYCLE 
-                           wij=adist(thi,j1,j2,j3,zext)
+                           wij=adist(thi,j1,j2,j3,vext)
 C     triangular location kernel
                            if(wij.ge.h3) CYCLE
                            wij = (1.d0 - wij/h3)

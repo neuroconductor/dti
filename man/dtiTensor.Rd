@@ -32,7 +32,7 @@ C.G. Koay, J.D. Carew, A.L. Alexander, P.J. Basser and M.E. Meyerand.
 \url{http://www.wias-berlin.de/projects/matheon_a3/} }
 \author{Karsten Tabelow tabelow@wias-berlin.de, Joerg Polzehl polzehl@wias-berlin.de}
 \note{}
-\seealso{ \code{\link{dtiData}}, \code{\link{dtiIndices}},  \code{\link{medinria2tensor}}, \code{\link{tensor2medinria}}}
+\seealso{ \code{\link{dtiData}}, \code{\link{dtiIndices}},  \code{\link{medinria2tensor}}, \code{\link{tensor2medinria}}, \code{\linkS4class{dtiData}}, \code{\linkS4class{dtiIndices}}}
 \examples{
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

@@ -2,11 +2,12 @@
 #   Nonlinear regression; regularized version according to Koay et. al. (2006)
 #   this is also based on an a statistical penalty defined using log-likelihood difference
 #
-dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slice=NULL,quant=.8,
-                         minanindex=NULL,eps=1e-6,hsig=2.5,lseq=NULL,varmethod="residuals",rician=TRUE,niter=5,varmodel="local",wlse=TRUE){
+dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slice=NULL,quant=.8,
+                         minanindex=NULL,hsig=2.5,lseq=NULL,varmethod="residuals",rician=TRUE,niter=5,varmodel="local",wlse=TRUE){
 #
 #     lambda and lseq adjusted for alpha=0.2
 #
+  eps <- 1e-6
   if (graph) {
     adimpro <- require(adimpro)
     if (!adimpro) cat("No graphical output! Install package adimpro from CRAN!\n")
@@ -24,7 +25,7 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
   source <- object@source
   btb <- object@btb
   voxelext <- object@voxelext
-  if(is.null(voxelext)) zext <- 1 else zext <- voxelext[3]/voxelext[1]
+  if(is.null(voxelext)) vext <- c(1,1,1) else vext <- voxelext/min(voxelext)
   dtobject <- dtiTensor(object,method="nonlinear",varmethod=varmethod,varmodel=varmodel)
   mask <- dtobject@mask
   th0 <- dtobject@th0
@@ -166,7 +167,7 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
                     sigma2r=double(n),
                     as.double(hakt),
                     as.integer(niter),
-                    as.double(zext),
+                    as.double(vext),
                     as.double(rho),
                     as.double(lambda0),
                     double(ngrad),#swsi

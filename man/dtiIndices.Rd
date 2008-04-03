@@ -24,7 +24,7 @@ dtiIndices(object, ...)
 \url{http://www.wias-berlin.de/projects/matheon_a3/}}
 \author{Karsten Tabelow tabelow@wias-berlin.de, J\"org Polzehl polzehl@wias-berlin.de }
 \note{ }
-\seealso{ \code{\link{dtiTensor}}}
+\seealso{ \code{\link{dtiTensor}}, \code{\linkS4class{dtiTensor}}, \code{\linkS4class{dtiIndices}}}
 \examples{
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

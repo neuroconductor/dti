@@ -5,7 +5,7 @@ C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine awssidti(s0,si,mask,th,bi,ani,andir,det,bcov,
      1                    solvebtb,sigma2,sigma2h,n1,n2,n3,ngrad,h,
-     2                    zext,rho,lambda,thnew,sigma2n,swsi,eps)
+     2                    vext,rho,lambda,thnew,sigma2n,swsi,eps)
 C
 C   y        -  observed diffusion tensor data
 C   th       -  smoothed diffusion tensor data
@@ -22,7 +22,7 @@ C   thnew    -  new smoothed diffusion tensor data
       integer n1,n2,n3,ngrad,s0(n1,n2,n3),si(n1,n2,n3,ngrad)
       real*8 th(6,n1,n2,n3),thnew(6,n1,n2,n3),h,rho,
      1       lambda,bi(n1,n2,n3),ani(n1,n2,n3),andir(3,n1,n2,n3),
-     2       det(n1,n2,n3),bcov(6,6),sigma2(n1,n2,n3),zext,
+     2       det(n1,n2,n3),bcov(6,6),sigma2(n1,n2,n3),vext(3),
      3       solvebtb(6,ngrad),swsi(ngrad),
      4       sigma2h(n1,n2,n3),sigma2n(n1,n2,n3)
       logical mask(n1,n2,n3)
@@ -85,20 +85,20 @@ C  this is scale invariant sice sqrbii scales with sqrt(sigma2) (standard deviat
                   thi(6)=ev(3,1)*ev(3,1)/ew(1)+ev(3,2)*ev(3,2)/ew(2)+
      1                   ev(3,3)*ev(3,3)/ew(3)
                END IF
-               call rangex(thi,h,j1a,j1e)
+               call rangex(thi,h,j1a,j1e,vext)
                DO j1=j1a,j1e
                   jj1=i1+j1
                   if(jj1.le.0.or.jj1.gt.n1) CYCLE
-                  call rangey(thi,j1,h,j2a,j2e)
+                  call rangey(thi,j1,h,j2a,j2e,vext)
                  DO j2=j2a,j2e
                      jj2=i2+j2
                      if(jj2.le.0.or.jj2.gt.n2) CYCLE
-                     call rangez(thi,j1,j2,h,j3a,j3e,zext)
+                     call rangez(thi,j1,j2,h,j3a,j3e,vext)
                       DO j3=j3a,j3e
                         jj3=i3+j3
                         if(jj3.le.0.or.jj3.gt.n3) CYCLE
                         if(.not.mask(jj1,jj2,jj3)) CYCLE
-                        wij=adist(thi,j1,j2,j3,zext)
+                        wij=adist(thi,j1,j2,j3,vext)
 C     triangular location kernel
                         if(wij.gt.h3) CYCLE
                         wij = (1.d0 - wij/h3)
@@ -298,15 +298,14 @@ C
       END DO
       RETURN
       END
-      subroutine smsigma(sigma2,n1,n2,n3,h,zext,sigma2h)
+      subroutine smsigma(sigma2,n1,n2,n3,h,vext,sigma2h)
       implicit logical (a-z)
       integer n1,n2,n3
-      real*8 sigma2(n1,n2,n3),sigma2h(n1,n2,n3),zext,h
+      real*8 sigma2(n1,n2,n3),sigma2h(n1,n2,n3),vext(3),h
       integer i1,i2,i3,j1,j2,j3,ih1,ih2,ih3
-      real*8 ssig,sw,w,h2,z1,z2,z3,z11,z22,z33,ze2
+      real*8 ssig,sw,w,h2,z1,z2,z3,z11,z22,z33
       h2=h*h
-      ze2=zext*zext
-      ih1=h
+      ih1=h/vext(1)
       DO i1=1,n1
          DO i2=1,n2
             DO i3=1,n3
@@ -314,18 +313,18 @@ C
                ssig=0.d0
                DO j1=i1-ih1,i1+ih1
                   if(j1.lt.1.or.j1.gt.n1) CYCLE
-                  z1=j1-i1
+                  z1=(j1-i1)*vext(1)
                   z11=z1*z1
-                  ih2=sqrt(h2-z11)
+                  ih2=sqrt(h2-z11)/vext(2)
                   DO j2=i2-ih2,i2+ih2
                      if(j2.lt.1.or.j2.gt.n2) CYCLE
-                     z2=j2-i2
+                     z2=(j2-i2)*vext(2)
                      z22=z11+z2*z2
-                     ih3=sqrt(h2-z22)/zext
+                     ih3=sqrt(h2-z22)/vext(3)
                      DO j3=i3-ih3,i3+ih3
                         if(j3.lt.1.or.j3.gt.n3) CYCLE
-                        z3=j3-i3
-                        z33=z22+ze2*z3*z3                     
+                        z3=(j3-i3)*vext(3)
+                        z33=z22+z3*z3                     
                         w=1.d0-z33/h2
                         sw=sw+w
                         ssig=ssig+w*sigma2(j1,j2,j3)

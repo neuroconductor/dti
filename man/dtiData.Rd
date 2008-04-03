@@ -6,37 +6,34 @@
   ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
-dtiData(gradient, imagefile, ddim, xind = NULL, yind = NULL, zind = NULL, level = 0, mins0value = 0, maxvalue = 10000, voxelext = c(1, 1, 1))
+dtiData(gradient, imagefile, ddim, xind = NULL, yind = NULL, zind = NULL, level = 0, mins0value = 0, maxvalue = 10000, voxelext = c(1, 1, 1), orientation = c(1, 3,
+                 5))
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{gradient}{ ~~Describe \code{gradient} here~~ }
-  \item{imagefile}{ ~~Describe \code{imagefile} here~~ }
-  \item{ddim}{ ~~Describe \code{ddim} here~~ }
-  \item{xind}{ ~~Describe \code{xind} here~~ }
-  \item{yind}{ ~~Describe \code{yind} here~~ }
-  \item{zind}{ ~~Describe \code{zind} here~~ }
-  \item{level}{ ~~Describe \code{level} here~~ }
-  \item{mins0value}{ ~~Describe \code{mins0value} here~~ }
-  \item{maxvalue}{ ~~Describe \code{maxvalue} here~~ }
-  \item{voxelext}{ ~~Describe \code{voxelext} here~~ }
+  \item{gradient}{ matrix of diffusion gradients (including zero gradients for S0 images}
+  \item{imagefile}{ filename for image data (binary 2Byte integers)}
+  \item{ddim}{ dimension of image cube (3D) }
+  \item{xind}{ subindex for x-direction }
+  \item{yind}{ subindex for y-direction }
+  \item{zind}{ subindex for z-direction }
+  \item{level}{ determine \code{mins0value} as quantile of positive S)-values  }
+  \item{mins0value}{ set voxel in S0-images with values less than \code{level} inactive }
+  \item{maxvalue}{ set voxel with values larger than \code{maxvalue} inactive  }
+  \item{voxelext}{ voxelextensions in coordinate directions.}
+  \item{orientation}{ orientations of data coded as in AFNI}
 }
 \details{
-  ~~ If necessary, more details than the description above ~~
 }
 \value{
-  ~Describe the value returned
-  If it is a LIST, use
-  \item{comp1 }{Description of 'comp1'}
-  \item{comp2 }{Description of 'comp2'}
-  ...
+An object of class \code{dtiData}.
 }
 \references{ K. Tabelow, J. Polzehl, H.U. Voss, and V. Spokoiny. \emph{Diffusion Tensor Imaging: Structural adaptive smoothing}, NeuroImage 39(4), 1763-1773 (2008).
 
 \url{http://www.wias-berlin.de/projects/matheon_a3/}}
 \author{Karsten Tabelow tabelow@wias-berlin.de, J\"org Polzehl polzehl@wias-berlin.de }
 \note{}
-\seealso{  \code{\link{dtiTensor}} }
+\seealso{  \code{\link{dtiTensor}}, \code{\linkS4class{dtiData}} }
 \examples{
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

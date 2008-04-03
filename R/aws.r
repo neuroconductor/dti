@@ -10,19 +10,20 @@ dti.smooth <- function(object, ...) cat("No DTI smoothing defined for this class
 
 setGeneric("dti.smooth", function(object, ...) standardGeneric("dti.smooth"))
 
-setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=30,
+setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=20,
                                             rho=1,graph=FALSE,slice=NULL,quant=.8,
-                                            minanindex=NULL,eps=1e-6,hsig=2.5,lseq=NULL, method="nonlinear",varmethod="residuals",rician=TRUE,niter=5,varmodel="local") {
-switch(method,"linear" = dtilin.smooth(object,hmax,hinit,lambda,rho,graph,slice,quant,minanindex,eps,hsig,lseq,varmethod,varmodel),
-              "nonlinear" =  dtireg.smooth(object,hmax,hinit,lambda,rho,graph,slice,quant,minanindex,eps,hsig,lseq,varmethod,rician,niter,varmodel))
+                                            minanindex=NULL,hsig=2.5,lseq=NULL, method="nonlinear",varmethod="residuals",rician=TRUE,niter=5,varmodel="local") {
+switch(method,"linear" = dtilin.smooth(object,hmax,hinit,lambda,rho,graph,slice,quant,minanindex,hsig,lseq,varmethod,varmodel),
+              "nonlinear" =  dtireg.smooth(object,hmax,hinit,lambda,rho,graph,slice,quant,minanindex,hsig,lseq,varmethod,rician,niter,varmodel))
 }
 )
 dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
                                             rho=1,graph=FALSE,slice=NULL,quant=.8,
-                                            minanindex=NULL,eps=1e-6,hsig=2.5,lseq=NULL,varmethod="residuals",varmodel="local"){
+                                            minanindex=NULL,hsig=2.5,lseq=NULL,varmethod="residuals",varmodel="local"){
 #
 #     lambda and lseq adjusted for alpha=0.2
 #
+  eps <- 1e-6
   if (graph) {
     adimpro <- require(adimpro)
     if (!adimpro) cat("No graphical output! Install package adimpro from CRAN!\n")
@@ -42,7 +43,7 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
   source <- object@source
   btb <- object@btb
   voxelext <- object@voxelext
-  if(is.null(voxelext)) zext <- 1 else zext <- voxelext[3]/voxelext[1]
+  if(is.null(voxelext)) vext <- c(1,1,1) else vext <- voxelext/min(voxelext)
   Bcov <- btb%*%t(btb)
   btbsvd <- svd(btb)
   solvebtb <- btbsvd$u %*% diag(1/btbsvd$d) %*% t(btbsvd$v)
@@ -87,7 +88,7 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
                        as.integer(n2),
                        as.integer(n3),
                        as.double(hsig),
-                       as.double(zext),
+                       as.double(vext),
                        sigma2hat=double(n1*n2*n3),
                        DUP=FALSE,
                        PACKAGE="dti")$sigma2hat
@@ -173,7 +174,7 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
                 as.integer(n3),
                 as.integer(ngrad),
                 as.double(hakt),
-                as.double(zext),
+                as.double(vext),
                 as.double(rho),
                 as.double(lambda0),
                 theta=double(6*n),
@@ -254,20 +255,20 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
 }
 
 setMethod("dti.smooth", "dtiTensor", function(object,hmax=5,lambda=20,rho=1,graph=FALSE,
-                                            slice=NULL,quant=.8,minanindex=NULL,zext=1){
+                                            slice=NULL,quant=.8,minanindex=NULL){
 #
 #
 cat("Functionality for smoothing the diffusion tensor is only included for demonstartion purposes.\n
 We do not advise to smooth the tensor, neither using a Rimannian or log-Euclidian or Euclidian metric.\n
 Please use function dti.smooth on a dtiData-object ... .\n")
     rdtianiso(object,hmax=hmax,lambda=lambda,rho=rho,graph=graph,
-              slice=slice,quant=quant,minanindex=minanindex,zext=zext)
+              slice=slice,quant=quant,minanindex=minanindex)
   }
 )
 
 
 
-rdtianiso <- function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,quant=.8,minanindex=NULL,zext=1){
+rdtianiso <- function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,quant=.8,minanindex=NULL){
   cat("Smoothing DT with Riemann Tensor Metric\n")
   if (graph) {
     adimpro <- require(adimpro)
@@ -291,6 +292,7 @@ rdtianiso <- function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,qua
   zind <- dtobject@zind
   ngrad <- dtobject@ngrad
   voxelext <- dtobject@voxelext
+  if(is.null(voxelext)) vext <- c(1,1,1) else vext <- voxelext/min(voxelext)
   source <- dtobject@source
   rm(dtobject)
   gc()
@@ -366,7 +368,7 @@ rdtianiso <- function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,qua
         lambda0 <- lambda * corrfactor
      cat("Correction factor for spatial correlation",signif(corrfactor,3),"\n")
 }
-     usize<-(2*ceiling(hakt+1))^3/zext
+     usize<-(2*ceiling(hakt+1))^3
      mask[z$anindex<0.1]<-FALSE
      z <- .Fortran("rawsdti",
                 as.double(y),
@@ -381,7 +383,7 @@ rdtianiso <- function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,qua
                 as.integer(n2),
                 as.integer(n3),
                 as.double(hakt),
-                as.double(zext),
+                as.double(vext),
                 as.double(rho),
                 as.double(lambda0),
                 theta=double(6*n),

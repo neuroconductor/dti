@@ -76,7 +76,7 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine awsrgdti(si,siest,sipred,nb,n1,n2,n3,mask,btb,
      1                    sigma2,wlse,th0,th0n,D,Dn,rss,bi,
      2                    ani,andir,det,sigma2h,sigma2n,sigma2r,h,
-     3                    niter,zext,rho0,lambda,swsi,swsi2,swsi4,F,
+     3                    niter,vext,rho0,lambda,swsi,swsi2,swsi4,F,
      4                    eps,rician)
 C
 C   si       -  observed diffusion weighted images
@@ -112,7 +112,7 @@ C   eps      -  something small and positive
      2       D(6,n1,n2,n3),Dn(6,n1,n2,n3),sipred(nb,n1,n2,n3),
      3       bi(n1,n2,n3),ani(n1,n2,n3),andir(3,n1,n2,n3),
      4       det(n1,n2,n3),sigma2h(n1,n2,n3),sigma2n(n1,n2,n3),h,rho0,
-     5       zext,lambda,swsi(nb),F(nb),eps,rss(n1,n2,n3)
+     5       vext(3),lambda,swsi(nb),F(nb),eps,rss(n1,n2,n3)
       logical mask(n1,n2,n3),rician,wlse
       integer i1,j1,j1a,j1e,jj1,i2,j2,j2a,j2e,jj2,i3,j3,j3a,j3e,jj3,
      1        ierr,k
@@ -206,20 +206,20 @@ C  this is scale invariant sice sqrbii scales with sqrt(sigma2) (standard deviat
      1                   ev(3,3)*ev(3,3)/ew(3)
                END IF
 C   create needed estimates of s_i
-               call rangex(thi,h,j1a,j1e)
+               call rangex(thi,h,j1a,j1e,vext)
                DO j1=j1a,j1e
                   jj1=i1+j1
                   if(jj1.le.0.or.jj1.gt.n1) CYCLE
-                  call rangey(thi,j1,h,j2a,j2e)
+                  call rangey(thi,j1,h,j2a,j2e,vext)
                   DO j2=j2a,j2e
                       jj2=i2+j2
                      if(jj2.le.0.or.jj2.gt.n2) CYCLE
-                     call rangez(thi,j1,j2,h,j3a,j3e,zext)
+                     call rangez(thi,j1,j2,h,j3a,j3e,vext)
                      DO j3=j3a,j3e
                         jj3=i3+j3
                         if(jj3.le.0.or.jj3.gt.n3) CYCLE
                         if(.not.mask(jj1,jj2,jj3)) CYCLE
-                        wij=adist(thi,j1,j2,j3,zext)
+                        wij=adist(thi,j1,j2,j3,vext)
 C     triangular location kernel
                         if(wij.ge.h3) CYCLE
                         wij = (1.d0 - wij/h3)

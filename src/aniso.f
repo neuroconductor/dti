@@ -127,7 +127,7 @@ C
 C    Compute anisotropic distance
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-      real*8 function adist(a,x,y,z,zext)
+      real*8 function adist(a,x,y,z,vext)
 C
 C    a - diffusion tensor  ( a_11, a_12, a_13, a_22, a_23, a_33
 C    ix - x-coordinate 
@@ -137,10 +137,12 @@ C    ni -  sum of weights (measures the variability of a
 C    ia,ie -  rane of x values (restricted to the grid)
       implicit logical (a-z)
       integer x,y,z
-      real*8 a(6),zz,zext
-      zz=z*zext
-      adist=a(1)*x*x+a(4)*y*y+a(6)*zz*zz+
-     1               2.d0*(a(2)*x*y+a(3)*x*zz+a(5)*y*zz)
+      real*8 a(6),xx,yy,zz,vext(3)
+      xx=x*vext(1)
+      yy=y*vext(2)
+      zz=z*vext(3)      
+      adist=a(1)*xx*xx+a(4)*yy*yy+a(6)*zz*zz+
+     1               2.d0*(a(2)*xx*yy+a(3)*xx*zz+a(5)*yy*zz)
       RETURN
       END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
@@ -171,7 +173,7 @@ C
 C    Compute range of x for anisotropic neighborhood
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-      subroutine rangex(a,h,ia,ie)
+      subroutine rangex(a,h,ia,ie,vext)
 C
 C    a - diffusion tensor  ( a_11, a_12, a_13, a_22, a_23, a_33
 C    h - bandwidth
@@ -180,7 +182,7 @@ C    ni -  sum of weights (measures the variability of a
 C    ia,ie -  rane of x values (restricted to the grid)
       implicit logical (a-z)
       integer ia,ie
-      real*8 a(6),h
+      real*8 a(6),h,vext(3)
       real*8 p1,p2,p3,p4,p5,p6,z,s,t,p55,p66,p44
       p1=a(1)
       p2=a(4)
@@ -205,8 +207,8 @@ C    ia,ie -  rane of x values (restricted to the grid)
       ELSE 
          z=sqrt(z)
       END IF
-      ia=-z*h
-      ie=z*h
+      ia=-z*h/vext(1)
+      ie=z*h/vext(1)
       RETURN
       END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
@@ -214,7 +216,7 @@ C
 C    Compute range of x for anisotropic neighborhood
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-      subroutine rangey(a,ix,h,ja,je)
+      subroutine rangey(a,ix,h,ja,je,vext)
 C
 C    a - diffusion tensor  ( a_11, a_12, a_13, a_22, a_23, a_33
 C    ix - x-coordinate 
@@ -224,9 +226,9 @@ C    ni -  sum of weights (measures the variability of a
 C    ia,ie -  rane of x values (restricted to the grid)
       implicit logical (a-z)
       integer ja,je,ix
-      real*8 a(6),h
+      real*8 a(6),h,vext(3)
       real*8 p1,p2,p3,p4,p5,p6,z,s,t,p55,p66,p44,x
-      x=ix/h
+      x=ix/h*vext(1)
       p1=a(1)
       p2=a(4)
       p3=a(6)
@@ -250,8 +252,8 @@ C    ia,ie -  rane of x values (restricted to the grid)
       ELSE 
          z=sqrt(z)
       END IF
-      ja=(t-z)*h/s
-      je=(t+z)*h/s
+      ja=(t-z)*h/s/vext(2)
+      je=(t+z)*h/s/vext(2)
       RETURN
       END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
@@ -259,7 +261,7 @@ C
 C    Compute range of x for anisotropic neighborhood
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-      subroutine rangez(a,ix,jy,h,ka,ke,zext)
+      subroutine rangez(a,ix,jy,h,ka,ke,vext)
 C
 C    a - diffusion tensor  ( a_11, a_12, a_13, a_22, a_23, a_33
 C    ix - x-coordinate 
@@ -269,10 +271,10 @@ C    ni -  sum of weights (measures the variability of a
 C    ia,ie -  rane of x values (restricted to the grid)
       implicit logical (a-z)
       integer ka,ke,ix,jy
-      real*8 a(6),h
-      real*8 p1,p2,p3,p4,p5,p6,z,t,x,y,zext
-      x=ix/h
-      y=jy/h
+      real*8 a(6),h,vext(3)
+      real*8 p1,p2,p3,p4,p5,p6,z,t,x,y
+      x=ix/h*vext(1)
+      y=jy/h*vext(2)
       p1=a(1)
       p2=a(4)
       p3=a(6)
@@ -287,7 +289,7 @@ C    ia,ie -  rane of x values (restricted to the grid)
       ELSE 
          z=sqrt(z)
       END IF
-      ka=(t-z)*h/zext
-      ke=(t+z)*h/zext
+      ka=(t-z)*h/vext(3)
+      ke=(t+z)*h/vext(3)
       RETURN
       END

@@ -17,25 +17,25 @@ setMethod("plot", "dti", function(x, y, ...) cat("No implementation for class dt
 
 setMethod("plot", "dtiIndices", 
 function(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=TRUE, contrast.enh=1, ...) {
-  if(is.null(x$fa)) cat("No anisotropy index yet")
+  if(is.null(x@fa)) cat("No anisotropy index yet")
   adimpro <- require(adimpro)
   if (view == "sagittal") {
-    anindex <- x$fa[slice,,]
+    anindex <- x@fa[slice,,]
     dimg <- x@ddim[2:3]
   } else if (view == "coronal") {
-    anindex <- x$fa[,slice,]
+    anindex <- x@fa[,slice,]
     dimg <- x@ddim[c(1,3)]
   } else {
-    anindex <- x$fa[,,slice]
+    anindex <- x@fa[,,slice]
     dimg <- x@ddim[1:2]
   }
   if ((method==1) || (method==2)) {
     if (view == "sagittal") {
-      andirection <- x$eigenv[slice,,,,]
+      andirection <- x@eigenv[slice,,,,]
     } else if (view == "coronal") {
-      andirection <- x$eigenv[,slice,,,]
+      andirection <- x@eigenv[,slice,,,]
     } else {
-      andirection <- x$eigenv[,,slice,,]
+      andirection <- x@eigenv[,,slice,,]
     }
     anindex[anindex>1]<-0
     anindex[anindex<0]<-0
@@ -67,11 +67,11 @@ function(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=
     invisible(andirection)
   } else if (method==3) {
     if (view == "sagittal") {
-      bary <- x$bary[slice,,,]
+      bary <- x@bary[slice,,,]
     } else if (view == "coronal") {
-      bary <- x$bary[,slice,,]
+      bary <- x@bary[,slice,,]
     } else {
-      bary <- x$bary[,,slice,]
+      bary <- x@bary[,,slice,]
     }
     if(adimpro) {
       bary[is.na(bary)] <- 0
@@ -83,11 +83,11 @@ function(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=
     invisible(bary)
   } else {
     if (view == "sagittal") {
-      andirection <- x$eigenv[slice,,,,]
+      andirection <- x@eigenv[slice,,,,]
     } else if (view == "coronal") {
-      andirection <- x$eigenv[,slice,,,]
+      andirection <- x@eigenv[,slice,,,]
     } else {
-      andirection <- x$eigenv[,,slice,,]
+      andirection <- x@eigenv[,,slice,,]
     }
     anindex[anindex>1]<-0
     anindex[anindex<0]<-0
@@ -117,8 +117,8 @@ function(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=
 #
 #
 
-dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=0,
-                    mins0value=0,maxvalue=10000,voxelext=c(1,1,1)) {
+dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=0,mins0value=0,maxvalue=10000,voxelext=c(1,1,1),orientation=c(1,3,5)) {
+  if (any(sort((orientation+1)%/%2) != 1:3)) stop("invalid orientation \n")
   if (dim(gradient)[2]==3) gradient <- t(gradient)
   if (dim(gradient)[1]!=3) stop("Not a valid gradient matrix")
   ngrad <- dim(gradient)[2]
@@ -135,8 +135,26 @@ dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=
   if (is.null(yind)) yind <- 1:ddim[2]
   if (is.null(zind)) zind <- 1:ddim[3]
   dim(si) <- c(ddim,ngrad)
-  si <- si[xind,yind,zind,] # really needed?
+  si <- si[xind,yind,zind,] 
   dimsi <- dim(si)
+#
+#   set correct orientation
+#
+  xyz <- (orientation+1)%*%2
+  swap <- orientation-2*(orientation%/%2)
+  if(any(xyz!=1:3)) {
+      si <- aperm(si,c(xyz,4))
+      swap[xyz] <- swap
+      voxelext[xyz] <- voxelext
+      dimsi[xyz] <- dimsi[1:3]
+      ddim[xyz] <- ddim[1:3]
+  }
+  if(swap[1]==1) si <- si[dimsi[1]:1,,,] 
+  if(swap[2]==1) si <- si[,dimsi[2]:1,,] 
+  if(swap[3]==0) si <- si[,,dimsi[3]:1,]   
+#
+#   orientation set to radiological convention
+#
   si <- .Fortran("initdata",
                  si=as.integer(si),
                  as.integer(dimsi[1]),
@@ -168,6 +186,7 @@ dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=
                 zind   = zind,
                 level  = level,
                 voxelext = voxelext,
+                orientation = c(0,2,5),
                 source = imagefile)
             )
 }

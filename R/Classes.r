@@ -10,6 +10,7 @@ setClass("dti",
                         yind   = "integer",
                         zind   = "integer",
                         voxelext = "numeric",
+                        orientation = "integer",
                         source = "character"),
          )
 
@@ -23,6 +24,14 @@ setClass("dtiData",
           }
           if (length(object@s0ind)<1) {
             cat("no S_0 images, parameters not identifiable \n")
+             return(invisible(FALSE))
+         }
+          if (length(object@orientation)!=3) {
+            cat("invalid orientation \n")
+             return(invisible(FALSE))
+         }
+          if (any(sort((object@orientation+1)%/%2) != 1:3)) {
+            cat("invalid orientation \n")
              return(invisible(FALSE))
          }
          }
@@ -102,7 +111,7 @@ setClass("dtiIndices",
             cat("invalid dimension of array bary\n")
             return(invisible(FALSE))
           }
-          if (any(dim(object@eigenv)!=c(object@ddim,9))) {
+          if (any(dim(object@eigenv)!=c(object@ddim,3,3))) {
             cat("invalid dimension of array eigenv\n")
             return(invisible(FALSE))
           }
