@@ -15,7 +15,8 @@ plot(x, y, ...)
   \item{y}{ not used }
   \item{\dots}{ additional arguments such as
    \item{slice }{Slice number}
-   \item{method }{\code{method==1} and \code{method==2} specify two difefrent color schemes for 
+   \item{view}{ choose sagittal, coronal, or axial view here}
+   \item{method }{\code{method==1} and \code{method==2} specify two different color schemes for 
     directional FA-maps. \code{method==3} specifies visualization of dtiIndices using color coded bary coordinates}
    \item{quant }{if \code{is.null(minanindex)} specify \code{minanindex} as corresponding quantile of the fractal anisotropy (FA) index.}
    \item{minanindex }{display only information for voxel with \code{FA>minanindex}}
