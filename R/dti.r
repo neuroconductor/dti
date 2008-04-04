@@ -11,8 +11,8 @@ function(object){
     cat("\n")
 })
 
-setMethod("plot", "dtiTensor", function(x, y, ...) cat("Not yet implemented yet for class dtiTensor\n"))
-setMethod("plot", "dtiData", function(x, y, ...) cat("Not yet implemented yet for class dtiData\n"))
+setMethod("plot", "dtiTensor", function(x, y, ...) cat("Not yet implemented for class dtiTensor\n"))
+setMethod("plot", "dtiData", function(x, y, ...) cat("Not yet implemented for class dtiData\n"))
 setMethod("plot", "dti", function(x, y, ...) cat("No implementation for class dti\n"))
 
 setMethod("plot", "dtiIndices", 
@@ -143,7 +143,9 @@ dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=
   xyz <- (orientation)%/%2+1
   swap <- orientation-2*(orientation%/%2)
   if(any(xyz!=1:3)) {
-      si <- aperm(si,c(xyz,4))
+      abc <- 1:3
+      abc[xyz] <- abc
+      si <- aperm(si,c(abc,4))
       swap[xyz] <- swap
       voxelext[xyz] <- voxelext
       dimsi[xyz] <- dimsi[1:3]
@@ -277,10 +279,13 @@ function(object, method="nonlinear",varmethod="replicates",varmodel="local") {
      for(i in 2:ngrad0) rss <- rss + res[i,]^2
      dim(rss) <- ddim
      sigma2 <- rss/(ngrad0-6)
+     D[c(1,4,6),!mask] <- 1e-6
+     D[c(2,3,5),!mask] <- 0
      dim(D) <- c(6,ddim)
      dim(res) <- c(ngrad0,ddim)
      cat("Variance estimates generated ",date(),proc.time(),"\n")
-     th0 <- NULL
+     th0 <- array(s0,object@ddim)
+     th0[!mask] <- 0
      gc()
   } else {
 #  method == "nonlinear" 

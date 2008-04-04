@@ -23,6 +23,7 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
 #
 #     lambda and lseq adjusted for alpha=0.2
 #
+  wlse <- TRUE
   eps <- 1e-6
   if (graph) {
     adimpro <- require(adimpro)
@@ -54,6 +55,7 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
   sigma2 <- dtobject@sigma
   scorr <- dtobject@scorr
   h0 <- dtobject@bw
+  th0 <- dtobject@th0
   cat("Corresponding bandwiths for specified correlation:",h0,"\n")
 
   rm(object,dtobject)
@@ -70,16 +72,16 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
                 as.integer(n1),
                 as.integer(n2),
                 as.integer(n3),
-                theta=double(6*n),
+                D=double(6*n),
                 anindex=double(n),
                 andirection=double(3*n),
                 det=double(n),
                 as.double(eps),
                 DUP=FALSE,
-                PACKAGE="dti")[c("theta","anindex","andirection","det")]
-  y <- array(z$theta,dimy)
+                PACKAGE="dti")[c("D","anindex","andirection","det")]
+  y <- array(z$D,dimy)
   z$bi <- 1/sigma2
-  dim(z$theta) <- dimy
+  dim(z$D) <- dimy
   dim(z$anindex) <-dim(z$det) <- dimy[-1]
   dim(z$andirection) <- c(3,dimy[-1]) 
   sigma2hat <- .Fortran("smsigma",
@@ -101,32 +103,44 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
      on.exit(par(oldpar))
      if(is.null(slice)) slice<-n3%/%2
      class(z) <- "dti"
-     img<-z$theta[1,,,slice]
+     img<-z$D[1,,,slice]
+     rg<-quantile(img,c(.01,.99))
+     img[img>rg[2]]<-rg[2]
      show.image(make.image(65535*img/max(img)))
-     title(paste("Dxx: mean",signif(mean(img),3),"max",signif(max(img),3)))
-     img<-z$theta[2,,,slice]
+     title(paste("Dxx: mean",signif(mean(z$D[1,,,][mask]),3),"max",signif(max(z$D[1,,,][mask]),3)))
+     img<-z$D[2,,,slice]
+     rg<-quantile(img,c(.01,.99))
+     img[img>rg[2]]<-rg[2]
      show.image(make.image(img))
-     title(paste("Dxy: min",signif(min(img),3),"max",signif(max(img),3)))
-     img<-z$theta[3,,,slice]
+     title(paste("Dxy: min",signif(min(z$D[2,,,][mask]),3),"max",signif(max(z$D[2,,,][mask]),3)))
+     img<-z$D[3,,,slice]
+     rg<-quantile(img,c(.01,.99))
+     img[img>rg[2]]<-rg[2]
      show.image(make.image(img))
-     title(paste("Dxz: min",signif(min(img),3),"max",signif(max(img),3)))
+     title(paste("Dxz: min",signif(min(z$D[3,,,][mask]),3),"max",signif(max(z$D[3,,,][mask]),3)))
      show.image(make.image(z$anindex[,,slice]))
-     title(paste("Anisotropy index  range:",signif(min(z$anindex),3),"-",
-                  signif(max(z$anindex),3)))
-     img<-z$theta[4,,,slice]
+     title(paste("Anisotropy index  range:",signif(min(z$anindex[mask]),3),"-",
+                  signif(max(z$anindex[mask]),3)))
+     img<-z$D[4,,,slice]
+     rg<-quantile(img,c(.01,.99))
+     img[img>rg[2]]<-rg[2]
      show.image(make.image(65535*img/max(img)))
-     title(paste("Dyy: mean",signif(mean(img),3),"max",signif(max(img),3)))
-     img<-z$theta[5,,,slice]
+     title(paste("Dyy: mean",signif(mean(z$D[4,,,][mask]),3),"max",signif(max(z$D[4,,,][mask]),3)))
+     img<-z$D[5,,,slice]
+     rg<-quantile(img,c(.01,.99))
+     img[img>rg[2]]<-rg[2]
      show.image(make.image(img))
-     title(paste("Dyz: min",signif(min(img),3),"max",signif(max(img),3)))
+     title(paste("Dyz: min",signif(min(z$D[5,,,][mask]),3),"max",signif(max(z$D[5,,,][mask]),3)))
      andir2.image(z,slice,quant=quant,minanindex=minanindex)
      title(paste("Directions (h=1), slice",slice))
-     ni<-z$bi[,,slice]*sigma2[,,slice]
-     show.image(make.image(65535*ni/max(ni)))
-     title(paste("sum of weights  mean=",signif(mean(z$bi*sigma2),3)))
-     img<-z$theta[6,,,slice]
+     ni<-array(1,dimy[-1])*as.integer(mask)
+     show.image(make.image((65535*ni/max(ni))[,,slice]))
+         title(paste("sum of weights  mean=",signif(1,3)))
+     img<-z$D[6,,,slice]
+     rg<-quantile(img,c(.01,.99))
+     img[img>rg[2]]<-rg[2]
      show.image(make.image(65535*img/max(img)))
-     title(paste("Dzz: mean",signif(mean(img),3),"max",signif(max(img),3)))
+     title(paste("Dzz: mean",signif(mean(z$D[6,,,][mask]),3),"max",signif(max(z$D[6,,,][mask]),3)))
   }
   hincr <- 1.25^(1/3)
   if(is.null(hinit)){
@@ -160,7 +174,7 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
                 as.integer(s0),
                 as.integer(si),
                 as.logical(mask),
-                as.double(z$theta),
+                as.double(z$D),
                 bi=as.double(z$bi),
                 anindex=as.double(z$anindex),
                 andirection=as.double(z$andirection),
@@ -177,47 +191,60 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
                 as.double(vext),
                 as.double(rho),
                 as.double(lambda0),
-                theta=double(6*n),
+                D=double(6*n),
                 sigma2hat=double(n),
                 double(ngrad),
                 as.double(eps),
                 DUP=FALSE,
-                PACKAGE="dti")[c("theta","bi","anindex","andirection","det","sigma2hat")]
+                PACKAGE="dti")[c("D","bi","anindex","andirection","det","sigma2hat")]
      if(hakt<hsig){
         eta <- (hsig^3 - hakt^3)/hsig^3
         z$sigma2hat <- eta*sigma2hat+(1-eta)*z$sigma2hat
      }
      dim(z$bi) <- dim(z$anindex) <- dim(z$det) <- dim(z$sigma2hat) <- dimy[-1]
-     dim(z$theta) <- dimy
+     dim(z$D) <- dimy
      dim(z$andirection) <- c(3,dimy[-1]) 
      if(graph){
      class(z) <- "dti"
-     img<-z$theta[1,,,slice]
+     img<-z$D[1,,,slice]
+     rg<-quantile(img,c(.01,.99))
+     img[img>rg[2]]<-rg[2]
      show.image(make.image(65535*img/max(img)))
-     title(paste("Dxx: mean",signif(mean(img),3),"max",signif(max(img),3)))
-     img<-z$theta[2,,,slice]
+     title(paste("Dxx: mean",signif(mean(z$D[1,,,][mask]),3),"max",signif(max(z$D[1,,,][mask]),3)))
+     img<-z$D[2,,,slice]
+     rg<-quantile(img,c(.01,.99))
+     img[img>rg[2]]<-rg[2]
+     img[img<rg[1]]<-rg[1]
      show.image(make.image(img))
-     title(paste("Dxy: min",signif(min(img),3),"max",signif(max(img),3)))
-     img<-z$theta[3,,,slice]
+     title(paste("Dxy: min",signif(min(z$D[2,,,][mask]),3),"max",signif(max(z$D[2,,,][mask]),3)))
+     img<-z$D[3,,,slice]
+     rg<-quantile(img,c(.01,.99))
+     img[img>rg[2]]<-rg[2]
+     img[img<rg[1]]<-rg[1]
      show.image(make.image(img))
-     title(paste("Dxz: min",signif(min(img),3),"max",signif(max(img),3)))
+     title(paste("Dxz: min",signif(min(z$D[3,,,][mask]),3),"max",signif(max(z$D[3,,,][mask]),3)))
      show.image(make.image(z$anindex[,,slice]))
-     title(paste("Anisotropy index  range:",signif(min(z$anindex),3),"-",
-                  signif(max(z$anindex),3)))
-     img<-z$theta[4,,,slice]
+     title(paste("Anisotropy index  range:",signif(min(z$anindex[mask]),3),"-",
+                  signif(max(z$anindex[mask]),3)))
+     img<-z$D[4,,,slice]
+     rg<-quantile(img,c(.01,.99))
+     img[img>rg[2]]<-rg[2]
      show.image(make.image(65535*img/max(img)))
-     title(paste("Dyy: mean",signif(mean(img),3),"max",signif(max(img),3)))
-     img<-z$theta[5,,,slice]
+     title(paste("Dyy: mean",signif(mean(z$D[4,,,][mask]),3),"max",signif(max(z$D[4,,,][mask]),3)))
+     img<-z$D[5,,,slice]
+     rg<-quantile(img,c(.01,.99))
+     img[img>rg[2]]<-rg[2]
+     img[img<rg[1]]<-rg[1]
      show.image(make.image(img))
-     title(paste("Dyz: min",signif(min(img),3),"max",signif(max(img),3)))
+     title(paste("Dyz: min",signif(min(z$D[5,,,][mask]),3),"max",signif(max(z$D[5,,,][mask]),3)))
      andir2.image(z,slice,quant=quant,minanindex=minanindex)
      title(paste("Directions (h=",signif(hakt,3),"), slice",slice))
-     ni<-z$bi[,,slice]*z$sigma2hat[,,slice]
+     ni<-(z$bi[,,slice]*if(wlse) z$sigma2hat[,,slice] else 1)*mask[,,slice]
      show.image(make.image(65535*ni/max(ni)))
-     title(paste("sum of weights  mean=",signif(mean(z$bi*z$sigma2hat),3)))
-     img<-z$theta[6,,,slice]
+     title(paste("sum of weights  mean=",signif(mean((z$bi*if(wlse) z$sigma2hat else 1)[mask]),3)))
+     img<-z$D[6,,,slice]
      show.image(make.image(65535*img/max(img)))
-     title(paste("Dyy: mean",signif(mean(img),3),"max",signif(max(img),3)))
+     title(paste("Dzz: mean",signif(mean(z$D[6,,,][mask]),3),"max",signif(max(z$D[6,,,][mask]),3)))
      }
      cat("h=",signif(hakt,3),"Quantiles (.5, .75, .9, .95, 1) of anisotropy index",signif(quantile(z$anindex,c(.5, .75, .9, .95, 1)),3),"\n")
      hakt0<-hakt
@@ -232,8 +259,8 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
 
   invisible(new("dtiTensor",
                 list( hmax = hmax),
-                D     = z$theta,
-                th0   = z$s0hat,
+                D     = z$D,
+                th0   = th0,
                 btb   = btb,
                 sigma = z$sigma2hat, 
                 scorr = scorr,
@@ -308,16 +335,16 @@ rdtianiso <- function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,qua
                 as.integer(n1),
                 as.integer(n2),
                 as.integer(n3),
-                theta=double(6*n),
+                D=double(6*n),
                 anindex=double(n),
                 andirection=double(3*n),
                 det=double(n),
                 mask=as.logical(mask),
                 DUP=FALSE,
-                PACKAGE="dti")[c("theta","anindex","andirection","det","mask")]
-  y <- array(z$theta,dimy)
+                PACKAGE="dti")[c("D","anindex","andirection","det","mask")]
+  y <- array(z$D,dimy)
   z$bi <- 1/sigma2
-  dim(z$theta) <- dimy
+  dim(z$D) <- dimy
   dim(z$anindex) <-dim(z$det) <-dim(z$mask) <- dimy[-1]
   z$mask <- array(z$mask,dimy[-1])&mask
   dim(z$andirection) <- c(3,dimy[-1]) 
@@ -329,22 +356,22 @@ rdtianiso <- function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,qua
      on.exit(par(oldpar))
      if(is.null(slice)) slice<-n3%/%2
      class(z) <- "dti"
-     img<-z$theta[1,,,slice]
+     img<-z$D[1,,,slice]
      show.image(make.image(65535*img/max(img)))
      title(paste("Dxx: min",signif(min(img),3),"max",signif(max(img),3)))
-     img<-z$theta[2,,,slice]
+     img<-z$D[2,,,slice]
      show.image(make.image(img))
      title(paste("Dxy: min",signif(min(img),3),"max",signif(max(img),3)))
-     img<-z$theta[3,,,slice]
+     img<-z$D[3,,,slice]
      show.image(make.image(img))
      title(paste("Dxz: min",signif(min(img),3),"max",signif(max(img),3)))
      show.image(make.image(z$anindex[,,slice]))
      title(paste("Anisotropy index  range:",signif(min(z$anindex[z$mask]),3),"-",
                   signif(max(z$anindex[z$mask]),3)))
-     img<-z$theta[4,,,slice]
+     img<-z$D[4,,,slice]
      show.image(make.image(65535*img/max(img)))
      title(paste("Dyy: min",signif(min(img),3),"max",signif(max(img),3)))
-     img<-z$theta[5,,,slice]
+     img<-z$D[5,,,slice]
      show.image(make.image(img))
      title(paste("Dyz: min",signif(min(img),3),"max",signif(max(img),3)))
      andir2.image(z,slice,quant=quant,minanindex=minanindex)
@@ -352,7 +379,7 @@ rdtianiso <- function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,qua
      ni<-z$bi[,,slice]*sigma2[,,slice]
      show.image(make.image(65535*ni/max(ni)))
      title(paste("sum of weights  mean=",signif(mean(z$bi[z$mask]*sigma2[z$mask]),3)))
-     img<-z$theta[6,,,slice]
+     img<-z$D[6,,,slice]
      show.image(make.image(65535*img/max(img)))
      title(paste("Dzz: min",signif(min(img),3),"max",signif(max(img),3)))
   }
@@ -372,7 +399,7 @@ rdtianiso <- function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,qua
      mask[z$anindex<0.1]<-FALSE
      z <- .Fortran("rawsdti",
                 as.double(y),
-                as.double(z$theta),
+                as.double(z$D),
                 bi=as.double(z$bi),
                 anindex=as.double(z$anindex),
                 andirection=as.double(z$andirection),
@@ -386,36 +413,36 @@ rdtianiso <- function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,qua
                 as.double(vext),
                 as.double(rho),
                 as.double(lambda0),
-                theta=double(6*n),
+                D=double(6*n),
                 mask=as.logical(z$mask),
                 double(usize),# array for weights
                 double(9*usize),# array for complete diffusion tensors with pos. weights
                 as.integer(usize),# upper bound for size of U(x)
                 double(9*usize),# array for Remannian Log Maps 
                 DUP=FALSE,
-                PACKAGE="dti")[c("theta","bi","anindex","andirection","det","mask")]
+                PACKAGE="dti")[c("D","bi","anindex","andirection","det","mask")]
      dim(z$bi) <- dim(z$anindex) <- dim(z$det) <- dim(z$mask) <- dimy[-1]
-     dim(z$theta) <- dimy
+     dim(z$D) <- dimy
      dim(z$andirection) <- c(3,dimy[-1]) 
      if(graph){
      
      class(z) <- "dti"
-     img<-z$theta[1,,,slice]
+     img<-z$D[1,,,slice]
      show.image(make.image(65535*img/max(img)))
      title(paste("Dxx: min",signif(min(img),3),"max",signif(max(img),3)))
-     img<-z$theta[2,,,slice]
+     img<-z$D[2,,,slice]
      show.image(make.image(img))
      title(paste("Dxy: min",signif(min(img),3),"max",signif(max(img),3)))
-     img<-z$theta[3,,,slice]
+     img<-z$D[3,,,slice]
      show.image(make.image(img))
      title(paste("Dxz: min",signif(min(img),3),"max",signif(max(img),3)))
      show.image(make.image(z$anindex[,,slice]))
      title(paste("Anisotropy index  range:",signif(min(z$anindex[z$mask]),3),"-",
                   signif(max(z$anindex[z$mask]),3)))
-     img<-z$theta[4,,,slice]
+     img<-z$D[4,,,slice]
      show.image(make.image(65535*img/max(img)))
      title(paste("Dyy: min",signif(min(img),3),"max",signif(max(img),3)))
-     img<-z$theta[5,,,slice]
+     img<-z$D[5,,,slice]
      show.image(make.image(img))
      title(paste("Dyz: min",signif(min(img),3),"max",signif(max(img),3)))
      andir2.image(z,slice,quant=quant,minanindex=minanindex)
@@ -423,7 +450,7 @@ rdtianiso <- function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,qua
      ni<-z$bi[,,slice]*sigma2[,,slice]
      show.image(make.image(65535*ni/max(ni)))
      title(paste("sum of weights  mean=",signif(mean(z$bi[z$mask]*sigma2[z$mask]),3)))
-     img<-z$theta[6,,,slice]
+     img<-z$D[6,,,slice]
      show.image(make.image(65535*img/max(img)))
      title(paste("Dyy: min",signif(min(img),3),"max",signif(max(img),3)))
      }
@@ -431,13 +458,13 @@ rdtianiso <- function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,qua
      hakt0<-hakt
      hakt <- hakt*hincr
   }
-#z <- list(theta=z$theta,bi=z$bi,anindex=z$anindex,andirection=z$andirection,mask=z$mask, ddim0=ddim0,xind=xind,yind=yind,zind=zind,InvCov=Bcov,call=args)
+#z <- list(D=z$D,bi=z$bi,anindex=z$anindex,andirection=z$andirection,mask=z$mask, ddim0=ddim0,xind=xind,yind=yind,zind=zind,InvCov=Bcov,call=args)
 #class(z) <- "dti"
 
   invisible(new("dtiTensor",
                 list(metrik="Riemann"),
                 method = method,
-                D     = z$theta,
+                D     = z$D,
                 th0   = th0,
                 sigma = z$sigma2hat,
                 scorr = scorr,
