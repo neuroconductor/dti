@@ -30,7 +30,7 @@ setClass("dtiData",
             cat("invalid orientation \n")
              return(invisible(FALSE))
          }
-          if (any(sort((object@orientation+1)%/%2) != 1:3)) {
+          if (any(sort((object@orientation)%/%2) != 0:2)) {
             cat("invalid orientation \n")
              return(invisible(FALSE))
          }

@@ -118,7 +118,7 @@ function(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=
 #
 
 dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=0,mins0value=0,maxvalue=10000,voxelext=c(1,1,1),orientation=c(1,3,5)) {
-  if (any(sort((orientation+1)%/%2) != 1:3)) stop("invalid orientation \n")
+  if (any(sort((orientation)%/%2) != 0:2)) stop("invalid orientation \n")
   if (dim(gradient)[2]==3) gradient <- t(gradient)
   if (dim(gradient)[1]!=3) stop("Not a valid gradient matrix")
   ngrad <- dim(gradient)[2]
@@ -140,7 +140,7 @@ dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=
 #
 #   set correct orientation
 #
-  xyz <- (orientation+1)%*%2
+  xyz <- (orientation)%/%2+1
   swap <- orientation-2*(orientation%/%2)
   if(any(xyz!=1:3)) {
       si <- aperm(si,c(xyz,4))
@@ -148,10 +148,20 @@ dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=
       voxelext[xyz] <- voxelext
       dimsi[xyz] <- dimsi[1:3]
       ddim[xyz] <- ddim[1:3]
+      gradient[xyz,] <- gradient
   }
-  if(swap[1]==1) si <- si[dimsi[1]:1,,,] 
-  if(swap[2]==1) si <- si[,dimsi[2]:1,,] 
-  if(swap[3]==0) si <- si[,,dimsi[3]:1,]   
+  if(swap[1]==1) {
+      si <- si[dimsi[1]:1,,,] 
+      gradient[1,] <- -gradient[1,]
+      }
+  if(swap[2]==1) {
+      si <- si[,dimsi[2]:1,,]  
+      gradient[2,] <- -gradient[2,]
+      }
+  if(swap[3]==0) {
+      si <- si[,,dimsi[3]:1,]    
+      gradient[3,] <- -gradient[3,]
+      }
 #
 #   orientation set to radiological convention
 #
@@ -186,7 +196,7 @@ dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=
                 zind   = zind,
                 level  = level,
                 voxelext = voxelext,
-                orientation = c(0,2,5),
+                orientation = as.integer(c(0,2,5)),
                 source = imagefile)
             )
 }
