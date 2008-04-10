@@ -90,7 +90,7 @@ C  this is scale invariant sice sqrbii scales with sqrt(sigma2) (standard deviat
                   jj1=i1+j1
                   if(jj1.le.0.or.jj1.gt.n1) CYCLE
                   call rangey(thi,j1,h,j2a,j2e,vext)
-                 DO j2=j2a,j2e
+                  DO j2=j2a,j2e
                      jj2=i2+j2
                      if(jj2.le.0.or.jj2.gt.n2) CYCLE
                      call rangez(thi,j1,j2,h,j3a,j3e,vext)

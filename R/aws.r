@@ -42,7 +42,7 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
   yind <- object@yind
   zind <- object@zind
   source <- object@source
-  btb <- object@btb
+  btb <- object@btb[,-s0ind]
   voxelext <- object@voxelext
   if(is.null(voxelext)) vext <- c(1,1,1) else vext <- voxelext/min(voxelext)
   Bcov <- btb%*%t(btb)
