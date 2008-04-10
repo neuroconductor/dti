@@ -179,6 +179,21 @@ image(anindex,...)
 invisible(andirection)
 } 
 
+andir.image <- function(anindex,andirection,quant=0,minanindex=NULL){
+dimg <- dim(anindex)
+anindex[anindex>1]<-0
+anindex[anindex<0]<-0
+dim(andirection)<-c(3,prod(dimg))
+if(is.null(minanindex)) minanindex <- quantile(anindex,quant)
+andirection[1,] <- abs(andirection[1,])
+andirection[2,] <- abs(andirection[2,])
+andirection[3,] <- abs(andirection[3,])
+andirection <- t(andirection)*as.vector(anindex)*as.numeric(anindex>minanindex)
+dim(andirection)<-c(dimg,3)
+show.image(make.image(andirection))
+invisible(NULL)
+} 
+
 tensor2medinria <- function(obj, filename, xind=NULL, yind=NULL, zind=NULL) {
   if (!require(fmri)) stop("cannot execute function without package fmri, because of missing write.NIFTI() function")
 

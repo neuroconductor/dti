@@ -13,11 +13,9 @@ Objects can be created by calls of function \code{\link{dtiIndices}}.
 	 \describe{
     \item{\code{.Data}:}{Object of class \code{"list"} usually empty }
     \item{\code{fa}:}{Object of class \code{"array"} Fractional anisotropy values (FA)}
-    \item{\code{ra}:}{Object of class \code{"array"} Relative anisotropy  values (RA) }
-    \item{\code{trc}:}{Object of class \code{"array"} mean eigenvalues of the diffusion tensor.  }
+    \item{\code{md}:}{Object of class \code{"array"} Mean diffusivity values (MD) }
+    \item{\code{andir}:}{Object of class \code{"array"} Main directions of anisotropy }
     \item{\code{bary}:}{Object of class \code{"array"} barycentric coordinates }
-    \item{\code{lambda}:}{Object of class \code{"array"} eigenvalues of the diffusion tensor.}
-    \item{\code{eigenv}:}{Object of class \code{"array"} eigenvectors of the diffusion tensor. }
 \item{\code{btb}:}{Object of class \code{"matrix"} matrix of dimension \code{c(6,ngrad)} obtained from gradient directions.}
     \item{\code{ngrad}:}{Object of class \code{"integer"} number of gradients (including zero gradients) }
     \item{\code{s0ind}:}{Object of class \code{"integer"} index of zero gradients within sequence \code{1:ngrad} }

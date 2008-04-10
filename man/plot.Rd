@@ -4,7 +4,8 @@
 \title{Visualizing of dtiIndices}
 \description{
 Generic plot function for visualization of objects of class
-\code{dtiIndices}. 
+\code{dtiIndices}. and class
+\code{dtiTensor}
 }
 \usage{
 plot(x, y, ...)
@@ -17,18 +18,21 @@ plot(x, y, ...)
    \item{slice }{Slice number}
    \item{view}{ choose sagittal, coronal, or axial view here}
    \item{method }{\code{method==1} and \code{method==2} specify two different color schemes for 
-    directional FA-maps. \code{method==3} specifies visualization of dtiIndices using color coded bary coordinates}
+    directional FA-maps. \code{method==3} specifies visualization of dtiIndices using color coded bary coordinates. (for class
+\code{dtiIndices} only)}
    \item{quant }{if \code{is.null(minanindex)} specify \code{minanindex} as corresponding quantile of the fractal anisotropy (FA) index.}
    \item{minanindex }{display only information for voxel with \code{FA>minanindex}}
-   \item{show }{Visualize information in a graphics device}
+   \item{show }{Visualize information in a graphics device (for class
+\code{dtiIndices} only)}
    \item{contrast.enh}{ enhance image contrast using \code{min(1,x$anindex/contrast.enh} instead
     of the anisotropy index itself. Effective values are within the interval (0,1).
+   \code{settings for function\code{par} (for class
+\code{dtiTensor} only)
  }
 }
 }
 \details{
-This function will be extended to visualize objects of class \code{dtiData}
-and \code{dtiTensor}.
+This function will be extended to visualize objects of class \code{dtiData}.
 }
 \value{
 an image of class \code{adimpro}.

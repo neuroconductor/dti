@@ -84,35 +84,25 @@ setClass("dtiTensor",
 
 setClass("dtiIndices",
          representation(fa     = "array",
-                        ra     = "array",
-                        trc    = "array",
-                        bary   = "array",
-                        lambda = "array",
-                        eigenv = "array"),
+                        md     = "array",
+                        andir  = "array",
+                        bary   = "array"),
          contains=c("list","dti"),
           validity=function(object){
           if (any(dim(object@fa)!=object@ddim)) {
             cat("invalid dimension of array fa\n")
             return(invisible(FALSE))
           }
-          if (any(dim(object@ra)!=object@ddim)) {
+          if (any(dim(object@md)!=object@ddim)) {
             cat("invalid dimension of array ra\n")
             return(invisible(FALSE))
           }
-          if (any(dim(object@trc)!=object@ddim)) {
-            cat("invalid dimension of array trc\n")
+          if (any(dim(object@andir)!=c(3,object@ddim))) {
+            cat("invalid dimension of array andir\n")
             return(invisible(FALSE))
           }
-          if (any(dim(object@bary)!=c(object@ddim,3))) {
+          if (any(dim(object@bary)!=c(3,object@ddim))) {
             cat("invalid dimension of array bary\n")
-            return(invisible(FALSE))
-          }
-          if (any(dim(object@lambda)!=c(object@ddim,3))) {
-            cat("invalid dimension of array bary\n")
-            return(invisible(FALSE))
-          }
-          if (any(dim(object@eigenv)!=c(object@ddim,3,3))) {
-            cat("invalid dimension of array eigenv\n")
             return(invisible(FALSE))
           }
          }

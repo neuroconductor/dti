@@ -293,3 +293,93 @@ C    ia,ie -  rane of x values (restricted to the grid)
       ke=(t+z)*h/vext(3)
       RETURN
       END
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+C
+C    Compute DTI-Indices for a slice
+C
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+      subroutine dtiind2D(D,n1,n2,mask,fa,md,adir)
+      implicit logical (a-z)
+      integer n1,n2
+      logical mask(n1,n2)
+      real*8 D(6,n1,n2),fa(n1,n2),md(n1,n2),adir(3,n1,n2)
+      integer i1,i2,ierr
+      real*8 lambda(3),evec(3,3),trc,d1,d2,d3,a1,a2,a3
+      DO i1=1,n1
+         DO i2=1,n2
+            if(mask(i1,i2)) THEN
+               call eigen3(D(1,i1,i2),lambda,evec,ierr)
+               a1=lambda(1)
+               a2=lambda(2)
+               a3=lambda(3)
+               trc=(a1+a2+a3)/3.d0
+               adir(1,i1,i2)=evec(1,3)
+               adir(2,i1,i2)=evec(2,3)
+               adir(3,i1,i2)=evec(3,3)
+               md(i1,i2)=trc
+               d1=a1-trc
+               d2=a2-trc
+               d3=a3-trc
+               fa(i1,i2)=sqrt(1.5d0*(d1*d1+d2*d2+d3*d3)/
+     1                        (a1*a1+a2*a2+a3*a3))
+            ELSE
+               md(i1,i2)=0.d0
+               fa(i1,i2)=0.d0
+               adir(1,i1,i2)=1.d0
+               adir(2,i1,i2)=0.d0
+               adir(3,i1,i2)=0.d0
+            END IF
+         END DO
+      END DO
+      RETURN
+      END
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+C
+C    Compute DTI-Indices for a volume
+C
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+      subroutine dtiind3D(D,n1,n2,n3,mask,fa,md,adir,bary)
+      implicit logical (a-z)
+      integer n1,n2,n3
+      logical mask(n1,n2,n3)
+      real*8 D(6,n1,n2,n3),fa(n1,n2,n3),md(n1,n2,n3),adir(3,n1,n2,n3),
+     1       bary(3,n1,n2,n3)
+      integer i1,i2,i3,ierr
+      real*8 lambda(3),evec(3,3),trc,d1,d2,d3,a1,a2,a3
+      DO i1=1,n1
+         DO i2=1,n2
+            DO i3=1,n3
+            if(mask(i1,i2,i3)) THEN
+               call eigen3(D(1,i1,i2,i3),lambda,evec,ierr)
+               a1=lambda(1)
+               a2=lambda(2)
+               a3=lambda(3)
+               trc=(a1+a2+a3)/3.d0
+               adir(1,i1,i2,i3)=evec(1,3)
+               adir(2,i1,i2,i3)=evec(2,3)
+               adir(3,i1,i2,i3)=evec(3,3)
+               md(i1,i2,i3)=trc
+               d1=a1-trc
+               d2=a2-trc
+               d3=a3-trc
+               fa(i1,i2,i3)=sqrt(1.5d0*(d1*d1+d2*d2+d3*d3)/
+     1                        (a1*a1+a2*a2+a3*a3))
+               bary(1,i1,i2,i3)=(a3-a2)/trc/3.d0
+               bary(2,i1,i2,i3)=2.d0*(a2-a1)/trc/3.d0
+               bary(3,i1,i2,i3)=a1/trc
+            ELSE
+               md(i1,i2,i3)=0.d0
+               fa(i1,i2,i3)=0.d0
+               adir(1,i1,i2,i3)=1.d0
+               adir(2,i1,i2,i3)=0.d0
+               adir(3,i1,i2,i3)=0.d0
+               bary(1,i1,i2,i3)=0.d0
+               bary(2,i1,i2,i3)=0.d0
+               bary(3,i1,i2,i3)=1.d0
+            END IF
+            END DO
+         END DO
+      END DO
+      RETURN
+      END
+      

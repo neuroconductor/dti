@@ -11,51 +11,161 @@ function(object){
     cat("\n")
 })
 
-setMethod("plot", "dtiTensor", function(x, y, ...) cat("Not yet implemented for class dtiTensor\n"))
-setMethod("plot", "dtiData", function(x, y, ...) cat("Not yet implemented for class dtiData\n"))
+setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, minanindex=NULL, contrast.enh=1, qrange=c(.01,.99), ...) {
+  if(is.null(x@D)) cat("No diffusion tensor yet")
+  adimpro <- require(adimpro)
+  if (view == "sagittal") {
+    D <- x@D[,slice,,]
+    mask <- x@mask[slice,,]
+  } else if (view == "coronal") {
+    D <- x@D[,,slice,]
+    mask <- x@mask[,slice,]
+  } else {
+    D <- x@D[,,,slice]
+    mask <- x@mask[,,slice]
+  }
+  n1 <- dim(mask)[1]
+  n2 <- dim(mask)[2]
+  z <- .Fortran("dtiind2D",
+                as.double(D),
+                as.integer(n1),
+                as.integer(n2),
+                as.logical(mask),
+                fa=double(n1*n2),
+                md=double(n1*n2),
+                andir=double(3*n1*n2),
+                DUPL=FALSE,
+                PACKAGE="dti")[c("fa","md","andir")]
+   oldpar <- par(mfrow=c(3,3),...)
+#  now draw information to graphical device
+   on.exit(par(oldpar))
+   img<-D[1,,]
+   rg<-quantile(img,qrange)
+   img[img>rg[2]]<-rg[2]
+   show.image(make.image(65535*img/max(img)))
+     title(paste("Dxx: mean",signif(mean(D[mask]),3),"max",signif(max(D[1,,][mask]),3)))
+     img<-D[2,,]
+     rg<-quantile(img,qrange)
+     img[img>rg[2]]<-rg[2]
+     img[img<rg[1]]<-rg[1]
+     show.image(make.image(img))
+     title(paste("Dxy: min",signif(min(D[2,,][mask]),3),"max",signif(max(D[2,,][mask]),3)))
+     img<-D[3,,]
+     rg<-quantile(img,qrange)
+     img[img>rg[2]]<-rg[2]
+     img[img<rg[1]]<-rg[1]
+     show.image(make.image(img))
+     title(paste("Dxz: min",signif(min(D[3,,][mask]),3),"max",signif(max(D[3,,][mask]),3)))
+     show.image(make.image(matrix(z$fa,n1,n2)))
+     title(paste("Anisotropy index (FA)  range:",signif(min(z$fa[mask]),3),"-",
+                  signif(max(z$fa[mask]),3)))
+     img<-D[4,,]
+     rg<-quantile(img,qrange)
+     img[img>rg[2]]<-rg[2]
+     img[img<rg[1]]<-rg[1]
+     show.image(make.image(65535*img/max(img)))
+     title(paste("Dyy: min",signif(min(D[4,,][mask]),3),"max",signif(max(D[4,,][mask]),3)))
+     img<-D[5,,]
+     rg<-quantile(img,qrange)
+     img[img>rg[2]]<-rg[2]
+     img[img<rg[1]]<-rg[1]
+     show.image(make.image(img))
+     title(paste("Dyz: min",signif(min(D[5,,][mask]),3),"max",signif(max(D[5,,][mask]),3)))
+     andir.image(matrix(z$fa,n1,n2),array(z$andir,c(3,n1,n2)),quant=quant,minanindex=minanindex)
+     title(paste("Anisotropy directions"))
+     img <- matrix(z$md,n1,n2)
+     show.image(make.image(65535*img/max(img)))
+     title(paste("Mean diffusivity   range:",signif(min(z$md[mask]),3),"-",
+                  signif(max(z$md[mask]),3)))
+     img<-D[6,,]
+     rg<-quantile(img,qrange)
+     img[img>rg[2]]<-rg[2]
+     img[img<rg[1]]<-rg[1]
+     show.image(make.image(65535*img/max(img)))
+     title(paste("Dzz: min",signif(min(D[6,,][mask]),3),"max",signif(max(D[6,,][mask]),3)))
+     invisible(NULL)
+}
+)
+setMethod("plot", "dtiData", function(x, y,slice=1, gradient=NULL, view= "axial", show=TRUE, ...) {
+if(is.null(x@si)) cat("No dwi data yet")
+maxsi <- max(x@si)
+if(is.null(gradient)) gradient <- x@s0ind[1]
+if(gradient<1||gradient>x@ngrad) {
+   warning("gradient number out of range, show s0 image")
+   gradient <- x@s0ind[1]
+}
+adimpro <- require(adimpro)
+if (view == "sagittal") {
+   if(slice<1||slice>x@ddim[1]) {
+      warning("slice number out of range, show central slice")
+      slice <- x@ddim[1]%/%2
+   }
+   img <- x@si[slice,,,gradient]
+  } else if (view == "coronal") {
+   if(slice<1||slice>x@ddim[2]) {
+      warning("slice number out of range, show central slice")
+      slice <- x@ddim[2]%/%2
+   }
+   img <- x@si[,slice,,gradient]
+  } else {
+   if(slice<1||slice>x@ddim[3]) {
+      warning("slice number out of range, show central slice")
+      slice <- x@ddim[3]%/%2
+   }
+   img <- x@si[,,slice,gradient]
+  }
+  if(adimpro) {
+     img <- make.image(65535*img/maxsi)
+     if(show) show.image(img,...)
+    } else if(show) {
+      image(img,...)
+    }
+    invisible(img)
+}
+)
 setMethod("plot", "dti", function(x, y, ...) cat("No implementation for class dti\n"))
 
 setMethod("plot", "dtiIndices", 
 function(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=TRUE, contrast.enh=1, ...) {
   if(is.null(x@fa)) cat("No anisotropy index yet")
+  if(!(method %in% 1:3)) {
+      warning("method out of range, reset to 1")
+      method <- 1
+  }
   adimpro <- require(adimpro)
   if (view == "sagittal") {
     anindex <- x@fa[slice,,]
+    andirection <- x@andir[,slice,,]
     dimg <- x@ddim[2:3]
   } else if (view == "coronal") {
     anindex <- x@fa[,slice,]
+    andirection <- x@andir[,,slice,]
     dimg <- x@ddim[c(1,3)]
   } else {
     anindex <- x@fa[,,slice]
+    andirection <- x@andir[,,,slice]
     dimg <- x@ddim[1:2]
   }
-  if ((method==1) || (method==2)) {
-    if (view == "sagittal") {
-      andirection <- x@eigenv[slice,,,,]
-    } else if (view == "coronal") {
-      andirection <- x@eigenv[,slice,,,]
-    } else {
-      andirection <- x@eigenv[,,slice,,]
-    }
     anindex[anindex>1]<-0
     anindex[anindex<0]<-0
+  if ((method==1) || (method==2)) {
     if(contrast.enh<1&&fa.contrast.enh>0) anindex <- pmin(anindex/contrast.enh,1)
-    dim(andirection)<-c(prod(dimg),3,3)
     if(is.null(minanindex)) minanindex <- quantile(anindex,quant,na.rm=TRUE)
     if (diff(range(anindex,na.rm=TRUE)) == 0) minanindex <- 0
     if(method==1) {
-      andirection[,1,3] <- abs(andirection[,1,3])
-      andirection[,2,3] <- abs(andirection[,2,3])
-      andirection[,3,3] <- abs(andirection[,3,3])
+      andirection[1,,] <- abs(andirection[1,,])
+      andirection[2,,] <- abs(andirection[2,,])
+      andirection[3,,] <- abs(andirection[3,,])
     } else {
-      ind<-andirection[,1,3]<0
-      andirection[ind,,] <- - andirection[ind,,]
-      andirection[,2,3] <- (1+andirection[,2,3])/2
-      andirection[,3,3] <- (1+andirection[,3,3])/2
+      ind<-andirection[1,,]<0
+      dim(andirection) <- c(3,prod(dim(ind)))
+      andirection[,ind] <- - andirection[,ind]
+      andirection[2,] <- (1+andirection[2,])/2
+      andirection[3,] <- (1+andirection[3,])/2
+      dim(andirection) <- c(3,dim(ind))
     }
-    andirection <- andirection[,,3]
+    andirection <- aperm(andirection,c(2,3,1))
     andirection <- andirection*as.vector(anindex)*as.numeric(anindex>minanindex)
-    dim(andirection)<-c(dimg,3)
     if(adimpro) {
       andirection[is.na(andirection)] <- 0
       andirection <- make.image(andirection,gamma=TRUE,gammatype="ITU",cspace="sRGB")
@@ -66,51 +176,15 @@ function(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=
     }
     invisible(andirection)
   } else if (method==3) {
-    if (view == "sagittal") {
-      bary <- x@bary[slice,,,]
-    } else if (view == "coronal") {
-      bary <- x@bary[,slice,,]
-    } else {
-      bary <- x@bary[,,slice,]
-    }
     if(adimpro) {
       bary[is.na(bary)] <- 0
-      bary <- make.image(bary)
+      bary <- make.image(aperm(bary,c(2,3,1)))
       if(show) show.image(bary,...)
     } else if(show) {
-      image(bary[,,1],...)
+      image(bary[1,,],...)
     }
     invisible(bary)
-  } else {
-    if (view == "sagittal") {
-      andirection <- x@eigenv[slice,,,,]
-    } else if (view == "coronal") {
-      andirection <- x@eigenv[,slice,,,]
-    } else {
-      andirection <- x@eigenv[,,slice,,]
-    }
-    anindex[anindex>1]<-0
-    anindex[anindex<0]<-0
-    if(contrast.enh<1&&contrast.enh>0) anindex <- pmin(anindex/contrast.enh,1)
-    dim(andirection)<-c(prod(dimg),3,3)
-    if(is.null(minanindex)) minanindex <- quantile(anindex,quant,na.rm=TRUE)
-    if (diff(range(anindex,na.rm=TRUE)) == 0) minanindex <- 0
-    andirection[,1,2] <- abs(andirection[,1,2])
-    andirection[,2,2] <- abs(andirection[,2,2])
-    andirection[,3,2] <- abs(andirection[,3,2])
-    andirection <- andirection[,,2]
-    andirection <- andirection*as.vector(anindex)*as.numeric(anindex>minanindex)
-    dim(andirection)<-c(dimg,3)
-    if(adimpro) {
-      andirection[is.na(andirection)] <- 0
-      andirection <- make.image(andirection,gamma=TRUE,gammatype="ITU",cspace="sRGB")
-      if(show) show.image(andirection,...)
-    } else if(show) {
-      dim(anindex) <- dimg
-      image(anindex,...)
-    }
-    invisible(andirection)
-  }
+  } 
 })
 
 #
@@ -429,55 +503,24 @@ setMethod("dtiIndices","dtiTensor",
 function(object, which) {
   ddim <- object@ddim
 
-  ll <- array(0,c(ddim,3))
-  th <- array(0,c(ddim,9))
-  ierr <- array(0,ddim)
-
-  for (i in 1:ddim[1]) {
-    cat(".")
-    for (j in 1:ddim[2]) {
-      for (k in 1:ddim[3]) {
-        z <- .Fortran("eigen3",
-                      as.double(object@D[,i,j,k]),
-                      lambda = double(3),
-                      theta = double(3*3),
-                      ierr = integer(1),
-                      PACKAGE="dti")[c("lambda","theta","ierr")]
-        ll[i,j,k,] <- z$lambda
-        th[i,j,k,] <- z$theta
-        ierr[i,j,k] <- z$ierr
-      }
-    }
-  }
-  cat("\ncalculated eigenvalues and -vectors\n")
-
-  dim(th) <- c(ddim,3,3)
-  dim(ll) <- c(prod(ddim),3)
-
-  trc <- as.vector(ll %*% c(1,1,1))/3
-  cat("voxel with negative trace",sum(trc<=0),"\n")
-  ind <- trc > 0
-  fa <- ra <- numeric(prod(ddim))
-  fa[ind] <- sqrt((1.5*((sweep(ll,1,trc)^2)%*% c(1,1,1))/((ll^2)%*% c(1,1,1)))[ind])
-  ra[ind] <- sqrt(((sweep(ll,1,trc)^2)%*% c(1,1,1))[ind]/(3*trc[ind]))
-# set fa, ra to zero if trc <= 0
-  cat("calculated anisotropy indices\n")
-
-  bary <- c((ll[,3] - ll[,2]) / (3*trc) , 2*(ll[,2] - ll[,1]) / (3*trc) , ll[,1] / trc)
-
-  dim(ll) <- c(ddim,3)
-  dim(trc) <- dim(fa) <- dim(ra) <- ddim
-  dim(bary) <- c(ddim,3)
-
-  cat("calculated barycentric coordinates\n")
+  z <- .Fortran("dtiind3D",
+                as.double(object@D),
+                as.integer(object@ddim[1]),
+                as.integer(object@ddim[2]),
+                as.integer(object@ddim[3]),
+                as.logical(object@mask),
+                fa=double(prod(object@ddim)),
+                md=double(prod(object@ddim)),
+                andir=double(3*prod(object@ddim)),
+                bary=double(3*prod(object@ddim)),
+                DUPL=FALSE,
+                PACKAGE="dti")[c("fa","md","andir","bary")]
 
   invisible(new("dtiIndices",
-                fa = fa,
-                ra = ra, 
-                trc = trc, 
-                bary = bary, 
-                lambda = ll, 
-                eigenv = th,
+                fa = array(z$fa,object@ddim),
+                md = array(z$md,object@ddim),
+                andir = array(z$andir,c(3,object@ddim)),
+                bary = array(z$bary,c(3,object@ddim)),
                 btb   = object@btb,
                 ngrad = object@ngrad, # = dim(btb)[2]
                 ddim  = object@ddim,
