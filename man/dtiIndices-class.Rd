@@ -21,13 +21,15 @@ Objects can be created by calls of function \code{\link{dtiIndices}}.
     \item{\code{s0ind}:}{Object of class \code{"integer"} index of zero gradients within sequence \code{1:ngrad} }
     \item{\code{replind}:}{Object of class \code{"integer"} index (identifier) of unique 
            gradient directions. Used to charactreize replications in the gradient design by identical indices. length is \code{ngrad}}
+    \item{\code{level}:}{Object of class \code{"numeric"} minimal valid s0-level. 
+     No evaluation was be performed for voxel with s0-values less than \code{level}. Used to determine  \code{mask}.}
     \item{\code{ddim}:}{Object of class \code{"integer"} dimension of original image cubes. Integer vector of length 3. }
     \item{\code{ddim0}:}{Object of class \code{"integer"} dimension of subcube defined by \code{xind}, \code{yind} and \code{zind}. }
     \item{\code{xind}:}{Object of class \code{"integer"} index for subcube definition in x-direction  }
     \item{\code{yind}:}{Object of class \code{"integer"} index for subcube definition in y-direction }
     \item{\code{zind}:}{Object of class \code{"integer"} index for subcube definition in z-direction }
     \item{\code{voxelext}:}{Object of class \code{"numeric"} voxel extensions in x-, y- and z-direction. vector of length 3. }
-    \item{\code{source}:}{Object of class \code{"character"} name of the imgfile used to create the data. }
+    \item{\code{method}:}{Object of class \code{"character"} either \code{"linear"} or \code{"nonlinear"} or \code{"unknown"}. Indicates the regression model used for estimating the tensors.}       \item{\code{source}:}{Object of class \code{"character"} name of the imgfile used to create the data. }
   }
 }
 \section{Extends}{

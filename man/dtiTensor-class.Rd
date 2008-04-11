@@ -26,6 +26,8 @@ Objects can be created by calls to functions \code{\link{dtiTensor}},  \code{\li
     \item{\code{bw}:}{Object of class \code{"numeric"} containing bandwidth for a Gaussian kernel that approximately creates
          the estimated spatial correlations. Needed for adjustments of critical values in the adaptive smoothing algorithm used in function \code{dti.smooth}} 
     \item{\code{mask}:}{Object of class \code{"array"}, logical array indicating the voxel where the tensor was estimated.} 
+    \item{\code{level}:}{Object of class \code{"numeric"} minimal valid s0-level. 
+     No evaluation was be performed for voxel with s0-values less than \code{level}. Used to determine  \code{mask}.}
     \item{\code{hmax}:}{Object of class \code{"numeric"} maximal bandwidth in case of adaptive smoothing. contains 1 otherwise.} 
     \item{\code{method}:}{Object of class \code{"character"} either \code{"linear"} or \code{"nonlinear"} or \code{"unknown"}. Indicates the regression model used for estimating the tensors.}     
 \item{\code{btb}:}{Object of class \code{"matrix"} matrix of dimension \code{c(6,ngrad)} obtained from gradient directions.}

@@ -26,6 +26,7 @@ Objects can be created by calls of function \code{\link{dtiData}}.
     \item{\code{yind}:}{Object of class \code{"integer"} index for subcube definition in y-direction }
     \item{\code{zind}:}{Object of class \code{"integer"} index for subcube definition in z-direction }
     \item{\code{voxelext}:}{Object of class \code{"numeric"} voxel extensions in x-, y- and z-direction. vector of length 3. }
+    \item{\code{orientation}:}{Object of class \code{"integer"} vector of length 3. Orientation of data according to AFNI convention.}
     \item{\code{source}:}{Object of class \code{"character"} name of the imgfile used to create the data. }
   }
 }

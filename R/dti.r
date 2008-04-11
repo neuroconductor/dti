@@ -1,14 +1,42 @@
 #
 #
 #
-  # solvebtb mit einfuegen??
 
 setMethod("show", "dti",
 function(object){
-    cat("DTI object\n")
-    cat("  Dimension     :", paste(object@ddim, collapse="x"), "\n")
-    cat("  Filename      :", object@source, "\n")
+    cat("  DTI object of class", class(object),"\n")
+    cat("  Dimension            :", paste(object@ddim, collapse="x"), "\n")
+    cat("  Number of Gradients  :", paste(object@ngrad, collapse="x"), "\n")
+    cat("  Filename             :", object@source, "\n")
     cat("\n")
+    invisible(NULL)
+})
+setMethod("print", "dti",
+function(x){
+    cat("  DTI object of class", class(x),"\n")
+    cat("  Dimension            :", paste(x@ddim, collapse="x"), "\n")
+    cat("  Number of Gradients  :", paste(x@ngrad, collapse="x"), "\n")
+    cat("  Filename             :", x@source, "\n")
+    cat("  Slots                :\n")
+    print(slotNames(x))
+    invisible(NULL)
+})
+setMethod("summary", "dti",
+function(object){
+    cat("  DTI object of class", class(object),"\n")
+    cat("  Filename             :", object@source, "\n")
+    cat("  Dimension            :", paste(object@ddim, collapse="x"), "\n")
+    cat("  Number of Gradients  :", paste(object@ngrad, collapse="x"), "\n")
+    cat("  Voxel extensions     :", paste(object@voxelext, collapse="x"), "\n")
+    cat("  Ind. S0-Images       :", paste(object@s0ind, collapse="x"), "\n")
+    if(class(object)=="dtiTensor"){
+    cat("  Voxel in mask        :", paste(sum(object@mask), collapse="x"), "\n")
+    cat("  Spatial smoothness   :", paste(signif(object@bw,3), collapse="x"), "\n")
+    cat("  mean variance        :", paste(signif(mean(object@sigma[object@mask]),3), collapse="x"), "\n")
+    cat("  hmax                 :", paste(object@hmax, collapse="x"), "\n")
+}
+    cat("\n")
+    invisible(NULL)
 })
 
 setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, minanindex=NULL, contrast.enh=1, qrange=c(.01,.99), ...) {
@@ -459,14 +487,17 @@ function(object, method="nonlinear",varmethod="replicates",varmodel="local") {
                 btb   = object@btb,
                 ngrad = object@ngrad, # = dim(btb)[2]
                 s0ind = object@s0ind,
+                replind = object@replind,
                 ddim  = object@ddim,
                 ddim0 = object@ddim0,
                 xind  = object@xind,
                 yind  = object@yind,
                 zind  = object@zind,
                 voxelext = object@voxelext,
-                source= object@source,
-                method= method)
+                level = object@level,
+                orientation = object@orientation,
+                source = object@source,
+                method = method)
             )
 })
 
@@ -523,14 +554,17 @@ function(object, which) {
                 bary = array(z$bary,c(3,object@ddim)),
                 btb   = object@btb,
                 ngrad = object@ngrad, # = dim(btb)[2]
+                s0ind = object@s0ind,
                 ddim  = object@ddim,
                 ddim0 = object@ddim0,
+                voxelext = object@voxelext,
+                orientation = object@orientation,
                 xind  = object@xind,
                 yind  = object@yind,
                 zind  = object@zind,
+                method = object@method,
+                level = object@level,
                 source= object@source)
             )
-
-
 })
 

@@ -10,12 +10,13 @@ setClass("dti",
                         yind   = "integer",
                         zind   = "integer",
                         voxelext = "numeric",
+                        level  = "numeric",
                         orientation = "integer",
                         source = "character"),
          )
 
 setClass("dtiData",
-         representation(si = "array", level = "numeric"),
+         representation(si = "array"),
          contains=c("list","dti"),
          validity=function(object){
           if (any(dim(object@si)!=c(object@ddim,object@ngrad))) {
@@ -32,6 +33,10 @@ setClass("dtiData",
          }
           if (any(sort((object@orientation)%/%2) != 0:2)) {
             cat("invalid orientation \n")
+             return(invisible(FALSE))
+         }
+          if (object@level < 0) {
+            cat("invalid level \n")
              return(invisible(FALSE))
          }
          }
@@ -83,7 +88,8 @@ setClass("dtiTensor",
          )
 
 setClass("dtiIndices",
-         representation(fa     = "array",
+         representation(method = "character",
+                        fa     = "array",
                         md     = "array",
                         andir  = "array",
                         bary   = "array"),
