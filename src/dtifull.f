@@ -28,12 +28,12 @@ C   thnew    -  new smoothed diffusion tensor data
       logical mask(n1,n2,n3)
       integer i1,j1,j1a,j1e,jj1,i2,j2,j2a,j2e,jj2,i3,j3,j3a,j3e,jj3,
      1        ierr,k,l
-      real*8 wij,adist,sw,sws0,h3,thi(6),bii,sqrbii,ew(3),ev(3,3),
+      real*8 wij,adist,sw,sws0,h2,thi(6),bii,sqrbii,ew(3),ev(3,3),
      1       mew,z1,z2,z3,dtidist2,sij,deti,z,sew,eps,eps3,ss2,sw0
       external adist,dtidist2
       logical aws
       aws=lambda.lt.1e20
-      h3=h*h*h
+      h2=h*h
       eps3=eps*eps*eps
 C  now anisotropic smoothing 
       DO i1=1,n1
@@ -100,8 +100,8 @@ C  this is scale invariant sice sqrbii scales with sqrt(sigma2) (standard deviat
                         if(.not.mask(jj1,jj2,jj3)) CYCLE
                         wij=adist(thi,j1,j2,j3,vext)
 C     triangular location kernel
-                        if(wij.gt.h3) CYCLE
-                        wij = (1.d0 - wij/h3)
+                        if(wij.gt.h2) CYCLE
+                        wij = (1.d0 - wij/h2)
                         IF(aws) THEN
                            sij=dtidist2(th(1,i1,i2,i3),
      1                          th(1,jj1,jj2,jj3),bcov)*bii/lambda

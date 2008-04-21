@@ -258,3 +258,25 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
                 method= dtobject@method)
             )
 }
+
+sumoflocw <- function(h,a){
+    sw <-  .Fortran("ellsize3",
+               as.double(a),
+               as.double(h),
+               sw=double(1),
+               sw2=double(1),
+               PACKAGE="dti")$sw
+sw
+}
+sumoflocw2 <- function(h,a){
+    z <-  .Fortran("ellsize3",
+               as.double(a),
+               as.double(h),
+               sw=double(1),
+               sw2=double(1),
+               PACKAGE="dti")[c("sw","sw2")]
+z$sw^2/z$sw2
+}
+
+risklw <- function(h,a,value) (value-sumoflocw(h,a))^2
+risklw2 <- function(h,a,value) (value-sumoflocw2(h,a))^2

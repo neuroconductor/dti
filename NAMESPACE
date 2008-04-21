@@ -8,3 +8,4 @@ exportMethods("show","plot","print","summary","dti.smooth","dtiTensor","dtiIndic
 export(dtiData)
 #export(dti.propagation,createdata.dti)
 export(tensor2medinria,medinria2tensor)
+export(sumoflocw,sumoflocw2,risklw,risklw2)

@@ -116,14 +116,14 @@ C   eps      -  something small and positive
       logical mask(n1,n2,n3),rician,wlse
       integer i1,j1,j1a,j1e,jj1,i2,j2,j2a,j2e,jj2,i3,j3,j3a,j3e,jj3,
      1        ierr,k
-      real*8 wij,adist,sw,sws0,h3,thi(7),bii,sqrbii,ew(3),ev(3,3),
+      real*8 wij,adist,sw,sws0,h2,thi(7),bii,sqrbii,ew(3),ev(3,3),
      1       mew,z1,z2,z3,sij,deti,z,sew,eps3,ss2,sw0,Di(6),dtidisrg,
      2       th0i,mswsi2,mswsi2q,mswsi4,s2hat,
      3       rhosw0,crhosw0,minswsi2,rssi
       external adist,dtidisrg
       logical aws
       aws=lambda.lt.1e20
-      h3=h*h*h
+      h2=h*h
       eps3=eps*eps*eps
 C  first fill predicted 
       DO i1=1,n1
@@ -221,8 +221,8 @@ C   create needed estimates of s_i
                         if(.not.mask(jj1,jj2,jj3)) CYCLE
                         wij=adist(thi,j1,j2,j3,vext)
 C     triangular location kernel
-                        if(wij.ge.h3) CYCLE
-                        wij = (1.d0 - wij/h3)
+                        if(wij.ge.h2) CYCLE
+                        wij = (1.d0 - wij/h2)
                         IF(aws) THEN
                         sij = dtidisrg(siest(1,i1,i2,i3),
      1                          sipred(1,jj1,jj2,jj3),nb)

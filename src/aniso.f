@@ -254,6 +254,7 @@ C    ia,ie -  rane of x values (restricted to the grid)
       END IF
       ja=(t-z)*h/s/vext(2)
       je=(t+z)*h/s/vext(2)
+      z=z*h/s/vext(2)
       RETURN
       END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
@@ -382,4 +383,167 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       END DO
       RETURN
       END
-      
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+C
+C   determine sum of location weights for a given geometry a(3) and given 
+C   bandwidth
+C
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+      subroutine ellsize3(a,h,sw,sw2)
+      implicit logical(a-z)
+      real*8 a(3),h,sw,sw2
+      integer ih,i1,i2,i3
+      real*8 z1,z2,z3,wij,h2
+      h2=h*h
+      sw=0.d0
+      sw2=0.d0
+      ih=h/a(1)
+      DO i1=-ih,ih
+         z1=i1*a(1)
+         z1=z1*z1
+         ih=sqrt(h2-z1)/a(2)
+         DO i2=-ih,ih
+            z2=i2*a(2)
+            z2=z2*z2
+            ih=sqrt(h2-z1-z2)/a(3)
+            DO i3=-ih,ih
+               z3=i3*a(2)
+               z3=z3*z3
+               wij=max(0.d0,1.d0-(z1+z2+z3)/h2)
+               sw=sw+wij
+               sw2=sw2+wij*wij
+            END DO
+         END DO
+      END DO
+      RETURN
+      END
+C  Algorithmus zur Nullstellenbestimmung einer monotonen Funktion auf(0,\infty)
+      subroutine gethani(x,y,value,a,vext,eps,bw)
+      implicit logical(a-z)
+      real*8 x,y,value,a(6),vext(3),eps,bw,fw
+      real*8 fw1,fw2,fw3,z
+      real*8 sofw3D
+      external sofw3D
+      if(x.ge.y) RETURN
+      fw1=sofw3D(a,x,vext)
+      fw2=sofw3D(a,y,vext)
+      DO WHILE(fw1.gt.value)
+         x=x*x/y
+         fw1=sofw3D(a,x,vext)
+      END DO
+      DO WHILE(fw2.le.value)
+         y=y*y/x
+         fw2=sofw3D(a,y,vext)
+      END DO
+      DO WHILE(min(fw2/value,value/fw1).gt.1.d0+eps)
+         z=x+(value-fw1)/(fw2-fw1)*(y-x)
+         fw3=sofw3D(a,z,vext)
+         if(fw3.le.value) THEN
+            x=z
+            fw1=fw3
+         ENDIF
+         if(fw3.ge.value) THEN
+            y=z
+            fw2=fw3
+         ENDIF
+               call rchkusr()
+      END DO
+      if(fw2/value.gt.value/fw1) THEN
+          bw=x+(value-fw1)/(fw2-fw1)*(y-x)
+      ELSE
+          bw=y-(fw2-value)/(fw2-fw1)*(y-x)
+      ENDIF
+      RETURN
+      END  
+C  compute sum of weights for anisotropic smoothing      
+      real*8 function sofw3D(a,bw,vext)
+      implicit logical(a-z)
+      real*8 a(6),bw,vext(3)
+      integer ia1,ie1,ia2,ie2,ia3,ie3,i1,i2,i3
+      real*8 wij,sw,h2,adist
+      external adist
+      h2=bw*bw
+      sw=1.d0
+      call rangex(a,bw,ia1,ie1,vext)
+      DO i1=1,ie1
+         call rangey(a,i1,bw,ia2,ie2,vext)
+         DO i2=ia2,ie2
+            call rangez(a,i1,i2,bw,ia3,ie3,vext)
+            DO i3=ia3,ie3
+               wij=max(0.d0,1.d0-adist(a,i1,i2,i3,vext)/h2)
+               sw=sw+2.d0*wij
+            END DO
+         END DO
+      END DO
+C  now case i1=0
+      call rangey(a,0,bw,ia2,ie2,vext)
+      DO i2=1,ie2
+         call rangez(a,0,i2,bw,ia3,ie3,vext)
+         DO i3=ia3,ie3
+            wij=max(0.d0,1.d0-adist(a,0,i2,i3,vext)/h2)
+            sw=sw+2.d0*wij
+         END DO
+      END DO
+C  now case i1=i2=0
+      call rangez(a,0,0,bw,ia3,ie3,vext)
+         DO i3=1,ie3
+            wij=max(0.d0,1.d0-adist(a,0,0,i3,vext)/h2)
+            sw=sw+2.d0*wij
+         END DO
+      sofw3D=sw
+      RETURN
+      END
+      subroutine sofw3Ds(a,bw,vext,sw)
+      implicit logical(a-z)
+      real*8 a(6),bw,vext(3)
+      integer ia1,ie1,ia2,ie2,ia3,ie3,i1,i2,i3
+      real*8 wij,sw,h2,adist
+      external adist
+      h2=bw*bw
+      call dblepr("vext",4,vext,3)
+      call dblepr("a",1,a,6)
+      call dblepr("bw",2,bw,1)
+      sw=1.d0
+      call rangex(a,bw,ia1,ie1,vext)
+      call intpr("ie1",3,ie1,1)
+      DO i1=1,ie1
+         call rangey(a,i1,bw,ia2,ie2,vext)
+         call intpr("i1",2,i1,1)
+         call intpr("ia2",3,ia2,1)
+         call intpr("ie2",3,ie2,1)
+         DO i2=ia2,ie2
+            call rangez(a,i1,i2,bw,ia3,ie3,vext)
+            call intpr("i2",2,i2,1)
+            call intpr("ia3",3,ia3,1)
+            call intpr("ie3",3,ie3,1)
+            DO i3=ia3,ie3
+               wij=max(0.d0,1.d0-adist(a,i1,i2,i3,vext)/h2)
+               call dblepr("wij",3,wij,1)
+               sw=sw+2.d0*wij
+            END DO
+         END DO
+      END DO
+C  now case i1=0
+      call rangey(a,0,bw,ia2,ie2,vext)
+        call intpr("ie2",3,ie2,1)
+      DO i2=1,ie2
+         call rangez(a,0,i2,bw,ia3,ie3,vext)
+            call intpr("i2",2,i2,1)
+            call intpr("ia3",3,ia3,1)
+            call intpr("ie3",3,ie3,1)
+         DO i3=ia3,ie3
+            wij=max(0.d0,1.d0-adist(a,0,i2,i3,vext)/h2)
+            call dblepr("wij",3,wij,1)
+            sw=sw+2.d0*wij
+         END DO
+      END DO
+C  now case i1=i2=0
+      call rangez(a,0,0,bw,ia3,ie3,vext)
+            call intpr("ie3",3,ie3,1)
+         DO i3=1,ie3
+            wij=max(0.d0,1.d0-adist(a,0,0,i3,vext)/h2)
+             call dblepr("wij",3,wij,1)
+            sw=sw+2.d0*wij
+         END DO
+      RETURN
+      END
