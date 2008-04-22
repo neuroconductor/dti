@@ -39,21 +39,28 @@ function(object){
     invisible(NULL)
 })
 
-setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, minanindex=NULL, contrast.enh=1, qrange=c(.01,.99), ...) {
+setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, minanindex=NULL, contrast.enh=1, qrange=c(.01,.99),xind=NULL,yind=NULL,zind=NULL, ...) {
   if(is.null(x@D)) cat("No diffusion tensor yet")
   adimpro <- require(adimpro)
+  if(is.null(xind)) xind<-(1:x@ddim[1])
+  if(is.null(yind)) yind<-(1:x@ddim[2])
+  if(is.null(zind)) zind<-(1:x@ddim[3])
   if (view == "sagittal") {
-    D <- x@D[,slice,,]
-    mask <- x@mask[slice,,]
+    D <- x@D[,slice,yind,zind]
+    mask <- x@mask[slice,yind,zind]
+    n1 <- length(yind)
+    n2 <- length(zind)
   } else if (view == "coronal") {
-    D <- x@D[,,slice,]
-    mask <- x@mask[,slice,]
+    D <- x@D[,xind,slice,zind]
+    mask <- x@mask[xind,slice,zind]
+    n1 <- length(xind)
+    n2 <- length(zind)
   } else {
-    D <- x@D[,,,slice]
-    mask <- x@mask[,,slice]
+    D <- x@D[,xind,yind,slice]
+    mask <- x@mask[xind,yind,slice]
+    n1 <- length(xind)
+    n2 <- length(yind)
   }
-  n1 <- dim(mask)[1]
-  n2 <- dim(mask)[2]
   z <- .Fortran("dtiind2D",
                 as.double(D),
                 as.integer(n1),
@@ -114,9 +121,12 @@ setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, mi
      invisible(NULL)
 }
 )
-setMethod("plot", "dtiData", function(x, y,slice=1, gradient=NULL, view= "axial", show=TRUE, ...) {
+setMethod("plot", "dtiData", function(x, y,slice=1, gradient=NULL, view= "axial", show=TRUE,xind=NULL,yind=NULL,zind=NULL, ...) {
 if(is.null(x@si)) cat("No dwi data yet")
 maxsi <- max(x@si)
+  if(is.null(xind)) xind<-(1:x@ddim[1])
+  if(is.null(yind)) yind<-(1:x@ddim[2])
+  if(is.null(zind)) zind<-(1:x@ddim[3])
 if(is.null(gradient)) gradient <- x@s0ind[1]
 if(gradient<1||gradient>x@ngrad) {
    warning("gradient number out of range, show s0 image")
@@ -128,19 +138,19 @@ if (view == "sagittal") {
       warning("slice number out of range, show central slice")
       slice <- x@ddim[1]%/%2
    }
-   img <- x@si[slice,,,gradient]
+   img <- x@si[slice,yind,zind,gradient]
   } else if (view == "coronal") {
    if(slice<1||slice>x@ddim[2]) {
       warning("slice number out of range, show central slice")
       slice <- x@ddim[2]%/%2
    }
-   img <- x@si[,slice,,gradient]
+   img <- x@si[xind,slice,zind,gradient]
   } else {
    if(slice<1||slice>x@ddim[3]) {
       warning("slice number out of range, show central slice")
       slice <- x@ddim[3]%/%2
    }
-   img <- x@si[,,slice,gradient]
+   img <- x@si[xind,yind,slice,gradient]
   }
   if(adimpro) {
      img <- make.image(65535*img/maxsi)
@@ -154,25 +164,25 @@ if (view == "sagittal") {
 setMethod("plot", "dti", function(x, y, ...) cat("No implementation for class dti\n"))
 
 setMethod("plot", "dtiIndices", 
-function(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=TRUE, contrast.enh=1, ...) {
+function(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=TRUE, contrast.enh=1,xind=NULL,yind=NULL,zind=NULL, ...) {
   if(is.null(x@fa)) cat("No anisotropy index yet")
   if(!(method %in% 1:3)) {
       warning("method out of range, reset to 1")
       method <- 1
   }
+  if(is.null(xind)) xind<-(1:x@ddim[1])
+  if(is.null(yind)) yind<-(1:x@ddim[2])
+  if(is.null(zind)) zind<-(1:x@ddim[3])
   adimpro <- require(adimpro)
   if (view == "sagittal") {
-    anindex <- x@fa[slice,,]
-    andirection <- x@andir[,slice,,]
-    dimg <- x@ddim[2:3]
+    anindex <- x@fa[slice,yind,zind]
+    andirection <- x@andir[,slice,yind,zind]
   } else if (view == "coronal") {
-    anindex <- x@fa[,slice,]
-    andirection <- x@andir[,,slice,]
-    dimg <- x@ddim[c(1,3)]
+    anindex <- x@fa[xind,slice,zind]
+    andirection <- x@andir[,xind,slice,zind]
   } else {
-    anindex <- x@fa[,,slice]
-    andirection <- x@andir[,,,slice]
-    dimg <- x@ddim[1:2]
+    anindex <- x@fa[xind,yind,slice]
+    andirection <- x@andir[,xind,yind,slice]
   }
     anindex[anindex>1]<-0
     anindex[anindex<0]<-0
@@ -196,10 +206,10 @@ function(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=
     andirection <- andirection*as.vector(anindex)*as.numeric(anindex>minanindex)
     if(adimpro) {
       andirection[is.na(andirection)] <- 0
-      andirection <- make.image(andirection,gamma=TRUE,gammatype="ITU",cspace="sRGB")
+      andirection <- make.image(andirection,gamma=TRUE)
       if(show) show.image(andirection,...)
     } else if(show) {
-      dim(anindex) <- dimg
+      dim(anindex) <- dim(andirection)[2:3]
       image(anindex,...)
     }
     invisible(andirection)

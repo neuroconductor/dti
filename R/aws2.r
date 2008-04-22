@@ -3,7 +3,7 @@
 #   this is also based on an a statistical penalty defined using log-likelihood difference
 #
 dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slice=NULL,quant=.8,
-                         minanindex=NULL,hsig=2.5,lseq=NULL,varmethod="residuals",rician=TRUE,niter=5,varmodel="local",wlse=TRUE){
+                         minanindex=NULL,hsig=2.5,lseq=NULL,varmethod="residuals",rician=TRUE,niter=5,varmodel="local",wlse=TRUE,volseq=FALSE){
 #
 #     lambda and lseq adjusted for alpha=0.2
 #
@@ -114,6 +114,8 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
      title(paste("Dzz: mean",signif(mean(z$D[6,,,][mask]),3),"max",signif(max(z$D[6,,,][mask]),3)))
   }
   hincr <- 1.25^(1/3)
+  maxvol <- getvofh(hmax,c(1,0,0,1,0,1),vext)
+  if(volseq) kstar <- as.integer(log(maxvol)/log(1.25)) else kstar <- as.integer(log(hmax)/log(hincr))
   if(is.null(hinit)){
   hakt0 <- 1
   hakt <- hincr
@@ -132,8 +134,15 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
   if (length(lseq)<steps) lseq <- c(lseq,rep(1,steps-length(lseq)))
   lseq <- lseq[1:steps]
   k <- 1
-  lambda0 <- lambda*lseq[k]
-  while(hakt <= hmax) {
+  if(volseq) lambda0 <- lambda else lambda0 <- lambda*lseq[k]
+  while(k <= kstar) {
+    if(volseq) {
+      hakt0 <- gethani(1,10,1.25^(k-1),c(1,0,0,1,0,1),vext,1e-4)
+      hakt <- gethani(1,10,1.25^k,c(1,0,0,1,0,1),vext,1e-4)
+    } else {
+      hakt0 <- hincr^(k-1)
+      hakt <- hincr^k
+    }
     if (any(h0 >= 0.25)) {
        corrfactor <- Spatialvar.gauss(hakt0/0.42445/4,h0,3) /
        Spatialvar.gauss(h0,1e-5,3) /
@@ -141,7 +150,42 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
        lambda0 <- lambda0 * corrfactor
        cat("Correction factor for spatial correlation",signif(corrfactor,3),"\n")
     }
-     z <- .Fortran("awsrgdti",
+    if(volseq) z <- .Fortran("awsrgdt2",
+                    as.integer(si),
+                    sihat=as.integer(z$sihat), # needed for statistical penalty
+                    double(ngrad*n),# array for predicted Si's from the tensor model 
+                    as.integer(ngrad),
+                    as.integer(n1),
+                    as.integer(n2),
+                    as.integer(n3),
+                    as.logical(mask),
+                    as.double(btb),
+                    as.double(sigma2),
+                    as.logical(wlse),
+                    as.double(z$th0),
+                    th0=double(n),
+                    as.double(z$D), 
+                    D=double(6*n),
+                    rss=as.double(z$rss),
+                    bi=as.double(z$bi),
+                    anindex=as.double(z$anindex),
+                    andirection=as.double(z$andirection),
+                    det=as.double(z$det),
+                    as.double(z$sigma2hat),
+                    sigma2hat=double(n),
+                    sigma2r=double(n),
+                    as.double(1.25^k),
+                    as.integer(niter),
+                    as.double(vext),
+                    as.double(rho),
+                    as.double(lambda0),
+                    double(ngrad),#swsi
+                    double(ngrad),#swsi2
+                    double(ngrad),#swsi4
+                    double(ngrad),#F
+                    as.double(eps),
+                    as.logical(rician), # based on x <- seq(0,100,.1) !!!
+                    DUP=FALSE,PACKAGE="dti")[c("th0","D","rss","bi","anindex","andirection","det","sigma2hat","sigma2r","sihat")] else z <- .Fortran("awsrgdti",
                     as.integer(si),
                     sihat=as.integer(z$sihat), # needed for statistical penalty
                     double(ngrad*n),# array for predicted Si's from the tensor model 
@@ -227,14 +271,13 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
      title(paste("Dzz: mean",signif(mean(z$D[6,,,][mask]),3),"max",signif(max(z$D[6,,,][mask]),3)))
      }
      cat("h=",signif(hakt,3),"Quantiles (.5, .75, .9, .95, 1) of anisotropy index",signif(quantile(z$anindex[mask],c(.5, .75, .9, .95, 1)),3),"\n")
-     hakt0<-hakt
-     hakt <- hakt*hincr
-    c1 <- (prod(h0+1))^(1/3)
-    c1 <- 2.7214286 - 3.9476190*c1 + 1.6928571*c1*c1 - 0.1666667*c1*c1*c1
-    x <- (prod(1.25^(k-1)/c(1,1,1)))^(1/3)
-    scorrfactor <- (c1+x)/(c1*prod(h0+1)+x)
+#    c1 <- (prod(h0+1))^(1/3)
+#    c1 <- 2.7214286 - 3.9476190*c1 + 1.6928571*c1*c1 - 0.1666667*c1*c1*c1
+#    x <- (prod(1.25^(k-1)/c(1,1,1)))^(1/3)
+#    scorrfactor <- (c1+x)/(c1*prod(h0+1)+x)
     k <- k+1
-    lambda0 <- lambda*lseq[k]*scorrfactor     
+#    if(volseq) lambda0 <- lambda*scorrfactor else lambda*lseq[k]*scorrfactor    
+     if(volseq) lambda0 <- lambda else lambda*lseq[k]
   }
   invisible(new("dtiTensor",
                 list(s2rician=if(rician) z$sigma2r else NULL, ni=z$bi*if(wlse) z$sigma2hat else 1),
@@ -259,24 +302,23 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
             )
 }
 
-sumoflocw <- function(h,a){
-    sw <-  .Fortran("ellsize3",
-               as.double(a),
-               as.double(h),
-               sw=double(1),
-               sw2=double(1),
-               PACKAGE="dti")$sw
-sw
+gethani <- function(x,y,value,a,vext,eps=1e-2){
+.Fortran("gethani",
+         as.double(x),
+         as.double(y),
+         as.double(value),
+         as.double(a),
+         as.double(vext),
+         as.double(eps),
+         bw=double(1),
+         PACKAGE="dti")$bw
 }
-sumoflocw2 <- function(h,a){
-    z <-  .Fortran("ellsize3",
-               as.double(a),
-               as.double(h),
-               sw=double(1),
-               sw2=double(1),
-               PACKAGE="dti")[c("sw","sw2")]
-z$sw^2/z$sw2
+getvofh <- function(bw,a,vext){
+.Fortran("getvofh",
+         as.double(a),
+         as.double(bw),
+         as.double(vext),
+         vol=double(1),
+         PACKAGE="dti")$vol
 }
 
-risklw <- function(h,a,value) (value-sumoflocw(h,a))^2
-risklw2 <- function(h,a,value) (value-sumoflocw2(h,a))^2

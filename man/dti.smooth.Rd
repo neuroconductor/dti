@@ -35,6 +35,8 @@ gradient directions if possible. Otherwise an estimate is obtained from the resi
 \item{varmodel}{if \code{varmodel=="global"} a homogeneous variance estimate is assumed and estimated as the median of the local variance estimates.}
 \item{rician}{logical: apply a correction for Rician bias. This is still experimental and depends on spatial independence of errors.}
 \item{niter}{Maximum number of iterations for tensor estimates using the nonlinear model.}
+\item{volseq}{If \code{volseq==TRUE} the sum of location weights is fixed to \code{1.25^k} within iteration \code{k} (does not depend on the actual tensor). Otherwise the ellipsoid of positive location weights is determined by a
+bandwidth \code{h_k = 1.25^(k/3)}.}
  }
 }
 \details{

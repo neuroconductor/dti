@@ -305,7 +305,7 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       logical mask(n1,n2)
       real*8 D(6,n1,n2),fa(n1,n2),md(n1,n2),adir(3,n1,n2)
       integer i1,i2,ierr
-      real*8 lambda(3),evec(3,3),trc,d1,d2,d3,a1,a2,a3
+      real*8 lambda(3),evec(3,3),trc,d1,d2,d3,a1,a2,a3,dd
       DO i1=1,n1
          DO i2=1,n2
             if(mask(i1,i2)) THEN
@@ -321,8 +321,12 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
                d1=a1-trc
                d2=a2-trc
                d3=a3-trc
-               fa(i1,i2)=sqrt(1.5d0*(d1*d1+d2*d2+d3*d3)/
-     1                        (a1*a1+a2*a2+a3*a3))
+               dd=a1*a1+a2*a2+a3*a3
+               IF(dd.gt.1.d-12) THEN
+               fa(i1,i2)=sqrt(1.5d0*(d1*d1+d2*d2+d3*d3)/dd)
+               ELSE
+               fa(i1,i2)=0.d0
+               ENDIF
             ELSE
                md(i1,i2)=0.d0
                fa(i1,i2)=0.d0
@@ -346,7 +350,7 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       real*8 D(6,n1,n2,n3),fa(n1,n2,n3),md(n1,n2,n3),adir(3,n1,n2,n3),
      1       bary(3,n1,n2,n3)
       integer i1,i2,i3,ierr
-      real*8 lambda(3),evec(3,3),trc,d1,d2,d3,a1,a2,a3
+      real*8 lambda(3),evec(3,3),trc,d1,d2,d3,a1,a2,a3,dd
       DO i1=1,n1
          DO i2=1,n2
             DO i3=1,n3
@@ -363,11 +367,18 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
                d1=a1-trc
                d2=a2-trc
                d3=a3-trc
-               fa(i1,i2,i3)=sqrt(1.5d0*(d1*d1+d2*d2+d3*d3)/
-     1                        (a1*a1+a2*a2+a3*a3))
+               dd=a1*a1+a2*a2+a3*a3
+               IF(dd.gt.1.d-12) THEN
+               fa(i1,i2,i3)=sqrt(1.5d0*(d1*d1+d2*d2+d3*d3)/dd)
                bary(1,i1,i2,i3)=(a3-a2)/trc/3.d0
                bary(2,i1,i2,i3)=2.d0*(a2-a1)/trc/3.d0
                bary(3,i1,i2,i3)=a1/trc
+               ELSE
+               fa(i1,i2,i3)=0.d0
+               bary(1,i1,i2,i3)=0.d0
+               bary(2,i1,i2,i3)=0.d0
+               bary(3,i1,i2,i3)=1.d0
+               ENDIF
             ELSE
                md(i1,i2,i3)=0.d0
                fa(i1,i2,i3)=0.d0
@@ -389,34 +400,6 @@ C   determine sum of location weights for a given geometry a(3) and given
 C   bandwidth
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-      subroutine ellsize3(a,h,sw,sw2)
-      implicit logical(a-z)
-      real*8 a(3),h,sw,sw2
-      integer ih,i1,i2,i3
-      real*8 z1,z2,z3,wij,h2
-      h2=h*h
-      sw=0.d0
-      sw2=0.d0
-      ih=h/a(1)
-      DO i1=-ih,ih
-         z1=i1*a(1)
-         z1=z1*z1
-         ih=sqrt(h2-z1)/a(2)
-         DO i2=-ih,ih
-            z2=i2*a(2)
-            z2=z2*z2
-            ih=sqrt(h2-z1-z2)/a(3)
-            DO i3=-ih,ih
-               z3=i3*a(2)
-               z3=z3*z3
-               wij=max(0.d0,1.d0-(z1+z2+z3)/h2)
-               sw=sw+wij
-               sw2=sw2+wij*wij
-            END DO
-         END DO
-      END DO
-      RETURN
-      END
 C  Algorithmus zur Nullstellenbestimmung einer monotonen Funktion auf(0,\infty)
       subroutine gethani(x,y,value,a,vext,eps,bw)
       implicit logical(a-z)
@@ -455,6 +438,12 @@ C  Algorithmus zur Nullstellenbestimmung einer monotonen Funktion auf(0,\infty)
       ENDIF
       RETURN
       END  
+      subroutine getvofh(a,bw,vext,vol)
+      implicit logical(a-z)
+      real*8 a(6),bw,vext(3),vol,sofw3D
+      vol=sofw3D(a,bw,vext)
+      RETURN
+      END
 C  compute sum of weights for anisotropic smoothing      
       real*8 function sofw3D(a,bw,vext)
       implicit logical(a-z)

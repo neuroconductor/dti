@@ -31,6 +31,9 @@ plot(x, y, ...)
 \code{dtiTensor} only)}
    \code{settings for function\code{show.image} (for class
 \code{dtiData} and \code{dtiIndices} only)}
+   \code{xind}{If provided restrict display to indices specified in \code{xind} for x-direction.}
+   \code{yind}{If provided restrict display to indices specified in \code{xind} for y-direction.}
+   \code{zind}{If provided restrict display to indices specified in \code{xind} for z-direction.}
 }
 }
 \details{
