@@ -78,49 +78,49 @@ setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, mi
    rg<-quantile(img,qrange)
    img[img>rg[2]]<-rg[2]
    show.image(make.image(65535*img/max(img)))
-     title(paste("Dxx: mean",signif(mean(D[mask]),3),"max",signif(max(D[1,,][mask]),3)))
-     img<-D[2,,]
-     rg<-quantile(img,qrange)
-     img[img>rg[2]]<-rg[2]
-     img[img<rg[1]]<-rg[1]
-     show.image(make.image(img))
-     title(paste("Dxy: min",signif(min(D[2,,][mask]),3),"max",signif(max(D[2,,][mask]),3)))
-     img<-D[3,,]
-     rg<-quantile(img,qrange)
-     img[img>rg[2]]<-rg[2]
-     img[img<rg[1]]<-rg[1]
-     show.image(make.image(img))
-     title(paste("Dxz: min",signif(min(D[3,,][mask]),3),"max",signif(max(D[3,,][mask]),3)))
-     show.image(make.image(matrix(z$fa,n1,n2)))
-     title(paste("Anisotropy index (FA)  range:",signif(min(z$fa[mask]),3),"-",
-                  signif(max(z$fa[mask]),3)))
-     img<-D[4,,]
-     rg<-quantile(img,qrange)
-     img[img>rg[2]]<-rg[2]
-     img[img<rg[1]]<-rg[1]
-     show.image(make.image(65535*img/max(img)))
-     title(paste("Dyy: min",signif(min(D[4,,][mask]),3),"max",signif(max(D[4,,][mask]),3)))
-     img<-D[5,,]
-     rg<-quantile(img,qrange)
-     img[img>rg[2]]<-rg[2]
-     img[img<rg[1]]<-rg[1]
-     show.image(make.image(img))
-     title(paste("Dyz: min",signif(min(D[5,,][mask]),3),"max",signif(max(D[5,,][mask]),3)))
-     andir.image(matrix(z$fa,n1,n2),array(z$andir,c(3,n1,n2)),quant=quant,minanindex=minanindex)
-     title(paste("Anisotropy directions"))
-     img <- matrix(z$md,n1,n2)
-     show.image(make.image(65535*img/max(img)))
-     title(paste("Mean diffusivity   range:",signif(min(z$md[mask]),3),"-",
-                  signif(max(z$md[mask]),3)))
-     img<-D[6,,]
-     rg<-quantile(img,qrange)
-     img[img>rg[2]]<-rg[2]
-     img[img<rg[1]]<-rg[1]
-     show.image(make.image(65535*img/max(img)))
-     title(paste("Dzz: min",signif(min(D[6,,][mask]),3),"max",signif(max(D[6,,][mask]),3)))
-     invisible(NULL)
-}
-)
+   title(paste("Dxx: mean",signif(mean(D[mask]),3),"max",signif(max(D[1,,][mask]),3)))
+   img<-D[2,,]
+   rg<-quantile(img,qrange)
+   img[img>rg[2]]<-rg[2]
+   img[img<rg[1]]<-rg[1]
+   show.image(make.image(img))
+   title(paste("Dxy: min",signif(min(D[2,,][mask]),3),"max",signif(max(D[2,,][mask]),3)))
+   img<-D[3,,]
+   rg<-quantile(img,qrange)
+   img[img>rg[2]]<-rg[2]
+   img[img<rg[1]]<-rg[1]
+   show.image(make.image(img))
+   title(paste("Dxz: min",signif(min(D[3,,][mask]),3),"max",signif(max(D[3,,][mask]),3)))
+   show.image(make.image(matrix(z$fa,n1,n2)))
+   title(paste("Anisotropy index (FA)  range:",signif(min(z$fa[mask]),3),"-",
+                signif(max(z$fa[mask]),3)))
+   img<-D[4,,]
+   rg<-quantile(img,qrange)
+   img[img>rg[2]]<-rg[2]
+   img[img<rg[1]]<-rg[1]
+   show.image(make.image(65535*img/max(img)))
+   title(paste("Dyy: min",signif(min(D[4,,][mask]),3),"max",signif(max(D[4,,][mask]),3)))
+   img<-D[5,,]
+   rg<-quantile(img,qrange)
+   img[img>rg[2]]<-rg[2]
+   img[img<rg[1]]<-rg[1]
+   show.image(make.image(img))
+   title(paste("Dyz: min",signif(min(D[5,,][mask]),3),"max",signif(max(D[5,,][mask]),3)))
+   andir.image(matrix(z$fa,n1,n2),array(z$andir,c(3,n1,n2)),quant=quant,minanindex=minanindex)
+   title(paste("Anisotropy directions"))
+   img <- matrix(z$md,n1,n2)
+   show.image(make.image(65535*img/max(img)))
+   title(paste("Mean diffusivity   range:",signif(min(z$md[mask]),3),"-",
+                signif(max(z$md[mask]),3)))
+   img<-D[6,,]
+   rg<-quantile(img,qrange)
+   img[img>rg[2]]<-rg[2]
+   img[img<rg[1]]<-rg[1]
+   show.image(make.image(65535*img/max(img)))
+   title(paste("Dzz: min",signif(min(D[6,,][mask]),3),"max",signif(max(D[6,,][mask]),3)))
+   invisible(NULL)
+})
+
 setMethod("plot", "dtiData", function(x, y,slice=1, gradient=NULL, view= "axial", show=TRUE,xind=NULL,yind=NULL,zind=NULL, ...) {
 if(is.null(x@si)) cat("No dwi data yet")
 maxsi <- max(x@si)
@@ -319,34 +319,6 @@ dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=
 #
 #
 
-# has to be re-implemented!!!!!!!!!!!!!!!!!!!!!!!!!!1
-createdata.dti <- function(file,dtensor,btb,s0,sigma,level=250){
-#  btb should include zero gradients !!!
-  ngrad <- dim(btb)[2]
-  ddim <- dim(s0)
-  dtensor[1,,,][s0<level] <- 1e-5
-  dtensor[4,,,][s0<level] <- 1e-5
-  dtensor[6,,,][s0<level] <- 1e-5
-  dtensor[2,,,][s0<level] <- 0
-  dtensor[3,,,][s0<level] <- 0
-  dtensor[5,,,][s0<level] <- 0
-  dim(dtensor)<-c(6,prod(ddim))
-  dtensor <- t(dtensor)
-  si <- exp(-dtensor%*%btb)*as.vector(s0)
-  rsi <- pmax(0,rnorm(si,si,pmin(s0/2.5,sigma)))
-  zz <- file(file,"wb")
-  writeBin(as.integer(rsi),zz,2)
-  close(zz)
-  dim(si)<-c(ddim,ngrad)
-  dtensor <- t(dtensor)
-  dim(dtensor)<-c(6,ddim)
-  list(s0=s0,si=si,dtensor=dtensor,sigma=sigma,level=level,btb=btb)
-}
-# END implementation needed!
-
-#
-#
-#
 
 dti <- function(object,  ...) cat("This object has class",class(object),"\n")
 setGeneric("dti", function(object,  ...) 
