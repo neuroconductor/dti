@@ -1,3 +1,23 @@
+cat("K. Tabelow, J. Polzehl, V. Spokoiny, and H.U. Voss,\n Diffusion Tensor Imaging: Structural Adaptive Smoothing,\n Neuroimage, 39(4), 1763--1773 (2008)\n used linear tensor estimation for their examples.\n The package now contains also non-linear tensor estimation.")
+a <- readline("Do you want to use linear tensor estimation (y/n)?")
+if (a == "y") {
+  method <- "linear"
+  cat("Note: Contrary to the paper above, due to numeric issues in this demo,\n there will be some additional non-positive definite tensors in the phantoms!\n")
+} else {
+  method <- "nonlinear"
+}
+cat("---> using",method,"tensor estimation!\n")
+
+a <- readline("Do you want to define a mask for minimal non-diffusion weighted values? (y/n)?")
+if (a == "y") {
+  mins0value <- 10
+} else {
+  mins0value <- 0
+}
+
+
+
+
 # define some constants
 lambda <- 47
 sigma <- 1600
@@ -7,7 +27,7 @@ ngrad <- 25
 factor <- 2.5
 
 # read the gradient data, these are 25 gradient directions + one non-diffusion weighted
-bvec <- read.table(system.file("data/b-directions.txt",package="dti"))
+bvec <- read.table(system.file("dat/b-directions.txt",package="dti"))
 bvec <- t(bvec)
 btb <- matrix(0,6,ngrad+1)
 btb[1,] <- bvec[1,]*bvec[1,]
@@ -159,7 +179,7 @@ image(project.cylinder(ind,19),col=grey((0:255)/255))
 image(project.cylinder(ind,25),col=grey((0:255)/255))
 
 # reset S0 image
-s0offa <- read.table(system.file("data/S0ofFA.txt",package="dti"))
+s0offa <- read.table(system.file("dat/S0ofFA.txt",package="dti"))
 s0 <- s0offa[as.integer(as.vector(ind)*500+1),2]
 dim(s0) <- dim(ind)
 for( i in 1:64) for (j in 1:64){
@@ -174,12 +194,9 @@ createdata.dti <- function(file,dtensor,btb,s0,sigma,level=250){
   dtensor <- t(dtensor)
   si <- exp(-dtensor%*%btb)*as.vector(s0)
   dim(si)<-c(ddim,ngrad)
-#  for (i in 1:ddim[3]) {
-#    s0[,,i] <- abs(fft(fft(s0[,,i])+complex(real=rnorm(64*64,0,sigma),imaginary=rnorm(64*64,0,sigma)),inverse=TRUE))/ddim[1]/ddim[2]
-#  }
   for (j in 1:ngrad) {
     for (i in 1:ddim[3]) {
-      si[,,i,j] <- abs(fft(fft(si[,,i,j])+complex(real=rnorm(64*64,0,sigma),imaginary=rnorm(64*64,0,sigma)),inverse=TRUE))/ddim[1]/ddim[2]
+      si[,,i,j] <- abs(fft(fft(si[,,i,j])+complex(real=rnorm(ddim[1]*ddim[2],0,sigma),imaginary=rnorm(ddim[1]*ddim[2],0,sigma)),inverse=TRUE))/ddim[1]/ddim[2]
     }
   }
   con <- file(file,"wb")
@@ -189,10 +206,11 @@ createdata.dti <- function(file,dtensor,btb,s0,sigma,level=250){
 
 
 #   create phantom - object
-dt0 <- new("dtiTensor",D=dtiso, th0= s0,sigma=array(0,dim(dtiso)[-1]), scorr=array(0,dim=c(5,5,3)), bw = c(0,0,0),
-           mask=array(TRUE,dim=dim(dtiso)[-1]), ddim=dim(dtiso)[-1], ddim0=dim(dtiso)[-1], method="unknown")
+createdata.dti("S_all",dtiso,btb,s0,0)
+dt0obj <- dtiData(bvec,paste("S_all",sep=""),mins0value=mins0value,ddim)
+dt0 <- dtiTensor(dt0obj, method=method)
 dt0aniso <- dtiIndices(dt0)
-
+file.remove("S_all")
 
 # create noisy data
 set.seed(1)
@@ -203,12 +221,13 @@ createdata.dti("S_noise_all",dtiso,btb,s0,sigma)
 #  We may be better off if we compare the FA with the FA of the Expected tensor computet from E S_0 and E S_b
 
 # Read noisy data 
-dtobj <- dtiData(bvec,paste("S_noise_all",sep=""),ddim)
-dthat1 <- dtiTensor(dtobj)
+dtobj <- dtiData(bvec,paste("S_noise_all",sep=""),mins0value=mins0value,ddim)
+dthat1 <- dtiTensor(dtobj, method=method)
 dthat1aniso <- dtiIndices(dthat1)
+file.remove("S_noise_all")
 
 # adaptive smoothing
-dthat4 <- dti.smooth(dtobj,hmax=4,graph=TRUE,lambda=lambda,minanindex=0,slice=15,rho=rho,lseq=NULL)
+dthat4 <- dti.smooth(dtobj,hmax=4,graph=TRUE,lambda=lambda,minanindex=0,slice=15,rho=rho,lseq=NULL,method=method)
 dthat4aniso <- dtiIndices(dthat4)
 
 # plot the color-coded directional maps, phantom, noisy, smoothed
