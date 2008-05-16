@@ -187,33 +187,12 @@ createdata.dti <- function(file,dtensor,btb,s0,sigma,level=250){
   close(con)
 }
 
-expected.dti <- function(file,dtensor,btb,s0,sigma,level=250){
-  ngrad <- dim(btb)[2]
-  ddim <- dim(s0)
-  dim(dtensor)<-c(6,prod(ddim))
-  dtensor <- t(dtensor)
-  si <- exp(-dtensor%*%btb)*as.vector(s0)
-  dim(si)<-c(ddim,ngrad)
-#  s0 <- s0+sigma^2/8100/s0
-  si <- si+sigma^2/8100/si
-#
-#  1/ Bias S_i ~ 8100 / sigma^2 * true S_i    
-#
-  con <- file(file,"wb")
-  writeBin(as.integer(si),con,2)
-  close(con)
-}
 
 #   create phantom - object
 dt0 <- new("dtiTensor",D=dtiso, th0= s0,sigma=array(0,dim(dtiso)[-1]), scorr=array(0,dim=c(5,5,3)), bw = c(0,0,0),
            mask=array(TRUE,dim=dim(dtiso)[-1]), ddim=dim(dtiso)[-1], ddim0=dim(dtiso)[-1], method="unknown")
 dt0aniso <- dtiIndices(dt0)
 
-# expected dti
-expected.dti("S_noise_all",dtiso,btb,s0,sigma)
-dtobj <- dtiData(bvec,paste("S_noise_all",sep=""),ddim)
-dthat0 <- dtiTensor(dtobj)
-dthat0aniso <- dtiIndices(dthat0)
 
 # create noisy data
 set.seed(1)
