@@ -63,7 +63,7 @@ an image of class \code{adimpro} for objects of class \code{"dtiData"} or \code{
 \author{ Karsten Tabelow tabelow@wias-berlin.de, J\"org Polzehl polzehl@wias-berlin.de }
 \seealso{ \code{\link{dtiIndices}}, \code{\link{dtiData}}, \code{\link{dtiTensor}}}
 \examples{
-\dontrun(demo(dti_art))
+\dontrun{demo(dti_art)}
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

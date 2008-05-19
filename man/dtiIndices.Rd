@@ -23,7 +23,7 @@ dtiIndices(object, ...)
 \author{Karsten Tabelow tabelow@wias-berlin.de, J\"org Polzehl polzehl@wias-berlin.de }
 \seealso{ \code{\link{dtiTensor}}, \code{\linkS4class{dtiTensor}}, \code{\linkS4class{dtiIndices}}}
 \examples{
-\dontrun(demo(dti_art))
+\dontrun{demo(dti_art)}
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

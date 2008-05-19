@@ -58,7 +58,7 @@ C.G. Koay, J.D. Carew, A.L. Alexander, P.J. Basser and M.E. Meyerand.
 \author{Karsten Tabelow tabelow@wias-berlin.de, J\"org Polzehl polzehl@wias-berlin.de }
 \seealso{ \code{\link{dtiData}}, \code{\link{dtiTensor}}, \code{\link{tensor2medinria}} , \code{\linkS4class{dtiData}}, \code{\linkS4class{dtiIndices}}, \code{\linkS4class{dtiTensor}}}
 \examples{
-\dontrun(demo(dti_art))
+\dontrun{demo(dti_art)}
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

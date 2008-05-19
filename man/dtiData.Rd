@@ -32,7 +32,7 @@ An object of class \code{dtiData}.
 \author{Karsten Tabelow tabelow@wias-berlin.de, J\"org Polzehl polzehl@wias-berlin.de }
 \seealso{  \code{\link{dtiTensor}}, \code{\linkS4class{dtiData}} }
 \examples{
-\dontrun(demo(dti_art))
+\dontrun{demo(dti_art)}
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

@@ -51,6 +51,6 @@ Class \code{"\linkS4class{vector}"}, by class "list", distance 2.
 }
 \examples{
 showClass("dtiData")
-\dontrun(demo(dti_art))
+\dontrun{demo(dti_art)}
 }
 \keyword{classes}
