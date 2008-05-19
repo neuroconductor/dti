@@ -403,7 +403,7 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 C  Algorithmus zur Nullstellenbestimmung einer monotonen Funktion auf(0,\infty)
       subroutine gethani(x,y,value,a,vext,eps,bw)
       implicit logical(a-z)
-      real*8 x,y,value,a(6),vext(3),eps,bw,fw
+      real*8 x,y,value,a(6),vext(3),eps,bw
       real*8 fw1,fw2,fw3,z
       real*8 sofw3D
       external sofw3D

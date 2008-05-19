@@ -11,7 +11,7 @@ tensor2medinria(obj, filename, xind = NULL, yind = NULL, zind = NULL)
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{obj}{ object of class \code{dtiTensor} }
-  \item{filename}{ Filename }
+  \item{filename}{ Filename, without extension 'nii' }
   \item{xind}{ index to define a subcube in x-direction. If \code{is.null(xind} all voxel indices are used. }
   \item{yind}{ index to define a subcube in y-direction. If \code{is.null(yind} all voxel indices are used. }
   \item{zind}{ index to define a subcube in z-direction. If \code{is.null(zind} all voxel indices are used. }
@@ -28,9 +28,9 @@ The function allows to write tensor data as NIFTY-Files readable by MedINRIA.
 P. Fillard, J. Souplet and N. Toussaint \emph{ Medical Image Navigation and Research
 Tool by INRIA (MedINRIA)}, INRIA Sophia Antipolis - Research Project ASCLEPIOS 2007}
 \author{ Karsten Tabelow tabelow@wias-berlin.de, J\"org Polzehl polzehl@wias-berlin.de }
-\note{}
 \seealso{ \code{\link{dtiTensor}} }
 \examples{
+\dontrun(demo(dti_art))
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

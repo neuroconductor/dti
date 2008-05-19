@@ -65,5 +65,6 @@ Class \code{"\linkS4class{vector}"}, by class "list", distance 2.
 }
 \examples{
 showClass("dtiTensor")
+\dontrun(demo(dti_art))
 }
 \keyword{classes}

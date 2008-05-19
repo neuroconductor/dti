@@ -20,8 +20,6 @@ gradient directions if possible. Otherwise an estimate is obtained from the resi
 \item{varmodel}{if \code{varmodel=="global"} a homogeneous variance estimate is assumed and estimated as the median of the local variance estimates.}
  }
 }
-\details{
-}
 \value{ an object of class \code{dtiTensor}.
 }
 \references{ K. Tabelow, J. Polzehl, H.U. Voss, and V. Spokoiny. \emph{Diffusion Tensor Imaging: Structural adaptive smoothing}, NeuroImage 39(4), 1763-1773 (2008).
@@ -31,9 +29,9 @@ C.G. Koay, J.D. Carew, A.L. Alexander, P.J. Basser and M.E. Meyerand.
 
 \url{http://www.wias-berlin.de/projects/matheon_a3/} }
 \author{Karsten Tabelow tabelow@wias-berlin.de, Joerg Polzehl polzehl@wias-berlin.de}
-\note{}
 \seealso{ \code{\link{dtiData}}, \code{\link{dtiIndices}},  \code{\link{medinria2tensor}}, \code{\link{tensor2medinria}}, \code{\linkS4class{dtiData}}, \code{\linkS4class{dtiIndices}}}
 \examples{
+\dontrun(demo(dti_art))
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

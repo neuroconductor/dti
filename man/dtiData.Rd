@@ -23,8 +23,6 @@ dtiData(gradient, imagefile, ddim, xind = NULL, yind = NULL, zind = NULL, level 
   \item{voxelext}{ voxelextensions in coordinate directions.}
   \item{orientation}{ orientations of data coded as in AFNI}
 }
-\details{
-}
 \value{
 An object of class \code{dtiData}.
 }
@@ -32,9 +30,9 @@ An object of class \code{dtiData}.
 
 \url{http://www.wias-berlin.de/projects/matheon_a3/}}
 \author{Karsten Tabelow tabelow@wias-berlin.de, J\"org Polzehl polzehl@wias-berlin.de }
-\note{}
 \seealso{  \code{\link{dtiTensor}}, \code{\linkS4class{dtiData}} }
 \examples{
+\dontrun(demo(dti_art))
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

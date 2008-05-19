@@ -15,17 +15,15 @@ dtiIndices(object, ...)
    currently none.
 }
 }
-\details{
-}
 \value{an object of class \code{dtiIndices}.
 }
 \references{ K. Tabelow, J. Polzehl, H.U. Voss, and V. Spokoiny. \emph{Diffusion Tensor Imaging: Structural adaptive smoothing}, NeuroImage 39(4), 1763-1773 (2008).
 
 \url{http://www.wias-berlin.de/projects/matheon_a3/}}
 \author{Karsten Tabelow tabelow@wias-berlin.de, J\"org Polzehl polzehl@wias-berlin.de }
-\note{ }
 \seealso{ \code{\link{dtiTensor}}, \code{\linkS4class{dtiTensor}}, \code{\linkS4class{dtiIndices}}}
 \examples{
+\dontrun(demo(dti_art))
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

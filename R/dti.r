@@ -39,7 +39,7 @@ function(object){
     invisible(NULL)
 })
 
-setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, minanindex=NULL, contrast.enh=1, qrange=c(.01,.99),xind=NULL,yind=NULL,zind=NULL, ...) {
+setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, minanindex=NULL, contrast.enh=1, qrange=c(.01,.99),xind=NULL,yind=NULL,zind=NULL, mar=c(2,2,2,.2),mgp=c(2,1,0),...) {
   if(is.null(x@D)) cat("No diffusion tensor yet")
   adimpro <- require(adimpro)
   if(is.null(xind)) xind<-(1:x@ddim[1])
@@ -71,7 +71,7 @@ setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, mi
                 andir=double(3*n1*n2),
                 DUPL=FALSE,
                 PACKAGE="dti")[c("fa","md","andir")]
-   oldpar <- par(mfrow=c(3,3),...)
+   oldpar <- par(mfrow=c(3,3),mar=mar,mgp=mgp,...)
 #  now draw information to graphical device
    on.exit(par(oldpar))
    img<-D[1,,]
@@ -121,7 +121,7 @@ setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, mi
    invisible(NULL)
 })
 
-setMethod("plot", "dtiData", function(x, y,slice=1, gradient=NULL, view= "axial", show=TRUE,xind=NULL,yind=NULL,zind=NULL, ...) {
+setMethod("plot", "dtiData", function(x, y,slice=1, gradient=NULL, view= "axial", show=TRUE,xind=NULL,yind=NULL,zind=NULL, mar=c(3,3,3,.3),mgp=c(2,1,0), ...) {
 if(is.null(x@si)) cat("No dwi data yet")
 maxsi <- max(x@si)
   if(is.null(xind)) xind<-(1:x@ddim[1])
@@ -152,19 +152,21 @@ if (view == "sagittal") {
    }
    img <- x@si[xind,yind,slice,gradient]
   }
+  oldpar <- par(mar=mar,mgp=mgp, ...)
   if(adimpro) {
      img <- make.image(65535*img/maxsi)
      if(show) show.image(img,...)
     } else if(show) {
       image(img,...)
     }
+    par(oldpar)
     invisible(img)
 }
 )
 setMethod("plot", "dti", function(x, y, ...) cat("No implementation for class dti\n"))
 
 setMethod("plot", "dtiIndices", 
-function(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=TRUE, contrast.enh=1,xind=NULL,yind=NULL,zind=NULL, ...) {
+function(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=TRUE, contrast.enh=1,xind=NULL,yind=NULL,zind=NULL, mar=c(3,3,3,.3),mgp=c(2,1,0), ...) {
   if(is.null(x@fa)) cat("No anisotropy index yet")
   if(!(method %in% 1:3)) {
       warning("method out of range, reset to 1")
@@ -174,6 +176,7 @@ function(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=
   if(is.null(yind)) yind<-(1:x@ddim[2])
   if(is.null(zind)) zind<-(1:x@ddim[3])
   adimpro <- require(adimpro)
+  oldpar <- par(mar=mar,mgp=mgp, ...)
   if (view == "sagittal") {
     anindex <- x@fa[slice,yind,zind]
     andirection <- x@andir[,slice,yind,zind]
@@ -212,6 +215,7 @@ function(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=
       dim(anindex) <- dim(andirection)[2:3]
       image(anindex,...)
     }
+    par(oldpar)
     invisible(andirection)
   } else if (method==3) {
     if(adimpro) {
@@ -221,6 +225,7 @@ function(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=
     } else if(show) {
       image(bary[1,,],...)
     }
+    par(oldpar)
     invisible(bary)
   } 
 })

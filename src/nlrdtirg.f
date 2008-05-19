@@ -38,7 +38,7 @@ C
       implicit logical (a-z)
       integer nb,s(nb),niter
       real*8 D(6),rho(6),b(6,nb),th0,F(nb),eps
-      integer i,j,k,info,iter,indvar
+      integer i,j,k,info,iter,indvar,icount
       real*8 z,gamma,alpha,delta,
      1       dg(7),pk(7),ak(7,7),ck(7,7),rss,nrss,crss,maxabsdg,
      2       oldrss,relrss,rhon(6),Dn(6),res,X(7),th0n,XX(6)
@@ -63,6 +63,8 @@ C includes regularization of D
          rss=rss+res*res
          F(i)=res
       END DO
+      th0n = th0
+      nrss = rss
       DO iter=1,niter
          DO j=1,7
             dg(j)=0.d0
@@ -122,7 +124,10 @@ C            call intpr("iter",4,iter,1)
          gamma=min(gamma/alpha,1.d0)
 C  End of step 3
          notacc=.TRUE.
-         DO WHILE (notacc) 
+         icount = 10
+         DO WHILE (notacc.and.icount.gt.0) 
+            icount = icount-1
+            call rchkusr()
             IF(gamma.lt.1.d0) THEN
                DO j=1,7
                   DO k=j,7
@@ -206,7 +211,7 @@ C
       implicit logical (a-z)
       integer nb,niter
       real*8 s(nb),D(6),rho(6),b(6,nb),th0,F(nb),eps
-      integer i,j,k,info,iter,indvar
+      integer i,j,k,info,iter,indvar,icount
       real*8 z,gamma,alpha,delta,
      1       dg(7),pk(7),ak(7,7),ck(7,7),rss,nrss,crss,maxabsdg,
      2       oldrss,relrss,rhon(6),Dn(6),res,X(7),th0n,XX(6)
@@ -228,6 +233,8 @@ C      call regularD(D)
          rss=rss+res*res
          F(i)=res
       END DO
+      th0n = th0
+      nrss = rss
       DO iter=1,niter
          DO j=1,7
             dg(j)=0.d0
@@ -281,7 +288,9 @@ C            call intpr("iter",4,iter,1)
          gamma=min(gamma/alpha,1.d0)
 C  End of step 3
          notacc=.TRUE.
-         DO WHILE (notacc) 
+         icount = 10
+         DO WHILE (notacc.and.icount.gt.0)
+            icount=icount-1 
             IF(gamma.lt.1.d0) THEN
                DO j=1,7
                   DO k=j,7

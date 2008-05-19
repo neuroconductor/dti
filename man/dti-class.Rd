@@ -36,7 +36,6 @@ Objects can be created by calls of the form \code{new("dti", ...)}.
 \url{http://www.wias-berlin.de/projects/matheon_a3/} 
 }
 \author{ Karsten Tabelow tabelow@wias-berlin.de, J\"org Polzehl polzehl@wias-berlin.de }
-\note{}
 \seealso{\code{\link{dtiData}}, \code{\linkS4class{dtiData}}, \code{\linkS4class{dtiTensor}}, \code{\linkS4class{dtiIndices}}
 }
 \examples{

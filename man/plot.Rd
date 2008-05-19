@@ -61,9 +61,9 @@ an image of class \code{adimpro} for objects of class \code{"dtiData"} or \code{
 
 \url{http://www.wias-berlin.de/projects/matheon_a3/} }
 \author{ Karsten Tabelow tabelow@wias-berlin.de, J\"org Polzehl polzehl@wias-berlin.de }
-\note{ }
 \seealso{ \code{\link{dtiIndices}}, \code{\link{dtiData}}, \code{\link{dtiTensor}}}
 \examples{
+\dontrun(demo(dti_art))
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

@@ -251,7 +251,7 @@ C     triangular location kernel
                   END DO
                END DO
                bi(i1,i2,i3)=sw
-               if(sw0.lt.1.d0) call dblepr("sw0",3,sw0,1)
+               if(sw0.lt..99d0) call dblepr("sw0a",4,sw0,1)
                if(rician.and.sw0.gt.1.d0) THEN
                   mswsi2=0.d0
                   mswsi2q=0.d0
@@ -514,7 +514,7 @@ C     triangular location kernel
                   END DO
                END DO
                bi(i1,i2,i3)=sw
-               if(sw0.lt.1.d0) call dblepr("sw0",3,sw0,1)
+               if(sw0.lt..99d0) call dblepr("sw0b",4,sw0,1)
                if(rician.and.sw0.gt.1.d0) THEN
                   mswsi2=0.d0
                   mswsi2q=0.d0
@@ -613,7 +613,7 @@ C
       implicit logical (a-z)
       integer nb,s(nb),niter
       real*8 D(6),b(6,nb),th0,F(nb),eps
-      integer i,j,k,info,iter
+      integer i,j,k,info,iter,icount
       logical negdefin
       real*8 z,gamma,alpha,delta,
      1       dg(7),pk(7),ak(7,7),ck(7,7),rss,nrss,crss,maxabsdg,
@@ -636,6 +636,8 @@ C      if(negdefin) call dblepr("neg. definite",13,D,6)
          rss=rss+res*res
          F(i)=res
       END DO
+      th0n = th0
+      nrss = rss
       DO iter=1,niter
          DO j=1,7
             dg(j)=0.d0
@@ -678,7 +680,10 @@ C  estimate using reparametrization
          gamma=min(gamma/alpha,1.d0)
 C  End of step 3
          notacc=.TRUE.
-         DO WHILE (notacc) 
+         icount = 10
+         DO WHILE (notacc.and.icount.gt.0) 
+            icount = icount-1
+            call rchkusr()
             IF(gamma.lt.1.d0) THEN
                DO j=1,7
                   DO k=j,7
@@ -760,14 +765,13 @@ C
       implicit logical (a-z)
       integer nb,niter
       real*8 s(nb),D(6),b(6,nb),th0,F(nb),eps
-      integer i,j,k,info,iter
+      integer i,j,k,info,iter,icount
       logical negdefin
       real*8 z,gamma,alpha,delta,
      1       dg(7),pk(7),ak(7,7),ck(7,7),rss,nrss,crss,maxabsdg,
      2       oldrss,relrss,Dn(6),res,X(7),th0n
 C  first check if D defines a positive definite densor
       call regularD(D,negdefin)
-C      if(negdefin) call dblepr("neg. definite",13,D,6)
       delta=0.25D0
       gamma=1.d0
       alpha=0.7d0
@@ -783,6 +787,8 @@ C      if(negdefin) call dblepr("neg. definite",13,D,6)
          rss=rss+res*res
          F(i)=res
       END DO
+      th0n = th0
+      nrss = rss
       DO iter=1,niter
          DO j=1,7
             dg(j)=0.d0
@@ -827,7 +833,10 @@ C               call testreg(D,3)
          gamma=min(gamma/alpha,1.d0)
 C  End of step 3
          notacc=.TRUE.
-         DO WHILE (notacc) 
+         icount = 10
+         DO WHILE (notacc.and.icount.gt.0)
+            icount = icount-1 
+            call rchkusr()
             IF(gamma.lt.1.d0) THEN
                DO j=1,7
                   DO k=j,7

@@ -25,9 +25,9 @@ The function allows to read tensor data written as NIFTY-Files by MedINRIA.
 P. Fillard, J. Souplet and N. Toussaint \emph{ Medical Image Navigation and Research
 Tool by INRIA (MedINRIA)}, INRIA Sophia Antipolis - Research Project ASCLEPIOS 2007}
 \author{Karsten Tabelow tabelow@wias-berlin.de, J\"org Polzehl polzehl@wias-berlin.de}
-\note{ }
 \seealso{ \code{\link{dtiTensor}} }
 \examples{
+\dontrun(demo(dti_art))
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

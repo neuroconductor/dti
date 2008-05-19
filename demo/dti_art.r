@@ -1,25 +1,27 @@
-cat("K. Tabelow, J. Polzehl, V. Spokoiny, and H.U. Voss,\n Diffusion Tensor Imaging: Structural Adaptive Smoothing,\n Neuroimage, 39(4), 1763--1773 (2008)\n used linear tensor estimation for their examples.\n The package now contains also non-linear tensor estimation.")
-a <- readline("Do you want to use linear tensor estimation (y/n)?")
-if (a == "y") {
+cat("K. Tabelow, J. Polzehl, V. Spokoiny, and H.U. Voss,\n Diffusion Tensor Imaging: Structural Adaptive Smoothing,\n Neuroimage, 39(4), 1763--1773 (2008)\n used linear tensor estimation for their examples.\n The package also contains non-linear tensor estimation which is the new default.")
+a <- readline("Use non-linear (Y, default) or linear (N) tensor estimates ?")
+if (toupper(a) == "N") {
   method <- "linear"
   cat("Note: Contrary to the paper above, due to numeric issues in this demo,\n there will be some additional non-positive definite tensors in the phantoms!\n")
+lambda <- 47 
+# this value was used in the Neuroimage paper
 } else {
   method <- "nonlinear"
+lambda <- 32
 }
 cat("---> using",method,"tensor estimation!\n")
 
-a <- readline("Do you want to define a mask for minimal non-diffusion weighted values? (y/n)?")
-if (a == "y") {
-  mins0value <- 10
-} else {
+a <- readline("Mask small non-diffusion weighted values ? (y/n)?")
+if (toupper(a) == "N") {
   mins0value <- 0
+} else {
+  mins0value <- 100
 }
 
 
 
 
 # define some constants
-lambda <- 47
 sigma <- 1600
 rho <- 1
 ddim <- c(64,64,26)
@@ -235,3 +237,35 @@ par(mfrow=c(1,3))
 plot(dt0aniso,slice=15)
 plot(dthat1aniso,slice=15)
 plot(dthat4aniso,slice=15)
+
+# illustrate what print() does
+print(dtobj)
+print(dthat1)
+print(dthat4)
+print(dthat4aniso)
+
+# illustrate what summary() does
+summary(dtobj)
+summary(dthat1)
+summary(dthat4)
+summary(dthat4aniso)
+
+# write tensor to a NIFTY-file
+tensor2medinria(dthat4, "dti_art")
+# read tensor from  NIFTY-file
+dthat4b <- medinria2tensor("dti_art")
+# plot the resulting object
+plot(dthat4b,slice=15)
+
+z <- readline("End of demo, remove created objects (Y/N) :")
+
+graphics.off()
+if(toupper(z)!="N"){
+file.remove("dti_art.nii")
+rm(a,btb,bvec,cphi,createdata.dti,ddim,dt0,dt0aniso,dt0obj,dthat1,dthat1aniso,
+dthat4,dthat4aniso,dthat4b,dtiso,dtobj,eta,etai,etas,factor,i,ind,j,lambda,method,
+mins0value,ngrad,phi,project.cylinder,rad,rad1,rad2,rho,s0,s0offa,sigma,sphi,x,y,z)
+
+}
+
+
