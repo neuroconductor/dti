@@ -2,15 +2,6 @@
 #
 #
 
-setMethod("show", "dti",
-function(object){
-    cat("  DTI object of class", class(object),"\n")
-    cat("  Dimension            :", paste(object@ddim, collapse="x"), "\n")
-    cat("  Number of Gradients  :", paste(object@ngrad, collapse="x"), "\n")
-    cat("  Filename             :", object@source, "\n")
-    cat("\n")
-    invisible(NULL)
-})
 setMethod("print", "dti",
 function(x){
     cat("  DTI object of class", class(x),"\n")
