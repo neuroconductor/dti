@@ -1,5 +1,6 @@
 \name{summary}
 \alias{summary}
+\alias{summary,dti-method}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{ generic function for objects of class "dti", "dtiData",
 "dtiTensor" and "dtiIndices". }

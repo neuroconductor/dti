@@ -1,13 +1,13 @@
 \name{dtiData}
 \alias{dtiData}
 %- Also NEED an '\alias' for EACH other topic documented here.
-\title{ ~~function to do ... ~~ }
+\title{ Creates a dtiData object }
 \description{
-  ~~ A concise (1-5 lines) description of what the function does. ~~
+  This function creates a dtiData object from an imagefile, where the diffusion weighted data is given as 2-byte integer.
 }
 \usage{
-dtiData(gradient, imagefile, ddim, xind = NULL, yind = NULL, zind = NULL, level = 0, mins0value = 0, maxvalue = 10000, voxelext = c(1, 1, 1), orientation = c(1, 3,
-                 5))
+dtiData(gradient, imagefile, ddim, xind = NULL, yind = NULL, zind = NULL, level = 0, mins0value = 0, maxvalue = 10000, voxelext = c(1, 1, 1),
+        orientation = c(1, 3, 5))
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -22,6 +22,9 @@ dtiData(gradient, imagefile, ddim, xind = NULL, yind = NULL, zind = NULL, level 
   \item{maxvalue}{ set voxel with values larger than \code{maxvalue} inactive  }
   \item{voxelext}{ voxelextensions in coordinate directions.}
   \item{orientation}{ orientations of data coded as in AFNI}
+}
+\details{
+  This function creates a dtiData object from an imagefile, where the diffusion weighted data is given as 2-byte integer. This image file has to be prepared by the user and there is not yet a function to do this within the package. Simply use \code{\link{writeBin}} to write out first all S0 images and than all Si images. The \code{gradient} should be created according to this order. Run the demo in order to have an example, how to do this!
 }
 \value{
 An object of class \code{dtiData}.

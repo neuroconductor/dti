@@ -1,5 +1,6 @@
 \name{print}
 \alias{print}
+\alias{print,dti-method}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{ generic function for objects of class "dti", "dtiData",
 "dtiTensor" and "dtiIndices". }
