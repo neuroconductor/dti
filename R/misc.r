@@ -226,7 +226,7 @@ medinria2tensor <- function(filename) {
   data <- read.NIFTI(filename)
  
   invisible(new("dtiTensor",
-                D     = aperm(data$ttt,c(4,1:3))[c(1,2,4,3,5,6),,,],
+                D     = aperm(extract.data(data),c(4,1:3))[c(1,2,4,3,5,6),,,],
                 sigma = array(0,data$dim[1:3]),
                 scorr = array(0,c(1,1,1)),
                 bw    = rep(0,3),
