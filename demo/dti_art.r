@@ -208,25 +208,25 @@ createdata.dti <- function(file,dtensor,btb,s0,sigma,level=250){
 
 
 #   create phantom - object
-createdata.dti("S_all",dtiso,btb,s0,0)
-dt0obj <- dtiData(bvec,paste("S_all",sep=""),mins0value=mins0value,ddim)
+tmpfile1 <- tempfile("S_all")
+createdata.dti(tmpfile1,dtiso,btb,s0,0)
+dt0obj <- dtiData(bvec,tmpfile1,mins0value=mins0value,ddim)
 dt0 <- dtiTensor(dt0obj, method=method)
 dt0aniso <- dtiIndices(dt0)
-file.remove("S_all")
 
 # create noisy data
 set.seed(1)
-createdata.dti("S_noise_all",dtiso,btb,s0,sigma)
+tmpfile2 <- tempfile("S_noise_all")
+createdata.dti(tmpfile2,dtiso,btb,s0,sigma)
 
 #  Bias of FA can not be avoided since the Expected S_0 S_b  and therefore the Expected Tensor 
 #  differ from the "True" quantities 
 #  We may be better off if we compare the FA with the FA of the Expected tensor computet from E S_0 and E S_b
 
 # Read noisy data 
-dtobj <- dtiData(bvec,paste("S_noise_all",sep=""),mins0value=mins0value,ddim)
+dtobj <- dtiData(bvec,tmpfile2,mins0value=mins0value,ddim)
 dthat1 <- dtiTensor(dtobj, method=method)
 dthat1aniso <- dtiIndices(dthat1)
-file.remove("S_noise_all")
 
 # adaptive smoothing
 dthat4 <- dti.smooth(dtobj,hmax=4,graph=TRUE,lambda=lambda,minanindex=0,slice=15,rho=rho,lseq=NULL,method=method)
@@ -251,9 +251,10 @@ summary(dthat4)
 summary(dthat4aniso)
 
 # write tensor to a NIFTY-file
-tensor2medinria(dthat4, "dti_art")
+tmpfile3 <- tempfile("dti_art")
+tensor2medinria(dthat4, tmpfile3)
 # read tensor from  NIFTY-file
-dthat4b <- medinria2tensor("dti_art")
+dthat4b <- medinria2tensor(tmpfile3)
 # plot the resulting object
 plot(dthat4b,slice=15)
 
@@ -261,7 +262,9 @@ z <- readline("End of demo, remove created objects (Y/N) :")
 
 graphics.off()
 if(toupper(z)!="N"){
-file.remove("dti_art.nii")
+file.remove(tmpfile1)
+file.remove(tmpfile2)
+file.remove(paste(tmpfile3,".nii",sep=""))
 rm(a,btb,bvec,cphi,createdata.dti,ddim,dt0,dt0aniso,dt0obj,dthat1,dthat1aniso,
 dthat4,dthat4aniso,dthat4b,dtiso,dtobj,eta,etai,etas,factor,i,ind,j,lambda,method,
 mins0value,ngrad,phi,project.cylinder,rad,rad1,rad2,rho,s0,s0offa,sigma,sphi,x,y,z)
