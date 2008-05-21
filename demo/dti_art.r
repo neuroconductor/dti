@@ -267,7 +267,7 @@ file.remove(tmpfile2)
 file.remove(paste(tmpfile3,".nii",sep=""))
 rm(a,btb,bvec,cphi,createdata.dti,ddim,dt0,dt0aniso,dt0obj,dthat1,dthat1aniso,
 dthat4,dthat4aniso,dthat4b,dtiso,dtobj,eta,etai,etas,factor,i,ind,j,lambda,method,
-mins0value,ngrad,phi,project.cylinder,rad,rad1,rad2,rho,s0,s0offa,sigma,sphi,x,y,z)
+mins0value,ngrad,phi,project.cylinder,rad,rad1,rad2,rho,s0,s0offa,sigma,sphi,x,y,z,tmpfile1,tmpfile2,tmpfile3)
 
 }
 
