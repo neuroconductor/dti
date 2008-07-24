@@ -124,7 +124,7 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
   hakt0 <- max(1,hinit/hincr)
   hakt <- hinit
   }
-  steps <- as.integer(log(hmax/hinit)/log(hincr)+1)
+  steps <- kstar+1
 
   # define lseq
   if (is.null(lseq)) {

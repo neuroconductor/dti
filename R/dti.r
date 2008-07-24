@@ -340,6 +340,7 @@ function(object, method="nonlinear",varmethod="replicates",varmodel="local") {
      si <- object@si[,,,-s0ind]
      if(length(s0ind)>1) s0 <- apply(s0,1:3,mean) 
      mask <- s0 > object@level
+     mask <- connect.mask(mask)
      dim(s0) <- dim(si) <- NULL
      ttt <- -log(si/s0)
      ttt[is.na(ttt)] <- 0
@@ -375,6 +376,7 @@ function(object, method="nonlinear",varmethod="replicates",varmodel="local") {
      if(length(s0ind)>1) s0 <- apply(s0,2:4,mean)
      dim(s0) <- ddim
      mask <- s0 > object@level
+     mask <- connect.mask(mask)
      cat("start nonlinear regression",date(),proc.time(),"\n")
      z <- .Fortran("nlrdtirg",
                 as.integer(si),
