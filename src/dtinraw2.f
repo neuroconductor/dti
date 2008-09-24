@@ -703,7 +703,7 @@ C   we may still need ak and dg so copy them to pk and ck
                pk(j)=dg(j)
             END DO
 C   Now solve  ak%*%dtheta= dg
-	    call dposv("U",7,1,ck,7,pk,7,info)
+            call dposv("U",7,1,ck,7,pk,7,info)
 C  Step 4 we have pk 
             IF(info.ne.0) THEN
                gamma=alpha*gamma
@@ -856,7 +856,7 @@ C   we may still need ak and dg so copy them to pk and ck
                pk(j)=dg(j)
             END DO
 C   Now solve  ak%*%dtheta= dg
-	    call dposv("U",7,1,ck,7,pk,7,info)
+            call dposv("U",7,1,ck,7,pk,7,info)
 C  Step 4 we have pk 
             IF(info.ne.0) THEN
                gamma=alpha*gamma

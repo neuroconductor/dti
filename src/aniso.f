@@ -112,7 +112,7 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       l=1
       DO i=1,3
          DO j=i,3
-	    a(i,j)=y(l)
+            a(i,j)=y(l)
             l=l+1
          END DO
       END DO
