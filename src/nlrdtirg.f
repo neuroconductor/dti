@@ -104,21 +104,11 @@ C includes regularization of D
          IF(maxabsdg.lt.eps.or.relrss.lt.1d-6) THEN
 C  prepare things for return if gradient is close to 0
             call regularD(D,negdefin)
-C      call dblepr("D0",2,D0,6)
-C      call dblepr("Da",2,D,6)
-C            call testreg(D,1)
-C            call dblepr("rhon1",5,rhon,6)
-C            call intpr("iter",4,iter,1)
             RETURN
          END IF
          IF(iter.gt.1.and.abs(rhon(1)*rhon(4)*rhon(6)).lt.1.d-10) THEN
 C  prepare things for return if gradient is close to 0
             call regularD(D,negdefin)
-C      call dblepr("D0",2,D0,6)
-C      call dblepr("Db",2,D,6)
-C            call testreg(D,1)
-C            call dblepr("rhon3",5,rhon,6)
-C            call intpr("iter",4,iter,1)
             RETURN
          END IF
          gamma=min(gamma/alpha,1.d0)
@@ -196,11 +186,6 @@ C  decrease gamma and try new regularization
          call rchkusr()
       END DO
       call regularD(D,negdefin)
-C      call dblepr("D0",2,D0,6)
-C      call dblepr("Dc",2,D,6)
-C      call testreg(D,2)
-C      call dblepr("rhon2",5,rhon,6)
-C      call intpr("niter",5,niter,1)
       RETURN
       END
       subroutine dslvdtir(s,nb,b,th0,D,F,niter,eps,rss)

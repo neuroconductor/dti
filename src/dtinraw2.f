@@ -117,12 +117,12 @@ C   eps      -  something small and positive
       integer i1,j1,j1a,j1e,jj1,i2,j2,j2a,j2e,jj2,i3,j3,j3a,j3e,jj3,
      1        ierr,k
       real*8 wij,adist,sw,sws0,h2,thi(7),bii,sqrbii,ew(3),ev(3,3),
-     1       mew,z1,z2,z3,sij,deti,z,sew,ss2,sw0,Di(6),dtidisrg,
-     2       th0i,mswsi2,mswsi2q,mswsi4,s2hat,
-     3       rhosw0,crhosw0,minswsi2,rssi
+     1       mew,z1,z2,z3,sij,deti,z,sew,ss2,sw0,sw2,Di(6),dtidisrg,
+     2       th0i,s2hat,ssigma2,rssi
       external adist,dtidisrg
       logical aws
       aws=lambda.lt.1e20
+      if(rician) call intpr("Rice in awsrgdt",15,n1,1)
       h2=h*h
 C  first fill predicted 
       DO i1=1,n1
@@ -141,6 +141,7 @@ C  now anisotropic smoothing
                rssi = dtidisrg(siest(1,i1,i2,i3),
      1                         sipred(1,i1,i2,i3),nb)
                sw=0.d0
+               sw2=0.d0
                sw0=0.d0
                sws0=0.d0
                ss2=0.d0
@@ -234,6 +235,7 @@ C     triangular location kernel
                         if(wlse) wij=wij/sigma2h(jj1,jj2,jj3)
                         if(wij.lt.0.d0) call dblepr("wij",3,wij,1)
                         sw=sw+wij
+                        sw2=sw2+wij*wij
                         if(rician) THEN
                            DO k=1,nb
                               z=si(k,jj1,jj2,jj3)
@@ -253,37 +255,23 @@ C     triangular location kernel
                bi(i1,i2,i3)=sw
                if(sw0.lt..99d0) call dblepr("sw0a",4,sw0,1)
                if(rician.and.sw0.gt.1.d0) THEN
-                  mswsi2=0.d0
-                  mswsi2q=0.d0
-                  mswsi4=0.d0
-                  minswsi2=1.d40
+C
+C   compute estimates of sigma^2 from 2nd and 4th moments for every gradient direction
+C   and pooling the estimates (assumes variance parameter not to depend on gradient)
+C
+                  ssigma2=0.d0
                   DO k=1,nb
-                     z = swsi2(k)/sw
-                     minswsi2=min(z,minswsi2)
-                     mswsi2=mswsi2+z
-                     mswsi2q=mswsi2q+z*z
-                     mswsi4=mswsi4+swsi4(k)
+                     s2hat = 2*swsi2(k)*swsi2(k)-swsi4(k)
+                     s2hat = 0.5d0*(swsi2(k)-sqrt(max(0.d0,s2hat)))
+                     ssigma2=ssigma2+s2hat
                   END DO
-                  mswsi2=mswsi2/nb
-                  mswsi2q=mswsi2q/nb
-                  mswsi4=mswsi4/nb/sw
-                  s2hat = mswsi2q+mswsi2*mswsi2-mswsi4
-                  if(s2hat.lt.0.d0) THEN
-                     s2hat = minswsi2/2
-                  ELSE
-                     s2hat = 0.5d0*(mswsi2-sqrt(s2hat))
-                     if(minswsi2/2.d0.lt.s2hat) THEN
-                        s2hat = minswsi2/2.d0
-                     ENDIF
-                  END IF
+                  s2hat = sw*sw/(sw*sw-sw2)*ssigma2/nb
+C   this also adjusts for eliminating \theta by combining the second and 4th moment
+                  DO k=1,nb
+           swsi(k)=sqrt(max(swsi2(k)/sw/3.d0,swsi2(k)/sw-2*s2hat))
+                  END DO
                   sigma2r(i1,i2,i3)=s2hat
 C  thats the joint moment estimate of the Rice variance based on the 2nd and 4th moment
-                  rhosw0=sqrt((sw0-1)/sw0)
-                  crhosw0=1.d0-rhosw0
-                  DO k=1,nb
-                  swsi(k)=rhosw0*sqrt(max(0.d0,swsi2(k)/sw-2*s2hat))+
-     1                       crhosw0*swsi(k)/sw
-                  END DO
                ELSE
                   Do k=1,nb
                      swsi(k)=swsi(k)/sw
@@ -299,11 +287,8 @@ C  thats the joint moment estimate of the Rice variance based on the 2nd and 4th
                   END DO
                ELSE
                   sigma2n(i1,i2,i3)=sigma2h(i1,i2,i3)
-C                  call testreg(Dn(1,i1,i2,i3),5)
+C                 keep old estimates
                END IF
-C               call regD(Dn(1,i1,i2,i3),Di)
-C  create a regularized version of Dn in Di
-C               call eigen3(Di(1),ew,ev,ierr)
                call eigen3(Dn(1,i1,i2,i3),ew,ev,ierr)
                IF(ew(1).lt.0.d0) call dblepr("C0",2,ew,3)
                mew=(ew(1)+ew(2)+ew(3))/3.d0
@@ -376,12 +361,12 @@ C   eps      -  something small and positive
       integer i1,j1,j1a,j1e,jj1,i2,j2,j2a,j2e,jj2,i3,j3,j3a,j3e,jj3,
      1        ierr,k
       real*8 wij,adist,sw,sws0,h2,thi(7),bii,sqrbii,ew(3),ev(3,3),
-     1       mew,z1,z2,z3,sij,deti,z,sew,ss2,sw0,Di(6),dtidisrg,
-     2       th0i,mswsi2,mswsi2q,mswsi4,s2hat,
-     3       rhosw0,crhosw0,minswsi2,rssi,h0,h1
+     1       mew,z1,z2,z3,sij,deti,z,sew,ss2,sw0,sw2,Di(6),dtidisrg,
+     2       th0i,s2hat,ssigma2,rssi,h0,h1
       external adist,dtidisrg
       logical aws
       aws=lambda.lt.1e20
+      if(rician) call intpr("Rice in awsrgdt2",16,n1,1)
       h1=exp(log(vol*vext(1)*vext(2)*vext(3))/3.d0)
       h0=exp(log(vol*vext(1)*vext(2)*vext(3))/3.d0)/1.4
 C  first fill predicted 
@@ -401,6 +386,7 @@ C  now anisotropic smoothing
                rssi = dtidisrg(siest(1,i1,i2,i3),
      1                         sipred(1,i1,i2,i3),nb)
                sw=0.d0
+               sw2=0.d0
                sw0=0.d0
                sws0=0.d0
                ss2=0.d0
@@ -497,6 +483,7 @@ C     triangular location kernel
                         if(wlse) wij=wij/sigma2h(jj1,jj2,jj3)
                         if(wij.lt.0.d0) call dblepr("wij",3,wij,1)
                         sw=sw+wij
+                        sw2=sw2+wij*wij
                         if(rician) THEN
                            DO k=1,nb
                               z=si(k,jj1,jj2,jj3)
@@ -516,37 +503,19 @@ C     triangular location kernel
                bi(i1,i2,i3)=sw
                if(sw0.lt..99d0) call dblepr("sw0b",4,sw0,1)
                if(rician.and.sw0.gt.1.d0) THEN
-                  mswsi2=0.d0
-                  mswsi2q=0.d0
-                  mswsi4=0.d0
-                  minswsi2=1.d40
+                  ssigma2=0.d0
                   DO k=1,nb
-                     z = swsi2(k)/sw
-                     minswsi2=min(z,minswsi2)
-                     mswsi2=mswsi2+z
-                     mswsi2q=mswsi2q+z*z
-                     mswsi4=mswsi4+swsi4(k)
+                     s2hat = 2*swsi2(k)*swsi2(k)-swsi4(k)
+                     s2hat = 0.5d0*(swsi2(k)-sqrt(max(0.d0,s2hat)))
+                     ssigma2=ssigma2+s2hat
                   END DO
-                  mswsi2=mswsi2/nb
-                  mswsi2q=mswsi2q/nb
-                  mswsi4=mswsi4/nb/sw
-                  s2hat = mswsi2q+mswsi2*mswsi2-mswsi4
-                  if(s2hat.lt.0.d0) THEN
-                     s2hat = minswsi2/2
-                  ELSE
-                     s2hat = 0.5d0*(mswsi2-sqrt(s2hat))
-                     if(minswsi2/2.d0.lt.s2hat) THEN
-                        s2hat = minswsi2/2.d0
-                     ENDIF
-                  END IF
+                  s2hat = sw*sw/(sw*sw-sw2)*ssigma2/nb
+C   this also adjusts for eliminating \theta by combining the second and 4th moment
+                  DO k=1,nb
+C                     swsi(k)=sqrt(max(0.d0,swsi2(k)/sw-2*s2hat))
+           swsi(k)=sqrt(max(swsi2(k)/sw/3.d0,swsi2(k)/sw-2*s2hat))
+                  END DO
                   sigma2r(i1,i2,i3)=s2hat
-C  thats the joint moment estimate of the Rice variance based on the 2nd and 4th moment
-                  rhosw0=sqrt((sw0-1)/sw0)
-                  crhosw0=1.d0-rhosw0
-                  DO k=1,nb
-                  swsi(k)=rhosw0*sqrt(max(0.d0,swsi2(k)/sw-2*s2hat))+
-     1                       crhosw0*swsi(k)/sw
-                  END DO
                ELSE
                   Do k=1,nb
                      swsi(k)=swsi(k)/sw
