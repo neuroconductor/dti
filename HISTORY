@@ -1,3 +1,6 @@
+2008-10-01 version 0.5-6
+  - new function readDWIdata reads DWI data from directories with imaging files (DICOM,NIFTI,AFNI,ANALYZE)
+
 2008-01-21 version 0.4-0
 
   - plot() on dtiIndices has new argument view for axial, sagittal, coronal view
