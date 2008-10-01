@@ -27,6 +27,8 @@ plot(x, y, ...)
 \code{dtiData} and \code{dtiIndices} only)}
    \item{contrast.enh}{ enhance image contrast using \code{min(1,x$anindex/contrast.enh} instead
     of the anisotropy index itself. Effective values are within the interval (0,1).}
+  \item{what}{ If \code{what="GA"} use geodesic anisotropy (GA) instead of 
+   fractional anisotropy (FA).}
    \code{settings for function\code{par} (for class
 \code{dtiTensor} only)}
    \code{settings for function\code{show.image} (for class

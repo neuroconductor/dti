@@ -90,6 +90,7 @@ setClass("dtiTensor",
 setClass("dtiIndices",
          representation(method = "character",
                         fa     = "array",
+                        ga     = "array",
                         md     = "array",
                         andir  = "array",
                         bary   = "array"),
@@ -97,6 +98,10 @@ setClass("dtiIndices",
           validity=function(object){
           if (any(dim(object@fa)!=object@ddim)) {
             cat("invalid dimension of array fa\n")
+            return(invisible(FALSE))
+          }
+          if (any(dim(object@ga)!=object@ddim)) {
+            cat("invalid dimension of array ga\n")
             return(invisible(FALSE))
           }
           if (any(dim(object@md)!=object@ddim)) {

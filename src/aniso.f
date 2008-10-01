@@ -122,6 +122,33 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
      1            theta,n,ISUPPZ,work,lwork,iwork,liwork,ierr)
       RETURN
       END
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+C
+C   Compute all eigenvalues (lambda) of a 3x3 matrix 
+C
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC      
+      subroutine eigen30(y,lambda,ierr)
+      implicit logical (a-z)
+      integer ierr
+      real*8 y(6),a(3,3),lambda(3),theta(3,3)
+      integer i,j,l,ISUPPZ(6),lwork,iwork(50),liwork,n,m
+      real*8 work(104),vl,vu,eps
+      n=3
+      m=3
+      eps=1.d-50
+      l=1
+      DO i=1,3
+         DO j=i,3
+            a(i,j)=y(l)
+            l=l+1
+         END DO
+      END DO
+      lwork=104
+      liwork=50
+      call dsyevr('N','A','U',n,a,n,vl,vu,1,n,eps,m,lambda,
+     1            theta,n,ISUPPZ,work,lwork,iwork,liwork,ierr)
+      RETURN
+      END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 C
 C    Compute anisotropic distance
@@ -299,7 +326,7 @@ C
 C    Compute DTI-Indices for a slice
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-      subroutine dtiind2D(D,n1,n2,mask,fa,md,adir)
+      subroutine dti2Dfa(D,n1,n2,mask,fa,md,adir)
       implicit logical (a-z)
       integer n1,n2
       logical mask(n1,n2)
@@ -339,16 +366,56 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       RETURN
       END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+      subroutine dti2Dga(D,n1,n2,mask,ga,md,adir)
+      implicit logical (a-z)
+      integer n1,n2
+      logical mask(n1,n2)
+      real*8 D(6,n1,n2),ga(n1,n2),md(n1,n2),adir(3,n1,n2)
+      integer i1,i2,ierr
+      real*8 lambda(3),evec(3,3),trc,d1,d2,d3,a1,a2,a3,dd
+      DO i1=1,n1
+         DO i2=1,n2
+            if(mask(i1,i2)) THEN
+               call eigen3(D(1,i1,i2),lambda,evec,ierr)
+               a1=log(lambda(1))
+               a2=log(lambda(2))
+               a3=log(lambda(3))
+               trc=(a1+a2+a3)/3.d0
+               adir(1,i1,i2)=evec(1,3)
+               adir(2,i1,i2)=evec(2,3)
+               adir(3,i1,i2)=evec(3,3)
+               md(i1,i2)=trc
+               d1=a1-trc
+               d2=a2-trc
+               d3=a3-trc
+               dd=a1*a1+a2*a2+a3*a3
+               IF(dd.gt.1.d-12) THEN
+               ga(i1,i2)=sqrt(1.5d0*(d1*d1+d2*d2+d3*d3)/dd)
+               ELSE
+               ga(i1,i2)=0.d0
+               ENDIF
+            ELSE
+               md(i1,i2)=0.d0
+               ga(i1,i2)=0.d0
+               adir(1,i1,i2)=1.d0
+               adir(2,i1,i2)=0.d0
+               adir(3,i1,i2)=0.d0
+            END IF
+         END DO
+      END DO
+      RETURN
+      END
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 C
 C    Compute DTI-Indices for a volume
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-      subroutine dtiind3D(D,n1,n2,n3,mask,fa,md,adir,bary)
+      subroutine dtiind3D(D,n1,n2,n3,mask,fa,ga,md,adir,bary)
       implicit logical (a-z)
       integer n1,n2,n3
       logical mask(n1,n2,n3)
       real*8 D(6,n1,n2,n3),fa(n1,n2,n3),md(n1,n2,n3),adir(3,n1,n2,n3),
-     1       bary(3,n1,n2,n3)
+     1       bary(3,n1,n2,n3),ga(n1,n2,n3)
       integer i1,i2,i3,ierr
       real*8 lambda(3),evec(3,3),trc,d1,d2,d3,a1,a2,a3,dd
       DO i1=1,n1
@@ -379,9 +446,18 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
                bary(2,i1,i2,i3)=0.d0
                bary(3,i1,i2,i3)=1.d0
                ENDIF
+               d1=log(a1)
+               d2=log(a2)
+               d3=log(a3)
+               dd=(d1+d2+d3)/3.d0
+               d1=d1-dd
+               d2=d2-dd
+               d3=d3-dd
+               ga(i1,i2,i3)=sqrt(d1*d1+d2*d2+d3*d3)
             ELSE
                md(i1,i2,i3)=0.d0
                fa(i1,i2,i3)=0.d0
+               ga(i1,i2,i3)=0.d0
                adir(1,i1,i2,i3)=1.d0
                adir(2,i1,i2,i3)=0.d0
                adir(3,i1,i2,i3)=0.d0
@@ -389,6 +465,124 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
                bary(2,i1,i2,i3)=0.d0
                bary(3,i1,i2,i3)=1.d0
             END IF
+            END DO
+         END DO
+      END DO
+      RETURN
+      END
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+C
+C    Compute DTI-Indices for a volume
+C
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+      subroutine dti3Dall(D,n1,n2,n3,mask,fa,ga,md,adir,ev)
+      implicit logical (a-z)
+      integer n1,n2,n3
+      logical mask(n1,n2,n3)
+      real*8 D(6,n1,n2,n3),fa(n1,n2,n3),md(n1,n2,n3),adir(3,n1,n2,n3),
+     1       ev(3,n1,n2,n3),ga(n1,n2,n3)
+      integer i1,i2,i3,ierr
+      real*8 evec(3,3),trc,d1,d2,d3,a1,a2,a3,dd
+      DO i1=1,n1
+         DO i2=1,n2
+            DO i3=1,n3
+            if(mask(i1,i2,i3)) THEN
+               call eigen3(D(1,i1,i2,i3),ev(1,i1,i2,i3),evec,ierr)
+               a1=ev(1,i1,i2,i3)
+               a2=ev(2,i1,i2,i3)
+               a3=ev(3,i1,i2,i3)
+               trc=(a1+a2+a3)/3.d0
+               adir(1,i1,i2,i3)=evec(1,3)
+               adir(2,i1,i2,i3)=evec(2,3)
+               adir(3,i1,i2,i3)=evec(3,3)
+               md(i1,i2,i3)=trc
+               d1=a1-trc
+               d2=a2-trc
+               d3=a3-trc
+               dd=a1*a1+a2*a2+a3*a3
+               IF(dd.gt.1.d-12) THEN
+               fa(i1,i2,i3)=sqrt(1.5d0*(d1*d1+d2*d2+d3*d3)/dd)
+               ELSE
+               fa(i1,i2,i3)=0.d0
+               ev(1,i1,i2,i3)=0.d0
+               ev(2,i1,i2,i3)=0.d0
+               ev(3,i1,i2,i3)=0.d0
+               ENDIF
+               d1=log(a1)
+               d2=log(a2)
+               d3=log(a3)
+               dd=(d1+d2+d3)/3.d0
+               d1=d1-dd
+               d2=d2-dd
+               d3=d3-dd
+               ga(i1,i2,i3)=sqrt(d1*d1+d2*d2+d3*d3)
+            ELSE
+               md(i1,i2,i3)=0.d0
+               fa(i1,i2,i3)=0.d0
+               ga(i1,i2,i3)=0.d0
+               adir(1,i1,i2,i3)=1.d0
+               adir(2,i1,i2,i3)=0.d0
+               adir(3,i1,i2,i3)=0.d0
+               ev(1,i1,i2,i3)=0.d0
+               ev(2,i1,i2,i3)=0.d0
+               ev(3,i1,i2,i3)=0.d0
+            END IF
+            END DO
+         END DO
+      END DO
+      RETURN
+      END
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+C
+C    Compute DTI-eigenvalues for a volume
+C
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+      subroutine dti3Dev(D,n1,n2,n3,mask,ev)
+      implicit logical (a-z)
+      integer n1,n2,n3
+      logical mask(n1,n2,n3)
+      real*8 D(6,n1,n2,n3),ev(3,n1,n2,n3)
+      integer i1,i2,i3,ierr
+      DO i1=1,n1
+         DO i2=1,n2
+            DO i3=1,n3
+               if(mask(i1,i2,i3)) THEN
+                  call eigen30(D(1,i1,i2,i3),ev(1,i1,i2,i3),ierr)
+               ELSE
+                  ev(1,i1,i2,i3)=0.d0
+                  ev(2,i1,i2,i3)=0.d0
+                  ev(3,i1,i2,i3)=0.d0
+               END IF
+            END DO
+         END DO
+      END DO
+      RETURN
+      END
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+C
+C    Compute DTI-eigenvectors for a volume
+C
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+      subroutine dti3Dand(D,n1,n2,n3,mask,andir)
+      implicit logical (a-z)
+      integer n1,n2,n3
+      logical mask(n1,n2,n3)
+      real*8 D(6,n1,n2,n3),andir(3,n1,n2,n3)
+      integer i1,i2,i3,ierr
+      real*8 lambda(3),evec(3,3)
+      DO i1=1,n1
+         DO i2=1,n2
+            DO i3=1,n3
+               if(mask(i1,i2,i3)) THEN
+                  call eigen3(D(1,i1,i2,i3),lambda,evec,ierr)
+                  andir(1,i1,i2,i3)=evec(1,3)
+                  andir(2,i1,i2,i3)=evec(2,3)
+                  andir(3,i1,i2,i3)=evec(3,3)
+               ELSE
+                  andir(1,i1,i2,i3)=0.d0
+                  andir(2,i1,i2,i3)=0.d0
+                  andir(3,i1,i2,i3)=0.d0
+               END IF
             END DO
          END DO
       END DO

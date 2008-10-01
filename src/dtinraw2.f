@@ -122,7 +122,6 @@ C   eps      -  something small and positive
       external adist,dtidisrg
       logical aws
       aws=lambda.lt.1e20
-      if(rician) call intpr("Rice in awsrgdt",15,n1,1)
       h2=h*h
 C  first fill predicted 
       DO i1=1,n1
@@ -366,7 +365,6 @@ C   eps      -  something small and positive
       external adist,dtidisrg
       logical aws
       aws=lambda.lt.1e20
-      if(rician) call intpr("Rice in awsrgdt2",16,n1,1)
       h1=exp(log(vol*vext(1)*vext(2)*vext(3))/3.d0)
       h0=exp(log(vol*vext(1)*vext(2)*vext(3))/3.d0)/1.4
 C  first fill predicted 

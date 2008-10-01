@@ -13,6 +13,7 @@ Objects can be created by calls of function \code{\link{dtiIndices}}.
 	 \describe{
     \item{\code{.Data}:}{Object of class \code{"list"} usually empty }
     \item{\code{fa}:}{Object of class \code{"array"} Fractional anisotropy values (FA)}
+    \item{\code{ga}:}{Object of class \code{"array"} Geodetic anisotropy values (GA)}
     \item{\code{md}:}{Object of class \code{"array"} Mean diffusivity values (MD) }
     \item{\code{andir}:}{Object of class \code{"array"} Main directions of anisotropy }
     \item{\code{bary}:}{Object of class \code{"array"} barycentric coordinates }
