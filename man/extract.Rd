@@ -1,7 +1,7 @@
 \name{extract}
 \alias{extract}
 %- Also NEED an '\alias' for EACH other topic documented here.
-\title{ Extract information from objects of class \code{dtiData} }
+\title{ Extract information from objects of class dtiData, dtiTensor or dtiIndices }
 \description{
   ~~ A concise (1-5 lines) description of what the function does. ~~
 }

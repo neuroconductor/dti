@@ -983,7 +983,8 @@ rgl.lines(lcoord[1,],lcoord[2,],lcoord[3,],color=colorvalues)
 invisible(NULL)
 })
 
-setMethod("show3d","dtiTensor",function(obj,xind=NULL,yind=NULL,zind=NULL,center=NULL,method=1,scale=.25,bgcolor="black",add=FALSE,...){
+setMethod("show3d","dtiTensor",function(obj,xind=NULL,yind=NULL,zind=NULL,center=NULL,method=1,scale=.25,
+bgcolor="black",add=FALSE,subdivide=2,smooth=FALSE,newversion=TRUE,...){
 if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
 if(is.null(xind)) xind <- 1:obj@ddim[1]
 if(is.null(yind)) yind <- 1:obj@ddim[2]
@@ -1043,13 +1044,39 @@ if(!add) {
 rgl.open()
 rgl.bg(color=bgcolor)
 }
+if(newversion){
+sphere <- subdivision3d(cube3d(smooth=smooth), subdivide)
+norm <- sqrt( sphere$vb[1,]^2 + sphere$vb[2,]^2 + sphere$vb[3,]^2 )
+for (i in 1:3) sphere$vb[i,] <- sphere$vb[i,]/norm
+sphere$vb[4,] <- 1
+sphere$normals <- sphere$vb
+tens <- scale*tens
 for(i in 1:n) {
        tensi <- tens[,,i]
        deti <- tensi[1,1]*tensi[2,2]*tensi[3,3]
        if(tensi[1,1]*tensi[2,2]*tensi[3,3]>0){
-       plot3d( ellipse(scale*tens[,,i], centre=tmean[,i],smooth=FALSE,subdivide=2), color=colorvalues[i], alpha=fa[i], add = TRUE, ...)
+       plot3d( ell2(sphere, tens[,,i], centre=tmean[,i]),
+                color=colorvalues[i], alpha=fa[i], add = TRUE, ...)
+}
+}
+} else {
+for(i in 1:n) {
+       tensi <- tens[,,i]
+       deti <- tensi[1,1]*tensi[2,2]*tensi[3,3]
+       if(tensi[1,1]*tensi[2,2]*tensi[3,3]>0){
+       plot3d( ellipse(scale*tens[,,i], centre=tmean[,i],smooth=smooth,subdivide=subdivide), color=colorvalues[i], alpha=fa[i], add = TRUE, ...)
+}
 }
 }
 invisible(NULL)
 })
 
+ell2 <- function (sphere,cov, centre = c(0, 0, 0)){
+# Adapted from package rgl: 3D visualization device system (OpenGL)
+# Authors: Daniel Adler, Duncan Murdoch
+  sphere <-rotate3d( sphere, matrix=chol(cov))
+#  sphere$vb <- sphere$vb%*%chol(cov)
+  if (!missing(centre))
+    result <- translate3d(sphere, centre[1], centre[2], centre[3])
+  return(result)
+}
