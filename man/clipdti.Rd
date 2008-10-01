@@ -1,49 +1,41 @@
 \name{clipdti}
 \alias{clipdti}
 %- Also NEED an '\alias' for EACH other topic documented here.
-\title{ ~~function to do ... ~~ }
+\title{ Index operations on dti-objects }
 \description{
-  ~~ A concise (1-5 lines) description of what the function does. ~~
+  Generic function for objects of class \code{dti}. It allows to
+  extract part of the data contained in the object by specifying
+  a subcube. A new object of the same class containing the reduced data
+  is created.
 }
 \usage{
 clipdti(obj, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{obj}{ ~~Describe \code{obj} here~~ }
-  \item{\dots}{ ~~Describe \code{\dots} here~~ }
+  \item{obj}{ an object of class \code{"dtiData"}, \code{"dtiTensor"} or
+     \code{"dtiIndices"}}
+  \item{\dots}{ Currently implemented are 
+  arguments \code{xind}, \code{yind}, \code{zind}. All arguments default to 
+  \code{NULL} and allow to specify an index vector for the respective dimension}
 }
 \details{
-  ~~ If necessary, more details than the description above ~~
+3D data volumes are reduced by applying the index vectors 
+supplied in \code{xind}, \code{yind}, \code{zind}. If an index vector
+is NULL then now reduction is performed for the corresponding dimension.
+An new object is created that inherits the class from \code{obj}.
 }
 \value{
-  ~Describe the value returned
-  If it is a LIST, use
-  \item{comp1 }{Description of 'comp1'}
-  \item{comp2 }{Description of 'comp2'}
-  ...
+An object of class \code{class(obj)}. Slots \code{xind}, \code{yind} and \code{zind} contain the indices with respect to the original object.
 }
-\references{ ~put references to the literature/web site here ~ }
-\author{ ~~who you are~~ }
-\note{ ~~further notes~~ 
-
- ~Make other sections like Warning with \section{Warning }{....} ~
-}
-\seealso{ ~~objects to See Also as \code{\link{help}}, ~~~ }
+\references{ K. Tabelow, J. Polzehl, H.U. Voss, and V. Spokoiny. \emph{Diffusion Tensor Imaging: Structural adaptive smoothing}, NeuroImage 39(4), 1763-1773 (2008).
+ }
+\url{http://www.wias-berlin.de/projects/matheon_a3/} }
+\author{Karsten Tabelow tabelow@wias-berlin.de, Joerg Polzehl polzehl@wias-berlin.de }
+\seealso{ \code{\link{dtiData}}, \code{\link{dtiTensor}}, \code{\link{dtiIndices}}, \code{\link{dtiData-class}}, \code{\link{dtiTensor-class}}, \code{\link{dtiIndices-class}}}
 \examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
-
-## The function is currently defined as
-structure(function (obj, ...) 
-standardGeneric("clipdti"), generic = structure("clipdti", package = "dti"), package = "dti", group = list(), valueClass = character(0), signature = "obj", default = <S4 object of class structure("MethodsList", package = "methods")>, skeleton = structure(function (obj, 
-    ...) 
-cat("Data clipping not defined for this class:", class(object), 
-    "\n"), target = structure(character(0), .Names = character(0), class = structure("signature", package = "methods")), defined = structure(character(0), .Names = character(0), class = structure("signature", package = "methods")), generic = structure("clipdti", package = "dti"), class = structure("derivedDefaultMethod", package = "methods"))(obj, 
-    ...), class = structure("standardGeneric", package = "methods"))
+\dontrun{demo(dti_art)}
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+\keyword{ manip }
