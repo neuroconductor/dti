@@ -272,24 +272,3 @@ dim(mask1) <- dm
 mask1
 }
 
-ellipse <-
-  function (cov, centre = c(0, 0, 0), subdivide = 3, smooth = TRUE, ...) 
-{
-# Adapted from package rgl: 3D visualization device system (OpenGL)
-# Authors: Daniel Adler, Duncan Murdoch
-  stopifnot(is.matrix(cov))
-
-  chol <- chol(cov)
-
-  sphere <- subdivision3d(cube3d(...), subdivide) 
-  norm <- sqrt( sphere$vb[1,]^2 + sphere$vb[2,]^2 + sphere$vb[3,]^2 )
-  for (i in 1:3) sphere$vb[i,] <- sphere$vb[i,]/norm
-  sphere$vb[4,] <- 1
-  sphere$normals <- sphere$vb
-  
-  result <-scale3d(transform3d( sphere, chol), 1,1,1)
-  
-  if (!missing(centre))
-    result <- translate3d(result, centre[1], centre[2], centre[3])
-  return(result)
-}

@@ -983,100 +983,100 @@ rgl.lines(lcoord[1,],lcoord[2,],lcoord[3,],color=colorvalues)
 invisible(NULL)
 })
 
-setMethod("show3d","dtiTensor",function(obj,xind=NULL,yind=NULL,zind=NULL,center=NULL,method=1,scale=.25,
-bgcolor="black",add=FALSE,subdivide=2,smooth=FALSE,newversion=TRUE,...){
+setMethod("show3d","dtiTensor",function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,method=1,level=0,scale=.25,
+bgcolor="black",add=FALSE,subdivide=2,smooth=TRUE,maxobjects=729,...){
 if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
-if(is.null(xind)) xind <- 1:obj@ddim[1]
-if(is.null(yind)) yind <- 1:obj@ddim[2]
-if(is.null(zind)) zind <- 1:obj@ddim[3]
-if(is.null(center)) center <- c(median(xind),median(yind),median(zind))
+if(is.null(nx)) nx <- obj@ddim[1]
+if(is.null(ny)) ny <- obj@ddim[2]
+if(is.null(nz)) nz <- obj@ddim[3]
+n <- nx*ny*nz
+if(is.null(center)) center <- floor(obj@ddim/2)
+if(nx*ny*nz>maxobjects) {
+warning(paste("size of data cube",n," exceeds maximum of",maxobjects,"\n
+        central part of specified cube selected"))
+if(nz > maxobjects^(1/3)) n3 <- 1 else n3 <- nz
+n1 <- n2 <- floor(sqrt(maxobjects/n3))
+} else {
+n1 <- nx
+n2 <- ny
+n3 <- nz
+}
+xind <- (center[1]-(n1%/%2)):(center[1]+(n1%/%2))
+yind <- (center[2]-(n2%/%2)):(center[2]+(n2%/%2))
+zind <- (center[3]-(n3%/%2)):(center[3]+(n3%/%2))
+xind <- xind[xind>0&xind<=obj@ddim[1]]
+yind <- yind[yind>0&yind<=obj@ddim[2]]
+zind <- zind[zind>0&zind<=obj@ddim[3]]
 n1 <- length(xind)
 n2 <- length(yind)
 n3 <- length(zind)
 n <- n1*n2*n3
-if(n1*n2*n3>729) {
-warning(paste("size of data cube",n," exceeds maximum of 729\n
-        central part of specified cube selected"))
-n1n <- n2n <- switch(min(n3,10),27,15,15,11,11,9,9,9,9,27)
-if(n3>9) n3 <- 1
-n1 <- min(n1n,n1)
-n2 <- min(n2n,n2)
-mxind <- trunc(median(xind))
-myind <- trunc(median(yind))
-mzind <- trunc(median(zind))
-xind <- (mxind-(n1%/%2)):(mxind+(n1%/%2))
-yind <- (myind-(n2%/%2)):(myind+(n2%/%2))
-zind <- (mzind-(n3%/%2)):(mzind+(n3%/%2))
-cat("size of data cube",n," exceeds maximum of 729\n selected cube specified by \n xind=",min(xind),":",max(xind),
+if(n==0) stop("Empty cube specified")
+cat(" selected cube specified by \n xind=",min(xind),":",max(xind),
 "\n yind=",min(yind),":",max(yind),
 "\n zind=",min(zind),":",max(zind),"\n")
-n <- n1*n2*n3
-}
 vext <- obj@voxelext
-if(is.null(center)) center <- c(median(xind),median(yind),median(zind))*vext
-corner <- 2*center
+center <- center*vext
 D <- obj@D[,xind,yind,zind]
 D <- D/max(D)
 dim(D) <- c(6,n)
+indpos <- (1:n)[D[1,]*D[4,]*D[6,]>0]
+tens <- D[c(1,2,3,2,4,5,3,5,6),indpos]
 tmean <- array(0,c(3,n1,n2,n3))
 tmean[1,,,] <- xind*vext[1]
 tmean[2,,,] <- outer(rep(1,n1),yind)*vext[2]
 tmean[3,,,] <- outer(rep(1,n1),outer(rep(1,n2),zind))*vext[3]
 dim(tmean) <- c(3,n)
+tmean <- tmean[,indpos]
 z <- extract(obj,c("andir","fa"),xind,yind,zind)
 andir <- z$andir
-fa <- z$fa
+dim(andir) <- c(3,n1*n2*n3)
+andir <- andir[,indpos]
+fa <- z$fa[indpos]
+n <- length(indpos)
 if(method==1) {
       andir <- abs(andir)
-      dim(andir) <- c(3,n1*n2*n3)
     } else {
-      ind<-andir[1,,]<0
-      dim(andir) <- c(3,n1*n2*n3)
+      ind<-andir[1,]<0
       andir[,ind] <- - andir[,ind]
       andir[2,] <- (1+andir[2,])/2
       andir[3,] <- (1+andir[3,])/2
     }
-#colorvalues <- rgb(andir[1,]*fa,andir[2,]*fa,andir[3,]*fa)
 colorvalues <- rgb(andir[1,],andir[2,],andir[3,])
-tens <- D[c(1,2,3,2,4,5,3,5,6),]
 dim(tens) <- c(3,3,n)
+if(level>0){
+indpos <- (1:n)[fa>level]
+tens <- tens[,,indpos]
+tmean <- tmean[,indpos]
+colorvalues <- colorvalues[indpos]
+fa <- fa[indpos]
+n <- length(indpos)
+}
 if(!add) {
 rgl.open()
 rgl.bg(color=bgcolor)
 }
-if(newversion){
 sphere <- subdivision3d(cube3d(smooth=smooth), subdivide)
 norm <- sqrt( sphere$vb[1,]^2 + sphere$vb[2,]^2 + sphere$vb[3,]^2 )
 for (i in 1:3) sphere$vb[i,] <- sphere$vb[i,]/norm
 sphere$vb[4,] <- 1
 sphere$normals <- sphere$vb
 tens <- scale*tens
+par3d(skipRedraw=TRUE)
+cat("Start creating rgl-object\n Progress (out of",n,"):")
 for(i in 1:n) {
-       tensi <- tens[,,i]
-       deti <- tensi[1,1]*tensi[2,2]*tensi[3,3]
-       if(tensi[1,1]*tensi[2,2]*tensi[3,3]>0){
-       plot3d( ell2(sphere, tens[,,i], centre=tmean[,i]),
+       if((i%/%100)*100==i) cat(i," ")
+       if(i==n) par3d(skipRedraw=FALSE)
+       plot3d( ell(sphere, tens[,,i], center=tmean[,i]),
                 color=colorvalues[i], alpha=fa[i], add = TRUE, ...)
 }
-}
-} else {
-for(i in 1:n) {
-       tensi <- tens[,,i]
-       deti <- tensi[1,1]*tensi[2,2]*tensi[3,3]
-       if(tensi[1,1]*tensi[2,2]*tensi[3,3]>0){
-       plot3d( ellipse(scale*tens[,,i], centre=tmean[,i],smooth=smooth,subdivide=subdivide), color=colorvalues[i], alpha=fa[i], add = TRUE, ...)
-}
-}
-}
+cat("\n")
 invisible(NULL)
 })
 
-ell2 <- function (sphere,cov, centre = c(0, 0, 0)){
+ell <- function (sphere, cov, center = c(0, 0, 0)){
 # Adapted from package rgl: 3D visualization device system (OpenGL)
 # Authors: Daniel Adler, Duncan Murdoch
-  sphere <-rotate3d( sphere, matrix=chol(cov))
-#  sphere$vb <- sphere$vb%*%chol(cov)
-  if (!missing(centre))
-    result <- translate3d(sphere, centre[1], centre[2], centre[3])
-  return(result)
+  translate3d(rotate3d( sphere, matrix=chol(cov)), center[1], center[2], center[3])
 }
+
