@@ -1,49 +1,65 @@
 \name{show3d}
 \alias{show3d}
 %- Also NEED an '\alias' for EACH other topic documented here.
-\title{ ~~function to do ... ~~ }
+\title{ Interactiv 3D visualization of dtiTensor and dtiIndices objects. }
 \description{
-  ~~ A concise (1-5 lines) description of what the function does. ~~
+  The function provides an interface to the rgl-package. It
+  creates a 3D visualization of dtiTensor and dtiIndices objects
+  within a rgl-device. Functionality of the rgl-package allows to
+  rotate and zoom the displayed object.
 }
 \usage{
 show3d(obj, ...)
+\method{show3d}{dtiTensor}(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,method=1,level=0,
+scale=.25,bgcolor="black",add=FALSE,subdivide=2,smooth=TRUE,maxobjects=729,\dots)
+\method{show3d}{dtiIndices}(obj,index="FA",xind=NULL,yind=NULL,zind=NULL,center=NULL,method=1,level=0,bgcolor="black",add=FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{obj}{ ~~Describe \code{obj} here~~ }
-  \item{\dots}{ ~~Describe \code{\dots} here~~ }
+  \item{obj}{ An object of class \code{dtiTensor} or \code{dtiIndices} }
+\item{nx}{Number of voxel in x-direction}
+\item{ny}{Number of voxel in y-direction}
+\item{nz}{Number of slices}
+\item{center}{Vector of length 3 specifying the center of the data cube (class \code{dtiTensor}) or center of display (class \code{dtiIndices})}
+\item{method}{\code{method==1} and \code{method==2} specify two different color schemes for 
+    directional FA-maps.}
+\item{level}{Minimal FA value of tensors.}
+\item{scale}{Scale factor for the size of ellipsoids}
+\item{bgcolor}{Backgroundcolor for rgl-display}
+\item{add}{If true information is added to the current device, otherwise a new device is opened.}
+\item{subdivide}{Level of subdivisions for meshing of ellipsoids, see package rgl.}
+\item{smooth}{Use smooted surfaces, see package rgl.}
+\item{maxobjects}{Maximal size of data cube (in voxel) to display}
+\item{index}{Eiter \code{"FA"} for fractional anisotropy index or 
+\code{"GA"} for geodetic anisotropy index.}
+\item{xind}{Index vector specifying the x-coordinates of the region of interest. Defaults to whole range.}
+\item{yind}{Index vector specifying the y-coordinates of the region of interest. Defaults to whole range.}
+\item{zind}{Index vector specifying the z-coordinates of the region of interest. Defaults to whole range.}
+\item{\dots}{Additional parameters passed to functions from the rgl-package.}
 }
 \details{
-  ~~ If necessary, more details than the description above ~~
+  For objects of class \code{dtiTensor} ellipsoids are visualized at the voxel centers. Orientation and size correspond to the tensor
+  values, color is determined by the main direction of anisotropy using the colorsceme specified with \code{method}. The fractional anisotropy value is coded as transparency. The value of \code{maxobjects} limits the size of datacube and may be increased
+ on hardware with suitable graphics capabilities.
+
+Objects of class \code{dtiIndices} are visualized as a collection of line segments with location given by the voxel center, orientation and color determined by the main direction of inisotropy and length corresponding to either fractional or geodesic anisotropy as specified in \code{index}. 
+
+In both cases displayed objects are restricted to voxel with an fractional (geodesic) anisotropy larger than \code{level}.
+
+Displays can be closed using function \code{rgl.close}
 }
 \value{
-  ~Describe the value returned
-  If it is a LIST, use
-  \item{comp1 }{Description of 'comp1'}
-  \item{comp2 }{Description of 'comp2'}
-  ...
+  The function returns \code{invisible(NULL)}.
 }
-\references{ ~put references to the literature/web site here ~ }
-\author{ ~~who you are~~ }
-\note{ ~~further notes~~ 
+\references{ K. Tabelow, J. Polzehl, H.U. Voss, and V. Spokoiny. \emph{Diffusion Tensor Imaging: Structural adaptive smoothing}, NeuroImage 39(4), 1763-1773 (2008).
 
- ~Make other sections like Warning with \section{Warning }{....} ~
-}
-\seealso{ ~~objects to See Also as \code{\link{help}}, ~~~ }
+\url{http://www.wias-berlin.de/projects/matheon_a3/} }
+\author{ Karsten Tabelow tabelow@wias-berlin.de, J\"org Polzehl polzehl@wias-berlin.de }
+\seealso{\code{\link{dtiTensor-class}}, \code{\link{dtiIndices-class}}  }
 \examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
-
-## The function is currently defined as
-structure(function (obj, ...) 
-standardGeneric("show3d"), generic = structure("show3d", package = "dti"), package = "dti", group = list(), valueClass = character(0), signature = "obj", default = <S4 object of class structure("MethodsList", package = "methods")>, skeleton = structure(function (obj, 
-    ...) 
-cat("3D Visualization not implemented for this class:", class(object), 
-    "\n"), target = structure(character(0), .Names = character(0), class = structure("signature", package = "methods")), defined = structure(character(0), .Names = character(0), class = structure("signature", package = "methods")), generic = structure("show3d", package = "dti"), class = structure("derivedDefaultMethod", package = "methods"))(obj, 
-    ...), class = structure("standardGeneric", package = "methods"))
+\dontrun{demo(dti_art)}
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+\keyword{ iplot }
+\keyword{ hplot }% __ONLY ONE__ keyword per line

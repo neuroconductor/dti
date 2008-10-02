@@ -830,7 +830,7 @@ if(is.null(zind)) zind <- 1:obj@ddim[3]
 z <- list(NULL)
 if("btb"%in%what) z$btb <- obj@btb
 if("s0"%in%what) z$S0 <- obj@si[xind,yind,zind,obj@s0ind]
-if("si"%in%what) z$Si <- obj@si[xind,yind,zind,-obj@s0ind]
+if("sb"%in%what) z$Si <- obj@si[xind,yind,zind,-obj@s0ind]
 if("data"%in%what) z$data <- obj@si[xind,yind,zind,]
 invisible(z)
 })
@@ -926,7 +926,6 @@ if("fa"%in%what) z$fa <- obj$fa[xind,yind,zind]
 if("ga"%in%what) z$ga <- obj$ga[xind,yind,zind]
 if("md"%in%what) z$md <- obj$md[xind,yind,zind]
 if("andir"%in%what) z$andir <- obj$andir[,xind,yind,zind]
-if("bary"%in%what) z$bary <- obj$bary[,xind,yind,zind]
 if("bary"%in%what) z$bary <- obj$bary[,xind,yind,zind]
 invisible(z)
 })

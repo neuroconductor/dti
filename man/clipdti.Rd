@@ -30,7 +30,7 @@ An object of class \code{class(obj)}. Slots \code{xind}, \code{yind} and \code{z
 }
 \references{ K. Tabelow, J. Polzehl, H.U. Voss, and V. Spokoiny. \emph{Diffusion Tensor Imaging: Structural adaptive smoothing}, NeuroImage 39(4), 1763-1773 (2008).
  }
-\url{http://www.wias-berlin.de/projects/matheon_a3/} }
+\url{http://www.wias-berlin.de/projects/matheon_a3/} 
 \author{Karsten Tabelow tabelow@wias-berlin.de, Joerg Polzehl polzehl@wias-berlin.de }
 \seealso{ \code{\link{dtiData}}, \code{\link{dtiTensor}}, \code{\link{dtiIndices}}, \code{\link{dtiData-class}}, \code{\link{dtiTensor-class}}, \code{\link{dtiIndices-class}}}
 \examples{

@@ -3,47 +3,68 @@
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{ Extract information from objects of class dtiData, dtiTensor or dtiIndices }
 \description{
-  ~~ A concise (1-5 lines) description of what the function does. ~~
+  The function extracts or/and computes specified statistics from 
+object of class \code{dti}. This can be restricted to a subset of voxel.
 }
 \usage{
 extract(obj, ...)
+\method{extract}{dtiData}(obj,what="dtiData",xind=NULL,yind=NULL,zind=NULL)
+\method{extract}{dtiTensor}(obj,what="dtiData",xind=NULL,yind=NULL,zind=NULL)
+\method{extract}{dtiIndices}(obj,what="dtiData",xind=NULL,yind=NULL,zind=NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{obj}{ ~~Describe \code{obj} here~~ }
-  \item{\dots}{ ~~Describe \code{\dots} here~~ }
+  \item{obj}{ Object of class \code{dti} }
+  \item{what}{ Statistic to extract. Options are
+
+for \code{class(obj)=="dtiData"}
+     \item{"btb"}{Gradient information}
+     \item{"S0"}{S0 images}  
+     \item{"Si"}{Sb images}  
+     \item{"Sb"}{Sb images}  
+     \item{"data"}{all images}
+
+     for \code{class(obj)=="dtiTensor"}
+     \item{"fa"}{Fractional anisotropy}  
+     \item{"ga"}{Geodetic anisotropy}  
+     \item{"md"}{Mean diffusivity}  
+     \item{"evalues"}{Eigenvalues}
+     \item{"andir"}{Main direction of anisotropy}
+     \item{"tensor"}{Estimated tensor}
+     \item{"s0"}{Estimated S0 image}
+     \item{"mask"}{mask}
+
+     for \code{class(obj)=="dtiIndices"}
+     
+     \item{"fa"}{Fractional anisotropy}  
+     \item{"ga"}{Geodetic anisotropy}  
+     \item{"md"}{Mean diffusivity}  
+     \item{"andir"}{Main direction of anisotropy}
+     \item{"bary"}{Bary coordinates}
+
+A vector of options can be supplied.
+}
+  \item{xind}{ vector of x-coordinates, defaults to whole range. }
+  \item{yind}{ vector of y-coordinates, defaults to whole range. }
+  \item{zind}{ vector of z-coordinates, defaults to whole range. }
+  \item{\dots}{ one or several  of the parameters above }
 }
 \details{
-  ~~ If necessary, more details than the description above ~~
+   Extraction of statistics is restricted to the cube defined by
+   arguments \code{xind}, \code{yind} and \code{zind}.
 }
 \value{
-  ~Describe the value returned
-  If it is a LIST, use
-  \item{comp1 }{Description of 'comp1'}
-  \item{comp2 }{Description of 'comp2'}
-  ...
+  List with components carrying the names of the options specified in
+  argument \code{what}.
 }
-\references{ ~put references to the literature/web site here ~ }
-\author{ ~~who you are~~ }
-\note{ ~~further notes~~ 
+\references{ K. Tabelow, J. Polzehl, H.U. Voss, and V. Spokoiny. \emph{Diffusion Tensor Imaging: Structural adaptive smoothing}, NeuroImage 39(4), 1763-1773 (2008).
 
- ~Make other sections like Warning with \section{Warning }{....} ~
-}
-\seealso{ ~~objects to See Also as \code{\link{help}}, ~~~ }
+\url{http://www.wias-berlin.de/projects/matheon_a3/} }
+\author{ Karsten Tabelow tabelow@wias-berlin.de, J\"org Polzehl polzehl@wias-berlin.de }
+\seealso{\code{\link{dtiTensor-class}}, \code{\link{dtiIndices-class}}  }
 \examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
-
-## The function is currently defined as
-structure(function (obj, ...) 
-standardGeneric("extract"), generic = structure("extract", package = "dti"), package = "dti", group = list(), valueClass = character(0), signature = "obj", default = <S4 object of class structure("MethodsList", package = "methods")>, skeleton = structure(function (obj, 
-    ...) 
-cat("Data extraction not defined for this class:", class(object), 
-    "\n"), target = structure(character(0), .Names = character(0), class = structure("signature", package = "methods")), defined = structure(character(0), .Names = character(0), class = structure("signature", package = "methods")), generic = structure("extract", package = "dti"), class = structure("derivedDefaultMethod", package = "methods"))(obj, 
-    ...), class = structure("standardGeneric", package = "methods"))
+\dontrun{demo(dti_art)}
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+\keyword{ manip }
