@@ -2,7 +2,6 @@
 \docType{class}
 \alias{dtiIndices-class}
 \alias{dtiTensor,dtiIndices-method}
-\alias{plot,dtiIndices-method}
 
 \title{Class "dtiIndices" }
 \description{ Fractional Anisotropy indices and main directions of anisotropy derived from a diffusion tensor	}

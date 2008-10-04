@@ -821,7 +821,7 @@ extract <- function(obj,  ...) cat("Data extraction not defined for this class:"
 
 setGeneric("extract", function(obj,  ...) standardGeneric("extract"))
 
-setMethod("extract","dtiData",function(obj,what="dtiData",xind=NULL,yind=NULL,zind=NULL){
+setMethod("extract","dtiData",function(obj,what="data",xind=NULL,yind=NULL,zind=NULL){
 what <- tolower(what) 
 if(! is.character(what)) stop("Argument what needs to be character\n")
 if(is.null(xind)) xind <- 1:obj@ddim[1]
@@ -835,7 +835,7 @@ if("data"%in%what) z$data <- obj@si[xind,yind,zind,]
 invisible(z)
 })
 
-setMethod("extract","dtiTensor",function(obj,what="dtiTensor",xind=NULL,yind=NULL,zind=NULL){
+setMethod("extract","dtiTensor",function(obj,what="tensor",xind=NULL,yind=NULL,zind=NULL){
 what <- tolower(what) 
 if(! is.character(what)) stop("Argument what needs to be character\n")
 if(is.null(xind)) xind <- 1:obj@ddim[1]
@@ -912,7 +912,7 @@ if("mask"%in%what) z$mask <- obj@th0[xind,yind,zind]
 invisible(z)
 })
 
-setMethod("extract","dtiIndices",function(obj,what,xind=NULL,yind=NULL,zind=NULL){
+setMethod("extract","dtiIndices",function(obj,what=c("fa","andir"),xind=NULL,yind=NULL,zind=NULL){
 what <- tolower(what) 
 if(! is.character(what)) stop("Argument what needs to be character\n")
 if(is.null(xind)) xind <- 1:obj@ddim[1]
@@ -979,7 +979,7 @@ rgl.open()
 rgl.bg(color=bgcolor)
 }
 rgl.lines(lcoord[1,],lcoord[2,],lcoord[3,],color=colorvalues)
-invisible(NULL)
+invisible(rgl.cur())
 })
 
 setMethod("show3d","dtiTensor",function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,method=1,level=0,scale=.25,
@@ -1070,7 +1070,7 @@ for(i in 1:n) {
                 color=colorvalues[i], alpha=fa[i], add = TRUE, ...)
 }
 cat("\n")
-invisible(NULL)
+invisible(rgl.cur())
 })
 
 ell <- function (sphere, cov, center = c(0, 0, 0)){

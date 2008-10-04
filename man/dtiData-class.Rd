@@ -3,7 +3,6 @@
 \alias{dtiData-class}
 \alias{dti.smooth,dtiData-method}
 \alias{dtiTensor,dtiData-method}
-\alias{plot,dtiData-method}
 
 \title{Class "dtiData"  }
 \description{ Diffusion Weighted Image (DWI) Data }

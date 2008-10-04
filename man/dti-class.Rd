@@ -1,7 +1,6 @@
 \name{dti-class}
 \docType{class}
 \alias{dti-class}
-\alias{plot,dti-method}
 \alias{show,dti-method}
 
 \title{Class "dti" }
