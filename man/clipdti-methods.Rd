@@ -15,9 +15,9 @@
 }
 \usage{
 clipdti(obj, ...)
-\method{clipdti}{dtiData}(obj,xind=NULL,yind=NULL,zind=NULL)
-\method{clipdti}{dtiIndices}(obj,xind=NULL,yind=NULL,zind=NULL)
-\method{clipdti}{dtiTensor}(obj,xind=NULL,yind=NULL,zind=NULL)
+\S4method{clipdti}{dtiData}(obj,xind=NULL,yind=NULL,zind=NULL)
+\S4method{clipdti}{dtiIndices}(obj,xind=NULL,yind=NULL,zind=NULL)
+\S4method{clipdti}{dtiTensor}(obj,xind=NULL,yind=NULL,zind=NULL)
 }
 \arguments{
   \item{obj}{ an object of class \code{"dtiData"}, \code{"dtiTensor"} or

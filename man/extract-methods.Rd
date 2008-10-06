@@ -13,9 +13,9 @@ object of class \code{dti}. This can be restricted to a subset of voxel.
 }
 \usage{
 extract(obj, ...)
-\method{extract}{dtiData}(obj,what="data",xind=NULL,yind=NULL,zind=NULL)
-\method{extract}{dtiTensor}(obj,what="tensor",xind=NULL,yind=NULL,zind=NULL)
-\method{extract}{dtiIndices}(obj,what=c("fa","andir"),xind=NULL,yind=NULL,zind=NULL)
+\S4method{extract}{dtiData}(obj,what="data",xind=NULL,yind=NULL,zind=NULL)
+\S4method{extract}{dtiTensor}(obj,what="tensor",xind=NULL,yind=NULL,zind=NULL)
+\S4method{extract}{dtiIndices}(obj,what=c("fa","andir"),xind=NULL,yind=NULL,zind=NULL)
 }
 \arguments{
   \item{obj}{ Object of class \code{dti} }

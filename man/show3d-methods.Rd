@@ -16,9 +16,9 @@
 }
 \usage{
 show3d(obj, ...)
-\method{show3d}{dtiTensor}(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,method=1,level=0,
+\S4method{show3d}{dtiTensor}(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,method=1,level=0,
 scale=.25,bgcolor="black",add=FALSE,subdivide=2,smooth=TRUE,maxobjects=729,\dots)
-\method{show3d}{dtiIndices}(obj,index="FA",xind=NULL,yind=NULL,zind=NULL,center=NULL,method=1,level=0,bgcolor="black",add=FALSE)
+\S4method{show3d}{dtiIndices}(obj,index="FA",xind=NULL,yind=NULL,zind=NULL,center=NULL,method=1,level=0,bgcolor="black",add=FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
