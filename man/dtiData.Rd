@@ -17,7 +17,7 @@ dtiData(gradient, imagefile, ddim, xind = NULL, yind = NULL, zind = NULL, level 
   \item{xind}{ subindex for x-direction }
   \item{yind}{ subindex for y-direction }
   \item{zind}{ subindex for z-direction }
-  \item{level}{ determine \code{mins0value} as quantile of positive S)-values  }
+  \item{level}{ determine \code{mins0value} as quantile of positive S0-values  }
   \item{mins0value}{ set voxel in S0-images with values less than \code{level} inactive }
   \item{maxvalue}{ set voxel with values larger than \code{maxvalue} inactive  }
   \item{voxelext}{ voxelextensions in coordinate directions.}
@@ -25,6 +25,10 @@ dtiData(gradient, imagefile, ddim, xind = NULL, yind = NULL, zind = NULL, level 
 }
 \details{
   This function creates a dtiData object from an imagefile, where the diffusion weighted data is given as 2-byte integer. This image file has to be prepared by the user and there is not yet a function to do this within the package. Simply use \code{\link{writeBin}} to write out first all S0 images and than all Si images. The \code{gradient} should be created according to this order. Run the demo in order to have an example, how to do this!
+
+  \code{xind}, \code{yind}, and \code{zind} define a region of interest as indices. If not given \code{1:dim[i]} is used. \code{level} determine \code{mins0value} as quantile of positive S0-values. \code{mins0value} sets voxel in S0-images with values less than \code{level} inactive. \code{maxvalue} sets voxel with values larger than \code{maxvalue} inactive.
+
+  \code{voxelext} defines the voxel extension. 
 }
 \value{
 An object of class \code{dtiData}.

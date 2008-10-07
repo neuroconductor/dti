@@ -1,8 +1,6 @@
 \name{dtiData-class}
 \docType{class}
 \alias{dtiData-class}
-\alias{dti.smooth,dtiData-method}
-\alias{dtiTensor,dtiData-method}
 
 \title{Class "dtiData"  }
 \description{ Diffusion Weighted Image (DWI) Data }

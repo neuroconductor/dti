@@ -367,7 +367,7 @@ readDWIdata <- function(dirlist, format, nslice, gradient, order = NULL,
 
   # generate file list in specified order
   filelist <- NULL
-  for (dd in dirlist) filelist <- c(filelist, paste(dd,list.files(dd),sep=""))
+  for (dd in dirlist) filelist <- c(filelist, paste(dd,list.files(dd),sep=.Platform$file.sep))
   if (format == "DICOM") {
     if (length(filelist) != ngrad * nslice)
       stop("Number of found files does not match ngrad*nslice",length(filelist))

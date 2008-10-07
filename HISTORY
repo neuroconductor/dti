@@ -1,5 +1,6 @@
-2008-10-01 version 0.5-6
+2008-10-07 version 0.5-6
   - new function readDWIdata reads DWI data from directories with imaging files (DICOM,NIFTI,AFNI,ANALYZE)
+  - documentation now consistent with S4-documentation
 
 2008-01-21 version 0.4-0
 

@@ -1,9 +1,6 @@
 \name{dtiTensor-class}
 \docType{class}
 \alias{dtiTensor-class}
-\alias{coerce,dtiTensor,dtiIndices-method}
-\alias{dtiIndices,dtiTensor-method}
-\alias{dti.smooth,dtiTensor-method}
 
 \title{Class "dtiTensor"}
 \description{ Diffusion Tensor object. Containes the results of estimating a diffusion tensor from diffusion weighted image (DWI) data.}
