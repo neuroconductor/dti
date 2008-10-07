@@ -49,7 +49,8 @@ setClass("dtiTensor",
                         scorr  = "array",
                         bw     = "numeric",
                         mask   = "array",
-                        hmax   = "numeric"),
+                        hmax   = "numeric",
+                        outlier = "numeric"),
          contains=c("list","dti"),
          validity=function(object){
           if (any(dim(object@D)!=c(6,object@ddim))) {
@@ -65,6 +66,8 @@ setClass("dtiTensor",
             return(invisible(FALSE))
           }
           if (any(dim(object@mask)!=object@ddim)) {
+            cat("dimension of mask:",dim(object@mask),"\n")
+            cat("should be:",object@ddim,"\n")
             cat("invalid dimension of array mask\n")
             return(invisible(FALSE))
           }

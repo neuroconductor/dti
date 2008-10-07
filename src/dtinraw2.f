@@ -226,6 +226,7 @@ C     triangular location kernel
                         sij = dtidisrg(siest(1,i1,i2,i3),
      1                          sipred(1,jj1,jj2,jj3),nb)
                         sij = bii*max(0.d0,sij-rssi)/lambda
+                           
                            if(sij.gt.1.d0) CYCLE
                            wij=wij*(1.d0-sij)
                         END IF
@@ -358,7 +359,7 @@ C   eps      -  something small and positive
      5       vext(3),lambda,swsi(nb),F(nb),eps,rss(n1,n2,n3),vol
       logical mask(n1,n2,n3),rician,wlse
       integer i1,j1,j1a,j1e,jj1,i2,j2,j2a,j2e,jj2,i3,j3,j3a,j3e,jj3,
-     1        ierr,k
+     1        ierr,k,center
       real*8 wij,adist,sw,sws0,h2,thi(7),bii,sqrbii,ew(3),ev(3,3),
      1       mew,z1,z2,z3,sij,deti,z,sew,ss2,sw0,sw2,Di(6),dtidisrg,
      2       th0i,s2hat,ssigma2,rssi,h0,h1
@@ -453,14 +454,50 @@ C   now get bandwidth such that the ellopsoid has specified volume
                h2=h*h
 C   create needed estimates of s_i
                call rangex(thi,h,j1a,j1e,vext)
+               if(j1a.gt.0.or.j1e.lt.0) THEN
+                  call intpr("illegal range x",15,i1,1)
+                  call intpr("i2",2,i2,1)
+                  call intpr("i3",2,i3,1)
+                  call dblepr("thi",3,thi,6)
+                  call dblepr("h",1,h,1)
+                  call intpr("j1a",3,j1a,1)
+                  call intpr("j1e",3,j1e,1)
+                  call dblepr("vext",4,vext,3)
+                  return
+               END IF
                DO j1=j1a,j1e
                   jj1=i1+j1
                   if(jj1.le.0.or.jj1.gt.n1) CYCLE
                   call rangey(thi,j1,h,j2a,j2e,vext)
+                  if(j1.eq.0.and.(j2a.gt.0.or.j2e.lt.0)) THEN
+                     call intpr("i1",2,i1,1)
+                     call intpr("illegal range y",15,i2,1)
+                     call intpr("i3",2,i3,1)
+                     call dblepr("thi",3,thi,6)
+                     call intpr("j1",3,j1,1)
+                     call dblepr("h",1,h,1)
+                     call intpr("j2a",3,j2a,1)
+                     call intpr("j2e",3,j2e,1)
+                     call dblepr("vext",4,vext,3)
+                     return
+                  END IF
                   DO j2=j2a,j2e
-                      jj2=i2+j2
+                     jj2=i2+j2
                      if(jj2.le.0.or.jj2.gt.n2) CYCLE
                      call rangez(thi,j1,j2,h,j3a,j3e,vext)
+             if(j1.eq.0.and.j2.eq.0.and.(j3a.gt.0.or.j3e.lt.0)) THEN
+                     call intpr("i1",2,i1,1)
+                     call intpr("i2",2,i2,1)
+                     call intpr("illegal range z",15,i3,1)
+                      call dblepr("thi",3,thi,6)
+                     call intpr("j1",3,j1,1)
+                     call intpr("j2",3,j2,1)
+                     call dblepr("h",1,h,1)
+                     call intpr("j3a",3,j3a,1)
+                     call intpr("j3e",3,j3e,1)
+                     call dblepr("vext",4,vext,3)
+                     return
+                  END IF
                      DO j3=j3a,j3e
                         jj3=i3+j3
                         if(jj3.le.0.or.jj3.gt.n3) CYCLE
@@ -468,11 +505,18 @@ C   create needed estimates of s_i
                         wij=adist(thi,j1,j2,j3,vext)
 C     triangular location kernel
                         if(wij.ge.h2) CYCLE
+                        center=abs(i1-jj1)+abs(i2-jj2)+abs(i3-jj3)
                         wij = (1.d0 - wij/h2)
                         IF(aws) THEN
-                        sij = dtidisrg(siest(1,i1,i2,i3),
+                           sij = dtidisrg(siest(1,i1,i2,i3),
      1                          sipred(1,jj1,jj2,jj3),nb)
-                        sij = bii*max(0.d0,sij-rssi)/lambda
+                           sij = bii*max(0.d0,sij-rssi)/lambda
+                           if(center.eq.0.and.sij.gt.1.d-1) THEN
+                              call dblepr("sij",3,sij,1) 
+                              call intpr("si",2,siest(1,i1,i2,i3),nb)
+                       call dblepr("sj",2,sipred(1,jj1,jj2,jj3),nb)
+                           END IF
+                           if(center.eq.0) sij=0.d0
                            if(sij.gt.1.d0) CYCLE
                            wij=wij*(1.d0-sij)
                         END IF

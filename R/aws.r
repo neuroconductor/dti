@@ -32,9 +32,24 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
   }
   args <- match.call()
   s0ind <- object@s0ind
-  s0 <- object@si[,,,s0ind]
+  ns0 <- length(s0ind)
+  z <- .Fortran("outlier",
+                as.integer(object@si),
+                as.integer(prod(ddim)),
+                as.integer(ngrad),
+                as.logical((1:ngrad)%in%s0ind),
+                as.integer(ns0),
+                si=integer(prod(ddim)*ngrad),
+                index=integer(prod(ddim)),
+                lindex=integer(1),
+                DUPL=FALSE,
+                PACKAGE="dti")[c("si","index","lindex")]
+  si <- array(si,c(ddim,ngrad))
+  index <- if(z$lindex>0) z$index[1:z$lindex] else numeric(0)
+  si <- aperm(si,c(4,1:3))
+  s0 <- si[,,,s0ind]
   if(length(s0ind)>1) s0 <- apply(s0,1:3,mean) 
-  si <- object@si[,,,-s0ind]
+  si <- si[,,,-s0ind]
   ngrad <- object@ngrad-length(s0ind)
   ddim0 <- object@ddim0
   ddim <- object@ddim
@@ -276,6 +291,7 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
                 zind  = zind,
                 voxelext = voxelext,
                 source= source,
+                outlier = index,
                 method= "linear")
             )
 
@@ -479,6 +495,7 @@ rdtianiso <- function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,qua
                 yind  = yind,
                 zind  = zind,
                 voxelext = voxelext,
+                outlier = dtobject@outlier,
                 source= source)
             )
 }

@@ -25,6 +25,7 @@ function(object){
     cat("  Spatial smoothness   :", paste(signif(object@bw,3), collapse="x"), "\n")
     cat("  mean variance        :", paste(signif(mean(object@sigma[object@mask]),3), collapse="x"), "\n")
     cat("  hmax                 :", paste(object@hmax, collapse="x"), "\n")
+    if(length(object@outlier)>0) cat("  Number of outliers    :", paste(length(object@outlier), collapse="x"), "\n")
 }
     cat("\n")
     invisible(NULL)
@@ -516,11 +517,29 @@ function(object, method="nonlinear",varmethod="replicates",varmodel="local") {
   ngrad <- object@ngrad
   ddim <- object@ddim
   s0ind <- object@s0ind
+  ns0 <- length(s0ind)
+  z <- .Fortran("outlier",
+                as.integer(object@si),
+                as.integer(prod(ddim)),
+                as.integer(ngrad),
+                as.logical((1:ngrad)%in%s0ind),
+                as.integer(ns0),
+                si=integer(prod(ddim)*ngrad),
+                index=integer(prod(ddim)),
+                lindex=integer(1),
+                DUPL=FALSE,
+                PACKAGE="dti")[c("si","index","lindex")]
+  si <- array(z$si,c(ddim,ngrad))
+  index <- if(z$lindex>0) z$index[1:z$lindex] else numeric(0)
   if(method=="linear"){
      ngrad0 <- ngrad - length(s0ind)
-     s0 <- object@si[,,,s0ind]
-     si <- object@si[,,,-s0ind]
-     if(length(s0ind)>1) s0 <- apply(s0,1:3,mean) 
+     s0 <- si[,,,s0ind]
+     si <- si[,,,-s0ind]
+     if(ns0>1) {
+         dim(s0) <- c(prod(ddim),ns0)
+         s0 <- s0 %*% rep(1/ns0,ns0)
+         dim(s0) <- ddim
+     }
      mask <- s0 > object@level
      mask <- connect.mask(mask)
      dim(s0) <- dim(si) <- NULL
@@ -553,10 +572,13 @@ function(object, method="nonlinear",varmethod="replicates",varmodel="local") {
   } else {
 #  method == "nonlinear" 
      ngrad0 <- ngrad
-     si <- aperm(object@si,c(4,1:3))
+     si <- aperm(si,c(4,1:3))
      s0 <- si[s0ind,,,]
-     if(length(s0ind)>1) s0 <- apply(s0,2:4,mean)
-     dim(s0) <- ddim
+     if(ns0>1) {
+         dim(s0) <- c(ns0,prod(ddim))
+         s0 <- rep(1/ns0,ns0)%*%s0
+         dim(s0) <- ddim
+     }
      mask <- s0 > object@level
      mask <- connect.mask(mask)
      cat("start nonlinear regression",date(),proc.time(),"\n")
@@ -659,6 +681,7 @@ function(object, method="nonlinear",varmethod="replicates",varmodel="local") {
                 level = object@level,
                 orientation = object@orientation,
                 source = object@source,
+                outlier = index,
                 method = method)
             )
 })
@@ -786,6 +809,7 @@ invisible(new("dtiTensor",
                 voxelext = object@voxelext,
                 level = object@level,
                 orientation = object@orientation,
+                outlier = object@outlier,
                 source = object@source,
                 method = method)
             )

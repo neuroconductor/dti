@@ -15,10 +15,23 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
   }
   args <- match.call()
   s0ind <- object@s0ind
-  si <- aperm(object@si,c(4,1:3))
   ngrad <- object@ngrad
   ddim0 <- object@ddim0
   ddim <- object@ddim
+  z <- .Fortran("outlier",
+                as.integer(object@si),
+                as.integer(prod(ddim)),
+                as.integer(ngrad),
+                as.logical((1:ngrad)%in%s0ind),
+                as.integer(length(s0ind)),
+                si=integer(prod(ddim)*ngrad),
+                index=integer(prod(ddim)),
+                lindex=integer(1),
+                DUPL=FALSE,
+                PACKAGE="dti")[c("si","index","lindex")]
+  si <- array(z$si,c(ddim,ngrad))
+  index <- if(z$lindex>0) z$index[1:z$lindex] else numeric(0)
+  si <- aperm(si,c(4,1:3))
   xind <- object@xind
   yind <- object@yind
   zind <- object@zind
@@ -217,7 +230,7 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
                     double(ngrad),#swsi
                     double(ngrad),#swsi2
                     double(ngrad),#swsi4
-                    double(ngrad),#F
+                    double(ngrad),#
                     as.double(eps),
                     as.logical(rician), # based on x <- seq(0,100,.1) !!!
                     DUP=FALSE,PACKAGE="dti")[c("th0","D","rss","bi","anindex","andirection","det","sigma2hat","sigma2r","sihat")]
@@ -228,6 +241,18 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
      dim(z$th0) <- dim(z$rss) <- dim(z$bi) <- dim(z$anindex) <- dim(z$det) <- dim(z$sigma2hat) <- dim(z$sigma2r) <- dimy[-1]
      dim(z$D) <- dimy
      dim(z$andirection) <- c(3,dimy[-1]) 
+     if(any(is.na(z$th0))){
+        indna <- is.na(z$th0)
+        cat("found ",sum(indna),"NA's\n")
+        z$th0[indna] <- th0[indna]
+        cat("th0",th0[indna])
+        dim(z$D) <- dim(D) <- c(6,n1*n2*n3)
+        z$D[,indna] <- D[,indna]
+        dim(z$D) <- dim(D) <- c(6,n1,n2,n3)
+        z$rss <- 1e10
+        mask[indna] <- FALSE
+        browser()
+     }
      if(graph){
      class(z) <- "dti"
      img<-z$D[1,,,slice]
@@ -298,6 +323,7 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
                 zind  = zind,
                 voxelext = object@voxelext,
                 source= object@source,
+                outlier = index,
                 method= dtobject@method)
             )
 }

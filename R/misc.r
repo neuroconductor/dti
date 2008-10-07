@@ -264,7 +264,6 @@ mask1 <- .Fortran("lconnect",
                  integer(n),
                  integer(n),
                  integer(n),
-                 logical(n),
                  mask=logical(n),
                  DUP=FALSE,
                  PACKAGE="dti")$mask
