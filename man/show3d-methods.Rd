@@ -18,7 +18,7 @@
 show3d(obj, ...)
 \S4method{show3d}{dtiTensor}(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,method=1,level=0,
 scale=.25,bgcolor="black",add=FALSE,subdivide=2,smooth=TRUE,maxobjects=729,\dots)
-\S4method{show3d}{dtiIndices}(obj,index="FA",xind=NULL,yind=NULL,zind=NULL,center=NULL,method=1,level=0,bgcolor="black",add=FALSE)
+\S4method{show3d}{dtiIndices}(obj,index="FA",nx=NULL,ny=NULL,nz=NULL,center=NULL,method=1,level=0,bgcolor="black",add=FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -38,9 +38,6 @@ scale=.25,bgcolor="black",add=FALSE,subdivide=2,smooth=TRUE,maxobjects=729,\dots
 \item{maxobjects}{Maximal size of data cube (in voxel) to display}
 \item{index}{Eiter \code{"FA"} for fractional anisotropy index or 
 \code{"GA"} for geodetic anisotropy index.}
-\item{xind}{Index vector specifying the x-coordinates of the region of interest. Defaults to whole range.}
-\item{yind}{Index vector specifying the y-coordinates of the region of interest. Defaults to whole range.}
-\item{zind}{Index vector specifying the z-coordinates of the region of interest. Defaults to whole range.}
 \item{\dots}{Additional parameters passed to functions from the rgl-package.}
 }
 \section{Methods}{

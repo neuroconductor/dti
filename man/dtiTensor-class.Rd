@@ -25,6 +25,9 @@ Objects can be created by calls to functions \code{\link{dtiTensor}},  \code{\li
     \item{\code{level}:}{Object of class \code{"numeric"} minimal valid s0-level. 
      No evaluation was be performed for voxel with s0-values less than \code{level}. Used to determine  \code{mask}.}
     \item{\code{hmax}:}{Object of class \code{"numeric"} maximal bandwidth in case of adaptive smoothing. contains 1 otherwise.} 
+    \item{\code{outlier}:}{Object of class \code{"numeric"} 
+     index of voxel where physical constraints are not met,
+     i.e. where the observed values in gradient images were larger than the corresponding S0 values. This are probably motion effects or registration errors. Values are replaced by the corresponding (mean) S0 values.} 
     \item{\code{method}:}{Object of class \code{"character"} either \code{"linear"} or \code{"nonlinear"} or \code{"unknown"}. Indicates the regression model used for estimating the tensors.}     
 \item{\code{btb}:}{Object of class \code{"matrix"} matrix of dimension \code{c(6,ngrad)} obtained from gradient directions.}
     \item{\code{ngrad}:}{Object of class \code{"integer"} number of gradients (including zero gradients) }

@@ -400,7 +400,10 @@ readDWIdata <- function(dirlist, format, nslice, gradient, order = NULL,
   si <- numeric()
   cat("\n")
   ddim <- NULL
+  first <- TRUE
+  i <- 0
   for (ff in filelist) {
+    i <- i+1
     cat(".")
     if (format == "DICOM") {
       data <- read.DICOM(ff)
@@ -424,10 +427,30 @@ readDWIdata <- function(dirlist, format, nslice, gradient, order = NULL,
     if (is.null(xind)) xind <- 1:data$dim[1]
     if (is.null(yind)) yind <- 1:data$dim[2]
     if (format == "DICOM") {
-      si <- c(si,extract.data(data)[xind,yind])
+      if(first){ 
+         ttt <- extract.data(data)[xind,yind]
+         nttt <- dim(ttt)
+         n <- length(filelist)
+         si <- numeric(n*prod(nttt))
+         dim(si) <- c(nttt,n)
+         si[,,1]<- ttt
+         first <- FALSE
+      } else {
+         si[,,i] <- extract.data(data)[xind,yind]
+      }
     } else {
-      ttt <- extract.data(data)
-      si <- c(si,ttt[xind,yind,zind,])
+      if(first){ 
+         ttt <- extract.data(data)[xind,yind,zind,]
+         nttt <- dim(ttt)
+         n <- length(filelist)
+         si <- numeric(n*prod(nttt))
+         dim(si) <- c(nttt,n)
+         if(length(nttt)==4) si[,,,,1]<- ttt else si[,,,1] <- ttt
+         first <- FALSE
+     } else {
+      ttt <- extract.data(data)[xind,yind,zind,]
+      if(length(nttt)==4) si[,,,,i] <- ttt else si[,,,i] <- ttt
+      }
     }
   }
   cat("\n")
@@ -960,19 +983,25 @@ show3d <- function(obj,  ...) cat("3D Visualization not implemented for this cla
 
 setGeneric("show3d", function(obj,  ...) standardGeneric("show3d"))
 
-setMethod("show3d","dtiIndices",function(obj,index="FA",xind=NULL,yind=NULL,zind=NULL,center=NULL,method=1,level=0,bgcolor="black",add=FALSE){
+setMethod("show3d","dtiIndices",function(obj,index="FA",nx=NULL,ny=NULL,nz=NULL,center=NULL,method=1,level=0,bgcolor="black",add=FALSE){
 if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
 index <- tolower(index) 
 if(!(index%in%c("fa","ga"))) stop("index should be either 'FA' or 'GA'\n")
-if(is.null(xind)) xind <- 1:obj@ddim[1]
-if(is.null(yind)) yind <- 1:obj@ddim[2]
-if(is.null(zind)) zind <- 1:obj@ddim[3]
+if(is.null(center)) center <- floor(obj@ddim/2)
+if(is.null(nx)) nx <- obj@ddim[1]
+if(is.null(ny)) ny <- obj@ddim[2]
+if(is.null(nz)) nz <- obj@ddim[3]
+xind <- (center[1]-(nx%/%2)):(center[1]+(nx%/%2))
+yind <- (center[2]-(ny%/%2)):(center[2]+(ny%/%2))
+zind <- (center[3]-(nz%/%2)):(center[3]+(nz%/%2))
+xind <- xind[xind>0&xind<=obj@ddim[1]]
+yind <- yind[yind>0&yind<=obj@ddim[2]]
+zind <- zind[zind>0&zind<=obj@ddim[3]]
 n1 <- length(xind)
 n2 <- length(yind)
 n3 <- length(zind)
+n <- n1*n2*n3
 vext <- obj@voxelext
-if(is.null(center)) center <- c(median(xind),median(yind),median(zind))
-corner <- 2*center*vext
 ind <- switch(index,"fa"=obj@fa[xind,yind,zind], "ga"=obj@ga[xind,yind,zind])
 ind[ind<level] <- 0
 ind <- ind*min(vext)
@@ -985,9 +1014,9 @@ if(method==1) {
       andir <- abs(andir)
       dim(andir) <- c(3,n1*n2*n3)
     } else {
-      ind<-andir[1,,]<0
+      ind1<-andir[1,,]<0
       dim(andir) <- c(3,n1*n2*n3)
-      andir[,ind] <- - andir[,ind]
+      andir[,ind1] <- - andir[,ind1]
       andir[2,] <- (1+andir[2,])/2
       andir[3,] <- (1+andir[3,])/2
     }
@@ -998,8 +1027,8 @@ lcoord <- array(0,c(3,2,n1,n2,n3))
 lcoord[,1,,,] <-  andir/2+tmean[,,,]
 lcoord[,2,,,] <-  -andir/2+tmean[,,,]
 dim(lcoord) <- c(3,2*n1*n2*n3)
-lcoord <- cbind(lcoord,corner-rep(.1,3),corner+rep(.1,3))
-colorvalues <- c(rbind(colorvalues,colorvalues),bgcolor,bgcolor)
+lcoord <- cbind(lcoord)
+colorvalues <- c(rbind(colorvalues,colorvalues))
 if(!add) {
 rgl.open()
 rgl.bg(color=bgcolor)
