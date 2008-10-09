@@ -383,6 +383,8 @@ readDWIdata <- function(dirlist, format, nslice, gradient, order = NULL,
     dim(order) <- NULL
     filelist <- filelist[order]
   } else {
+    if (format =="ANALYZE") filelist <- unlist(strsplit(filelist[regexpr("\\.hdr$", filelist) != -1],"\\.hdr"))
+    if (format =="AFNI") filelist <- filelist[regexpr("\\.HEAD$", filelist) != -1]
     if (length(filelist) != ngrad)
       stop("Number of found files does not match ngrad",length(filelist),"\nPlease provide each gradient cube in a separate file.")
     if (is.null(order)) {
