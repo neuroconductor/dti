@@ -814,29 +814,39 @@ function(obj,xind=NULL,yind=NULL,zind=NULL){
 if(is.null(xind)) xind <- 1:obj@ddim[1]
 if(is.null(yind)) yind <- 1:obj@ddim[2]
 if(is.null(zind)) zind <- 1:obj@ddim[3]
+ind <- 1:prod(obj@ddim)
+if(length(obj@outlier)>0){
+ind <- rep(FALSE,prod(obj@ddim))
+ind[obj@outlier] <- TRUE
+dim(ind) <- obj@ddim
+ind <- ind[xind,yind,zind]
+outlier <- (1:length(ind))[ind]
+} else {
+outlier <- numeric(0)
+}
 invisible(new("dtiTensor",
-                D     = obj$D[,xind,yind,zind],
-                th0   = obj$th0[xind,yind,zind],
-                sigma = obj$sigma2[xind,yind,zind],
-                scorr = scorr, 
-                bw = bw,
-                mask = mask[xind,yind,zind],
-                hmax = 1,
-                btb   = object@btb,
-                ngrad = object@ngrad, # = dim(btb)[2]
-                s0ind = object@s0ind,
-                replind = object@replind,
+                D     = obj@D[,xind,yind,zind],
+                th0   = obj@th0[xind,yind,zind],
+                sigma = obj@sigma[xind,yind,zind],
+                scorr = obj@scorr, 
+                bw = obj@bw,
+                mask = obj@mask[xind,yind,zind],
+                hmax = obj@hmax,
+                btb   = obj@btb,
+                ngrad = obj@ngrad, # = dim(btb)[2]
+                s0ind = obj@s0ind,
+                replind = obj@replind,
                 ddim  = c(length(xind),length(yind),length(zind)),
-                ddim0 = object@ddim0,
-                xind  = object@xind[xind],
-                yind  = object@yind[yind],
-                zind  = object@zind[zind],
-                voxelext = object@voxelext,
-                level = object@level,
-                orientation = object@orientation,
-                outlier = object@outlier,
-                source = object@source,
-                method = method)
+                ddim0 = obj@ddim0,
+                xind  = obj@xind[xind],
+                yind  = obj@yind[yind],
+                zind  = obj@zind[zind],
+                voxelext = obj@voxelext,
+                level = obj@level,
+                orientation = obj@orientation,
+                outlier = outlier,
+                source = obj@source,
+                method = obj@method)
             )
 })
 
@@ -845,24 +855,24 @@ if(is.null(xind)) xind <- 1:obj@ddim[1]
 if(is.null(yind)) yind <- 1:obj@ddim[2]
 if(is.null(zind)) zind <- 1:obj@ddim[3]
   invisible(new("dtiIndices",
-                fa = obj$fa[xind,yind,zind],
-                ga = obj$ga[xind,yind,zind],
-                md = obj$md[xind,yind,zind],
-                andir = obj$andir[,xind,yind,zind],
-                bary = obj$bary[,xind,yind,zind],
-                btb   = object@btb,
-                ngrad = object@ngrad, # = dim(btb)[2]
-                s0ind = object@s0ind,
+                fa = obj@fa[xind,yind,zind],
+                ga = obj@ga[xind,yind,zind],
+                md = obj@md[xind,yind,zind],
+                andir = obj@andir[,xind,yind,zind],
+                bary = obj@bary[,xind,yind,zind],
+                btb   = obj@btb,
+                ngrad = obj@ngrad, # = dim(btb)[2]
+                s0ind = obj@s0ind,
                 ddim  = c(length(xind),length(yind),length(zind)),
-                ddim0 = object@ddim0,
-                voxelext = object@voxelext,
-                orientation = object@orientation,
-                xind  = object@xind[xind],
-                yind  = object@yind[yind],
-                zind  = object@zind[zind],
-                method = object@method,
-                level = object@level,
-                source= object@source)
+                ddim0 = obj@ddim0,
+                voxelext = obj@voxelext,
+                orientation = obj@orientation,
+                xind  = obj@xind[xind],
+                yind  = obj@yind[yind],
+                zind  = obj@zind[zind],
+                method = obj@method,
+                level = obj@level,
+                source= obj@source)
             )
 })
 
@@ -958,6 +968,12 @@ if("andir"%in%what){
 if("tensor"%in%what) z$tensor <- obj@D[,xind,yind,zind] 
 if("s0"%in%what) z$s0 <- obj@th0[xind,yind,zind]
 if("mask"%in%what) z$mask <- obj@th0[xind,yind,zind]
+if("outlier"%in%what) {
+ind <- 1:prod(obj@ddim)
+ind <- rep(FALSE,prod(obj@ddim))
+if(length(obj@outlier)>0) ind[obj@outlier] <- TRUE
+dim(ind) <- obj@ddim
+}
 invisible(z)
 })
 
