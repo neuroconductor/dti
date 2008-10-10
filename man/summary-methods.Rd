@@ -1,24 +1,30 @@
-\name{summary}
+\name{summary-methods}
+\docType{methods}
 \alias{summary}
+\alias{summary-methods}
+\alias{summary,ANY-method}
 \alias{summary,dti-method}
-%- Also NEED an '\alias' for EACH other topic documented here.
-\title{ generic function for objects of class "dti", "dtiData",
-"dtiTensor" and "dtiIndices". }
+\title{ Method for summary }
 \description{
-  The function provides summary information for objects of class \code{dti}, \code{dtiData},
-\code{dtiTensor} and \code{dtiIndices}.
+  The method provides summary information for objects of class \code{dti}.
 }
 \usage{
 summary(object, ...)
+\S4method{summary}{dti}(object)
 }
-%- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{object}{ an object of class \code{dti}, \code{dtiData},
 \code{dtiTensor} or \code{dtiIndices}. }
   \item{\dots}{ without effect }
 }
-\value{\code{invisible(NULL)}
-}
+\section{Methods}{
+\describe{
+
+\item{object = "ANY"}{ Returns a warning }
+
+\item{object = "dti"}{  The function provides summary information for objects of class \code{dti}, \code{dtiData},
+\code{dtiTensor} and \code{dtiIndices}. }
+}}
 \references{ K. Tabelow, J. Polzehl, H.U. Voss, and V. Spokoiny. \emph{Diffusion Tensor Imaging: Structural adaptive smoothing}, NeuroImage 39(4), 1763-1773 (2008).
 
 \url{http://www.wias-berlin.de/projects/matheon_a3/} }
@@ -27,6 +33,5 @@ summary(object, ...)
 \examples{
 \dontrun{demo(dti_art)}
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory.
-\keyword{ utilities }
+\keyword{methods}
+\keyword{utilities}
