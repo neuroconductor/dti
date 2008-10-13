@@ -1,15 +1,12 @@
 \name{dtiData}
 \alias{dtiData}
-%- Also NEED an '\alias' for EACH other topic documented here.
-\title{ Creates a dtiData object }
+\title{ Read Diffusion Weighted Data from Image File}
 \description{
-  This function creates a dtiData object from an imagefile, where the diffusion weighted data is given as 2-byte integer.
+  This function creates a \code{"dtiData"} object from an imagefile, where the diffusion weighted data is given as 2-byte integer.
 }
 \usage{
-dtiData(gradient, imagefile, ddim, xind = NULL, yind = NULL, zind = NULL, level = 0, mins0value = 0, maxvalue = 10000, voxelext = c(1, 1, 1),
-        orientation = c(1, 3, 5))
+  dtiData(gradient, imagefile, ddim, xind = NULL, yind = NULL, zind = NULL, level = 0, mins0value = 0, maxvalue = 10000, voxelext = c(1, 1, 1), orientation = c(1, 3, 5))
 }
-%- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{gradient}{ matrix of diffusion gradients (including zero gradients for S0 images}
   \item{imagefile}{ filename for image data (binary 2Byte integers)}
@@ -33,14 +30,15 @@ dtiData(gradient, imagefile, ddim, xind = NULL, yind = NULL, zind = NULL, level 
 \value{
 An object of class \code{dtiData}.
 }
-\references{ K. Tabelow, J. Polzehl, H.U. Voss, and V. Spokoiny. \emph{Diffusion Tensor Imaging: Structural adaptive smoothing}, NeuroImage 39(4), 1763-1773 (2008).
+\references{  K. Tabelow, J. Polzehl, H.U. Voss, and V. Spokoiny. 
+              \emph{Diffusion Tensor Imaging: Structural adaptive smoothing}, 
+              NeuroImage 39(4), 1763-1773 (2008).
 
-\url{http://www.wias-berlin.de/projects/matheon_a3/}}
-\author{Karsten Tabelow tabelow@wias-berlin.de, J\"org Polzehl polzehl@wias-berlin.de }
-\seealso{  \code{\link{dtiTensor}}, \code{\linkS4class{dtiData}} }
-\examples{
-\dontrun{demo(dti_art)}
+              \url{ http://www.wias-berlin.de/projects/matheon_a3/} 
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory.
+\author{ Karsten Tabelow tabelow@wias-berlin.de, J\"org Polzehl polzehl@wias-berlin.de }
+\seealso{ \code{\link{dtiTensor-methods}}, \code{\linkS4class{dtiData}} }
+\examples{
+  \dontrun{demo(dti_art)}
+}
 \keyword{ IO }

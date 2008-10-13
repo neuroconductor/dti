@@ -2,11 +2,10 @@
 \docType{class}
 \alias{dtiIndices-class}
 \alias{dtiTensor,dtiIndices-method}
-
-\title{Class "dtiIndices" }
+\title{ Class "dtiIndices" }
 \description{ Fractional Anisotropy indices and main directions of anisotropy derived from a diffusion tensor	}
 \section{Objects from the Class}{
-Objects can be created by calls of function \code{\link{dtiIndices}}.
+Objects can be created by calls of function \code{\link{dtiIndices-methods}}.
 }
 \section{Slots}{
 	 \describe{
@@ -42,16 +41,17 @@ Class \code{"\linkS4class{vector}"}, by class "list", distance 2.
     \item{plot}{\code{signature(x = "dtiIndices")}: 2D Visualization for a specified slice.  }
 	 }
 }
-\references{ K. Tabelow, J. Polzehl, H.U. Voss, and V. Spokoiny. \emph{Diffusion Tensor Imaging: Structural adaptive smoothing}, NeuroImage 39(4), 1763-1773 (2008).
+\references{  K. Tabelow, J. Polzehl, H.U. Voss, and V. Spokoiny. 
+              \emph{Diffusion Tensor Imaging: Structural adaptive smoothing}, 
+              NeuroImage 39(4), 1763-1773 (2008).
 
-\url{http://www.wias-berlin.de/projects/matheon_a3/} 
- }
+              \url{ http://www.wias-berlin.de/projects/matheon_a3/} 
+}
 \author{ Karsten Tabelow tabelow@wias-berlin.de, J\"org Polzehl polzehl@wias-berlin.de  }
-\seealso{
-\code{\link{dtiData}},\code{\link{dtiTensor}},\code{\link{dti.smooth}}, \code{\linkS4class{dti}}, \code{\linkS4class{dtiData}}, \code{\linkS4class{dtiTensor}}	
+\seealso{ \code{\link{dtiData}},\code{\link{dtiTensor-methods}},\code{\link{dti.smooth-methods}}, \code{\linkS4class{dti}}, \code{\linkS4class{dtiData}}, \code{\linkS4class{dtiTensor}}	
 }
 \examples{
-showClass("dtiIndices")
-\dontrun{demo(dti_art)}
+  showClass("dtiIndices")
+  \dontrun{demo(dti_art)}
 }
-\keyword{classes}
+\keyword{ classes }

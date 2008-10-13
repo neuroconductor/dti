@@ -1,24 +1,16 @@
 \name{show3d-methods}
 \docType{methods}
-\alias{show3d}
 \alias{show3d-methods}
 \alias{show3d,ANY-method}
 \alias{show3d,dtiIndices-method}
-\alias{\method{show3d},dtiIndices}
 \alias{show3d,dtiTensor-method}
-\alias{\method{show3d},dtiTensor}
-\title{ Interactiv 3D visualization of dtiTensor and dtiIndices objects.}
+\title{ Methods for Function `show3d' in Package `dti' }
 \description{
-  The function provides an interface to the rgl-package. It
-  creates a 3D visualization of dtiTensor and dtiIndices objects
-  within a rgl-device. Functionality of the rgl-package allows to
-  rotate and zoom the displayed object.
+  The function provides 3D visualization of \code{"dtiTensor"} and \code{"dtiIndices"} objects using the \code{"rgl"}-package. Functionality of the rgl-package allows to rotate and zoom the displayed object.
 }
 \usage{
-show3d(obj, ...)
-\S4method{show3d}{dtiTensor}(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,method=1,level=0,
-scale=.25,bgcolor="black",add=FALSE,subdivide=2,smooth=TRUE,maxobjects=729,\dots)
-\S4method{show3d}{dtiIndices}(obj,index="FA",nx=NULL,ny=NULL,nz=NULL,center=NULL,method=1,level=0,bgcolor="black",add=FALSE)
+  \S4method{show3d}{dtiTensor}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, method=1, level=0, scale=.25, bgcolor="black", add=FALSE, subdivide=2, smooth=TRUE, maxobjects=729, \dots)
+  \S4method{show3d}{dtiIndices}(obj, index="FA", nx=NULL, ny=NULL, nz=NULL, center=NULL, method=1, level=0, bgcolor="black", add=FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -60,14 +52,17 @@ Displays can be closed using function \code{rgl.close}
 \value{
   The function returns the number of the current rgl-device.
 }
-\references{ K. Tabelow, J. Polzehl, H.U. Voss, and V. Spokoiny. \emph{Diffusion Tensor Imaging: Structural adaptive smoothing}, NeuroImage 39(4), 1763-1773 (2008).
+\references{  K. Tabelow, J. Polzehl, H.U. Voss, and V. Spokoiny. 
+              \emph{Diffusion Tensor Imaging: Structural adaptive smoothing}, 
+              NeuroImage 39(4), 1763-1773 (2008).
 
-\url{http://www.wias-berlin.de/projects/matheon_a3/} }
-\author{ Karsten Tabelow tabelow@wias-berlin.de, J\"org Polzehl polzehl@wias-berlin.de }
-\seealso{\code{\link{dtiTensor-class}}, \code{\link{dtiIndices-class}}  }
-\examples{
-\dontrun{demo(dti_art)}
+              \url{ http://www.wias-berlin.de/projects/matheon_a3/} 
 }
-\keyword{methods}
+\author{ Karsten Tabelow tabelow@wias-berlin.de, J\"org Polzehl polzehl@wias-berlin.de }
+\seealso{ \code{\linkS4class{dtiTensor}}, \code{\linkS4class{dtiIndices}}  }
+\examples{
+  \dontrun{demo(dti_art)}
+}
+\keyword{ methods }
 \keyword{ iplot }
-\keyword{ hplot }% __ONLY ONE__ keyword per line
+\keyword{ hplot }

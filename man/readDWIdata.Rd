@@ -1,9 +1,8 @@
 \name{readDWIdata}
 \alias{readDWIdata}
-%- Also NEED an '\alias' for EACH other topic documented here.
-\title{ Read Diffusion Weighted Data }
+\title{ Read Diffusion Weighted Data from Directory }
 \description{
-  The function reads Diffusion Weighted Data from medicial imaging file in data directories for further processing.
+  The function creates a \code{"dtiData"} object from Diffusion Weighted Data from medicial imaging files in a list of directories.
 }
 \usage{
 readDWIdata(dirlist, format, nslice, gradient, order = NULL, xind = NULL, yind = NULL, zind = NULL, level = 0, mins0value = 0, maxvalue = 10000, voxelext = NULL, orientation = c(1, 3, 5))
@@ -34,14 +33,15 @@ readDWIdata(dirlist, format, nslice, gradient, order = NULL, xind = NULL, yind =
 \value{
   An object of class \code{dtiData}.
 }
-\references{  K. Tabelow, J. Polzehl, H.U. Voss, and V. Spokoiny. \emph{Diffusion Tensor Imaging: Structural adaptive smoothing}, NeuroImage 39(4), 1763-1773 (2008).
+\references{  K. Tabelow, J. Polzehl, H.U. Voss, and V. Spokoiny. 
+              \emph{Diffusion Tensor Imaging: Structural adaptive smoothing}, 
+              NeuroImage 39(4), 1763-1773 (2008).
 
-\url{http://www.wias-berlin.de/projects/matheon_a3/} }
-\author{Karsten Tabelow tabelow@wias-berlin.de, J\"org Polzehl polzehl@wias-berlin.de}
-\seealso{  \code{\link{dtiTensor}}, \code{\linkS4class{dtiData}} }
-\examples{
-\dontrun{demo(dti_art)}
+              \url{ http://www.wias-berlin.de/projects/matheon_a3/} 
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory.
+\author{ Karsten Tabelow tabelow@wias-berlin.de, J\"org Polzehl polzehl@wias-berlin.de}
+\seealso{ \code{\link{dtiTensor-methods}}, \code{\linkS4class{dtiData}} }
+\examples{
+  \dontrun{demo(dti_art)}
+}
 \keyword{ IO }

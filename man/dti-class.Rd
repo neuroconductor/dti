@@ -1,8 +1,6 @@
 \name{dti-class}
 \docType{class}
 \alias{dti-class}
-\alias{show,dti-method}
-
 \title{Class "dti" }
 \description{ Basic description of Diffusion Weighted Image (DWI) data}
 \section{Objects from the Class}{
@@ -31,13 +29,16 @@ Objects can be created by calls of the form \code{new("dti", ...)}.
     \item{show}{\code{signature(object = "dti")}: not yet implemented }
 	 }
 }
-\references{ 
-\url{http://www.wias-berlin.de/projects/matheon_a3/} 
+\references{  K. Tabelow, J. Polzehl, H.U. Voss, and V. Spokoiny. 
+              \emph{Diffusion Tensor Imaging: Structural adaptive smoothing}, 
+              NeuroImage 39(4), 1763-1773 (2008).
+
+              \url{ http://www.wias-berlin.de/projects/matheon_a3/} 
 }
 \author{ Karsten Tabelow tabelow@wias-berlin.de, J\"org Polzehl polzehl@wias-berlin.de }
 \seealso{\code{\link{dtiData}}, \code{\linkS4class{dtiData}}, \code{\linkS4class{dtiTensor}}, \code{\linkS4class{dtiIndices}}
 }
 \examples{
-showClass("dti")
+  showClass("dti")
 }
-\keyword{classes}
+\keyword{ classes }

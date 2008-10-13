@@ -1,21 +1,18 @@
 \name{extract-methods}
 \docType{methods}
-\alias{extract}
 \alias{extract-methods}
 \alias{extract,ANY-method}
 \alias{extract,dtiData-method}
 \alias{extract,dtiIndices-method}
 \alias{extract,dtiTensor-method}
-\title{ Extract information from objects}
+\title{ Methods for Function `extract' in Package `dti' }
 \description{
- The methods extract or/and compute specified statistics from 
-object of class \code{dti}. This can be restricted to a subset of voxel.
+  The methods extract and/or compute specified statistics from object of class \code{"dtiData"}, \code{"dtiTensor"}, and \code{"dtiIndices"}. This can be restricted to a subset of voxel.
 }
 \usage{
-extract(obj, ...)
-\S4method{extract}{dtiData}(obj,what="data",xind=NULL,yind=NULL,zind=NULL)
-\S4method{extract}{dtiTensor}(obj,what="tensor",xind=NULL,yind=NULL,zind=NULL)
-\S4method{extract}{dtiIndices}(obj,what=c("fa","andir"),xind=NULL,yind=NULL,zind=NULL)
+  \S4method{extract}{dtiData}(obj, what="data", xind=NULL, yind=NULL, zind=NULL)
+  \S4method{extract}{dtiTensor}(obj, what="tensor", xind=NULL, yind=NULL, zind=NULL)
+  \S4method{extract}{dtiIndices}(obj, what=c("fa","andir"), xind=NULL, yind=NULL, zind=NULL)
 }
 \arguments{
   \item{obj}{ Object of class \code{dti} }
@@ -85,13 +82,16 @@ A vector of options can be supplied.
   List with components carrying the names of the options specified in
   argument \code{what}.
 }
-\references{ K. Tabelow, J. Polzehl, H.U. Voss, and V. Spokoiny. \emph{Diffusion Tensor Imaging: Structural adaptive smoothing}, NeuroImage 39(4), 1763-1773 (2008).
+\references{  K. Tabelow, J. Polzehl, H.U. Voss, and V. Spokoiny. 
+              \emph{Diffusion Tensor Imaging: Structural adaptive smoothing}, 
+              NeuroImage 39(4), 1763-1773 (2008).
 
-\url{http://www.wias-berlin.de/projects/matheon_a3/} }
-\author{ Karsten Tabelow tabelow@wias-berlin.de, J\"org Polzehl polzehl@wias-berlin.de }
-\seealso{\code{\link{dtiTensor-class}}, \code{\link{dtiIndices-class}}  }
-\examples{
-\dontrun{demo(dti_art)}
+              \url{ http://www.wias-berlin.de/projects/matheon_a3/} 
 }
-\keyword{methods}
-\keyword{manip}
+\author{ Karsten Tabelow tabelow@wias-berlin.de, J\"org Polzehl polzehl@wias-berlin.de }
+\seealso{ \code{\linkS4class{dtiTensor}}, \code{\linkS4class{dtiIndices}}  }
+\examples{
+  \dontrun{demo(dti_art)}
+}
+\keyword{ methods }
+\keyword{ manip }

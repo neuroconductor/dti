@@ -1,7 +1,6 @@
 \name{tensor2medinria}
 \alias{tensor2medinria}
-%- Also NEED an '\alias' for EACH other topic documented here.
-\title{Write Tensor-Data as NIFTI File }
+\title{ Write Diffusion Tensor Data as NIFTI File }
 \description{
   Write Tensor-Data as NIFTI File. Interface function to MedINRIA
 }
@@ -21,17 +20,19 @@ The function allows to write tensor data as NIFTY-Files readable by MedINRIA.
 }
 \value{\code{NULL}
 }
-\references{ K. Tabelow, J. Polzehl, H.U. Voss, and V. Spokoiny. \emph{Diffusion Tensor Imaging: Structural adaptive smoothing}, NeuroImage 39(4), 1763-1773 (2008).
+\references{  K. Tabelow, J. Polzehl, H.U. Voss, and V. Spokoiny. 
+              \emph{Diffusion Tensor Imaging: Structural adaptive smoothing}, 
+              NeuroImage 39(4), 1763-1773 (2008).
 
-\url{http://www.wias-berlin.de/projects/matheon_a3/} 
-
-P. Fillard, J. Souplet and N. Toussaint \emph{ Medical Image Navigation and Research
-Tool by INRIA (MedINRIA)}, INRIA Sophia Antipolis - Research Project ASCLEPIOS 2007}
-\author{ Karsten Tabelow tabelow@wias-berlin.de, J\"org Polzehl polzehl@wias-berlin.de }
-\seealso{ \code{\link{dtiTensor}} }
-\examples{
-\dontrun{demo(dti_art)}
+              \url{ http://www.wias-berlin.de/projects/matheon_a3/}
+ 
+              P. Fillard, J. Souplet and N. Toussaint 
+              \emph{ Medical Image Navigation and Research Tool by INRIA (MedINRIA)}, 
+              INRIA Sophia Antipolis - Research Project ASCLEPIOS 2007
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory.
+\author{ Karsten Tabelow tabelow@wias-berlin.de, J\"org Polzehl polzehl@wias-berlin.de }
+\seealso{ \code{\link{dtiTensor-methods}} }
+\examples{
+  \dontrun{demo(dti_art)}
+}
 \keyword{ IO }

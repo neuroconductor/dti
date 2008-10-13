@@ -1,21 +1,19 @@
 \name{plot-methods}
 \docType{methods}
-\alias{plot}
 \alias{plot-methods}
 \alias{plot,ANY-method}
 \alias{plot,dti-method}
 \alias{plot,dtiData-method}
 \alias{plot,dtiIndices-method}
 \alias{plot,dtiTensor-method}
-\title{ Plot function for visualization } 
+\title{ Methods for Function `plot' in Package `dti' } 
 \description{
-  Plot function for visualization of objects of class \code{"dtiData"}, \code{"dtiIndices"} and class \code{"dtiTensor"}
+  Visualization of objects of class \code{"dtiData"}, \code{"dtiIndices"} and class \code{"dtiTensor"}
 }
 \usage{
-plot(x, y, ...)
-\S4method{plot}{dtiData}(x, y,slice=1, gradient=NULL, view= "axial", show=TRUE,xind=NULL,yind=NULL,zind=NULL, mar=c(3,3,3,.3),mgp=c(2,1,0), ...)
-\S4method{plot}{dtiTensor}(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=TRUE, contrast.enh=1,what="FA",xind=NULL,yind=NULL,zind=NULL, mar=c(3,3,3,.3),mgp=c(2,1,0), ...)
-\S4method{plot}{dtiIndices}(x, y, slice=1, view="axial", quant=0, minanindex=NULL, contrast.enh=1,what="FA", qrange=c(.01,.99),xind=NULL,yind=NULL,zind=NULL, mar=c(2,2,2,.2),mgp=c(2,1,0),...)
+  \S4method{plot}{dtiData}(x, y, slice=1, gradient=NULL, view= "axial", show=TRUE, xind=NULL, yind=NULL, zind=NULL, mar=c(3,3,3,.3), mgp=c(2,1,0), \dots)
+  \S4method{plot}{dtiTensor}(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=TRUE, contrast.enh=1, what="FA", xind=NULL, yind=NULL, zind=NULL, mar=c(3,3,3,.3), mgp=c(2,1,0), \dots)
+  \S4method{plot}{dtiIndices}(x, y, slice=1, view="axial", quant=0, minanindex=NULL, contrast.enh=1,what="FA", qrange=c(.01,.99), xind=NULL, yind=NULL, zind=NULL, mar=c(2,2,2,.2), mgp=c(2,1,0), \dots)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -42,34 +40,36 @@ plot(x, y, ...)
 }
 \section{Methods}{
 \describe{
+  \item{x = "ANY"}{ Generic function: see \code{\link[graphics]{plot}}. }
 
-\item{x = "ANY"}{ Returns a warning. }
+  \item{x =  "dti"}{ Returns a warning. }
 
-\item{x = "dti"}{ Returns a warning. }
+  \item{x = "dtiData"}{ For objects of class \code{"dtiData"}
+    \code{gradient} can be used to specify a specific data cube
+    associated with the index of a gradient direction.
+    For objects of class \code{"dtiData"} images are produces that are
+    scaled by the maximal observed image value. This guarantees 
+    that subsequently produced images are on a comparable grey scale.
+    The resulting image is returned. }
 
-\item{x = "dtiData"}{ For objects of class \code{"dtiData"}
-  \code{gradient} can be used to specify a specific data cube
-  associated with the index of a gradient direction.
-  For objects of class \code{"dtiData"} images are produces that are
-  scaled by the maximal observed image value. This guarantees 
-  that subsequently produced images are on a comparable grey scale.
-  The resulting image is returned. }
+  \item{x = "dtiIndices"}{ For objects of class \code{"dtiIndices"} color
+    coded anisotropy maps are produced depending on the specification in
+    \code{method}. The resulting image is returned. }
 
-\item{x = "dtiIndices"}{ For objects of class \code{"dtiIndices"} color
-  coded anisotropy maps are produced depending on the specification in
-  \code{method}. The resulting image is returned. }
-
-\item{x = "dtiTensor"}{ For objects of class \code{"dtiTensor"} the
-  tensor itself, fractional anisotropy (FA), mean diffusivity (MD) and a
-  color coded anisotropy map are provided. \code{NULL} is returned. }
+  \item{x = "dtiTensor"}{ For objects of class \code{"dtiTensor"} the
+    tensor itself, fractional anisotropy (FA), mean diffusivity (MD) and a
+    color coded anisotropy map are provided. \code{NULL} is returned. }
 }}
-\references{ K. Tabelow, J. Polzehl, H.U. Voss, and V. Spokoiny. \emph{Diffusion Tensor Imaging: Structural adaptive smoothing}, NeuroImage 39(4), 1763-1773 (2008).
+\references{  K. Tabelow, J. Polzehl, H.U. Voss, and V. Spokoiny. 
+              \emph{Diffusion Tensor Imaging: Structural adaptive smoothing}, 
+              NeuroImage 39(4), 1763-1773 (2008).
 
-\url{http://www.wias-berlin.de/projects/matheon_a3/} }
+              \url{ http://www.wias-berlin.de/projects/matheon_a3/} 
+}
 \author{ Karsten Tabelow tabelow@wias-berlin.de, J\"org Polzehl polzehl@wias-berlin.de }
 \seealso{ \code{\linkS4class{dtiIndices}}, \code{\linkS4class{dtiData}}, \code{\linkS4class{dtiTensor}}}
 \examples{
-\dontrun{demo(dti_art)}
+  \dontrun{demo(dti_art)}
 }
-\keyword{methods}
+\keyword{ methods }
 \keyword{ hplot }

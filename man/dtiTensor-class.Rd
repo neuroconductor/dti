@@ -5,7 +5,7 @@
 \title{Class "dtiTensor"}
 \description{ Diffusion Tensor object. Containes the results of estimating a diffusion tensor from diffusion weighted image (DWI) data.}
 \section{Objects from the Class}{
-Objects can be created by calls to functions \code{\link{dtiTensor}},  \code{\link{dti.smooth}} or \code{\link{medinria2tensor}}.
+Objects can be created by calls to functions \code{\link{dtiTensor-methods}},  \code{\link{dti.smooth-methods}} or \code{\link{medinria2tensor}}.
 }
 \section{Slots}{
 	 \describe{
@@ -55,15 +55,17 @@ Class \code{"\linkS4class{vector}"}, by class "list", distance 2.
     \item{plot}{\code{signature(x = "dtiTensor")}: not jet implemented. }
 	 }
 }
-\references{ K. Tabelow, J. Polzehl, H.U. Voss, and V. Spokoiny. \emph{Diffusion Tensor Imaging: Structural adaptive smoothing}, NeuroImage 39(4), 1763-1773 (2008).
+\references{  K. Tabelow, J. Polzehl, H.U. Voss, and V. Spokoiny. 
+              \emph{Diffusion Tensor Imaging: Structural adaptive smoothing}, 
+              NeuroImage 39(4), 1763-1773 (2008).
 
-\url{http://www.wias-berlin.de/projects/matheon_a3/} 
- }
+              \url{ http://www.wias-berlin.de/projects/matheon_a3/} 
+}
 \author{ Karsten Tabelow tabelow@wias-berlin.de, J\"org Polzehl polzehl@wias-berlin.de  }
-\seealso{\code{\link{dtiData}},\code{\link{dtiTensor}},\code{\link{dtiIndices}},\code{\link{dti.smooth}}, \code{\linkS4class{dti}}, \code{\linkS4class{dtiData}}, \code{\linkS4class{dtiIndices}}
+\seealso{\code{\link{dtiData}},\code{\link{dtiTensor-methods}},\code{\link{dtiIndices-methods}},\code{\link{dti.smooth-methods}}, \code{\linkS4class{dti}}, \code{\linkS4class{dtiData}}, \code{\linkS4class{dtiIndices}}
 }
 \examples{
-showClass("dtiTensor")
-\dontrun{demo(dti_art)}
+  showClass("dtiTensor")
+  \dontrun{demo(dti_art)}
 }
-\keyword{classes}
+\keyword{ classes }
