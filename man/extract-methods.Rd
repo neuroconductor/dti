@@ -5,62 +5,42 @@
 \alias{extract,dtiData-method}
 \alias{extract,dtiIndices-method}
 \alias{extract,dtiTensor-method}
-\title{ Methods for Function `extract' in Package `dti' }
+\alias{[-methods}
+\alias{[,ANY-method}
+\alias{[,dtiData-method}
+\alias{[,dtiIndices-method}
+\alias{[,dtiTensor-method}
+\title{ Methods for Function `extract' and `[' in Package `dti' }
 \description{
   The methods extract and/or compute specified statistics from object of class \code{"dtiData"}, \code{"dtiTensor"}, and \code{"dtiIndices"}. This can be restricted to a subset of voxel.
 }
 \usage{
-  \S4method{extract}{dtiData}(obj, what="data", xind=NULL, yind=NULL, zind=NULL)
-  \S4method{extract}{dtiTensor}(obj, what="tensor", xind=NULL, yind=NULL, zind=NULL)
-  \S4method{extract}{dtiIndices}(obj, what=c("fa","andir"), xind=NULL, yind=NULL, zind=NULL)
+  \S4method{extract}{dtiData}(x, i, j, k, what="data")
+  \S4method{extract}{dtiTensor}(x, i, j, k, what="tensor")
+  \S4method{extract}{dtiIndices}(x, i, j, k, what=c("fa","andir"))
+  \S4method{[}{dtiData}(x, i, j, k, drop=FALSE)
+  \S4method{[}{dtiTensor}(x, i, j, k, drop=FALSE)
+  \S4method{[}{dtiIndices}(x, i, j, k, drop=FALSE)
 }
 \arguments{
-  \item{obj}{ Object of class \code{dti} }
-  \item{what}{ Statistic to extract. Options are
-
-for \code{class(obj)=="dtiData"}
-     \item{"btb"}{Gradient information}
-     \item{"S0"}{S0 images}  
-     \item{"Si"}{Sb images}  
-     \item{"Sb"}{Sb images}  
-     \item{"data"}{all images}
-
-     for \code{class(obj)=="dtiTensor"}
-     \item{"fa"}{Fractional anisotropy}  
-     \item{"ga"}{Geodetic anisotropy}  
-     \item{"md"}{Mean diffusivity}  
-     \item{"evalues"}{Eigenvalues}
-     \item{"andir"}{Main direction of anisotropy}
-     \item{"tensor"}{Estimated tensor}
-     \item{"s0"}{Estimated S0 image}
-     \item{"mask"}{mask}
-
-     for \code{class(obj)=="dtiIndices"}
-     
-     \item{"fa"}{Fractional anisotropy}  
-     \item{"ga"}{Geodetic anisotropy}  
-     \item{"md"}{Mean diffusivity}  
-     \item{"andir"}{Main direction of anisotropy}
-     \item{"bary"}{Bary coordinates}
-
-A vector of options can be supplied.
-}
-  \item{xind}{ vector of x-coordinates, defaults to whole range. }
-  \item{yind}{ vector of y-coordinates, defaults to whole range. }
-  \item{zind}{ vector of z-coordinates, defaults to whole range. }
-  \item{\dots}{ one or several  of the parameters above }
+  \item{x}{ Object of class \code{dti} }
+  \item{i}{ vector of x-coordinates, defaults to whole range. }
+  \item{j}{ vector of y-coordinates, defaults to whole range. }
+  \item{k}{ vector of z-coordinates, defaults to whole range. }
+  \item{what}{ Statistic to extract. See Methods Section for details. }
+  \item{drop}{ unused. }
 }
 \section{Methods}{
 \describe{
 
-\item{obj = "ANY"}{ Returns a warning. }
+\item{x = "ANY"}{ Returns a warning for \code{extract}. Generic funtion for \code{"["} }
 
-\item{obj = "dtiData"}{    Extraction of squared gradient matrix or of
-   S0, Sb or all images restricted to the cube defined by
-   arguments \code{xind}, \code{yind} and \code{zind}.
+\item{x = "dtiData"}{    Extraction of squared gradient matrix (btb) or of
+   S0 (S0), Sb (Sb) or all images (Si) restricted to the cube defined by
+   arguments \code{i}, \code{j} and \code{k}.
  }
 
-\item{obj = "dtiIndices"}{ Returns an array containing the specified statistics,
+\item{x = "dtiIndices"}{ Returns an array containing the specified statistics,
   i.e. fractional anisotropy (fa), geodesic anisotropy (ga), mean diffusivity (md),
     main direction of anisotropy (andir) and/or Bary coordinates (bary),
    as specified in argument \code{what}. Information is extracted for voxel 
@@ -68,7 +48,7 @@ A vector of options can be supplied.
    arguments \code{xind}, \code{yind} and \code{zind}.
  }
 
-\item{obj = "dtiTensor"}{    Returns an array containing the specified statistics,
+\item{x = "dtiTensor"}{    Returns an array containing the specified statistics,
   i.e. fractional anisotropy (fa), geodesic anisotropy (ga), mean diffusivity (md),
    eigenvalues (evalues), main direction of anisotropy (andir), the tensor 
    (tensor) the estimated S0 image (s0) and/or the mask used to restrict computations (mask),

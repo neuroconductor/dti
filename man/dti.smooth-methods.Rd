@@ -30,7 +30,7 @@ or an object of class \code{dtiTensor}}
   \item{varmodel}{if \code{varmodel=="global"} a homogeneous variance estimate is assumed and estimated as the median of the local variance estimates.}
   \item{rician}{logical: apply a correction for Rician bias. This is still experimental and depends on spatial independence of errors.}
   \item{niter}{Maximum number of iterations for tensor estimates using the nonlinear model.}
-  \item{volseq}{If \code{volseq==TRUE} the sum of location weights is fixed to \code{1.25^k} within iteration \code{k} (does not depend on the actual tensor). Otherwise the ellipsoid of positive location weights is determined by a bandwidth \code{$h_k = 1.25^(k/3)$}.}
+  \item{volseq}{If \code{volseq==TRUE} the sum of location weights is fixed to \eqn{1.25^k}{1.25^k} within iteration \eqn{k}{k} (does not depend on the actual tensor). Otherwise the ellipsoid of positive location weights is determined by a bandwidth \eqn{h_k = 1.25^(k/3)}{h_k = 1.25^(k/3)}.}
 }
 \section{Methods}{
 \describe{
@@ -47,13 +47,13 @@ due to methodological reasons.  }
 \value{
   An object of class \code{dtiTensor}.
 }
-\references{  K. Tabelow, J. Polzehl, H.U. Voss, and V. Spokoiny. 
-              \emph{Diffusion Tensor Imaging: Structural adaptive smoothing}, 
-              NeuroImage 39(4), 1763-1773 (2008).
+\references{  Tabelow, K. and Polzehl, J. and Spokoiny, V. and Voss, H. U. (2008)
+              Diffusion Tensor Imaging: Structural adaptive smoothing,
+              \emph{NeuroImage} \bold{39(4)}, 1763--1773.
 
-              C.G. Koay, J.D. Carew, A.L. Alexander, P.J. Basser and M.E. Meyerand.
-              \emph{ Investigation of Anomalous Estimates of Tensor-Derived Quantities in Diffusion Tensor Imaging}, 
-              Magnetic Resonance in medicine, 2006, 55, 930-936.
+              Koay, C. G. and Carew, J. D. and Alexander, A. L. and Basser, P. J. and Meyerand, M.E. (2006)
+              Investigation of Anomalous Estimates of Tensor-Derived Quantities in Diffusion Tensor Imaging, 
+              \emph{Magnetic Resonance in Medicine} \bold{55}, 930--936.
 
               \url{ http://www.wias-berlin.de/projects/matheon_a3/} 
 }

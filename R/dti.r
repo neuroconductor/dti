@@ -780,220 +780,450 @@ function(object, which) {
             )
 })
 
-clipdti <- function(obj,  ...) cat("Data clipping not defined for this class:",class(object),"\n")
+setMethod("[","dtiData",
+function(x, i, j, k, drop=FALSE){
+  if (missing(i)) i <- TRUE
+  if (missing(j)) j <- TRUE
+  if (missing(k)) k <- TRUE
+  if (is.logical(i)) ddimi <- x@ddim[1] else ddimi <- length(i)
+  if (is.logical(j)) ddimj <- x@ddim[2] else ddimj <- length(j)
+  if (is.logical(k)) ddimk <- x@ddim[3] else ddimk <- length(k)
 
-
-setGeneric("clipdti", function(obj,  ...) standardGeneric("clipdti"))
-
-
-setMethod("clipdti","dtiData",
-function(obj,xind=NULL,yind=NULL,zind=NULL){
-if(is.null(xind)) xind <- 1:obj@ddim[1]
-if(is.null(yind)) yind <- 1:obj@ddim[2]
-if(is.null(zind)) zind <- 1:obj@ddim[3]
-invisible(new("dtiData",
-                si     = obj@si[xind,yind,zind,],
-                btb    = obj@btb,
-                ngrad  = obj@ngrad, # = dim(btb)[2]
-                s0ind  = obj@s0ind, # indices of S_0 images
-                replind = obj@rind,
-                ddim   = c(length(xind),length(yind),length(zind)),
-                ddim0  = obj@ddim0,
-                xind   = obj@xind[xind],
-                yind   = obj@yind[yind],
-                zind   = obj@zind[zind],
-                level  = obj@level,
-                voxelext = obj@voxelext,
-                orientation = obj@orientation,
-                source = obj@imagefile)
+  invisible(new("dtiData",
+                si     = x@si[i,j,k,,drop=FALSE],
+                btb    = x@btb,
+                ngrad  = x@ngrad,
+                s0ind  = x@s0ind,
+                replind = x@replind,
+                ddim   = c(ddimi,ddimj,ddimk),
+                ddim0  = x@ddim0,
+                xind   = x@xind[i],
+                yind   = x@yind[j],
+                zind   = x@zind[k],
+                level  = x@level,
+                voxelext = x@voxelext,
+                orientation = x@orientation,
+                source = x@source)
             )
 })
 
-setMethod("clipdti","dtiTensor",
-function(obj,xind=NULL,yind=NULL,zind=NULL){
-if(is.null(xind)) xind <- 1:obj@ddim[1]
-if(is.null(yind)) yind <- 1:obj@ddim[2]
-if(is.null(zind)) zind <- 1:obj@ddim[3]
-ind <- 1:prod(obj@ddim)
-if(length(obj@outlier)>0){
-ind <- rep(FALSE,prod(obj@ddim))
-ind[obj@outlier] <- TRUE
-dim(ind) <- obj@ddim
-ind <- ind[xind,yind,zind]
-outlier <- (1:length(ind))[ind]
-} else {
-outlier <- numeric(0)
-}
-invisible(new("dtiTensor",
-                D     = obj@D[,xind,yind,zind],
-                th0   = obj@th0[xind,yind,zind],
-                sigma = obj@sigma[xind,yind,zind],
-                scorr = obj@scorr, 
-                bw = obj@bw,
-                mask = obj@mask[xind,yind,zind],
-                hmax = obj@hmax,
-                btb   = obj@btb,
-                ngrad = obj@ngrad, # = dim(btb)[2]
-                s0ind = obj@s0ind,
-                replind = obj@replind,
-                ddim  = c(length(xind),length(yind),length(zind)),
-                ddim0 = obj@ddim0,
-                xind  = obj@xind[xind],
-                yind  = obj@yind[yind],
-                zind  = obj@zind[zind],
-                voxelext = obj@voxelext,
-                level = obj@level,
-                orientation = obj@orientation,
+setMethod("[","dtiTensor",
+function(x, i, j, k, drop=FALSE){
+  if (missing(i)) i <- TRUE
+  if (missing(j)) j <- TRUE
+  if (missing(k)) k <- TRUE
+  if (is.logical(i)) ddimi <- x@ddim[1] else ddimi <- length(i)
+  if (is.logical(j)) ddimj <- x@ddim[2] else ddimj <- length(j)
+  if (is.logical(k)) ddimk <- x@ddim[3] else ddimk <- length(k)
+
+  ind <- 1:prod(x@ddim)
+  if(length(x@outlier)>0){
+    ind <- rep(FALSE,prod(x@ddim))
+    ind[x@outlier] <- TRUE
+    dim(ind) <- x@ddim
+    ind <- ind[i,j,k]
+    outlier <- (1:length(ind))[ind]
+  } else {
+    outlier <- numeric(0)
+  }
+
+  invisible(new("dtiTensor",
+                D     = x@D[,i,j,k],
+                th0   = x@th0[i,j,k],
+                sigma = x@sigma[i,j,k],
+                scorr = x@scorr, 
+                bw = x@bw,
+                mask = x@mask[i,j,k],
+                hmax = x@hmax,
+                btb   = x@btb,
+                ngrad = x@ngrad,
+                s0ind = x@s0ind,
+                replind = x@replind,
+                ddim  = c(ddimi,ddimj,ddimk),
+                ddim0 = x@ddim0,
+                xind  = x@xind[i],
+                yind  = x@yind[j],
+                zind  = x@zind[k],
+                voxelext = x@voxelext,
+                level = x@level,
+                orientation = x@orientation,
                 outlier = outlier,
-                source = obj@source,
-                method = obj@method)
+                source = x@source,
+                method = x@method)
             )
 })
 
-setMethod("clipdti","dtiIndices",function(obj,xind=NULL,yind=NULL,zind=NULL){
-if(is.null(xind)) xind <- 1:obj@ddim[1]
-if(is.null(yind)) yind <- 1:obj@ddim[2]
-if(is.null(zind)) zind <- 1:obj@ddim[3]
+setMethod("[","dtiIndices",
+function(x, i, j, k, drop=FALSE){
+  if (missing(i)) i <- TRUE
+  if (missing(j)) j <- TRUE
+  if (missing(k)) k <- TRUE
+  if (is.logical(i)) ddimi <- x@ddim[1] else ddimi <- length(i)
+  if (is.logical(j)) ddimj <- x@ddim[2] else ddimj <- length(j)
+  if (is.logical(k)) ddimk <- x@ddim[3] else ddimk <- length(k)
+
   invisible(new("dtiIndices",
-                fa = obj@fa[xind,yind,zind],
-                ga = obj@ga[xind,yind,zind],
-                md = obj@md[xind,yind,zind],
-                andir = obj@andir[,xind,yind,zind],
-                bary = obj@bary[,xind,yind,zind],
-                btb   = obj@btb,
-                ngrad = obj@ngrad, # = dim(btb)[2]
-                s0ind = obj@s0ind,
-                ddim  = c(length(xind),length(yind),length(zind)),
-                ddim0 = obj@ddim0,
-                voxelext = obj@voxelext,
-                orientation = obj@orientation,
-                xind  = obj@xind[xind],
-                yind  = obj@yind[yind],
-                zind  = obj@zind[zind],
-                method = obj@method,
-                level = obj@level,
-                source= obj@source)
+                fa = x@fa[i,j,k],
+                ga = x@ga[i,j,k],
+                md = x@md[i,j,k],
+                andir = x@andir[,i,j,k],
+                bary = x@bary[,i,j,k],
+                btb   = x@btb,
+                ngrad = x@ngrad,
+                s0ind = x@s0ind,
+                ddim  = c(ddimi,ddimj,ddimk),
+                ddim0 = x@ddim0,
+                voxelext = x@voxelext,
+                orientation = x@orientation,
+                xind  = x@xind[i],
+                yind  = x@yind[j],
+                zind  = x@zind[k],
+                method = x@method,
+                level = x@level,
+                source= x@source)
             )
 })
 
-extract <- function(obj,  ...) cat("Data extraction not defined for this class:",class(object),"\n")
 
-setGeneric("extract", function(obj,  ...) standardGeneric("extract"))
 
-setMethod("extract","dtiData",function(obj,what="data",xind=NULL,yind=NULL,zind=NULL){
-what <- tolower(what) 
-if(! is.character(what)) stop("Argument what needs to be character\n")
-if(is.null(xind)) xind <- 1:obj@ddim[1]
-if(is.null(yind)) yind <- 1:obj@ddim[2]
-if(is.null(zind)) zind <- 1:obj@ddim[3]
-z <- list(NULL)
-if("btb"%in%what) z$btb <- obj@btb
-if("s0"%in%what) z$S0 <- obj@si[xind,yind,zind,obj@s0ind]
-if("sb"%in%what) z$Si <- obj@si[xind,yind,zind,-obj@s0ind]
-if("data"%in%what) z$data <- obj@si[xind,yind,zind,]
-invisible(z)
+
+# clipdti <- function(obj,  ...) cat("Data clipping not defined for this class:",class(obj),"\n")
+# 
+# setGeneric("clipdti", function(obj,  ...) standardGeneric("clipdti"))
+# 
+# setMethod("clipdti","dtiData",
+# function(obj,xind=NULL,yind=NULL,zind=NULL){
+# if(is.null(xind)) xind <- 1:obj@ddim[1]
+# if(is.null(yind)) yind <- 1:obj@ddim[2]
+# if(is.null(zind)) zind <- 1:obj@ddim[3]
+# invisible(new("dtiData",
+#                 si     = obj@si[xind,yind,zind,],
+#                 btb    = obj@btb,
+#                 ngrad  = obj@ngrad, # = dim(btb)[2]
+#                 s0ind  = obj@s0ind, # indices of S_0 images
+#                 replind = obj@replind,
+#                 ddim   = c(length(xind),length(yind),length(zind)),
+#                 ddim0  = obj@ddim0,
+#                 xind   = obj@xind[xind],
+#                 yind   = obj@yind[yind],
+#                 zind   = obj@zind[zind],
+#                 level  = obj@level,
+#                 voxelext = obj@voxelext,
+#                 orientation = obj@orientation,
+#                 source = obj@source)
+#             )
+# })
+# 
+# setMethod("clipdti","dtiTensor",
+# function(obj,xind=NULL,yind=NULL,zind=NULL){
+# if(is.null(xind)) xind <- 1:obj@ddim[1]
+# if(is.null(yind)) yind <- 1:obj@ddim[2]
+# if(is.null(zind)) zind <- 1:obj@ddim[3]
+# ind <- 1:prod(obj@ddim)
+# if(length(obj@outlier)>0){
+# ind <- rep(FALSE,prod(obj@ddim))
+# ind[obj@outlier] <- TRUE
+# dim(ind) <- obj@ddim
+# ind <- ind[xind,yind,zind]
+# outlier <- (1:length(ind))[ind]
+# } else {
+# outlier <- numeric(0)
+# }
+# invisible(new("dtiTensor",
+#                 D     = obj@D[,xind,yind,zind],
+#                 th0   = obj@th0[xind,yind,zind],
+#                 sigma = obj@sigma[xind,yind,zind],
+#                 scorr = obj@scorr, 
+#                 bw = obj@bw,
+#                 mask = obj@mask[xind,yind,zind],
+#                 hmax = obj@hmax,
+#                 btb   = obj@btb,
+#                 ngrad = obj@ngrad, # = dim(btb)[2]
+#                 s0ind = obj@s0ind,
+#                 replind = obj@replind,
+#                 ddim  = c(length(xind),length(yind),length(zind)),
+#                 ddim0 = obj@ddim0,
+#                 xind  = obj@xind[xind],
+#                 yind  = obj@yind[yind],
+#                 zind  = obj@zind[zind],
+#                 voxelext = obj@voxelext,
+#                 level = obj@level,
+#                 orientation = obj@orientation,
+#                 outlier = outlier,
+#                 source = obj@source,
+#                 method = obj@method)
+#             )
+# })
+# 
+# setMethod("clipdti","dtiIndices",function(obj,xind=NULL,yind=NULL,zind=NULL){
+# if(is.null(xind)) xind <- 1:obj@ddim[1]
+# if(is.null(yind)) yind <- 1:obj@ddim[2]
+# if(is.null(zind)) zind <- 1:obj@ddim[3]
+#   invisible(new("dtiIndices",
+#                 fa = obj@fa[xind,yind,zind],
+#                 ga = obj@ga[xind,yind,zind],
+#                 md = obj@md[xind,yind,zind],
+#                 andir = obj@andir[,xind,yind,zind],
+#                 bary = obj@bary[,xind,yind,zind],
+#                 btb   = obj@btb,
+#                 ngrad = obj@ngrad, # = dim(btb)[2]
+#                 s0ind = obj@s0ind,
+#                 ddim  = c(length(xind),length(yind),length(zind)),
+#                 ddim0 = obj@ddim0,
+#                 voxelext = obj@voxelext,
+#                 orientation = obj@orientation,
+#                 xind  = obj@xind[xind],
+#                 yind  = obj@yind[yind],
+#                 zind  = obj@zind[zind],
+#                 method = obj@method,
+#                 level = obj@level,
+#                 source= obj@source)
+#             )
+# })
+# 
+
+extract <- function(x, i, j, k, what) cat("Data extraction not defined for this class:",class(x),"and type",what,"\n")
+
+setGeneric("extract", function(x, i, j, k, what) standardGeneric("extract"))
+
+setMethod("extract",c(x="dtiData", what="character"),
+function(x, i, j, k, what="data"){
+  what <- tolower(what) 
+
+  x <- x[i,j,k]
+
+  z <- list(NULL)
+  if("btb" %in% what) z$btb <- x@btb
+  if("s0" %in% what) z$S0 <- x@si[,,,x@s0ind]
+  if("sb" %in% what) z$Si <- x@si[,,,-x@s0ind]
+  if("data" %in% what) z$data <- x@si
+  invisible(z)
 })
 
-setMethod("extract","dtiTensor",function(obj,what="tensor",xind=NULL,yind=NULL,zind=NULL){
-what <- tolower(what) 
-if(! is.character(what)) stop("Argument what needs to be character\n")
-if(is.null(xind)) xind <- 1:obj@ddim[1]
-if(is.null(yind)) yind <- 1:obj@ddim[2]
-if(is.null(zind)) zind <- 1:obj@ddim[3]
-n1 <- length(xind)
-n2 <- length(yind)
-n3 <- length(zind)
-needev <- ("fa"%in%what)||("ga"%in%what)||("md"%in%what)||("evalues"%in%what)
-needall <- needev && ("andir"%in%what)
-z <- list(NULL)
-if(needall){
-   erg <- .Fortran("dti3Dall",
-                as.double(obj@D[,xind,yind,zind]),
-                as.integer(n1),
-                as.integer(n2),
-                as.integer(n3),
-                as.logical(obj@mask[xind,yind,zind]),
-                fa=double(n1*n2*n3),
-                ga=double(n1*n2*n3),
-                md=double(n1*n2*n3),
-                andir=double(3*n1*n2*n3),
-                ev=double(3*n1*n2*n3),
-                DUPL=FALSE,
-                PACKAGE="dti")[c("fa","ga","md","andir","ev")]
-if("fa"%in%what) z$fa <- array(erg$fa,c(n1,n2,n3))
-if("ga"%in%what) z$ga <- array(erg$ga,c(n1,n2,n3))
-if("md"%in%what) z$md <- array(erg$md,c(n1,n2,n3))
-if("evalues"%in%what) z$evalues <- array(erg$ev,c(3,n1,n2,n3))
-if("andir"%in%what) z$andir <- array(erg$andir,c(3,n1,n2,n3))
-} else {
-if(needev){
-ev <- array(.Fortran("dti3Dev",
-               as.double(obj@D[,xind,yind,zind]),
-               as.integer(n1),
-               as.integer(n2),
-               as.integer(n3),
-               as.logical(obj@mask[xind,yind,zind]),
-               ev=double(3*n1*n2*n3),
-               DUPL=FALSE,
-               PACKAGE="dti")$ev,c(3,n1,n2,n3))
-if("fa"%in%what) {
-               dd <- apply(ev^2,2:4,sum)
-               md <- (ev[1,,,]+ev[2,,,]+ev[3,,,])/3
-               sev <- sweep(ev,2:4,md)
-               z$fa <- sqrt(1.5*apply(sev^2,2:4,sum)/dd)
-}
-if("ga"%in%what) {
-               sev <- log(ev)
-               md <- (sev[1,,,]+sev[2,,,]+sev[3,,,])/3
-               sev <- sweep(sev,2:4,md)
-               ga <- sqrt(apply(sev^2,2:4,sum))
-               ga[is.na(ga)] <- 0
-               z$ga <- ga 
-}
-if("md"%in%what) z$md <- (ev[1,,,]+ev[2,,,]+ev[3,,,])/3
-if("evalues"%in%what) z$evalues <- ev
-}
-if("andir"%in%what){
-    z$andir <- array(.Fortran("dti3Dand",
-               as.double(obj@D[,xind,yind,zind]),
-               as.integer(n1),
-               as.integer(n2),
-               as.integer(n3),
-               as.logical(obj@mask[xind,yind,zind]),
-               andir=double(3*n1*n2*n3),
-               DUPL=FALSE,
-               PACKAGE="dti")$andir,c(3,n1,n2,n3))
-}
-}
-if("tensor"%in%what) z$tensor <- obj@D[,xind,yind,zind] 
-if("s0"%in%what) z$s0 <- obj@th0[xind,yind,zind]
-if("mask"%in%what) z$mask <- obj@th0[xind,yind,zind]
-if("outlier"%in%what) {
-ind <- 1:prod(obj@ddim)
-ind <- rep(FALSE,prod(obj@ddim))
-if(length(obj@outlier)>0) ind[obj@outlier] <- TRUE
-dim(ind) <- obj@ddim
-}
-invisible(z)
+setMethod("extract","dtiTensor",
+function(x, i, j, k, what="tensor"){
+  what <- tolower(what) 
+
+  x <- x[i,j,k]
+  n1 <- x@ddim[1]
+  n2 <- x@ddim[2]
+  n3 <- x@ddim[3]
+  needev <- ("fa" %in% what) || ("ga" %in% what) || ("md" %in% what) || ("evalues" %in% what)
+  needall <- needev && ("andir" %in% what)
+
+  z <- list(NULL)
+  if(needall){
+    erg <- .Fortran("dti3Dall",
+                    as.double(x@D),
+                    as.integer(n1),
+                    as.integer(n2),
+                    as.integer(n3),
+                    as.logical(x@mask),
+                    fa=double(n1*n2*n3),
+                    ga=double(n1*n2*n3),
+                    md=double(n1*n2*n3),
+                    andir=double(3*n1*n2*n3),
+                    ev=double(3*n1*n2*n3),
+                    DUPL=FALSE,
+                    PACKAGE="dti")[c("fa","ga","md","andir","ev")]
+    if("fa" %in% what) z$fa <- array(erg$fa,c(n1,n2,n3))
+    if("ga" %in% what) z$ga <- array(erg$ga,c(n1,n2,n3))
+    if("md" %in% what) z$md <- array(erg$md,c(n1,n2,n3))
+    if("evalues" %in% what) z$evalues <- array(erg$ev,c(3,n1,n2,n3))
+    if("andir" %in% what) z$andir <- array(erg$andir,c(3,n1,n2,n3))
+  } else {
+    if(needev){
+      ev <- array(.Fortran("dti3Dev",
+                           as.double(x@D),
+                           as.integer(n1),
+                           as.integer(n2),
+                           as.integer(n3),
+                           as.logical(x@mask),
+                           ev=double(3*n1*n2*n3),
+                           DUPL=FALSE,
+                           PACKAGE="dti")$ev,c(3,n1,n2,n3))
+      if("fa" %in% what) {
+        dd <- apply(ev^2,2:4,sum)
+        md <- (ev[1,,,]+ev[2,,,]+ev[3,,,])/3
+        sev <- sweep(ev,2:4,md)
+        z$fa <- sqrt(1.5*apply(sev^2,2:4,sum)/dd)
+      }
+      if("ga" %in% what) {
+        sev <- log(ev)
+        md <- (sev[1,,,]+sev[2,,,]+sev[3,,,])/3
+        sev <- sweep(sev,2:4,md)
+        ga <- sqrt(apply(sev^2,2:4,sum))
+        ga[is.na(ga)] <- 0
+        z$ga <- ga 
+      }
+      if("md" %in% what) z$md <- (ev[1,,,]+ev[2,,,]+ev[3,,,])/3
+      if("evalues" %in% what) z$evalues <- ev
+    }
+    if("andir" %in% what){
+      z$andir <- array(.Fortran("dti3Dand",
+                                as.double(x@D),
+                                as.integer(n1),
+                                as.integer(n2),
+                                as.integer(n3),
+                                as.logical(x@mask),
+                                andir=double(3*n1*n2*n3),
+                                DUPL=FALSE,
+                                PACKAGE="dti")$andir,c(3,n1,n2,n3))
+    }
+  }
+  if("tensor" %in% what) z$tensor <- x@D
+  if("s0" %in% what) z$s0 <- x@th0
+  if("mask" %in% what) z$mask <- x@th0
+  if("outlier" %in% what) {
+    ind <- 1:prod(x@ddim)
+    ind <- rep(FALSE,prod(x@ddim))
+    if(length(x@outlier)>0) ind[x@outlier] <- TRUE
+    dim(ind) <- x@ddim
+  }
+  invisible(z)
 })
 
-setMethod("extract","dtiIndices",function(obj,what=c("fa","andir"),xind=NULL,yind=NULL,zind=NULL){
-what <- tolower(what) 
-if(! is.character(what)) stop("Argument what needs to be character\n")
-if(is.null(xind)) xind <- 1:obj@ddim[1]
-if(is.null(yind)) yind <- 1:obj@ddim[2]
-if(is.null(zind)) zind <- 1:obj@ddim[3]
-n1 <- length(xind)
-n2 <- length(yind)
-n3 <- length(zind)
-z <- list(NULL)
-if("fa"%in%what) z$fa <- obj$fa[xind,yind,zind]
-if("ga"%in%what) z$ga <- obj$ga[xind,yind,zind]
-if("md"%in%what) z$md <- obj$md[xind,yind,zind]
-if("andir"%in%what) z$andir <- obj$andir[,xind,yind,zind]
-if("bary"%in%what) z$bary <- obj$bary[,xind,yind,zind]
-invisible(z)
+setMethod("extract","dtiIndices",
+function(x, i, j, k, what=c("fa","andir")){
+  what <- tolower(what) 
+
+  x <- x[i,j,k]
+  n1 <- x@ddim[1]
+  n2 <- x@ddim[2]
+  n3 <- x@ddim[3]
+
+  z <- list(NULL)
+  if("fa" %in% what) z$fa <- x$fa
+  if("ga" %in% what) z$ga <- x$ga
+  if("md" %in% what) z$md <- x$md
+  if("andir" %in% what) z$andir <- x$andir
+  if("bary" %in% what) z$bary <- x$bary
+  invisible(z)
 })
+
+# extract <- function(obj,  ...) cat("Data extraction not defined for this class:",class(obj),"\n")
+# 
+# setGeneric("extract", function(obj,  ...) standardGeneric("extract"))
+# 
+# setMethod("extract","dtiData",
+# function(obj,what="data",xind=NULL,yind=NULL,zind=NULL){
+#   what <- tolower(what) 
+#   if(! is.character(what)) stop("Argument what needs to be character\n")
+#   if(is.null(xind)) xind <- 1:obj@ddim[1]
+#   if(is.null(yind)) yind <- 1:obj@ddim[2]
+#   if(is.null(zind)) zind <- 1:obj@ddim[3]
+# 
+#   z <- list(NULL)
+#   if("btb"%in%what) z$btb <- obj@btb
+#   if("s0"%in%what) z$S0 <- obj@si[xind,yind,zind,obj@s0ind]
+#   if("sb"%in%what) z$Si <- obj@si[xind,yind,zind,-obj@s0ind]
+#   if("data"%in%what) z$data <- obj@si[xind,yind,zind,]
+#   invisible(z)
+# })
+# 
+# setMethod("extract","dtiTensor",
+# function(obj,what="tensor",xind=NULL,yind=NULL,zind=NULL){
+#   what <- tolower(what) 
+#   if(! is.character(what)) stop("Argument what needs to be character\n")
+#   if(is.null(xind)) xind <- 1:obj@ddim[1]
+#   if(is.null(yind)) yind <- 1:obj@ddim[2]
+#   if(is.null(zind)) zind <- 1:obj@ddim[3]
+#   n1 <- length(xind)
+#   n2 <- length(yind)
+#   n3 <- length(zind)
+#   needev <- ("fa"%in%what)||("ga"%in%what)||("md"%in%what)||("evalues"%in%what)
+#   needall <- needev && ("andir"%in%what)
+# 
+#   z <- list(NULL)
+#   if(needall){
+#     erg <- .Fortran("dti3Dall",
+#                     as.double(obj@D[,xind,yind,zind]),
+#                     as.integer(n1),
+#                     as.integer(n2),
+#                     as.integer(n3),
+#                     as.logical(obj@mask[xind,yind,zind]),
+#                     fa=double(n1*n2*n3),
+#                     ga=double(n1*n2*n3),
+#                     md=double(n1*n2*n3),
+#                     andir=double(3*n1*n2*n3),
+#                     ev=double(3*n1*n2*n3),
+#                     DUPL=FALSE,
+#                     PACKAGE="dti")[c("fa","ga","md","andir","ev")]
+#     if("fa"%in%what) z$fa <- array(erg$fa,c(n1,n2,n3))
+#     if("ga"%in%what) z$ga <- array(erg$ga,c(n1,n2,n3))
+#     if("md"%in%what) z$md <- array(erg$md,c(n1,n2,n3))
+#     if("evalues"%in%what) z$evalues <- array(erg$ev,c(3,n1,n2,n3))
+#     if("andir"%in%what) z$andir <- array(erg$andir,c(3,n1,n2,n3))
+#   } else {
+#     if(needev){
+#       ev <- array(.Fortran("dti3Dev",
+#                            as.double(obj@D[,xind,yind,zind]),
+#                            as.integer(n1),
+#                            as.integer(n2),
+#                            as.integer(n3),
+#                            as.logical(obj@mask[xind,yind,zind]),
+#                            ev=double(3*n1*n2*n3),
+#                            DUPL=FALSE,
+#                            PACKAGE="dti")$ev,c(3,n1,n2,n3))
+#       if("fa"%in%what) {
+#         dd <- apply(ev^2,2:4,sum)
+#         md <- (ev[1,,,]+ev[2,,,]+ev[3,,,])/3
+#         sev <- sweep(ev,2:4,md)
+#         z$fa <- sqrt(1.5*apply(sev^2,2:4,sum)/dd)
+#       }
+#       if("ga"%in%what) {
+#         sev <- log(ev)
+#         md <- (sev[1,,,]+sev[2,,,]+sev[3,,,])/3
+#         sev <- sweep(sev,2:4,md)
+#         ga <- sqrt(apply(sev^2,2:4,sum))
+#         ga[is.na(ga)] <- 0
+#         z$ga <- ga 
+#       }
+#       if("md"%in%what) z$md <- (ev[1,,,]+ev[2,,,]+ev[3,,,])/3
+#       if("evalues"%in%what) z$evalues <- ev
+#     }
+#     if("andir"%in%what){
+#       z$andir <- array(.Fortran("dti3Dand",
+#                                 as.double(obj@D[,xind,yind,zind]),
+#                                 as.integer(n1),
+#                                 as.integer(n2),
+#                                 as.integer(n3),
+#                                 as.logical(obj@mask[xind,yind,zind]),
+#                                 andir=double(3*n1*n2*n3),
+#                                 DUPL=FALSE,
+#                                 PACKAGE="dti")$andir,c(3,n1,n2,n3))
+#     }
+#   }
+#   if("tensor"%in%what) z$tensor <- obj@D[,xind,yind,zind] 
+#   if("s0"%in%what) z$s0 <- obj@th0[xind,yind,zind]
+#   if("mask"%in%what) z$mask <- obj@th0[xind,yind,zind]
+#   if("outlier"%in%what) {
+#     ind <- 1:prod(obj@ddim)
+#     ind <- rep(FALSE,prod(obj@ddim))
+#     if(length(obj@outlier)>0) ind[obj@outlier] <- TRUE
+#     dim(ind) <- obj@ddim
+#   }
+#   invisible(z)
+# })
+# 
+# setMethod("extract","dtiIndices",
+# function(obj,what=c("fa","andir"),xind=NULL,yind=NULL,zind=NULL){
+#   what <- tolower(what) 
+#   if(! is.character(what)) stop("Argument what needs to be character\n")
+#   if(is.null(xind)) xind <- 1:obj@ddim[1]
+#   if(is.null(yind)) yind <- 1:obj@ddim[2]
+#   if(is.null(zind)) zind <- 1:obj@ddim[3]
+#   n1 <- length(xind)
+#   n2 <- length(yind)
+#   n3 <- length(zind)
+#   z <- list(NULL)
+#   if("fa"%in%what) z$fa <- obj$fa[xind,yind,zind]
+#   if("ga"%in%what) z$ga <- obj$ga[xind,yind,zind]
+#   if("md"%in%what) z$md <- obj$md[xind,yind,zind]
+#   if("andir"%in%what) z$andir <- obj$andir[,xind,yind,zind]
+#   if("bary"%in%what) z$bary <- obj$bary[,xind,yind,zind]
+#   invisible(z)
+# })
 
 show3d <- function(obj,  ...) cat("3D Visualization not implemented for this class:",class(object),"\n")
 
@@ -1098,7 +1328,8 @@ tmean[2,,,] <- outer(rep(1,n1),yind)*vext[2]
 tmean[3,,,] <- outer(rep(1,n1),outer(rep(1,n2),zind))*vext[3]
 dim(tmean) <- c(3,n)
 tmean <- tmean[,indpos]
-z <- extract(obj,c("andir","fa"),xind,yind,zind)
+#z <- extract(obj,c("andir","fa"),xind,yind,zind)
+z <- extract(x,xind,yind,zind,c("andir","fa"))
 andir <- z$andir
 dim(andir) <- c(3,n1*n2*n3)
 andir <- andir[,indpos]

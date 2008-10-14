@@ -57,11 +57,7 @@ Joerg Polzehl <polzehl@wias-berlin.de>
 
 Maintainer: Karsten Tabelow <tabelow@wias-berlin.de>
 }
-\references{
-}
 \keyword{ package }
-\seealso{
-}
 \examples{
   \dontrun{demo(dti_art)}
 }
