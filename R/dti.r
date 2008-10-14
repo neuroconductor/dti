@@ -2,6 +2,8 @@
 #
 #
 
+print <- function(x, ...) UseMethod("print")
+print.default <- base::print
 setMethod("print", "dti",
 function(x){
     cat("  DTI object of class", class(x),"\n")
@@ -12,6 +14,8 @@ function(x){
     print(slotNames(x))
     invisible(NULL)
 })
+summary <- function(object, ...) UseMethod("summary")
+plot.default <- base::summary
 setMethod("summary", "dti",
 function(object){
     cat("  DTI object of class", class(object),"\n")
@@ -30,6 +34,9 @@ function(object){
     cat("\n")
     invisible(NULL)
 })
+
+plot <- function(x, y, ...) UseMethod("plot")
+plot.default <- graphics::plot
 
 setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, minanindex=NULL, contrast.enh=1,what="FA", qrange=c(.01,.99),xind=NULL,yind=NULL,zind=NULL, mar=c(2,2,2,.2),mgp=c(2,1,0),...) {
   if(is.null(x@D)) cat("No diffusion tensor yet")
@@ -780,6 +787,8 @@ function(object, which) {
             )
 })
 
+"[" <- function(x) UseMethod("[")
+"[.default" <- base::"["
 setMethod("[","dtiData",
 function(x, i, j, k, drop=FALSE){
   if (missing(i)) i <- TRUE

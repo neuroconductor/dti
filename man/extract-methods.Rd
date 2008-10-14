@@ -33,7 +33,9 @@
 \section{Methods}{
 \describe{
 
-\item{x = "ANY"}{ Returns a warning for \code{extract}. Generic funtion for \code{"["} }
+\item{x = "ANY"}{ Returns a warning for \code{extract}. Generic funtion for \code{"["} 
+  returns an object of same class with data clipped to the inices specified in arguments \code{i},
+  \code{j} and \code{k}.}
 
 \item{x = "dtiData"}{    Extraction of squared gradient matrix (btb) or of
    S0 (S0), Sb (Sb) or all images (Si) restricted to the cube defined by
