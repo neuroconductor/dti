@@ -306,6 +306,7 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
   }
   invisible(new("dtiTensor",
                 list(s2rician=if(rician) z$sigma2r else NULL, ni=z$bi*if(wlse) z$sigma2hat else 1),
+                call = args,
                 D = z$D,
                 th0 = z$th0,
                 sigma = z$sigma2hat,

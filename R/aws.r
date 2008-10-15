@@ -274,6 +274,7 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
 
   invisible(new("dtiTensor",
                 list( hmax = hmax),
+                call = args,
                 D     = z$D,
                 th0   = th0,
                 btb   = btb,
@@ -479,6 +480,7 @@ rdtianiso <- function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,qua
 
   invisible(new("dtiTensor",
                 list(metrik="Riemann"),
+                call   = args,
                 method = method,
                 D     = z$D,
                 th0   = th0,

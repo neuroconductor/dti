@@ -16,7 +16,8 @@ setClass("dti",
          )
 
 setClass("dtiData",
-         representation(si = "array"),
+         representation(call = "call",
+                        si   = "array"),
          contains=c("list","dti"),
          validity=function(object){
           if (any(dim(object@si)!=c(object@ddim,object@ngrad))) {
@@ -42,7 +43,8 @@ setClass("dtiData",
          }
          )
 setClass("dtiTensor",
-         representation(method = "character",
+         representation(call   = "call",
+                        method = "character",
                         D      = "array",
                         th0    = "array",
                         sigma  = "array",
@@ -91,7 +93,8 @@ setClass("dtiTensor",
          )
 
 setClass("dtiIndices",
-         representation(method = "character",
+         representation(call   = "call",
+                        method = "character",
                         fa     = "array",
                         ga     = "array",
                         md     = "array",

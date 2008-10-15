@@ -2,8 +2,6 @@
 #
 #
 
-print <- function(x, ...) UseMethod("print")
-print.default <- base::print
 setMethod("print", "dti",
 function(x){
     cat("  DTI object of class", class(x),"\n")
@@ -14,8 +12,6 @@ function(x){
     print(slotNames(x))
     invisible(NULL)
 })
-summary <- function(object, ...) UseMethod("summary")
-plot.default <- base::summary
 setMethod("summary", "dti",
 function(object){
     cat("  DTI object of class", class(object),"\n")
@@ -35,8 +31,6 @@ function(object){
     invisible(NULL)
 })
 
-plot <- function(x, y, ...) UseMethod("plot")
-plot.default <- graphics::plot
 
 setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, minanindex=NULL, contrast.enh=1,what="FA", qrange=c(.01,.99),xind=NULL,yind=NULL,zind=NULL, mar=c(2,2,2,.2),mgp=c(2,1,0),...) {
   if(is.null(x@D)) cat("No diffusion tensor yet")
@@ -257,6 +251,7 @@ function(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=
 #
 
 dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=0,mins0value=0,maxvalue=10000,voxelext=c(1,1,1),orientation=c(1,3,5)) {
+  args <- match.call()
   if (any(sort((orientation)%/%2) != 0:2)) stop("invalid orientation \n")
   if (dim(gradient)[2]==3) gradient <- t(gradient)
   if (dim(gradient)[1]!=3) stop("Not a valid gradient matrix")
@@ -342,6 +337,7 @@ dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=
   rind <- replind(gradient)
   
   invisible(new("dtiData",
+                call = args,
                 si     = si,
                 btb    = btb,
                 ngrad  = ngrad, # = dim(btb)[2]
@@ -364,6 +360,7 @@ readDWIdata <- function(dirlist, format, nslice, gradient, order = NULL,
                         level=0, mins0value=0, maxvalue=10000,
                         voxelext=NULL, orientation=c(1,3,5)) {
   # basic consistency checks
+  args <- match.call()
   if (!(format %in% c("DICOM","NIFTI","ANALYZE","AFNI")))
     stop("Cannot handle other formats then DICOM|NIFTI|ANALYZE|AFNI, found:",format)
   if (any(sort((orientation)%/%2) != 0:2)) stop("invalid orientation \n")
@@ -510,6 +507,7 @@ readDWIdata <- function(dirlist, format, nslice, gradient, order = NULL,
   rind <- replind(gradient)
   
   invisible(new("dtiData",
+                call = args,
                 si     = si,
                 btb    = btb,
                 ngrad  = ngrad, # = dim(btb)[2]
@@ -546,6 +544,7 @@ function(object, method="nonlinear",varmethod="replicates",varmodel="local") {
 #  available methods are 
 #  "linear" - use linearized model (log-transformed)
 #  "nonlinear" - use nonlinear model with parametrization according to Koay et.al. (2006)
+  args <- match.call()
   ngrad <- object@ngrad
   ddim <- object@ddim
   s0ind <- object@s0ind
@@ -693,6 +692,7 @@ function(object, method="nonlinear",varmethod="replicates",varmodel="local") {
   cat("estimated corresponding bandwidths",date(),proc.time(),"\n")
 
   invisible(new("dtiTensor",
+                call  = args,
                 D     = D,
                 th0   = th0,
                 sigma = sigma2,
@@ -749,6 +749,7 @@ setGeneric("dtiIndices", function(object, ...) standardGeneric("dtiIndices"))
 
 setMethod("dtiIndices","dtiTensor",
 function(object, which) {
+  args <- match.call()
   ddim <- object@ddim
 
   z <- .Fortran("dtiind3D",
@@ -766,6 +767,7 @@ function(object, which) {
                 PACKAGE="dti")[c("fa","ga","md","andir","bary")]
 
   invisible(new("dtiIndices",
+                call = args,
                 fa = array(z$fa,object@ddim),
                 ga = array(z$ga,object@ddim),
                 md = array(z$md,object@ddim),
@@ -787,10 +789,9 @@ function(object, which) {
             )
 })
 
-"[" <- function(x) UseMethod("[")
-"[.default" <- base::"["
 setMethod("[","dtiData",
 function(x, i, j, k, drop=FALSE){
+  args <- match.call()
   if (missing(i)) i <- TRUE
   if (missing(j)) j <- TRUE
   if (missing(k)) k <- TRUE
@@ -799,6 +800,7 @@ function(x, i, j, k, drop=FALSE){
   if (is.logical(k)) ddimk <- x@ddim[3] else ddimk <- length(k)
 
   invisible(new("dtiData",
+                call   = args,
                 si     = x@si[i,j,k,,drop=FALSE],
                 btb    = x@btb,
                 ngrad  = x@ngrad,
@@ -818,6 +820,7 @@ function(x, i, j, k, drop=FALSE){
 
 setMethod("[","dtiTensor",
 function(x, i, j, k, drop=FALSE){
+  args <- match.call()
   if (missing(i)) i <- TRUE
   if (missing(j)) j <- TRUE
   if (missing(k)) k <- TRUE
@@ -837,6 +840,7 @@ function(x, i, j, k, drop=FALSE){
   }
 
   invisible(new("dtiTensor",
+                call  = args, 
                 D     = x@D[,i,j,k],
                 th0   = x@th0[i,j,k],
                 sigma = x@sigma[i,j,k],
@@ -864,6 +868,7 @@ function(x, i, j, k, drop=FALSE){
 
 setMethod("[","dtiIndices",
 function(x, i, j, k, drop=FALSE){
+  args <- match.call()
   if (missing(i)) i <- TRUE
   if (missing(j)) j <- TRUE
   if (missing(k)) k <- TRUE
@@ -872,6 +877,7 @@ function(x, i, j, k, drop=FALSE){
   if (is.logical(k)) ddimk <- x@ddim[3] else ddimk <- length(k)
 
   invisible(new("dtiIndices",
+                call = args,
                 fa = x@fa[i,j,k],
                 ga = x@ga[i,j,k],
                 md = x@md[i,j,k],
