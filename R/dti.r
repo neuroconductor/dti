@@ -893,104 +893,6 @@ function(x, i, j, k, drop=FALSE){
             )
 })
 
-
-
-
-# clipdti <- function(obj,  ...) cat("Data clipping not defined for this class:",class(obj),"\n")
-# 
-# setGeneric("clipdti", function(obj,  ...) standardGeneric("clipdti"))
-# 
-# setMethod("clipdti","dtiData",
-# function(obj,xind=NULL,yind=NULL,zind=NULL){
-# if(is.null(xind)) xind <- 1:obj@ddim[1]
-# if(is.null(yind)) yind <- 1:obj@ddim[2]
-# if(is.null(zind)) zind <- 1:obj@ddim[3]
-# invisible(new("dtiData",
-#                 si     = obj@si[xind,yind,zind,],
-#                 btb    = obj@btb,
-#                 ngrad  = obj@ngrad, # = dim(btb)[2]
-#                 s0ind  = obj@s0ind, # indices of S_0 images
-#                 replind = obj@replind,
-#                 ddim   = c(length(xind),length(yind),length(zind)),
-#                 ddim0  = obj@ddim0,
-#                 xind   = obj@xind[xind],
-#                 yind   = obj@yind[yind],
-#                 zind   = obj@zind[zind],
-#                 level  = obj@level,
-#                 voxelext = obj@voxelext,
-#                 orientation = obj@orientation,
-#                 source = obj@source)
-#             )
-# })
-# 
-# setMethod("clipdti","dtiTensor",
-# function(obj,xind=NULL,yind=NULL,zind=NULL){
-# if(is.null(xind)) xind <- 1:obj@ddim[1]
-# if(is.null(yind)) yind <- 1:obj@ddim[2]
-# if(is.null(zind)) zind <- 1:obj@ddim[3]
-# ind <- 1:prod(obj@ddim)
-# if(length(obj@outlier)>0){
-# ind <- rep(FALSE,prod(obj@ddim))
-# ind[obj@outlier] <- TRUE
-# dim(ind) <- obj@ddim
-# ind <- ind[xind,yind,zind]
-# outlier <- (1:length(ind))[ind]
-# } else {
-# outlier <- numeric(0)
-# }
-# invisible(new("dtiTensor",
-#                 D     = obj@D[,xind,yind,zind],
-#                 th0   = obj@th0[xind,yind,zind],
-#                 sigma = obj@sigma[xind,yind,zind],
-#                 scorr = obj@scorr, 
-#                 bw = obj@bw,
-#                 mask = obj@mask[xind,yind,zind],
-#                 hmax = obj@hmax,
-#                 btb   = obj@btb,
-#                 ngrad = obj@ngrad, # = dim(btb)[2]
-#                 s0ind = obj@s0ind,
-#                 replind = obj@replind,
-#                 ddim  = c(length(xind),length(yind),length(zind)),
-#                 ddim0 = obj@ddim0,
-#                 xind  = obj@xind[xind],
-#                 yind  = obj@yind[yind],
-#                 zind  = obj@zind[zind],
-#                 voxelext = obj@voxelext,
-#                 level = obj@level,
-#                 orientation = obj@orientation,
-#                 outlier = outlier,
-#                 source = obj@source,
-#                 method = obj@method)
-#             )
-# })
-# 
-# setMethod("clipdti","dtiIndices",function(obj,xind=NULL,yind=NULL,zind=NULL){
-# if(is.null(xind)) xind <- 1:obj@ddim[1]
-# if(is.null(yind)) yind <- 1:obj@ddim[2]
-# if(is.null(zind)) zind <- 1:obj@ddim[3]
-#   invisible(new("dtiIndices",
-#                 fa = obj@fa[xind,yind,zind],
-#                 ga = obj@ga[xind,yind,zind],
-#                 md = obj@md[xind,yind,zind],
-#                 andir = obj@andir[,xind,yind,zind],
-#                 bary = obj@bary[,xind,yind,zind],
-#                 btb   = obj@btb,
-#                 ngrad = obj@ngrad, # = dim(btb)[2]
-#                 s0ind = obj@s0ind,
-#                 ddim  = c(length(xind),length(yind),length(zind)),
-#                 ddim0 = obj@ddim0,
-#                 voxelext = obj@voxelext,
-#                 orientation = obj@orientation,
-#                 xind  = obj@xind[xind],
-#                 yind  = obj@yind[yind],
-#                 zind  = obj@zind[zind],
-#                 method = obj@method,
-#                 level = obj@level,
-#                 source= obj@source)
-#             )
-# })
-# 
-
 extract <- function(x, i, j, k, what) cat("Data extraction not defined for this class:",class(x),"and type",what,"\n")
 
 setGeneric("extract", function(x, i, j, k, what) standardGeneric("extract"))
@@ -1110,283 +1012,158 @@ function(x, i, j, k, what=c("fa","andir")){
   invisible(z)
 })
 
-# extract <- function(obj,  ...) cat("Data extraction not defined for this class:",class(obj),"\n")
-# 
-# setGeneric("extract", function(obj,  ...) standardGeneric("extract"))
-# 
-# setMethod("extract","dtiData",
-# function(obj,what="data",xind=NULL,yind=NULL,zind=NULL){
-#   what <- tolower(what) 
-#   if(! is.character(what)) stop("Argument what needs to be character\n")
-#   if(is.null(xind)) xind <- 1:obj@ddim[1]
-#   if(is.null(yind)) yind <- 1:obj@ddim[2]
-#   if(is.null(zind)) zind <- 1:obj@ddim[3]
-# 
-#   z <- list(NULL)
-#   if("btb"%in%what) z$btb <- obj@btb
-#   if("s0"%in%what) z$S0 <- obj@si[xind,yind,zind,obj@s0ind]
-#   if("sb"%in%what) z$Si <- obj@si[xind,yind,zind,-obj@s0ind]
-#   if("data"%in%what) z$data <- obj@si[xind,yind,zind,]
-#   invisible(z)
-# })
-# 
-# setMethod("extract","dtiTensor",
-# function(obj,what="tensor",xind=NULL,yind=NULL,zind=NULL){
-#   what <- tolower(what) 
-#   if(! is.character(what)) stop("Argument what needs to be character\n")
-#   if(is.null(xind)) xind <- 1:obj@ddim[1]
-#   if(is.null(yind)) yind <- 1:obj@ddim[2]
-#   if(is.null(zind)) zind <- 1:obj@ddim[3]
-#   n1 <- length(xind)
-#   n2 <- length(yind)
-#   n3 <- length(zind)
-#   needev <- ("fa"%in%what)||("ga"%in%what)||("md"%in%what)||("evalues"%in%what)
-#   needall <- needev && ("andir"%in%what)
-# 
-#   z <- list(NULL)
-#   if(needall){
-#     erg <- .Fortran("dti3Dall",
-#                     as.double(obj@D[,xind,yind,zind]),
-#                     as.integer(n1),
-#                     as.integer(n2),
-#                     as.integer(n3),
-#                     as.logical(obj@mask[xind,yind,zind]),
-#                     fa=double(n1*n2*n3),
-#                     ga=double(n1*n2*n3),
-#                     md=double(n1*n2*n3),
-#                     andir=double(3*n1*n2*n3),
-#                     ev=double(3*n1*n2*n3),
-#                     DUPL=FALSE,
-#                     PACKAGE="dti")[c("fa","ga","md","andir","ev")]
-#     if("fa"%in%what) z$fa <- array(erg$fa,c(n1,n2,n3))
-#     if("ga"%in%what) z$ga <- array(erg$ga,c(n1,n2,n3))
-#     if("md"%in%what) z$md <- array(erg$md,c(n1,n2,n3))
-#     if("evalues"%in%what) z$evalues <- array(erg$ev,c(3,n1,n2,n3))
-#     if("andir"%in%what) z$andir <- array(erg$andir,c(3,n1,n2,n3))
-#   } else {
-#     if(needev){
-#       ev <- array(.Fortran("dti3Dev",
-#                            as.double(obj@D[,xind,yind,zind]),
-#                            as.integer(n1),
-#                            as.integer(n2),
-#                            as.integer(n3),
-#                            as.logical(obj@mask[xind,yind,zind]),
-#                            ev=double(3*n1*n2*n3),
-#                            DUPL=FALSE,
-#                            PACKAGE="dti")$ev,c(3,n1,n2,n3))
-#       if("fa"%in%what) {
-#         dd <- apply(ev^2,2:4,sum)
-#         md <- (ev[1,,,]+ev[2,,,]+ev[3,,,])/3
-#         sev <- sweep(ev,2:4,md)
-#         z$fa <- sqrt(1.5*apply(sev^2,2:4,sum)/dd)
-#       }
-#       if("ga"%in%what) {
-#         sev <- log(ev)
-#         md <- (sev[1,,,]+sev[2,,,]+sev[3,,,])/3
-#         sev <- sweep(sev,2:4,md)
-#         ga <- sqrt(apply(sev^2,2:4,sum))
-#         ga[is.na(ga)] <- 0
-#         z$ga <- ga 
-#       }
-#       if("md"%in%what) z$md <- (ev[1,,,]+ev[2,,,]+ev[3,,,])/3
-#       if("evalues"%in%what) z$evalues <- ev
-#     }
-#     if("andir"%in%what){
-#       z$andir <- array(.Fortran("dti3Dand",
-#                                 as.double(obj@D[,xind,yind,zind]),
-#                                 as.integer(n1),
-#                                 as.integer(n2),
-#                                 as.integer(n3),
-#                                 as.logical(obj@mask[xind,yind,zind]),
-#                                 andir=double(3*n1*n2*n3),
-#                                 DUPL=FALSE,
-#                                 PACKAGE="dti")$andir,c(3,n1,n2,n3))
-#     }
-#   }
-#   if("tensor"%in%what) z$tensor <- obj@D[,xind,yind,zind] 
-#   if("s0"%in%what) z$s0 <- obj@th0[xind,yind,zind]
-#   if("mask"%in%what) z$mask <- obj@th0[xind,yind,zind]
-#   if("outlier"%in%what) {
-#     ind <- 1:prod(obj@ddim)
-#     ind <- rep(FALSE,prod(obj@ddim))
-#     if(length(obj@outlier)>0) ind[obj@outlier] <- TRUE
-#     dim(ind) <- obj@ddim
-#   }
-#   invisible(z)
-# })
-# 
-# setMethod("extract","dtiIndices",
-# function(obj,what=c("fa","andir"),xind=NULL,yind=NULL,zind=NULL){
-#   what <- tolower(what) 
-#   if(! is.character(what)) stop("Argument what needs to be character\n")
-#   if(is.null(xind)) xind <- 1:obj@ddim[1]
-#   if(is.null(yind)) yind <- 1:obj@ddim[2]
-#   if(is.null(zind)) zind <- 1:obj@ddim[3]
-#   n1 <- length(xind)
-#   n2 <- length(yind)
-#   n3 <- length(zind)
-#   z <- list(NULL)
-#   if("fa"%in%what) z$fa <- obj$fa[xind,yind,zind]
-#   if("ga"%in%what) z$ga <- obj$ga[xind,yind,zind]
-#   if("md"%in%what) z$md <- obj$md[xind,yind,zind]
-#   if("andir"%in%what) z$andir <- obj$andir[,xind,yind,zind]
-#   if("bary"%in%what) z$bary <- obj$bary[,xind,yind,zind]
-#   invisible(z)
-# })
-
 show3d <- function(obj,  ...) cat("3D Visualization not implemented for this class:",class(object),"\n")
 
 setGeneric("show3d", function(obj,  ...) standardGeneric("show3d"))
 
-setMethod("show3d","dtiIndices",function(obj,index="FA",nx=NULL,ny=NULL,nz=NULL,center=NULL,method=1,level=0,bgcolor="black",add=FALSE){
-if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
-index <- tolower(index) 
-if(!(index%in%c("fa","ga"))) stop("index should be either 'FA' or 'GA'\n")
-if(is.null(center)) center <- floor(obj@ddim/2)
-if(is.null(nx)) nx <- obj@ddim[1]
-if(is.null(ny)) ny <- obj@ddim[2]
-if(is.null(nz)) nz <- obj@ddim[3]
-xind <- (center[1]-(nx%/%2)):(center[1]+(nx%/%2))
-yind <- (center[2]-(ny%/%2)):(center[2]+(ny%/%2))
-zind <- (center[3]-(nz%/%2)):(center[3]+(nz%/%2))
-xind <- xind[xind>0&xind<=obj@ddim[1]]
-yind <- yind[yind>0&yind<=obj@ddim[2]]
-zind <- zind[zind>0&zind<=obj@ddim[3]]
-n1 <- length(xind)
-n2 <- length(yind)
-n3 <- length(zind)
-n <- n1*n2*n3
-vext <- obj@voxelext
-ind <- switch(index,"fa"=obj@fa[xind,yind,zind], "ga"=obj@ga[xind,yind,zind])
-ind[ind<level] <- 0
-ind <- ind*min(vext)
-tmean <- array(0,c(3,n1,n2,n3))
-tmean[1,,,] <- xind*vext[1]
-tmean[2,,,] <- outer(rep(1,n1),yind)*vext[2]
-tmean[3,,,] <- outer(rep(1,n1),outer(rep(1,n2),zind))*vext[3]
-andir <- obj@andir[,xind,yind,zind]
-if(method==1) {
-      andir <- abs(andir)
-      dim(andir) <- c(3,n1*n2*n3)
-    } else {
-      ind1<-andir[1,,]<0
-      dim(andir) <- c(3,n1*n2*n3)
-      andir[,ind1] <- - andir[,ind1]
-      andir[2,] <- (1+andir[2,])/2
-      andir[3,] <- (1+andir[3,])/2
-    }
-colorvalues <- rgb(andir[1,],andir[2,],andir[3,])
-dim(andir) <- c(3,n1,n2,n3)
-andir <- sweep(andir,2:4,ind,"*")
-lcoord <- array(0,c(3,2,n1,n2,n3))
-lcoord[,1,,,] <-  andir/2+tmean[,,,]
-lcoord[,2,,,] <-  -andir/2+tmean[,,,]
-dim(lcoord) <- c(3,2*n1*n2*n3)
-lcoord <- cbind(lcoord)
-colorvalues <- c(rbind(colorvalues,colorvalues))
-if(!add) {
-rgl.open()
-rgl.bg(color=bgcolor)
-}
-rgl.lines(lcoord[1,],lcoord[2,],lcoord[3,],color=colorvalues)
-invisible(rgl.cur())
+setMethod("show3d","dtiIndices",
+function(obj, index="FA", nx=NULL, ny=NULL, nz=NULL, center=NULL, method=1, level=0, bgcolor="black", add=FALSE){
+  if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
+  index <- tolower(index) 
+  if(!(index%in%c("fa","ga"))) stop("index should be either 'FA' or 'GA'\n")
+  if(is.null(center)) center <- floor(obj@ddim/2)
+  if(is.null(nx)) nx <- obj@ddim[1]
+  if(is.null(ny)) ny <- obj@ddim[2]
+  if(is.null(nz)) nz <- obj@ddim[3]
+  xind <- (center[1]-(nx%/%2)):(center[1]+(nx%/%2))
+  yind <- (center[2]-(ny%/%2)):(center[2]+(ny%/%2))
+  zind <- (center[3]-(nz%/%2)):(center[3]+(nz%/%2))
+  xind <- xind[xind>0&xind<=obj@ddim[1]]
+  yind <- yind[yind>0&yind<=obj@ddim[2]]
+  zind <- zind[zind>0&zind<=obj@ddim[3]]
+  n1 <- length(xind)
+  n2 <- length(yind)
+  n3 <- length(zind)
+  n <- n1*n2*n3
+  vext <- obj@voxelext
+  ind <- switch(index,"fa"=obj@fa[xind,yind,zind], "ga"=obj@ga[xind,yind,zind])
+  ind[ind<level] <- 0
+  ind <- ind*min(vext)
+  tmean <- array(0,c(3,n1,n2,n3))
+  tmean[1,,,] <- xind*vext[1]
+  tmean[2,,,] <- outer(rep(1,n1),yind)*vext[2]
+  tmean[3,,,] <- outer(rep(1,n1),outer(rep(1,n2),zind))*vext[3]
+  andir <- obj@andir[,xind,yind,zind]
+  if(method==1) {
+    andir <- abs(andir)
+    dim(andir) <- c(3,n1*n2*n3)
+  } else {
+    ind1 <- andir[1,,]<0
+    dim(andir) <- c(3,n1*n2*n3)
+    andir[,ind1] <- - andir[,ind1]
+    andir[2,] <- (1+andir[2,])/2
+    andir[3,] <- (1+andir[3,])/2
+  }
+  colorvalues <- rgb(andir[1,],andir[2,],andir[3,])
+  dim(andir) <- c(3,n1,n2,n3)
+  andir <- sweep(andir,2:4,ind,"*")
+  lcoord <- array(0,c(3,2,n1,n2,n3))
+  lcoord[,1,,,] <-  andir/2+tmean[,,,]
+  lcoord[,2,,,] <-  -andir/2+tmean[,,,]
+  dim(lcoord) <- c(3,2*n1*n2*n3)
+  lcoord <- cbind(lcoord)
+  colorvalues <- c(rbind(colorvalues,colorvalues))
+  if(!add) {
+    rgl.open()
+    rgl.bg(color=bgcolor)
+  }
+  rgl.lines(lcoord[1,],lcoord[2,],lcoord[3,],color=colorvalues)
+  invisible(rgl.cur())
 })
 
-setMethod("show3d","dtiTensor",function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,method=1,level=0,scale=.25,
-bgcolor="black",add=FALSE,subdivide=2,smooth=TRUE,maxobjects=729,...){
-if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
-if(is.null(nx)) nx <- obj@ddim[1]
-if(is.null(ny)) ny <- obj@ddim[2]
-if(is.null(nz)) nz <- obj@ddim[3]
-n <- nx*ny*nz
-if(is.null(center)) center <- floor(obj@ddim/2)
-if(nx*ny*nz>maxobjects) {
-warning(paste("size of data cube",n," exceeds maximum of",maxobjects,"\n
-        central part of specified cube selected"))
-if(nz > maxobjects^(1/3)) n3 <- 1 else n3 <- nz
-n1 <- n2 <- floor(sqrt(maxobjects/n3))
-} else {
-n1 <- nx
-n2 <- ny
-n3 <- nz
-}
-xind <- (center[1]-(n1%/%2)):(center[1]+(n1%/%2))
-yind <- (center[2]-(n2%/%2)):(center[2]+(n2%/%2))
-zind <- (center[3]-(n3%/%2)):(center[3]+(n3%/%2))
-xind <- xind[xind>0&xind<=obj@ddim[1]]
-yind <- yind[yind>0&yind<=obj@ddim[2]]
-zind <- zind[zind>0&zind<=obj@ddim[3]]
-n1 <- length(xind)
-n2 <- length(yind)
-n3 <- length(zind)
-n <- n1*n2*n3
-if(n==0) stop("Empty cube specified")
-cat(" selected cube specified by \n xind=",min(xind),":",max(xind),
-"\n yind=",min(yind),":",max(yind),
-"\n zind=",min(zind),":",max(zind),"\n")
-vext <- obj@voxelext
-center <- center*vext
-D <- obj@D[,xind,yind,zind]
-D <- D/max(D)
-dim(D) <- c(6,n)
-indpos <- (1:n)[D[1,]*D[4,]*D[6,]>0]
-tens <- D[c(1,2,3,2,4,5,3,5,6),indpos]
-tmean <- array(0,c(3,n1,n2,n3))
-tmean[1,,,] <- xind*vext[1]
-tmean[2,,,] <- outer(rep(1,n1),yind)*vext[2]
-tmean[3,,,] <- outer(rep(1,n1),outer(rep(1,n2),zind))*vext[3]
-dim(tmean) <- c(3,n)
-tmean <- tmean[,indpos]
-#z <- extract(obj,c("andir","fa"),xind,yind,zind)
-z <- extract(x,xind,yind,zind,c("andir","fa"))
-andir <- z$andir
-dim(andir) <- c(3,n1*n2*n3)
-andir <- andir[,indpos]
-fa <- z$fa[indpos]
-n <- length(indpos)
-if(method==1) {
-      andir <- abs(andir)
-    } else {
-      ind<-andir[1,]<0
-      andir[,ind] <- - andir[,ind]
-      andir[2,] <- (1+andir[2,])/2
-      andir[3,] <- (1+andir[3,])/2
-    }
-colorvalues <- rgb(andir[1,],andir[2,],andir[3,])
-dim(tens) <- c(3,3,n)
-if(level>0){
-indpos <- (1:n)[fa>level]
-tens <- tens[,,indpos]
-tmean <- tmean[,indpos]
-colorvalues <- colorvalues[indpos]
-fa <- fa[indpos]
-n <- length(indpos)
-}
-if(!add) {
-rgl.open()
-rgl.bg(color=bgcolor)
-}
-sphere <- subdivision3d(cube3d(smooth=smooth), subdivide)
-norm <- sqrt( sphere$vb[1,]^2 + sphere$vb[2,]^2 + sphere$vb[3,]^2 )
-for (i in 1:3) sphere$vb[i,] <- sphere$vb[i,]/norm
-sphere$vb[4,] <- 1
-sphere$normals <- sphere$vb
-tens <- scale*tens
-par3d(skipRedraw=TRUE)
-cat("Start creating rgl-object\n Progress (out of",n,"):")
-for(i in 1:n) {
-       if((i%/%100)*100==i) cat(i," ")
-       if(i==n) par3d(skipRedraw=FALSE)
-       plot3d( ell(sphere, tens[,,i], center=tmean[,i]),
-                color=colorvalues[i], alpha=fa[i], add = TRUE, ...)
-}
-cat("\n")
-invisible(rgl.cur())
+setMethod("show3d","dtiTensor",
+function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,method=1,level=0,scale=.25,bgcolor="black",add=FALSE,subdivide=2,smooth=TRUE,maxobjects=729,...){
+  if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
+  if(is.null(nx)) nx <- obj@ddim[1]
+  if(is.null(ny)) ny <- obj@ddim[2]
+  if(is.null(nz)) nz <- obj@ddim[3]
+  n <- nx*ny*nz
+  if(is.null(center)) center <- floor(obj@ddim/2)
+  if(nx*ny*nz>maxobjects) {
+  warning(paste("size of data cube",n," exceeds maximum of",maxobjects,"\n
+                central part of specified cube selected"))
+  if(nz > maxobjects^(1/3)) n3 <- 1 else n3 <- nz
+    n1 <- n2 <- floor(sqrt(maxobjects/n3))
+  } else {
+    n1 <- nx
+    n2 <- ny
+    n3 <- nz
+  }
+  xind <- (center[1]-(n1%/%2)):(center[1]+(n1%/%2))
+  yind <- (center[2]-(n2%/%2)):(center[2]+(n2%/%2))
+  zind <- (center[3]-(n3%/%2)):(center[3]+(n3%/%2))
+  xind <- xind[xind>0&xind<=obj@ddim[1]]
+  yind <- yind[yind>0&yind<=obj@ddim[2]]
+  zind <- zind[zind>0&zind<=obj@ddim[3]]
+  n1 <- length(xind)
+  n2 <- length(yind)
+  n3 <- length(zind)
+  n <- n1*n2*n3
+  if(n==0) stop("Empty cube specified")
+  cat(" selected cube specified by \n xind=",min(xind),":",max(xind),
+      "\n yind=",min(yind),":",max(yind),
+      "\n zind=",min(zind),":",max(zind),"\n")
+  vext <- obj@voxelext
+  center <- center*vext
+  D <- obj@D[,xind,yind,zind]
+  D <- D/max(D)
+  dim(D) <- c(6,n)
+  indpos <- (1:n)[D[1,]*D[4,]*D[6,]>0]
+  tens <- D[c(1,2,3,2,4,5,3,5,6),indpos]
+  tmean <- array(0,c(3,n1,n2,n3))
+  tmean[1,,,] <- xind*vext[1]
+  tmean[2,,,] <- outer(rep(1,n1),yind)*vext[2]
+  tmean[3,,,] <- outer(rep(1,n1),outer(rep(1,n2),zind))*vext[3]
+  dim(tmean) <- c(3,n)
+  tmean <- tmean[,indpos]
+  z <- extract(x,xind,yind,zind,c("andir","fa"))
+  andir <- z$andir
+  dim(andir) <- c(3,n1*n2*n3)
+  andir <- andir[,indpos]
+  fa <- z$fa[indpos]
+  n <- length(indpos)
+  if(method==1) {
+    andir <- abs(andir)
+  } else {
+    ind<-andir[1,]<0
+    andir[,ind] <- - andir[,ind]
+    andir[2,] <- (1+andir[2,])/2
+    andir[3,] <- (1+andir[3,])/2
+  }
+  colorvalues <- rgb(andir[1,],andir[2,],andir[3,])
+  dim(tens) <- c(3,3,n)
+  if(level>0){
+    indpos <- (1:n)[fa>level]
+    tens <- tens[,,indpos]
+    tmean <- tmean[,indpos]
+    colorvalues <- colorvalues[indpos]
+    fa <- fa[indpos]
+    n <- length(indpos)
+  }
+  if(!add) {
+    rgl.open()
+    rgl.bg(color=bgcolor)
+  }
+  sphere <- subdivision3d(cube3d(smooth=smooth), subdivide)
+  norm <- sqrt( sphere$vb[1,]^2 + sphere$vb[2,]^2 + sphere$vb[3,]^2 )
+  for (i in 1:3) sphere$vb[i,] <- sphere$vb[i,]/norm
+  sphere$vb[4,] <- 1
+  sphere$normals <- sphere$vb
+  tens <- scale*tens
+  par3d(skipRedraw=TRUE)
+  cat("Start creating rgl-object\n Progress (out of",n,"):")
+  for(i in 1:n) {
+    if((i%/%100)*100==i) cat(i," ")
+    if(i==n) par3d(skipRedraw=FALSE)
+    plot3d( ell(sphere, tens[,,i], center=tmean[,i]), color=colorvalues[i], alpha=fa[i], add = TRUE, ...)
+  }
+  cat("\n")
+  invisible(rgl.cur())
 })
 
 ell <- function (sphere, cov, center = c(0, 0, 0)){
-# Adapted from package rgl: 3D visualization device system (OpenGL)
-# Authors: Daniel Adler, Duncan Murdoch
+  # Adapted from package rgl: 3D visualization device system (OpenGL)
+  # Authors: Daniel Adler, Duncan Murdoch
   translate3d(rotate3d( sphere, matrix=chol(cov)), center[1], center[2], center[3])
 }
 
