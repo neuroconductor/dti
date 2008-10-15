@@ -8,11 +8,13 @@
   The method provides summary information for objects of class \code{dti}.
 }
 \usage{
-  \S4method{summary}{dti}(object)
+  \S4method{summary}{dti}(object, ...)
 }
 \arguments{
   \item{object}{ an object of class \code{dti}, \code{dtiData},
 \code{dtiTensor} or \code{dtiIndices}. }
+  \item{\dots}{ Additional arguments in \code{\dots} 
+are passed to function \code{quantile}, e.g. argument \code{probs} may be specified here.}
 }
 \section{Methods}{
 \describe{

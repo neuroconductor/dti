@@ -11,9 +11,9 @@
   Visualization of objects of class \code{"dtiData"}, \code{"dtiIndices"} and class \code{"dtiTensor"}
 }
 \usage{
-  \S4method{plot}{dtiData}(x, y, slice=1, gradient=NULL, view= "axial", show=TRUE, xind=NULL, yind=NULL, zind=NULL, mar=c(3,3,3,.3), mgp=c(2,1,0), \dots)
+  \S4method{plot}{dtiData}(x, y, slice=1, gradient=NULL, view= "axial", show=TRUE, density=FALSE, xind=NULL, yind=NULL, zind=NULL, mar=c(3,3,3,.3), mgp=c(2,1,0), \dots)
   \S4method{plot}{dtiTensor}(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=TRUE, contrast.enh=1, what="FA", xind=NULL, yind=NULL, zind=NULL, mar=c(3,3,3,.3), mgp=c(2,1,0), \dots)
-  \S4method{plot}{dtiIndices}(x, y, slice=1, view="axial", quant=0, minanindex=NULL, contrast.enh=1,what="FA", qrange=c(.01,.99), xind=NULL, yind=NULL, zind=NULL, mar=c(2,2,2,.2), mgp=c(2,1,0), \dots)
+  \S4method{plot}{dtiIndices}(x, y, slice=1, view="axial", quant=0, minanindex=NULL, show=TRUE, density=FALSE, contrast.enh=1,what="FA", qrange=c(.01,.99), xind=NULL, yind=NULL, zind=NULL, mar=c(2,2,2,.2), mgp=c(2,1,0), \dots)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -26,9 +26,11 @@
   \item{method}{ \code{method==1} and \code{method==2} specify two different color schemes for  directional FA-maps. \code{method==3} specifies visualization of dtiIndices using color coded bary coordinates. (for class \code{dtiIndices} only)}
   \item{quant}{ if \code{is.null(minanindex)} specify \code{minanindex} as corresponding quantile of the fractal anisotropy (FA) index.}
   \item{minanindex}{ display only information for voxel with \code{FA>minanindex}}
-  \item{show}{Visualize information in a graphics device (for classes \code{dtiData} and \code{dtiIndices} only)}
+  \item{show}{Visualize information in a graphics device (for classes \code{dtiData} and \code{dtiIndices} only).  }
+  \item{density}{Show density of S0(Sb)-values (for class \code{dtiData})
+      or densities of fractal anisotropy (FA) or geodetic anisotropy (GA) ( for class \code{dtiIndices}), not implemented for class \code{dtiTensor}.  }
   \item{contrast.enh}{ enhance image contrast using \code{min(1,x$anindex/contrast.enh} instead of the anisotropy index itself. Effective values are within the interval (0,1).}
-  \item{what}{ If \code{what="GA"} use geodesic anisotropy (GA) instead of fractional anisotropy (FA).}
+  \item{what}{ If \code{what="GA"} use geodesic anisotropy (GA) instead of fractional anisotropy (FA).  }
   \item{mar}{}
   \item{mgp}{}
   \item{qrange}{}
