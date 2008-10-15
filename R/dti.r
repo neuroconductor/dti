@@ -4,14 +4,15 @@
 
 setMethod("print", "dti",
 function(x){
-    cat("  DTI object of class", class(x),"\n")
-    cat("  Dimension            :", paste(x@ddim, collapse="x"), "\n")
-    cat("  Number of Gradients  :", paste(x@ngrad, collapse="x"), "\n")
-    cat("  Filename             :", x@source, "\n")
-    cat("  Slots                :\n")
-    print(slotNames(x))
-    invisible(NULL)
+  cat("  DTI object of class", class(x),"\n")
+  cat("  Dimension            :", paste(x@ddim, collapse="x"), "\n")
+  cat("  Number of Gradients  :", paste(x@ngrad, collapse="x"), "\n")
+  cat("  Filename             :", x@source, "\n")
+  cat("  Slots                :\n")
+  print(slotNames(x))
+  invisible(NULL)
 })
+
 setMethod("summary", "dti",
 function(object){
     cat("  DTI object of class", class(object),"\n")
@@ -30,7 +31,6 @@ function(object){
     cat("\n")
     invisible(NULL)
 })
-
 
 setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, minanindex=NULL, contrast.enh=1,what="FA", qrange=c(.01,.99),xind=NULL,yind=NULL,zind=NULL, mar=c(2,2,2,.2),mgp=c(2,1,0),...) {
   if(is.null(x@D)) cat("No diffusion tensor yet")
