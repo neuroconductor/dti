@@ -251,7 +251,6 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
         dim(z$D) <- dim(D) <- c(6,n1,n2,n3)
         z$rss <- 1e10
         mask[indna] <- FALSE
-        browser()
      }
      if(graph){
      class(z) <- "dti"

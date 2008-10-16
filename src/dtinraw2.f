@@ -359,13 +359,18 @@ C   eps      -  something small and positive
      5       vext(3),lambda,swsi(nb),F(nb),eps,rss(n1,n2,n3),vol
       logical mask(n1,n2,n3),rician,wlse
       integer i1,j1,j1a,j1e,jj1,i2,j2,j2a,j2e,jj2,i3,j3,j3a,j3e,jj3,
-     1        ierr,k,center
+     1        ierr,k,center,l,m,iter
       real*8 wij,adist,sw,sws0,h2,thi(7),bii,sqrbii,ew(3),ev(3,3),
      1       mew,z1,z2,z3,sij,deti,z,sew,ss2,sw0,sw2,Di(6),dtidisrg,
-     2       th0i,s2hat,ssigma2,rssi,h0,h1
+     2       th0i,s2hat,ssigma2,rssi,h0,h1,sih,sih0,squot,shat
+      integer isel1(1000),isel2(1000),isel3(1000),nselect,sisel(1000)
+      real*8 wselect(1000),x(10000),fw(10000)
       external adist,dtidisrg
       logical aws
       aws=lambda.lt.1e20
+      if(rician) THEN
+         call besselq(x,10000,fw)
+      END IF
       h1=exp(log(vol*vext(1)*vext(2)*vext(3))/3.d0)
       h0=exp(log(vol*vext(1)*vext(2)*vext(3))/3.d0)/1.4
 C  first fill predicted 
@@ -453,51 +458,16 @@ C   now get bandwidth such that the ellopsoid has specified volume
                call gethani(h0,h1,vol,thi,vext,1.d-2,h)
                h2=h*h
 C   create needed estimates of s_i
+               nselect=0
                call rangex(thi,h,j1a,j1e,vext)
-               if(j1a.gt.0.or.j1e.lt.0) THEN
-                  call intpr("illegal range x",15,i1,1)
-                  call intpr("i2",2,i2,1)
-                  call intpr("i3",2,i3,1)
-                  call dblepr("thi",3,thi,6)
-                  call dblepr("h",1,h,1)
-                  call intpr("j1a",3,j1a,1)
-                  call intpr("j1e",3,j1e,1)
-                  call dblepr("vext",4,vext,3)
-                  return
-               END IF
                DO j1=j1a,j1e
                   jj1=i1+j1
                   if(jj1.le.0.or.jj1.gt.n1) CYCLE
                   call rangey(thi,j1,h,j2a,j2e,vext)
-                  if(j1.eq.0.and.(j2a.gt.0.or.j2e.lt.0)) THEN
-                     call intpr("i1",2,i1,1)
-                     call intpr("illegal range y",15,i2,1)
-                     call intpr("i3",2,i3,1)
-                     call dblepr("thi",3,thi,6)
-                     call intpr("j1",3,j1,1)
-                     call dblepr("h",1,h,1)
-                     call intpr("j2a",3,j2a,1)
-                     call intpr("j2e",3,j2e,1)
-                     call dblepr("vext",4,vext,3)
-                     return
-                  END IF
                   DO j2=j2a,j2e
                      jj2=i2+j2
                      if(jj2.le.0.or.jj2.gt.n2) CYCLE
                      call rangez(thi,j1,j2,h,j3a,j3e,vext)
-             if(j1.eq.0.and.j2.eq.0.and.(j3a.gt.0.or.j3e.lt.0)) THEN
-                     call intpr("i1",2,i1,1)
-                     call intpr("i2",2,i2,1)
-                     call intpr("illegal range z",15,i3,1)
-                      call dblepr("thi",3,thi,6)
-                     call intpr("j1",3,j1,1)
-                     call intpr("j2",3,j2,1)
-                     call dblepr("h",1,h,1)
-                     call intpr("j3a",3,j3a,1)
-                     call intpr("j3e",3,j3e,1)
-                     call dblepr("vext",4,vext,3)
-                     return
-                  END IF
                      DO j3=j3a,j3e
                         jj3=i3+j3
                         if(jj3.le.0.or.jj3.gt.n3) CYCLE
@@ -511,11 +481,6 @@ C     triangular location kernel
                            sij = dtidisrg(siest(1,i1,i2,i3),
      1                          sipred(1,jj1,jj2,jj3),nb)
                            sij = bii*max(0.d0,sij-rssi)/lambda
-                           if(center.eq.0.and.sij.gt.1.d-1) THEN
-                              call dblepr("sij",3,sij,1) 
-                              call intpr("si",2,siest(1,i1,i2,i3),nb)
-                       call dblepr("sj",2,sipred(1,jj1,jj2,jj3),nb)
-                           END IF
                            if(center.eq.0) sij=0.d0
                            if(sij.gt.1.d0) CYCLE
                            wij=wij*(1.d0-sij)
@@ -523,7 +488,6 @@ C     triangular location kernel
                         ss2=ss2+wij*sigma2(jj1,jj2,jj3)
                         sw0=sw0+wij
                         if(wlse) wij=wij/sigma2h(jj1,jj2,jj3)
-                        if(wij.lt.0.d0) call dblepr("wij",3,wij,1)
                         sw=sw+wij
                         sw2=sw2+wij*wij
                         if(rician) THEN
@@ -534,6 +498,11 @@ C     triangular location kernel
                               swsi2(k)=swsi2(k)+wij*z
                               swsi4(k)=swsi4(k)+wij*z*z
                            END DO
+                           nselect=nselect+1
+                           isel1(nselect)=jj1
+                           isel2(nselect)=jj2
+                           isel3(nselect)=jj3
+                           wselect(nselect)=wij
                         ELSE
                            DO k=1,nb
                               swsi(k)=swsi(k)+wij*si(k,jj1,jj2,jj3)
@@ -543,7 +512,6 @@ C     triangular location kernel
                   END DO
                END DO
                bi(i1,i2,i3)=sw
-               if(sw0.lt..99d0) call dblepr("sw0b",4,sw0,1)
                if(rician.and.sw0.gt.1.d0) THEN
                   ssigma2=0.d0
                   DO k=1,nb
@@ -552,10 +520,29 @@ C     triangular location kernel
                      ssigma2=ssigma2+s2hat
                   END DO
                   s2hat = sw*sw/(sw*sw-sw2)*ssigma2/nb
+                  shat = sqrt(s2hat)
 C   this also adjusts for eliminating \theta by combining the second and 4th moment
                   DO k=1,nb
-C                     swsi(k)=sqrt(max(0.d0,swsi2(k)/sw-2*s2hat))
-           swsi(k)=sqrt(max(swsi2(k)/sw/3.d0,swsi2(k)/sw-2*s2hat))
+                     sih=swsi(k)/sw
+                     squot=sih/shat
+                     if(squot.lt.1.d1) THEN
+                        iter=6
+                        if(squot.gt.2.25d0) iter=2
+                        if(squot.gt.3.25d0) iter=1
+                        sih0=sih/sw0
+                        DO l=1,nselect
+                           sisel(l)=si(k,isel1(l),isel2(l),isel3(l))
+                        END DO
+                        DO m=1,iter
+C                 call ricecorr(sisel,wselect,nselect,sw,sih,s2hat)
+                 call ricecor1(sisel,wselect,nselect,sw,sih,s2hat,fw)
+                           if(sih.le.sih0) THEN
+                              sih=sih0
+                              CYCLE
+                           END IF
+                        END DO
+                     END IF
+                     swsi(k)=sih
                   END DO
                   sigma2r(i1,i2,i3)=s2hat
                ELSE
