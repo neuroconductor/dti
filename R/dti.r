@@ -1171,7 +1171,7 @@ function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,method=1,level=0,scale=.25,bgco
   tmean[3,,,] <- outer(rep(1,n1),outer(rep(1,n2),zind))*vext[3]
   dim(tmean) <- c(3,n)
   tmean <- tmean[,indpos]
-  z <- extract(x,xind,yind,zind,c("andir","fa"))
+  z <- extract(obj,xind,yind,zind,c("andir","fa"))
   andir <- z$andir
   dim(andir) <- c(3,n1*n2*n3)
   andir <- andir[,indpos]
