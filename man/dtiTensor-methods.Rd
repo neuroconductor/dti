@@ -1,31 +1,31 @@
 \name{dtiTensor-methods}
 \docType{methods}
+\alias{dtiTensor}
 \alias{dtiTensor-methods}
 \alias{dtiTensor,ANY-method}
 \alias{dtiTensor,dtiData-method}
 \title{ Methods for Function `dtiTensor' in Package `dti' }
-\description{ The method estimates, in each voxel, the diffusion tensor from
-the DWI data contained in an object of class \code{dtiData}.
+\description{ 
+  The method estimates, in each voxel, the diffusion tensor from the DWI data contained in an object of class \code{"dtiData"}.
 }
 \usage{
   \S4method{dtiTensor}{dtiData}(object, method="nonlinear", varmethod="replicates", varmodel="local")
 }
-%- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{object}{ object of class \code{dtiData}}
-  \item{method}{ if \code{model=="linear"} estimates are obtained using a linearization of the tensor model. This was the estimate used in Tabelow et.al. (2008). \code{model=="nonlinear"} uses a nonlinear regression model with reparametrization that ensures the tensor to be  positive semidefinite, see  Koay et.al. (2006).}
-  \item{varmethod}{specifies the method for estimating the error  variance. If \code{varmethod=="replicates"} the error variance is estimated from replicated gradient directions if possible. Otherwise an estimate is obtained from the residual sum of squares.}
-  \item{varmodel}{if \code{varmodel=="global"} a homogeneous variance estimate is assumed and estimated as the median of the local variance estimates.}
-  \item{\dots}{ one or several  of the parameters above }
+  \item{object}{ Object of class \code{"dtiData"}}
+  \item{method}{ Method for tensor estimation. May be \code{"linear"}, or \code{"nonlinear"}. }
+  \item{varmethod}{ Specifies the method for estimating the error variance. May be \code{"replicates"}. }
+  \item{varmodel}{ Specifies the model for the variance. May be \code{"global"}, or \code{"local"}. }
 }
-\value{ an object of class \code{dtiTensor}.
+\value{ 
+  An object of class \code{"dtiTensor"}.
 }
 \section{Methods}{
 \describe{
 
-\item{obj = "ANY"}{ Returns a warning. }
+  \item{obj = "ANY"}{ Returns a warning. }
 
-\item{obj = "dtiData"}{ Estimate diffusion tensor from data in each voxel with the different options for the regression type and model for variance estimation. }
+  \item{obj = "dtiData"}{ Estimate diffusion tensor from data in each voxel with the different options for the regression type and model for variance estimation.  If \code{method=="linear"} estimates are obtained using a linearization of the tensor model. This was the estimate used in Tabelow et.al. (2008).  \code{method=="nonlinear"} uses a nonlinear regression model with reparametrization that ensures the tensor to be  positive semidefinite, see  Koay et.al. (2006).  If \code{varmethod=="replicates"} the error variance is estimated from replicated gradient directions if possible, otherwise an estimate is obtained from the residual sum of squares.  If \code{varmodel=="global"} a homogeneous variance is assumed and estimated as the median of the local variance estimates. }
 
 }
 }
@@ -39,8 +39,18 @@ the DWI data contained in an object of class \code{dtiData}.
 
               \url{ http://www.wias-berlin.de/projects/matheon_a3/} 
 }
-\author{Karsten Tabelow tabelow@wias-berlin.de, Joerg Polzehl polzehl@wias-berlin.de}
-\seealso{ \code{\link{dtiData}}, \code{\link{readDWIdata}}, \code{\link{dtiIndices-methods}},  \code{\link{medinria2tensor}}, \code{\link{tensor2medinria}}, \code{\linkS4class{dtiData}}, \code{\linkS4class{dtiIndices}}}
+\author{ 
+  Karsten Tabelow \email{tabelow@wias-berlin.de}\cr 
+  J\"org Polzehl \email{polzehl@wias-berlin.de}
+}
+\seealso{ 
+  \code{\link{dtiData}}, 
+  \code{\link{readDWIdata}}, 
+  \code{\link{dtiIndices-methods}},  
+  \code{\link{medinria}}, 
+  \code{\linkS4class{dtiData}}, 
+  \code{\linkS4class{dtiTensor}}
+}
 \examples{
   \dontrun{demo(dti_art)}
 }
