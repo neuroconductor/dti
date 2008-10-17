@@ -404,7 +404,7 @@ dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=
             )
 }
 
-readDWIdata <- function(dirlist, format, nslice, gradient, order = NULL,
+readDWIdata <- function(gradient, dirlist, format, nslice, order = NULL,
                         xind=NULL, yind=NULL, zind=NULL,
                         level=0, mins0value=0, maxvalue=10000,
                         voxelext=NULL, orientation=c(1,3,5)) {
