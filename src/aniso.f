@@ -225,7 +225,7 @@ C    ia,ie -  rane of x values (restricted to the grid)
       z=(p1-p44/p2-p55/p3+2.d0*p6*t)*s-p66*p55/p3-p66*p44/p2+
      1                                             2.d0*p66*p6*t
       if(abs(z).le.1e-40) THEN
-         call dblepr("denominator in rangex",21,z,1)
+C         call dblepr("denominator in rangex",21,z,1)
          z=1
       END IF
       z=s/z
@@ -267,9 +267,7 @@ C    ia,ie -  rane of x values (restricted to the grid)
       p66=p6*p6
       s=p2*p3-p6*p6
       if(s.le.1e-10) THEN
-         call dblepr("denominator in rangey",21,s,1)
-         call dblepr("a",1,a,6)
-         call dblepr("z",1,z,1)
+C         call dblepr("denominator in rangey",21,s,1)
          z=1
       END IF
       t=-(p4*p3 - p6*p5)* x
@@ -683,49 +681,31 @@ C  now case i1=i2=0
       real*8 wij,sw,h2,adist
       external adist
       h2=bw*bw
-      call dblepr("vext",4,vext,3)
-      call dblepr("a",1,a,6)
-      call dblepr("bw",2,bw,1)
       sw=1.d0
       call rangex(a,bw,ia1,ie1,vext)
-      call intpr("ie1",3,ie1,1)
       DO i1=1,ie1
          call rangey(a,i1,bw,ia2,ie2,vext)
-         call intpr("i1",2,i1,1)
-         call intpr("ia2",3,ia2,1)
-         call intpr("ie2",3,ie2,1)
          DO i2=ia2,ie2
             call rangez(a,i1,i2,bw,ia3,ie3,vext)
-            call intpr("i2",2,i2,1)
-            call intpr("ia3",3,ia3,1)
-            call intpr("ie3",3,ie3,1)
             DO i3=ia3,ie3
                wij=max(0.d0,1.d0-adist(a,i1,i2,i3,vext)/h2)
-               call dblepr("wij",3,wij,1)
                sw=sw+2.d0*wij
             END DO
          END DO
       END DO
 C  now case i1=0
       call rangey(a,0,bw,ia2,ie2,vext)
-        call intpr("ie2",3,ie2,1)
       DO i2=1,ie2
          call rangez(a,0,i2,bw,ia3,ie3,vext)
-            call intpr("i2",2,i2,1)
-            call intpr("ia3",3,ia3,1)
-            call intpr("ie3",3,ie3,1)
          DO i3=ia3,ie3
             wij=max(0.d0,1.d0-adist(a,0,i2,i3,vext)/h2)
-            call dblepr("wij",3,wij,1)
             sw=sw+2.d0*wij
          END DO
       END DO
 C  now case i1=i2=0
       call rangez(a,0,0,bw,ia3,ie3,vext)
-            call intpr("ie3",3,ie3,1)
          DO i3=1,ie3
             wij=max(0.d0,1.d0-adist(a,0,0,i3,vext)/h2)
-             call dblepr("wij",3,wij,1)
             sw=sw+2.d0*wij
          END DO
       RETURN

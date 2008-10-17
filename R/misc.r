@@ -222,10 +222,11 @@ tensor2medinria <- function(obj, filename, xind=NULL, yind=NULL, zind=NULL) {
 
 medinria2tensor <- function(filename) {
   if (!require(fmri)) stop("cannot execute function without package fmri, because of missing read.NIFTI() function")
-
+  args <- sys.call() 
   data <- read.NIFTI(filename)
  
   invisible(new("dtiTensor",
+                call  = list(args),
                 D     = aperm(extract.data(data),c(4,1:3))[c(1,2,4,3,5,6),,,],
                 sigma = array(0,data$dim[1:3]),
                 scorr = array(0,c(1,1,1)),
@@ -243,6 +244,7 @@ medinria2tensor <- function(filename) {
                 yind  = 1:data$dim[2],
                 zind  = 1:data$dim[3],
                 voxelext = data$delta,
+                scale = 1,
                 source= "unknown")
             )
 

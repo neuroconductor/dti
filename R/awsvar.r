@@ -33,7 +33,6 @@ awsvar <- function(y,hmax=NULL,qlambda=NULL,
 #
 #    first check arguments and initialize
 #
-args <- match.call()
 dy<-dim(y)
 if(length(dy)>3) stop("AWS for more than 3 dimensional grids is not implemented")
 #

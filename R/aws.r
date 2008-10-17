@@ -30,7 +30,8 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
     if (!adimpro) cat("No graphical output! Install package adimpro from CRAN!\n")
     graph <- graph & adimpro
   }
-  args <- match.call()
+  args <- sys.call(-3)
+  args <- c(object@call,args)
   s0ind <- object@s0ind
   ns0 <- length(s0ind)
   z <- .Fortran("outlier",
@@ -63,8 +64,8 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
   Bcov <- btb%*%t(btb)
   btbsvd <- svd(btb)
   solvebtb <- btbsvd$u %*% diag(1/btbsvd$d) %*% t(btbsvd$v)
-  
   dtobject <- dtiTensor(object,method="linear",varmethod=varmethod)
+  scale <- dtobject@scale
   mask <- dtobject@mask
   y <- dtobject@D
   sigma2 <- dtobject@sigma
@@ -293,6 +294,7 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
                 voxelext = voxelext,
                 source= source,
                 outlier = index,
+                scale = scale,
                 method= "linear")
             )
 
@@ -319,7 +321,8 @@ rdtianiso <- function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,qua
     if (!adimpro) cat("No graphical output! Install package adimpro from CRAN!\n")
     graph <- graph & adimpro
   }
-  args <- match.call()
+  args <- sys.call(-2)
+  args <- c(object@call,args)
   btb<-dtobject@btb
   Bcov <- btb%*%t(btb)
   y <- dtobject@D
@@ -498,6 +501,7 @@ rdtianiso <- function(dtobject,hmax=5,lambda=20,rho=1,graph=FALSE,slice=NULL,qua
                 zind  = zind,
                 voxelext = voxelext,
                 outlier = dtobject@outlier,
+                scale = dtobject@scale,
                 source= source)
             )
 }

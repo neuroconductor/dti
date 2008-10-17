@@ -13,7 +13,8 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
     if (!adimpro) cat("No graphical output! Install package adimpro from CRAN!\n")
     graph <- graph & adimpro
   }
-  args <- match.call()
+  args <- sys.call(-3)
+  args <- c(object@call,args)
   s0ind <- object@s0ind
   ngrad <- object@ngrad
   ddim0 <- object@ddim0
@@ -40,6 +41,7 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
   voxelext <- object@voxelext
   if(is.null(voxelext)) vext <- c(1,1,1) else vext <- voxelext/min(voxelext)
   dtobject <- dtiTensor(object,method="nonlinear",varmethod=varmethod,varmodel=varmodel)
+  scale <- dtobject@scale
   mask <- dtobject@mask
   th0 <- dtobject@th0
   D <- dtobject@D
@@ -177,7 +179,7 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
                     as.logical(wlse),
                     as.double(z$th0),
                     th0=double(n),
-                    as.double(z$D), 
+                    as.double(z$D),
                     D=double(6*n),
                     rss=as.double(z$rss),
                     bi=as.double(z$bi),
@@ -249,7 +251,29 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
         dim(z$D) <- dim(D) <- c(6,n1*n2*n3)
         z$D[,indna] <- D[,indna]
         dim(z$D) <- dim(D) <- c(6,n1,n2,n3)
-        z$rss <- 1e10
+        z$rss[indna] <- 1e10
+        mask[indna] <- FALSE
+     }
+##
+##  set mask to FALSE on voxel where we observe extreme 
+##  values of z$det
+##  this is an indication for numerical problems caused
+##  e.g. by registration artifacts
+##
+     det95 <- quantile(z$det[mask],.95)
+     if(any(z$det[mask]>1e3*det95)){
+        n <- n1*n2*n3
+        indna <- (1:n)[z$det>1e3*det95]
+        cat("found ",length(indna),"voxel with extreme derterminat 's, keep initial estimates and do not use these voxel\n")
+        z$th0[indna] <- th0[indna]
+        dim(z$D) <- dim(D) <- c(6,n1*n2*n3)
+        z$D[,indna] <- D[,indna]
+        dim(z$D) <- dim(D) <- c(6,n1,n2,n3)
+        dim(z$sihat)  <- dim(si) <- c(ngrad,n1*n2*n3)
+        z$sihat[,indna] <- si[,indna]
+        dim(z$sihat) <- dim(si) <- c(ngrad,n1,n2,n3)
+        z$rss[indna] <- 1e10
+        z$det[indna] <- 0
         mask[indna] <- FALSE
      }
      if(graph){
@@ -324,6 +348,7 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
                 voxelext = object@voxelext,
                 source= object@source,
                 outlier = index,
+                scale = scale,
                 method= dtobject@method)
             )
 }

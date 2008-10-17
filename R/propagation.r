@@ -11,7 +11,7 @@ dti.propagation <- function(object,hmax=5,hinit=NULL,lambda=47,
     if (!adimpro) cat("No graphical output! Install package adimpro from CRAN!\n")
     graph <- graph & adimpro
   }
-  args <- match.call()
+  args <- sys.call()
   si <- object$si
   s0 <- object$s0
   ngrad <- object@ngrad

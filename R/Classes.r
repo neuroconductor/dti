@@ -1,5 +1,6 @@
 setClass("dti",
          representation(.Data = "list",
+                        call = "list",
                         btb    = "matrix",
                         ngrad  = "integer", # = dim(btb)[2]
                         s0ind  = "integer", # indices of s0 images
@@ -16,8 +17,7 @@ setClass("dti",
          )
 
 setClass("dtiData",
-         representation(call = "call",
-                        si   = "array"),
+         representation(si   = "array"),
          contains=c("list","dti"),
          validity=function(object){
           if (any(dim(object@si)!=c(object@ddim,object@ngrad))) {
@@ -43,8 +43,7 @@ setClass("dtiData",
          }
          )
 setClass("dtiTensor",
-         representation(call   = "call",
-                        method = "character",
+         representation(method = "character",
                         D      = "array",
                         th0    = "array",
                         sigma  = "array",
@@ -52,7 +51,8 @@ setClass("dtiTensor",
                         bw     = "numeric",
                         mask   = "array",
                         hmax   = "numeric",
-                        outlier = "numeric"),
+                        outlier = "numeric",
+                        scale  = "numeric"),
          contains=c("list","dti"),
          validity=function(object){
           if (any(dim(object@D)!=c(6,object@ddim))) {
@@ -93,8 +93,7 @@ setClass("dtiTensor",
          )
 
 setClass("dtiIndices",
-         representation(call   = "call",
-                        method = "character",
+         representation(method = "character",
                         fa     = "array",
                         ga     = "array",
                         md     = "array",

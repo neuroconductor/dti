@@ -44,6 +44,8 @@ For class \code{"dtiTensor"}:
     \item{ \code{mask}: }{ Object of class \code{"array"}, logical indicating the voxel where the tensor was estimated.} 
     \item{ \code{hmax}: }{ Object of class \code{"numeric"}, maximal bandwidth in case of adaptive smoothing, 1 otherwise.} 
     \item{ \code{outlier}: }{ Object of class \code{"numeric"}, index of voxel where physical constraints are not met, i.e. where the observed values in gradient images Si were larger than the corresponding S0 values. These are probably motion effects or registration errors. Values are replaced by the corresponding (mean) S0 values.}
+    \item{\code{scale}:}{Numerical value corresponding to the 95\% quantile of the maximal eigenvalues of estimated tensors within the mask.
+          Used for scaling in function \code{show3d.dtiTensor}}
     \item{ \code{method}: }{ Object of class \code{"character"}, either \code{"linear"} or \code{"nonlinear"} or \code{"unknown"}. Indicates the regression model used for estimating the tensors.}
 }
 
@@ -77,7 +79,11 @@ For class \code{"dtiIndices"}:
   \code{\link{dtiData}},
   \code{\link{readDWIdata}},
   \code{\link{dtiTensor-methods}}, 
-  \code{\link{dti.smooth-methods}}
+  \code{\link{dti.smooth-methods}},
   \code{\link{dtiIndices-methods}},
+  \code{\link{plot-methods}},
+  \code{\link{print-methods}},
+  \code{\link{summary-methods}},
+  \code{\link{extract-methods}}
 }
 \keyword{ classes }

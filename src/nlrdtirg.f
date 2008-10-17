@@ -9,12 +9,10 @@ C
       real*8 D(6,n1,n2,n3),b(6,nb),res(nb,n1,n2,n3),
      1    th0(n1,n2,n3),eps,rss(n1,n2,n3)
       integer i1,i2,i3,j
-      call intpr("niter",5,niter,1)
       DO i3=1,n3
-         call intpr("Nonlinear regression for slice No:",34,i3,1)
+C         call intpr("Nonlinear regression for slice No:",34,i3,1)
          DO i2=1,n2
             DO i1=1,n1
-C               call intpr("i1",2,i1,1)
                if(mask(i1,i2,i3)) THEN
                   call islvdti(s(1,i1,i2,i3),nb,b,th0(i1,i2,i3),
      1                       D(1,i1,i2,i3),
@@ -43,7 +41,6 @@ C
      1       dg(7),pk(7),ak(7,7),ck(7,7),rss,nrss,crss,maxabsdg,
      2       oldrss,relrss,rhon(6),Dn(6),res,X(7),th0n,XX(6)
       external indvar
-C      call intpr("slvdtirg",8,1,1)
       delta=0.25D0
       gamma=1.d0
       alpha=0.7d0
@@ -259,15 +256,11 @@ C      call regularD(D)
          IF(maxabsdg.lt.eps.or.relrss.lt.1d-6) THEN
 C  prepare things for return if gradient is close to 0
             call regularD(D,negdefin)
-C            call testreg(D,1)
             RETURN
          END IF
          IF(iter.gt.1.and.abs(rhon(1)*rhon(4)*rhon(6)).lt.1.d-10) THEN
 C  prepare things for return if gradient is close to 0
             call regularD(D,negdefin)
-C            call testreg(D,1)
-C            call dblepr("rhon3",5,rhon,6)
-C            call intpr("iter",4,iter,1)
             RETURN
          END IF
          gamma=min(gamma/alpha,1.d0)

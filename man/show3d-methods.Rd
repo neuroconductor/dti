@@ -11,24 +11,27 @@
 }
 \usage{
   \S4method{show3d}{dtiTensor}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, method=1, level=0, scale=.25, bgcolor="black", add=FALSE, subdivide=2, smooth=TRUE, maxobjects=729, \dots)
-  \S4method{show3d}{dtiIndices}(obj, index="FA", nx=NULL, ny=NULL, nz=NULL, center=NULL, method=1, level=0, bgcolor="black", add=FALSE)
+  \S4method{show3d}{dtiIndices}(obj, index="FA", nx=NULL, ny=NULL, nz=NULL, center=NULL, method=1, level=0, bgcolor="black", add=FALSE, lwd=1, \dots)
 }
 \arguments{
-  \item{obj}{ An object of class \code{"dtiTensor"} or \code{"dtiIndices"} }
-  \item{nx}{Number of voxel in x-direction}
-  \item{ny}{Number of voxel in y-direction}
-  \item{nz}{Number of slices}
-  \item{center}{Vector of length 3 specifying the center of the data cube (class \code{"dtiTensor"}) or center of display (class \code{"dtiIndices"})}
-  \item{method}{\code{method==1} and \code{method==2} specify two different color schemes for directional FA-maps.}
-  \item{level}{Minimal FA value of tensors.}
-  \item{scale}{Scale factor for the size of ellipsoids}
-  \item{bgcolor}{Backgroundcolor for rgl-display}
-  \item{add}{If true information is added to the current device, otherwise a new device is opened.}
-  \item{subdivide}{Level of subdivisions for meshing of ellipsoids, see package rgl.}
-  \item{smooth}{Use smooted surfaces, see package rgl.}
-  \item{maxobjects}{Maximal size of data cube (in voxel) to display}
-  \item{index}{ \code{"FA"} for fractional anisotropy index or \code{"GA"} for geodetic anisotropy index.}
-  \item{\dots}{Additional parameters passed to functions from the rgl-package.}
+  \item{obj}{ An object of class \code{dtiTensor} or \code{dtiIndices} }
+\item{nx}{Number of voxel in x-direction}
+\item{ny}{Number of voxel in y-direction}
+\item{nz}{Number of slices}
+\item{center}{Vector of length 3 specifying the center of the data cube (class \code{dtiTensor}) or center of display (class \code{dtiIndices})}
+\item{method}{\code{method==1} and \code{method==2} specify two different color schemes for 
+    directional FA-maps.}
+\item{level}{Minimal FA value of tensors.}
+\item{scale}{Scale factor for the size of ellipsoids}
+\item{bgcolor}{Backgroundcolor for rgl-display}
+\item{add}{If true information is added to the current device, otherwise a new device is opened.}
+\item{subdivide}{Level of subdivisions for meshing of ellipsoids, see package rgl.}
+\item{smooth}{Use smooted surfaces, see package rgl.}
+\item{maxobjects}{Maximal size of data cube (in voxel) to display}
+\item{index}{Eiter \code{"FA"} for fractional anisotropy index or 
+\code{"GA"} for geodetic anisotropy index.}
+\item{lwd}{Line width to use.}
+\item{\dots}{Additional parameters passed to function \code{rgl.par} from the rgl-package.}
 }
 \section{Methods}{
 \describe{
