@@ -370,6 +370,7 @@ C   eps      -  something small and positive
       aws=lambda.lt.1e20
       if(rician) THEN
          call besselq(x,10000,fw)
+      call dblepr("besselq(10000)",14,fw(10000),1)
       END IF
       h1=exp(log(vol*vext(1)*vext(2)*vext(3))/3.d0)
       h0=exp(log(vol*vext(1)*vext(2)*vext(3))/3.d0)/1.4
@@ -529,7 +530,7 @@ C   this also adjusts for eliminating \theta by combining the second and 4th mom
                         iter=6
                         if(squot.gt.2.25d0) iter=2
                         if(squot.gt.3.25d0) iter=1
-                        sih0=sih/sw0
+                        sih0=sih/min(5.d0,sw0)
                         DO l=1,nselect
                            sisel(l)=si(k,isel1(l),isel2(l),isel3(l))
                         END DO

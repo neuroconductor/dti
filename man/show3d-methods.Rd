@@ -29,7 +29,7 @@
 \item{smooth}{Use smooted surfaces, see package rgl.}
 \item{maxobjects}{Maximal size of data cube (in voxel) to display}
 \item{index}{Eiter \code{"FA"} for fractional anisotropy index or 
-\code{"GA"} for geodetic anisotropy index.}
+\code{"GA"} for geodesic anisotropy index.}
 \item{lwd}{Line width to use.}
 \item{\dots}{Additional parameters passed to function \code{rgl.par} from the rgl-package.}
 }

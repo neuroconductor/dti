@@ -25,7 +25,7 @@
   \item{quant}{ If \code{is.null(minanindex)} specify \code{minanindex} as corresponding quantile of the fractal anisotropy (FA) index.}
   \item{minanindex}{ Display only information for voxel with \code{FA>minanindex}}
   \item{show}{Visualize information in a graphics device (for classes \code{"dtiData"} and \code{"dtiIndices"} only).  }
-  \item{density}{Show density of S0(Sb)-values (for class \code{"dtiData"}) or densities of fractal anisotropy (FA) or geodetic anisotropy (GA) ( for class \code{"dtiIndices"}).  }
+  \item{density}{Show density of S0(Sb)-values (for class \code{"dtiData"}) or densities of fractal anisotropy (FA) or geodesic anisotropy (GA) ( for class \code{"dtiIndices"}).  }
   \item{contrast.enh}{ Enhance image contrast using \code{min(1,x$anindex/contrast.enh} instead of the anisotropy index itself. Effective values are within the interval (0,1).}
   \item{what}{ If \code{what="GA"} use geodesic anisotropy (GA) instead of fractional anisotropy (FA).  }
   \item{mar}{ Graphical parameter for \code{par}. }
