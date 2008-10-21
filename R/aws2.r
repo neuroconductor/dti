@@ -8,6 +8,7 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
 #     lambda and lseq adjusted for alpha=0.2
 #
   eps <- 1e-6
+  maxnw <- 1000
   if (graph) {
     adimpro <- require(adimpro)
     if (!adimpro) cat("No graphical output! Install package adimpro from CRAN!\n")
@@ -196,10 +197,15 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
                     as.double(lambda0),
                     double(ngrad),#swsi
                     double(ngrad),#swsi2
-                    double(ngrad),#swsi4
                     double(ngrad),#F
                     as.double(eps),
-                    as.logical(rician), # based on x <- seq(0,100,.1) !!!
+                    as.logical(rician), 
+                    as.integer(maxnw),# maximum number of positive weights
+                    integer(ngrad),# auxiliary for number of iterations
+                    integer(maxnw*ngrad),# auxiliary for aktive data
+                    integer(maxnw*3),# auxiliary for index of aktive data
+                    double(maxnw),# auxiliary for weights
+                    double(ngrad),# auxiliary for variances
                     DUP=FALSE,PACKAGE="dti")[c("th0","D","rss","bi","anindex","andirection","det","sigma2hat","sigma2r","sihat")] else z <- .Fortran("awsrgdti",
                     as.integer(si),
                     sihat=as.integer(z$sihat), # needed for statistical penalty
@@ -327,6 +333,7 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
 #    if(volseq) lambda0 <- lambda*scorrfactor else lambda*lseq[k]*scorrfactor    
      if(volseq) lambda0 <- lambda else lambda*lseq[k]
   }
+  cat("prepare final dtiTensor object",date(),"\n")
   invisible(new("dtiTensor",
                 list(s2rician=if(rician) z$sigma2r else NULL, ni=z$bi*if(wlse) z$sigma2hat else 1),
                 call = args,

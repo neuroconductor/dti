@@ -320,8 +320,8 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine awsrgdt2(si,siest,sipred,nb,n1,n2,n3,mask,btb,
      1                    sigma2,wlse,th0,th0n,D,Dn,rss,bi,
      2                    ani,andir,det,sigma2h,sigma2n,sigma2r,vol,
-     3                    niter,vext,rho0,lambda,swsi,swsi2,swsi4,F,
-     4                    eps,rician)
+     3                    niter,vext,rho0,lambda,swsi,swsi2,F,
+     4                    eps,rician,nw,nriter,sisel,wselect,s2)
 C
 C   si       -  observed diffusion weighted images
 C   nb       -  number of gradients (including zero gradients)
@@ -350,27 +350,28 @@ C   swsi     -  auxiliary for sum_j w_j si(j)
 C   F        -  auxiliary for function values in LSE
 C   eps      -  something small and positive
       implicit logical (a-z)
-      integer n1,n2,n3,nb,si(nb,n1,n2,n3),niter,siest(nb,n1,n2,n3)
-      real*8 btb(6,nb),sigma2(n1,n2,n3),swsi2(nb),swsi4(nb),
+      integer n1,n2,n3,nb,si(nb,n1,n2,n3),niter,siest(nb,n1,n2,n3),
+     1       nw,nriter(nb),sisel(nb,nw),isel(3,nw)
+      real*8 btb(6,nb),sigma2(n1,n2,n3),swsi2(nb),
      1       th0(n1,n2,n3),th0n(n1,n2,n3),sigma2r(n1,n2,n3),
      2       D(6,n1,n2,n3),Dn(6,n1,n2,n3),sipred(nb,n1,n2,n3),
-     3       bi(n1,n2,n3),ani(n1,n2,n3),andir(3,n1,n2,n3),
+     3       bi(n1,n2,n3),ani(n1,n2,n3),andir(3,n1,n2,n3),s2(nb),
      4       det(n1,n2,n3),sigma2h(n1,n2,n3),sigma2n(n1,n2,n3),h,rho0,
-     5       vext(3),lambda,swsi(nb),F(nb),eps,rss(n1,n2,n3),vol
+     5       vext(3),lambda,swsi(nb),F(nb),eps,rss(n1,n2,n3),
+     6       wselect(nw),vol
       logical mask(n1,n2,n3),rician,wlse
       integer i1,j1,j1a,j1e,jj1,i2,j2,j2a,j2e,jj2,i3,j3,j3a,j3e,jj3,
-     1        ierr,k,center,l,m,iter
+     1        ierr,k,center,l
       real*8 wij,adist,sw,sws0,h2,thi(7),bii,sqrbii,ew(3),ev(3,3),
      1       mew,z1,z2,z3,sij,deti,z,sew,ss2,sw0,sw2,Di(6),dtidisrg,
-     2       th0i,s2hat,ssigma2,rssi,h0,h1,sih,sih0,squot,shat
-      integer isel1(1000),isel2(1000),isel3(1000),nselect,sisel(1000)
-      real*8 wselect(1000),x(10000),fw(10000)
+     2       th0i,s2hat,ssigma2,rssi,h0,h1,squot,shat
+      integer nselect
+      real*8 x(10000),fw(10000)
       external adist,dtidisrg
       logical aws
       aws=lambda.lt.1e20
       if(rician) THEN
          call besselq(x,10000,fw)
-      call dblepr("besselq(10000)",14,fw(10000),1)
       END IF
       h1=exp(log(vol*vext(1)*vext(2)*vext(3))/3.d0)
       h0=exp(log(vol*vext(1)*vext(2)*vext(3))/3.d0)/1.4
@@ -398,7 +399,6 @@ C  now anisotropic smoothing
                DO k=1,nb
                   swsi(k)=0.d0
                   swsi2(k)=0.d0
-                  swsi4(k)=0.d0
                END DO
                s2hat = sigma2h(i1,i2,i3)
                deti=exp(log(det(i1,i2,i3))/3)
@@ -497,12 +497,15 @@ C     triangular location kernel
                               swsi(k)=swsi(k)+wij*z
                               z=z*z
                               swsi2(k)=swsi2(k)+wij*z
-                              swsi4(k)=swsi4(k)+wij*z*z
                            END DO
+                           if(nselect.gt.nw) THEN
+                              call intpr("nselect>nw",10,nselect,1)
+                              CYCLE
+                           ENDIF 
                            nselect=nselect+1
-                           isel1(nselect)=jj1
-                           isel2(nselect)=jj2
-                           isel3(nselect)=jj3
+                           isel(1,nselect)=jj1
+                           isel(2,nselect)=jj2
+                           isel(3,nselect)=jj3
                            wselect(nselect)=wij
                         ELSE
                            DO k=1,nb
@@ -513,43 +516,36 @@ C     triangular location kernel
                   END DO
                END DO
                bi(i1,i2,i3)=sw
+               Do k=1,nb
+                  swsi(k)=swsi(k)/sw
+               END DO                  
                if(rician.and.sw0.gt.1.d0) THEN
                   ssigma2=0.d0
                   DO k=1,nb
-                     s2hat = 2*swsi2(k)*swsi2(k)-swsi4(k)
-                     s2hat = 0.5d0*(swsi2(k)-sqrt(max(0.d0,s2hat)))
+                     s2hat = swsi2(k)/sw-swsi(k)*swsi(k)
+                     s2(k) = s2hat
                      ssigma2=ssigma2+s2hat
                   END DO
                   s2hat = sw*sw/(sw*sw-sw2)*ssigma2/nb
+C                  s2hat = ssigma2/nb
                   shat = sqrt(s2hat)
 C   this also adjusts for eliminating \theta by combining the second and 4th moment
                   DO k=1,nb
-                     sih=swsi(k)/sw
-                     squot=sih/shat
+                     squot=swsi(k)/shat
                      if(squot.lt.1.d1) THEN
-                        iter=6
-                        if(squot.gt.2.25d0) iter=2
-                        if(squot.gt.3.25d0) iter=1
-                        sih0=sih/min(5.d0,sw0)
-                        DO l=1,nselect
-                           sisel(l)=si(k,isel1(l),isel2(l),isel3(l))
-                        END DO
-                        DO m=1,iter
-C                 call ricecorr(sisel,wselect,nselect,sw,sih,s2hat)
-                 call ricecor1(sisel,wselect,nselect,sw,sih,s2hat,fw)
-                           if(sih.le.sih0) THEN
-                              sih=sih0
-                              CYCLE
-                           END IF
-                        END DO
+                        nriter(k)=6
+                        if(squot.gt.2.25d0) nriter(k)=2
+                        if(squot.gt.3.25d0) nriter(k)=1
+                     ELSE
+                        nriter(k)=0
                      END IF
-                     swsi(k)=sih
+                     DO l=1,nselect
+                        sisel(k,l)=si(k,isel(1,l),isel(2,l),isel(3,l))
+                     END DO
                   END DO
+                  call ricecor2(sisel,wselect,nselect,nb,
+     1                          nriter,sw,swsi,s2,s2hat,fw)
                   sigma2r(i1,i2,i3)=s2hat
-               ELSE
-                  Do k=1,nb
-                     swsi(k)=swsi(k)/sw
-                  END DO                  
                END IF
                IF(sw.gt.0.d0.and.sw.lt.1.d20) THEN
                   sigma2n(i1,i2,i3)=ss2/sw0
