@@ -3,7 +3,7 @@
 #   this is also based on an a statistical penalty defined using log-likelihood difference
 #
 dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slice=NULL,quant=.8,
-                         minanindex=NULL,hsig=2.5,lseq=NULL,varmethod="residuals",rician=TRUE,niter=5,varmodel="local",wlse=TRUE,volseq=TRUE){
+                         minanindex=NULL,hsig=2.5,lseq=NULL,varmethod="residuals",rician=TRUE,niter=5,varmodel="local",volseq=TRUE){
 #
 #     lambda and lseq adjusted for alpha=0.2
 #
@@ -75,10 +75,9 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
   z$th0 <- th0
   dim(z$anindex) <-dim(z$det) <- dimy[-1]
   dim(z$andirection) <- c(3,dimy[-1]) 
-  z$sigma2hat <- sigma2
   z$sihat <- si
-   z$bi <- array(1,dimy[-1])#/z$sigma2hat
-   dim(z$sigma2hat) <- dimy[-1]
+   dim(sigma2) <- dimy[-1]
+   z$bi <- 1/sigma2
 #
 #  initial state for h=1
 #
@@ -177,7 +176,6 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
                     as.logical(mask),
                     as.double(btb),
                     as.double(sigma2),
-                    as.logical(wlse),
                     as.double(z$th0),
                     th0=double(n),
                     as.double(z$D),
@@ -187,8 +185,6 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
                     anindex=as.double(z$anindex),
                     andirection=as.double(z$andirection),
                     det=as.double(z$det),
-                    as.double(z$sigma2hat),
-                    sigma2hat=double(n),
                     sigma2r=double(n),
                     as.double(1.25^k),
                     as.integer(niter),
@@ -206,7 +202,7 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
                     integer(maxnw*3),# auxiliary for index of aktive data
                     double(maxnw),# auxiliary for weights
                     double(ngrad),# auxiliary for variances
-                    DUP=FALSE,PACKAGE="dti")[c("th0","D","rss","bi","anindex","andirection","det","sigma2hat","sigma2r","sihat")] else z <- .Fortran("awsrgdti",
+                    DUP=FALSE,PACKAGE="dti")[c("th0","D","rss","bi","anindex","andirection","det","sigma2r","sihat")] else z <- .Fortran("awsrgdti",
                     as.integer(si),
                     sihat=as.integer(z$sihat), # needed for statistical penalty
                     double(ngrad*n),# array for predicted Si's from the tensor model 
@@ -217,7 +213,6 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
                     as.logical(mask),
                     as.double(btb),
                     as.double(sigma2),
-                    as.logical(wlse),
                     as.double(z$th0),
                     th0=double(n),
                     as.double(z$D), 
@@ -227,8 +222,6 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
                     anindex=as.double(z$anindex),
                     andirection=as.double(z$andirection),
                     det=as.double(z$det),
-                    as.double(z$sigma2hat),
-                    sigma2hat=double(n),
                     sigma2r=double(n),
                     as.double(hakt),
                     as.integer(niter),
@@ -241,12 +234,8 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
                     double(ngrad),#
                     as.double(eps),
                     as.logical(rician), # based on x <- seq(0,100,.1) !!!
-                    DUP=FALSE,PACKAGE="dti")[c("th0","D","rss","bi","anindex","andirection","det","sigma2hat","sigma2r","sihat")]
-     if(hakt<hsig){
-        eta <- (hsig^3 - hakt^3)/hsig^3
-        z$sigma2hat <- eta*sigma2+(1-eta)*z$sigma2hat
-     }
-     dim(z$th0) <- dim(z$rss) <- dim(z$bi) <- dim(z$anindex) <- dim(z$det) <- dim(z$sigma2hat) <- dim(z$sigma2r) <- dimy[-1]
+                    DUP=FALSE,PACKAGE="dti")[c("th0","D","rss","bi","anindex","andirection","det","sigma2r","sihat")]
+     dim(z$th0) <- dim(z$rss) <- dim(z$bi) <- dim(z$anindex) <- dim(z$det) <- dim(z$sigma2r) <- dimy[-1]
      dim(z$D) <- dimy
      dim(z$andirection) <- c(3,dimy[-1]) 
      if(any(is.na(z$th0))){
@@ -317,9 +306,9 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
      title(paste("Dyz: min",signif(min(z$D[5,,,][mask]),3),"max",signif(max(z$D[5,,,][mask]),3)))
      andir2.image(z,slice,quant=quant,minanindex=minanindex,xaxt="n",yaxt="n")
      title(paste("Directions (h=",signif(hakt,3),"), slice",slice))
-     ni<-z$bi[,,slice]*if(wlse) z$sigma2hat[,,slice] else 1
+     ni<-z$bi[,,slice]*sigma2[,,slice]
      show.image(make.image(65535*ni/max(ni)),xaxt="n",yaxt="n")
-     title(paste("sum of weights  mean=",signif(mean((z$bi*if(wlse) z$sigma2hat else 1)[mask]),3)))
+     title(paste("sum of weights  mean=",signif(mean((z$bi* sigma2)[mask]),3)))
      img<-z$D[6,,,slice]
      show.image(make.image(65535*img/max(img)),xaxt="n",yaxt="n")
      title(paste("Dzz: mean",signif(mean(z$D[6,,,][mask]),3),"max",signif(max(z$D[6,,,][mask]),3)))
@@ -335,11 +324,11 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
   }
   cat("prepare final dtiTensor object",date(),"\n")
   invisible(new("dtiTensor",
-                list(s2rician=if(rician) z$sigma2r else NULL, ni=z$bi*if(wlse) z$sigma2hat else 1),
+                list(s2rician=if(rician) z$sigma2r else NULL, ni=z$bi* sigma2),
                 call = args,
                 D = z$D,
                 th0 = z$th0,
-                sigma = z$sigma2hat,
+                sigma = sigma2,
                 scorr = dtobject@scorr,
                 bw = dtobject@bw,
                 mask = dtobject@mask,

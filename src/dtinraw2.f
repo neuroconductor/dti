@@ -74,8 +74,8 @@ C   3D anisotropic smoothing of diffusion tensor data
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine awsrgdti(si,siest,sipred,nb,n1,n2,n3,mask,btb,
-     1                    sigma2,wlse,th0,th0n,D,Dn,rss,bi,
-     2                    ani,andir,det,sigma2h,sigma2n,sigma2r,h,
+     1                    sigma2,th0,th0n,D,Dn,rss,bi,
+     2                    ani,andir,det,sigma2r,h,
      3                    niter,vext,rho0,lambda,swsi,swsi2,swsi4,F,
      4                    eps,rician)
 C
@@ -111,13 +111,13 @@ C   eps      -  something small and positive
      1       th0(n1,n2,n3),th0n(n1,n2,n3),sigma2r(n1,n2,n3),
      2       D(6,n1,n2,n3),Dn(6,n1,n2,n3),sipred(nb,n1,n2,n3),
      3       bi(n1,n2,n3),ani(n1,n2,n3),andir(3,n1,n2,n3),
-     4       det(n1,n2,n3),sigma2h(n1,n2,n3),sigma2n(n1,n2,n3),h,rho0,
+     4       det(n1,n2,n3),h,rho0,
      5       vext(3),lambda,swsi(nb),F(nb),eps,rss(n1,n2,n3)
-      logical mask(n1,n2,n3),rician,wlse
+      logical mask(n1,n2,n3),rician
       integer i1,j1,j1a,j1e,jj1,i2,j2,j2a,j2e,jj2,i3,j3,j3a,j3e,jj3,
      1        ierr,k
-      real*8 wij,adist,sw,sws0,h2,thi(7),bii,sqrbii,ew(3),ev(3,3),
-     1       mew,z1,z2,z3,sij,deti,z,sew,ss2,sw0,sw2,Di(6),dtidisrg,
+      real*8 wij,adist,sw,h2,thi(7),bii,sqrbii,ew(3),ev(3,3),
+     1       mew,z1,z2,z3,sij,deti,z,sew,sw0,sw2,Di(6),dtidisrg,
      2       th0i,s2hat,ssigma2,rssi
       external adist,dtidisrg
       logical aws
@@ -142,22 +142,14 @@ C  now anisotropic smoothing
                sw=0.d0
                sw2=0.d0
                sw0=0.d0
-               sws0=0.d0
-               ss2=0.d0
                DO k=1,nb
                   swsi(k)=0.d0
                   swsi2(k)=0.d0
                   swsi4(k)=0.d0
                END DO
-               s2hat = sigma2h(i1,i2,i3)
                deti=exp(log(det(i1,i2,i3))/3)
                bii=bi(i1,i2,i3)
-               if(wlse) THEN
-                  sqrbii=sigma2h(i1,i2,i3)/sqrt(bii)
-               ELSE
-                  bii=bii/s2hat
-                  sqrbii=sqrt(1.d0/bii)
-               END IF
+               sqrbii=sigma2(i1,i2,i3)/sqrt(bii)
                th0i=th0(i1,i2,i3)
                th0n(i1,i2,i3)=th0i
 C    used as initial values
@@ -230,9 +222,8 @@ C     triangular location kernel
                            if(sij.gt.1.d0) CYCLE
                            wij=wij*(1.d0-sij)
                         END IF
-                        ss2=ss2+wij*sigma2(jj1,jj2,jj3)
                         sw0=sw0+wij
-                        if(wlse) wij=wij/sigma2h(jj1,jj2,jj3)
+                        wij=wij/sigma2(jj1,jj2,jj3)
                         if(wij.lt.0.d0) call dblepr("wij",3,wij,1)
                         sw=sw+wij
                         sw2=sw2+wij*wij
@@ -278,16 +269,12 @@ C  thats the joint moment estimate of the Rice variance based on the 2nd and 4th
                   END DO                  
                END IF
                IF(sw.gt.0.d0.and.sw.lt.1.d20) THEN
-                  sigma2n(i1,i2,i3)=ss2/sw0
                   call dslvdti(swsi,nb,btb,th0n(i1,i2,i3),
      1                          Dn(1,i1,i2,i3),F,
      2                          niter,eps,rss(i1,i2,i3))
                   DO k=1,nb
                      siest(k,i1,i2,i3)=swsi(k)
                   END DO
-               ELSE
-                  sigma2n(i1,i2,i3)=sigma2h(i1,i2,i3)
-C                 keep old estimates
                END IF
                call eigen3(Dn(1,i1,i2,i3),ew,ev,ierr)
                IF(ew(1).lt.0.d0) call dblepr("C0",2,ew,3)
@@ -318,10 +305,10 @@ C   3D anisotropic smoothing of diffusion tensor data
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine awsrgdt2(si,siest,sipred,nb,n1,n2,n3,mask,btb,
-     1                    sigma2,wlse,th0,th0n,D,Dn,rss,bi,
-     2                    ani,andir,det,sigma2h,sigma2n,sigma2r,vol,
+     1                    sigma2,th0,th0n,D,Dn,rss,bi,
+     2                    ani,andir,det,sigma2r,vol,
      3                    niter,vext,rho0,lambda,swsi,swsi2,F,
-     4                    eps,rician,nw,nriter,sisel,wselect,s2)
+     4                    eps,rician,nw,nriter,sisel,isel,wselect,s2)
 C
 C   si       -  observed diffusion weighted images
 C   nb       -  number of gradients (including zero gradients)
@@ -338,8 +325,6 @@ C   bi       -  sum of weights
 C   ani      -  anisotropy index 
 C   dir      -  direction of main anisotropy 
 C   det      -  det(D)
-C   sigma2h  -  
-C   sigma2n  -
 C   h        -  actual bandwidth
 C   niter    -  number of iterations for imbedded nl-regression
 C   zext     -  
@@ -356,14 +341,14 @@ C   eps      -  something small and positive
      1       th0(n1,n2,n3),th0n(n1,n2,n3),sigma2r(n1,n2,n3),
      2       D(6,n1,n2,n3),Dn(6,n1,n2,n3),sipred(nb,n1,n2,n3),
      3       bi(n1,n2,n3),ani(n1,n2,n3),andir(3,n1,n2,n3),s2(nb),
-     4       det(n1,n2,n3),sigma2h(n1,n2,n3),sigma2n(n1,n2,n3),h,rho0,
+     4       det(n1,n2,n3),h,rho0,
      5       vext(3),lambda,swsi(nb),F(nb),eps,rss(n1,n2,n3),
      6       wselect(nw),vol
-      logical mask(n1,n2,n3),rician,wlse
+      logical mask(n1,n2,n3),rician
       integer i1,j1,j1a,j1e,jj1,i2,j2,j2a,j2e,jj2,i3,j3,j3a,j3e,jj3,
      1        ierr,k,center,l
-      real*8 wij,adist,sw,sws0,h2,thi(7),bii,sqrbii,ew(3),ev(3,3),
-     1       mew,z1,z2,z3,sij,deti,z,sew,ss2,sw0,sw2,Di(6),dtidisrg,
+      real*8 wij,adist,sw,h2,thi(7),bii,sqrbii,ew(3),ev(3,3),
+     1       mew,z1,z2,z3,sij,deti,z,sew,sw0,sw2,Di(6),dtidisrg,
      2       th0i,s2hat,ssigma2,rssi,h0,h1,squot,shat
       integer nselect
       real*8 x(10000),fw(10000)
@@ -394,21 +379,13 @@ C  now anisotropic smoothing
                sw=0.d0
                sw2=0.d0
                sw0=0.d0
-               sws0=0.d0
-               ss2=0.d0
                DO k=1,nb
                   swsi(k)=0.d0
                   swsi2(k)=0.d0
                END DO
-               s2hat = sigma2h(i1,i2,i3)
                deti=exp(log(det(i1,i2,i3))/3)
                bii=bi(i1,i2,i3)
-               if(wlse) THEN
-                  sqrbii=sigma2h(i1,i2,i3)/sqrt(bii)
-               ELSE
-                  bii=bii/s2hat
-                  sqrbii=sqrt(1.d0/bii)
-               END IF
+               sqrbii=sigma2(i1,i2,i3)/sqrt(bii)
                th0i=th0(i1,i2,i3)
                th0n(i1,i2,i3)=th0i
 C    used as initial values
@@ -486,9 +463,8 @@ C     triangular location kernel
                            if(sij.gt.1.d0) CYCLE
                            wij=wij*(1.d0-sij)
                         END IF
-                        ss2=ss2+wij*sigma2(jj1,jj2,jj3)
                         sw0=sw0+wij
-                        if(wlse) wij=wij/sigma2h(jj1,jj2,jj3)
+                        wij=wij/sigma2(jj1,jj2,jj3)
                         sw=sw+wij
                         sw2=sw2+wij*wij
                         if(rician) THEN
@@ -498,7 +474,7 @@ C     triangular location kernel
                               z=z*z
                               swsi2(k)=swsi2(k)+wij*z
                            END DO
-                           if(nselect.gt.nw) THEN
+                          if(nselect.gt.nw) THEN
                               call intpr("nselect>nw",10,nselect,1)
                               CYCLE
                            ENDIF 
@@ -527,7 +503,6 @@ C     triangular location kernel
                      ssigma2=ssigma2+s2hat
                   END DO
                   s2hat = sw*sw/(sw*sw-sw2)*ssigma2/nb
-C                  s2hat = ssigma2/nb
                   shat = sqrt(s2hat)
 C   this also adjusts for eliminating \theta by combining the second and 4th moment
                   DO k=1,nb
@@ -548,16 +523,12 @@ C   this also adjusts for eliminating \theta by combining the second and 4th mom
                   sigma2r(i1,i2,i3)=s2hat
                END IF
                IF(sw.gt.0.d0.and.sw.lt.1.d20) THEN
-                  sigma2n(i1,i2,i3)=ss2/sw0
                   call dslvdti(swsi,nb,btb,th0n(i1,i2,i3),
      1                          Dn(1,i1,i2,i3),F,
      2                          niter,eps,rss(i1,i2,i3))
                   DO k=1,nb
                      siest(k,i1,i2,i3)=swsi(k)
                   END DO
-               ELSE
-                  sigma2n(i1,i2,i3)=sigma2h(i1,i2,i3)
-C                  call testreg(Dn(1,i1,i2,i3),5)
                END IF
 C               call regD(Dn(1,i1,i2,i3),Di)
 C  create a regularized version of Dn in Di
