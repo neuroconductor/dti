@@ -16,6 +16,17 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
   }
   args <- sys.call(-3)
   args <- c(object@call,args)
+  dtobject <- dtiTensor(object,method="nonlinear",varmethod=varmethod,varmodel=varmodel)
+  scale <- dtobject@scale
+  mask <- dtobject@mask
+  th0 <- dtobject@th0
+  D <- dtobject@D
+  sigma2 <- dtobject@sigma
+  scorr <- dtobject@scorr
+  h0 <- dtobject@bw
+  rm(dtobject)
+  gc()
+  cat("Corresponding bandwiths for specified correlation:",h0,"\n")
   s0ind <- object@s0ind
   ngrad <- object@ngrad
   ddim0 <- object@ddim0
@@ -33,6 +44,8 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
                 PACKAGE="dti")[c("si","index","lindex")]
   si <- array(z$si,c(ddim,ngrad))
   index <- if(z$lindex>0) z$index[1:z$lindex] else numeric(0)
+  rm(z)
+  gc()
   si <- aperm(si,c(4,1:3))
   xind <- object@xind
   yind <- object@yind
@@ -41,15 +54,6 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
   btb <- object@btb
   voxelext <- object@voxelext
   if(is.null(voxelext)) vext <- c(1,1,1) else vext <- voxelext/min(voxelext)
-  dtobject <- dtiTensor(object,method="nonlinear",varmethod=varmethod,varmodel=varmodel)
-  scale <- dtobject@scale
-  mask <- dtobject@mask
-  th0 <- dtobject@th0
-  D <- dtobject@D
-  sigma2 <- dtobject@sigma
-  scorr <- dtobject@scorr
-  h0 <- dtobject@bw
-  cat("Corresponding bandwiths for specified correlation:",h0,"\n")
   gc()
   dimy <- dim(D)
   if(length(dimy)!=4||dimy[1]!=6) stop("D does not contain 3D diffusion tensor image")
@@ -314,14 +318,12 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
      title(paste("Dzz: mean",signif(mean(z$D[6,,,][mask]),3),"max",signif(max(z$D[6,,,][mask]),3)))
      }
      cat("h=",signif(hakt,3),"Quantiles (.5, .75, .9, .95, 1) of anisotropy index",signif(quantile(z$anindex[mask],c(.5, .75, .9, .95, 1)),3),"\n")
-#    c1 <- (prod(h0+1))^(1/3)
-#    c1 <- 2.7214286 - 3.9476190*c1 + 1.6928571*c1*c1 - 0.1666667*c1*c1*c1
-#    x <- (prod(1.25^(k-1)/c(1,1,1)))^(1/3)
-#    scorrfactor <- (c1+x)/(c1*prod(h0+1)+x)
     k <- k+1
-#    if(volseq) lambda0 <- lambda*scorrfactor else lambda*lseq[k]*scorrfactor    
      if(volseq) lambda0 <- lambda else lambda*lseq[k]
+     print(gc())
   }
+  rm(si)
+  gc()
   cat("prepare final dtiTensor object",date(),"\n")
   invisible(new("dtiTensor",
                 list(s2rician=if(rician) z$sigma2r else NULL, ni=z$bi* sigma2),
@@ -329,10 +331,10 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
                 D = z$D,
                 th0 = z$th0,
                 sigma = sigma2,
-                scorr = dtobject@scorr,
-                bw = dtobject@bw,
-                mask = dtobject@mask,
-                btb   = dtobject@btb,
+                scorr = scorr,
+                bw = h0,
+                mask = mask,
+                btb   = btb,
                 hmax  = hmax,
                 ngrad = ngrad, # = dim(btb)[2]
                 s0ind = object@s0ind,
@@ -345,7 +347,7 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
                 source= object@source,
                 outlier = index,
                 scale = scale,
-                method= dtobject@method)
+                method= "nonlinear")
             )
 }
 

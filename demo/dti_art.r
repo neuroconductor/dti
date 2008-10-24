@@ -1,5 +1,6 @@
 cat("K. Tabelow, J. Polzehl, V. Spokoiny, and H.U. Voss,\n Diffusion Tensor Imaging: Structural Adaptive Smoothing,\n Neuroimage, 39(4), 1763--1773 (2008)\n used linear tensor estimation for their examples.\n The package also contains non-linear tensor estimation which is the new default.")
 a <- readline("Use non-linear (Y, default) or linear (N) tensor estimates ?")
+
 if (toupper(a) == "N") {
   method <- "linear"
   cat("Note: Contrary to the paper above, due to numeric issues in this demo,\n there will be some additional non-positive definite tensors in the phantoms!\n")
@@ -7,11 +8,12 @@ lambda <- 47
 # this value was used in the Neuroimage paper
 } else {
   method <- "nonlinear"
-lambda <- 32
+lambda <- 40
 }
 cat("---> using",method,"tensor estimation!\n")
 
 a <- readline("Mask small non-diffusion weighted values ? (y/n)?")
+
 if (toupper(a) == "N") {
   mins0value <- 0
 } else {
@@ -23,6 +25,7 @@ if (toupper(a) == "N") {
 
 # define some constants
 sigma <- 1600
+sigma <- 2400
 rho <- 1
 ddim <- c(64,64,26)
 ngrad <- 25
@@ -247,13 +250,14 @@ plot(dthat4b,slice=15)
 
 z <- readline("Visualize and compare estimated tensors (Y/N) :")
 
+size <- as.integer(min(.adimpro$xsize/3.2,.adimpro$ysize/2.4))
 if(toupper(z)!="N"){
 dthat1@scale <- dt0@scale
 dthat4@scale <- dt0@scale 
 #  use same scale in all plots
-w1<-show3d(dt0,level=.3,nz=5,center=c(20,20,13),maxobjects=2000,FOV=1,windowRect = c(1, 1, 400, 400))
-w2<-show3d(dthat1,level=.3,nz=5,center=c(20,20,13),maxobjects=2000,FOV=1,windowRect = c(401, 1, 800, 400))
-w3<-show3d(dthat4,level=.3,nz=5,center=c(20,20,13),maxobjects=2000,FOV=1,windowRect = c(801, 1, 1200, 400))
+w1<-show3d(dt0,level=.3,nz=5,center=c(20,20,13),maxobjects=2000,FOV=1,windowRect = c(1, 1, size, size))
+w2<-show3d(dthat1,level=.3,nz=5,center=c(20,20,13),maxobjects=2000,FOV=1,windowRect = c(size+11, 1, 2*size+10, size))
+w3<-show3d(dthat4,level=.3,nz=5,center=c(20,20,13),maxobjects=2000,FOV=1,windowRect = c(2*size+21, 1, 3*size+20, size))
 source(system.file("rcode/mousecallbacks.r",package="dti"))
 #
 #  from package rgl::demo(mouseCallbacks)
@@ -269,7 +273,15 @@ cat("Estimated smoothed tensor in device",w3,"\n")
 z <- readline("Visualize smoothed estimated dtiIndex (Y/N) :")
 
 if(toupper(z)!="N"){
-w4<-show3d(dthat4aniso,level=.3,center=c(20,20,13),lwd=2,FOV=1,windowRect = c(1, 451, 500, 951))
+w4<-show3d(dt0aniso,level=.3,center=c(20,20,13),lwd=2,FOV=1,windowRect = c(1, size+21, size, 2*size+20))
+w5<-show3d(dthat1aniso,level=.3,center=c(20,20,13),lwd=2,FOV=1,windowRect = c(size+11, size+21, 2*size+10, 2*size+20))
+w6<-show3d(dthat4aniso,level=.3,center=c(20,20,13),lwd=2,FOV=1,windowRect = c(2*size+21, size+21, 3*size+20, 2*size+20))
+mouseTrackball(dev=c(w4,w5,w6))
+mouseZoom(2,dev=c(w4,w5,w6))
+mouseFOV(3,dev=c(w4,w5,w6))
+cat("True FA in device",w4,"\n")
+cat("Estimated FA in device",w5,"\n")
+cat("Estimated smoothed FA in device",w6,"\n")
 }
 
 z <- readline("End of demo, remove created objects (Y/N) :")

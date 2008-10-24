@@ -681,6 +681,8 @@ function(object, method="nonlinear",varmethod="replicates",varmodel="local") {
                 PACKAGE="dti")[c("si","index","lindex")]
   si <- array(z$si,c(ddim,ngrad))
   index <- if(z$lindex>0) z$index[1:z$lindex] else numeric(0)
+  rm(z)
+  gc()
   if(method=="linear"){
      ngrad0 <- ngrad - length(s0ind)
      s0 <- si[,,,s0ind]
