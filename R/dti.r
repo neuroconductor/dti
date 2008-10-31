@@ -1336,7 +1336,7 @@ function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,method=1,level=0,scale=1,bgcolo
   colorvalues <- rgb(andir[1,],andir[2,],andir[3,])
   dim(tens) <- c(3,3,n)
   if(level>0){
-    indpos <- (1:n)[fa>level&mask]
+    indpos <- (1:n)[fa>level&obj@mask]
     tens <- tens[,,indpos]
     tmean <- tmean[,indpos]
     colorvalues <- colorvalues[indpos]
