@@ -73,241 +73,10 @@ C
 C   3D anisotropic smoothing of diffusion tensor data
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-      subroutine awsrgdti(si,siest,sipred,nb,n1,n2,n3,mask,btb,
-     1                    sigma2,th0,th0n,D,Dn,rss,bi,
-     2                    ani,andir,det,sigma2r,h,
-     3                    niter,vext,rho0,lambda,swsi,swsi2,swsi4,F,
-     4                    eps,rician)
-C
-C   si       -  observed diffusion weighted images
-C   nb       -  number of gradients (including zero gradients)
-C   n1,n2,n3 -  dimensions of data cube
-C   mask     -  logical: 1 for voxel inside region of interest
-C   btb      -  b^T%*%b obtained from matrix of gradients b
-C   sigma2   -  voxelwise variance estimates (data)
-C   th0      -  current estimate of mean s_0 values
-C   th0n     -  new  estimate of mean s_0 values (output)
-C   D        -  current estimate of tensor
-C   Dn       -  new estimate of tensor (output)
-C   rss      -  residual sum of squares (output)
-C   bi       -  sum of weights
-C   ani      -  anisotropy index 
-C   dir      -  direction of main anisotropy 
-C   det      -  det(D)
-C   sigma2h  -  
-C   sigma2n  -
-C   h        -  actual bandwidth
-C   niter    -  number of iterations for imbedded nl-regression
-C   zext     -  
-C   rho      -  regularization parameter for anisotropic neighborhoods
-C               (X,y,z) ( A(theta)+ rho/bi I ) (X,y,z)^T  = h^2  defines the elloispid 
-C   lambda   -  scale factor in the statistical penalty
-C   swsi     -  auxiliary for sum_j w_j si(j)
-C   F        -  auxiliary for function values in LSE
-C   eps      -  something small and positive
-      implicit logical (a-z)
-      integer n1,n2,n3,nb,si(nb,n1,n2,n3),niter,siest(nb,n1,n2,n3)
-      real*8 btb(6,nb),sigma2(n1,n2,n3),swsi2(nb),swsi4(nb),
-     1       th0(n1,n2,n3),th0n(n1,n2,n3),sigma2r(n1,n2,n3),
-     2       D(6,n1,n2,n3),Dn(6,n1,n2,n3),sipred(nb,n1,n2,n3),
-     3       bi(n1,n2,n3),ani(n1,n2,n3),andir(3,n1,n2,n3),
-     4       det(n1,n2,n3),h,rho0,
-     5       vext(3),lambda,swsi(nb),F(nb),eps,rss(n1,n2,n3)
-      logical mask(n1,n2,n3),rician
-      integer i1,j1,j1a,j1e,jj1,i2,j2,j2a,j2e,jj2,i3,j3,j3a,j3e,jj3,
-     1        ierr,k
-      real*8 wij,adist,sw,h2,thi(7),bii,sqrbii,ew(3),ev(3,3),
-     1       mew,z1,z2,z3,sij,deti,z,sew,sw0,sw2,Di(6),dtidisrg,
-     2       th0i,s2hat,ssigma2,rssi
-      external adist,dtidisrg
-      logical aws
-      aws=lambda.lt.1e20
-      h2=h*h
-C  first fill predicted 
-      DO i1=1,n1
-         DO i2=1,n2
-            DO i3=1,n3
-               call sihat(th0(i1,i2,i3),D(1,i1,i2,i3),btb,
-     1                    sipred(1,i1,i2,i3),nb)
-            END DO
-         END DO
-      END DO
-C  now anisotropic smoothing 
-      DO i1=1,n1
-         DO i2=1,n2
-            DO i3=1,n3
-               if(.not.mask(i1,i2,i3)) CYCLE
-               rssi = dtidisrg(siest(1,i1,i2,i3),
-     1                         sipred(1,i1,i2,i3),nb)
-               sw=0.d0
-               sw2=0.d0
-               sw0=0.d0
-               DO k=1,nb
-                  swsi(k)=0.d0
-                  swsi2(k)=0.d0
-                  swsi4(k)=0.d0
-               END DO
-               deti=exp(log(det(i1,i2,i3))/3)
-               bii=bi(i1,i2,i3)
-               sqrbii=sigma2(i1,i2,i3)/sqrt(bii)
-               th0i=th0(i1,i2,i3)
-               th0n(i1,i2,i3)=th0i
-C    used as initial values
-               DO k=1,6
-                  Di(k)=D(k,i1,i2,i3)
-                  Dn(k,i1,i2,i3)=Di(k)
-C    used as initial values
-                  thi(k)=Di(k)/deti
-               END DO
-               thi(1)=thi(1)+rho0*sqrbii
-               thi(4)=thi(4)+rho0*sqrbii
-               thi(6)=thi(6)+rho0*sqrbii
-C  this is scale invariant sice sqrbii scales with sqrt(sigma2) (standard deviation)
-               call eigen3(thi,ew,ev,ierr)
-               if(ierr.ne.0) THEN
-                  call intpr("ierr",4,ierr,1)
-                  thi(1)=1
-                  thi(2)=0
-                  thi(3)=0
-                  thi(4)=1
-                  thi(5)=0
-                  thi(6)=1
-               ELSE
-                  if(ew(1).lt.1.d-5) THEN
-                     ew(1)=max(1.d-6,ew(1))
-                     ew(2)=max(1.d-6,ew(2))
-                     ew(3)=max(1.d-6,ew(3))
-                  END IF
-                  sew=ew(1)*ew(2)*ew(3)
-                  sew=exp(log(sew)/3.d0)
-                  ew(1)=ew(1)/sew
-                  ew(2)=ew(2)/sew
-                  ew(3)=ew(3)/sew
-                  thi(1)=ev(1,1)*ev(1,1)/ew(1)+ev(1,2)*ev(1,2)/ew(2)+
-     1                   ev(1,3)*ev(1,3)/ew(3)
-                  thi(2)=ev(1,1)*ev(2,1)/ew(1)+ev(1,2)*ev(2,2)/ew(2)+
-     1                   ev(1,3)*ev(2,3)/ew(3)
-                  thi(3)=ev(1,1)*ev(3,1)/ew(1)+ev(1,2)*ev(3,2)/ew(2)+
-     1                   ev(1,3)*ev(3,3)/ew(3)
-                  thi(4)=ev(2,1)*ev(2,1)/ew(1)+ev(2,2)*ev(2,2)/ew(2)+
-     1                   ev(2,3)*ev(2,3)/ew(3)
-                  thi(5)=ev(2,1)*ev(3,1)/ew(1)+ev(2,2)*ev(3,2)/ew(2)+
-     1                   ev(2,3)*ev(3,3)/ew(3)
-                  thi(6)=ev(3,1)*ev(3,1)/ew(1)+ev(3,2)*ev(3,2)/ew(2)+
-     1                   ev(3,3)*ev(3,3)/ew(3)
-               END IF
-C   create needed estimates of s_i
-               call rangex(thi,h,j1a,j1e,vext)
-               DO j1=j1a,j1e
-                  jj1=i1+j1
-                  if(jj1.le.0.or.jj1.gt.n1) CYCLE
-                  call rangey(thi,j1,h,j2a,j2e,vext)
-                  DO j2=j2a,j2e
-                      jj2=i2+j2
-                     if(jj2.le.0.or.jj2.gt.n2) CYCLE
-                     call rangez(thi,j1,j2,h,j3a,j3e,vext)
-                     DO j3=j3a,j3e
-                        jj3=i3+j3
-                        if(jj3.le.0.or.jj3.gt.n3) CYCLE
-                        if(.not.mask(jj1,jj2,jj3)) CYCLE
-                        wij=adist(thi,j1,j2,j3,vext)
-C     triangular location kernel
-                        if(wij.ge.h2) CYCLE
-                        wij = (1.d0 - wij/h2)
-                        IF(aws) THEN
-                        sij = dtidisrg(siest(1,i1,i2,i3),
-     1                          sipred(1,jj1,jj2,jj3),nb)
-                        sij = bii*max(0.d0,sij-rssi)/lambda
-                           
-                           if(sij.gt.1.d0) CYCLE
-                           wij=wij*(1.d0-sij)
-                        END IF
-                        sw0=sw0+wij
-                        wij=wij/sigma2(jj1,jj2,jj3)
-                        if(wij.lt.0.d0) call dblepr("wij",3,wij,1)
-                        sw=sw+wij
-                        sw2=sw2+wij*wij
-                        if(rician) THEN
-                           DO k=1,nb
-                              z=si(k,jj1,jj2,jj3)
-                              swsi(k)=swsi(k)+wij*z
-                              z=z*z
-                              swsi2(k)=swsi2(k)+wij*z
-                              swsi4(k)=swsi4(k)+wij*z*z
-                           END DO
-                        ELSE
-                           DO k=1,nb
-                              swsi(k)=swsi(k)+wij*si(k,jj1,jj2,jj3)
-                           END DO
-                        END IF
-                     END DO
-                  END DO
-               END DO
-               bi(i1,i2,i3)=sw
-               if(sw0.lt..99d0) call dblepr("sw0a",4,sw0,1)
-               if(rician.and.sw0.gt.1.d0) THEN
-C
-C   compute estimates of sigma^2 from 2nd and 4th moments for every gradient direction
-C   and pooling the estimates (assumes variance parameter not to depend on gradient)
-C
-                  ssigma2=0.d0
-                  DO k=1,nb
-                     s2hat = 2*swsi2(k)*swsi2(k)-swsi4(k)
-                     s2hat = 0.5d0*(swsi2(k)-sqrt(max(0.d0,s2hat)))
-                     ssigma2=ssigma2+s2hat
-                  END DO
-                  s2hat = sw*sw/(sw*sw-sw2)*ssigma2/nb
-C   this also adjusts for eliminating \theta by combining the second and 4th moment
-                  DO k=1,nb
-           swsi(k)=sqrt(max(swsi2(k)/sw/3.d0,swsi2(k)/sw-2*s2hat))
-                  END DO
-                  sigma2r(i1,i2,i3)=s2hat
-C  thats the joint moment estimate of the Rice variance based on the 2nd and 4th moment
-               ELSE
-                  Do k=1,nb
-                     swsi(k)=swsi(k)/sw
-                  END DO                  
-               END IF
-               IF(sw.gt.0.d0.and.sw.lt.1.d20) THEN
-                  call dslvdti(swsi,nb,btb,th0n(i1,i2,i3),
-     1                          Dn(1,i1,i2,i3),F,
-     2                          niter,eps,rss(i1,i2,i3))
-                  DO k=1,nb
-                     siest(k,i1,i2,i3)=swsi(k)
-                  END DO
-               END IF
-               call eigen3(Dn(1,i1,i2,i3),ew,ev,ierr)
-               IF(ew(1).lt.0.d0) call dblepr("C0",2,ew,3)
-               mew=(ew(1)+ew(2)+ew(3))/3.d0
-               z1=ew(1)-mew
-               z2=ew(2)-mew
-               z3=ew(3)-mew
-               z=3.d0*(z1*z1+z2*z2+z3*z3)
-               z1=ew(1)
-               z2=ew(2)
-               z3=ew(3)
-               mew=2.d0*(z1*z1+z2*z2+z3*z3)
-               if(mew.le.eps*eps) mew=1.d0
-               ani(i1,i2,i3)=sqrt(z/mew)
-               det(i1,i2,i3)=ew(1)*ew(2)*ew(3)
-               DO k=1,3
-                  andir(k,i1,i2,i3)=ev(k,3)
-               END DO
-               call rchkusr()
-            END DO
-         END DO
-      END DO
-      RETURN
-      END
-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-C
-C   3D anisotropic smoothing of diffusion tensor data
-C
-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-      subroutine awsrgdt2(si,siest,sipred,nb,n1,n2,n3,mask,btb,
+      subroutine awsrgdti(si,siest,sipred,nb,n1,n2,n3,mask,btb,sdcoef,
      1                    sigma2,th0,th0n,D,Dn,rss,bi,
      2                    ani,andir,det,sigma2r,vol,
-     3                    niter,vext,rho0,lambda,swsi,swsi2,F,
+     3                    niter,vext,rho0,lambda,swsi,swsi2,F,var,
      4                    eps,rician,nw,nriter,sisel,isel,wselect,s2)
 C
 C   si       -  observed diffusion weighted images
@@ -337,19 +106,19 @@ C   eps      -  something small and positive
       implicit logical (a-z)
       integer n1,n2,n3,nb,si(nb,n1,n2,n3),niter,siest(nb,n1,n2,n3),
      1       nw,nriter(nb),sisel(nb,nw),isel(3,nw)
-      real*8 btb(6,nb),sigma2(n1,n2,n3),swsi2(nb),
+      real*8 btb(6,nb),sigma2(n1,n2,n3),swsi2(nb),sdcoef(4),
      1       th0(n1,n2,n3),th0n(n1,n2,n3),sigma2r(n1,n2,n3),
      2       D(6,n1,n2,n3),Dn(6,n1,n2,n3),sipred(nb,n1,n2,n3),
      3       bi(n1,n2,n3),ani(n1,n2,n3),andir(3,n1,n2,n3),s2(nb),
      4       det(n1,n2,n3),h,rho0,
-     5       vext(3),lambda,swsi(nb),F(nb),eps,rss(n1,n2,n3),
+     5       vext(3),lambda,swsi(nb),F(nb),var(nb),eps,rss(n1,n2,n3),
      6       wselect(nw),vol
       logical mask(n1,n2,n3),rician
       integer i1,j1,j1a,j1e,jj1,i2,j2,j2a,j2e,jj2,i3,j3,j3a,j3e,jj3,
      1        ierr,k,center,l
       real*8 wij,adist,sw,h2,thi(7),bii,sqrbii,ew(3),ev(3,3),
      1       mew,z1,z2,z3,sij,deti,z,sew,sw0,sw2,Di(6),dtidisrg,
-     2       th0i,s2hat,ssigma2,rssi,h0,h1,squot,shat
+     2       th0i,s2hat,ssigma2,rssi,h0,h1,squot,shat,low,up,zsd
       integer nselect
       real*8 x(10000),fw(10000)
       external adist,dtidisrg
@@ -374,8 +143,18 @@ C  now anisotropic smoothing
          DO i2=1,n2
             DO i3=1,n3
                if(.not.mask(i1,i2,i3)) CYCLE
+               low=sdcoef(1)+sdcoef(3)*sdcoef(2)
+               up=sdcoef(1)+sdcoef(4)*sdcoef(2)
+               DO k=1,nb
+                  z=si(i1,i2,i3,k)
+                  zsd=sdcoef(1)+z*sdcoef(2)
+                  if(z.lt.sdcoef(3)) zsd=low
+                  if(z.gt.sdcoef(4)) zsd=up
+                  var(k)=zsd*zsd
+               END DO
+C               call dblepr("var",3,var,nb)
                rssi = dtidisrg(siest(1,i1,i2,i3),
-     1                         sipred(1,i1,i2,i3),nb)
+     1                         sipred(1,i1,i2,i3),var,nb)
                sw=0.d0
                sw2=0.d0
                sw0=0.d0
@@ -457,14 +236,14 @@ C     triangular location kernel
                         wij = (1.d0 - wij/h2)
                         IF(aws) THEN
                            sij = dtidisrg(siest(1,i1,i2,i3),
-     1                          sipred(1,jj1,jj2,jj3),nb)
+     1                          sipred(1,jj1,jj2,jj3),var,nb)
                            sij = bii*max(0.d0,sij-rssi)/lambda
                            if(center.eq.0) sij=0.d0
                            if(sij.gt.1.d0) CYCLE
                            wij=wij*(1.d0-sij)
                         END IF
                         sw0=sw0+wij
-                        wij=wij/sigma2(jj1,jj2,jj3)
+C                        wij=wij/sigma2(jj1,jj2,jj3)
                         sw=sw+wij
                         sw2=sw2+wij*wij
                         if(rician) THEN
@@ -523,9 +302,11 @@ C   this also adjusts for eliminating \theta by combining the second and 4th mom
                   sigma2r(i1,i2,i3)=s2hat
                END IF
                IF(sw.gt.0.d0.and.sw.lt.1.d20) THEN
-                  call dslvdti(swsi,nb,btb,th0n(i1,i2,i3),
+C                 call dblepr("swsi",4,swsi,nb)
+                  call dslvdti(swsi,nb,btb,sdcoef,var,th0n(i1,i2,i3),
      1                          Dn(1,i1,i2,i3),F,
      2                          niter,eps,rss(i1,i2,i3))
+C                 call dblepr("D",1,D,6)
                   DO k=1,nb
                      siest(k,i1,i2,i3)=swsi(k)
                   END DO
@@ -556,21 +337,21 @@ C               call eigen3(Di(1),ew,ev,ierr)
       END DO
       RETURN
       END
-      real*8 function dtidisrg(si,sj,nb)
+      real*8 function dtidisrg(si,sj,var,nb)
       implicit logical (a-z)
       integer nb,si(nb)
-      real*8 sj(nb)
+      real*8 sj(nb),var(nb)
       real*8 z,z1
       integer i
       z=0.d0
       DO i=1,nb
          z1=si(i)-sj(i)
-         z=z+z1*z1
+         z=z+z1*z1/var(i)
       END DO
       dtidisrg=z
       RETURN
       END
-      subroutine islvdti(s,nb,b,th0,D,F,niter,eps,rss)
+      subroutine islvdti(s,nb,b,sdcoef,var,th0,D,F,niter,eps,rss)
 C
 C  Implements the regularized Gauss-Newton Algortithm (10.2.8)
 C  from Schwetlick (1979)
@@ -578,13 +359,14 @@ C  same as solvedti except that s is double
 C
       implicit logical (a-z)
       integer nb,s(nb),niter
-      real*8 D(6),b(6,nb),th0,F(nb),eps
+      real*8 D(6),b(6,nb),var(nb),th0,F(nb),eps,sdcoef(4)
       integer i,j,k,info,iter,icount
       logical negdefin
-      real*8 z,gamma,alpha,delta,
+      real*8 z,gamma,alpha,delta,xzvar,
      1       dg(7),pk(7),ak(7,7),ck(7,7),rss,nrss,crss,maxabsdg,
-     2       oldrss,relrss,Dn(6),res,X(7),th0n
+     2       oldrss,relrss,Dn(6),res,X(7),th0n,zsd,low,up
 C  first check if D defines a positive definite densor
+C      call dblepr("islvdti in",10,var(1),1)
       call regularD(D,negdefin)
 C      if(negdefin) call dblepr("neg. definite",13,D,6)
       delta=0.25D0
@@ -592,7 +374,13 @@ C      if(negdefin) call dblepr("neg. definite",13,D,6)
       alpha=0.7d0
       oldrss=1.d50
       rss=0.d0
+      low=sdcoef(1)+sdcoef(3)*sdcoef(2)
+      up=sdcoef(1)+sdcoef(4)*sdcoef(2)
       DO i=1,nb
+         zsd=sdcoef(1)+s(i)*sdcoef(2)
+         if(s(i).lt.sdcoef(3)) zsd=low
+         if(s(i).gt.sdcoef(4)) zsd=up
+         var(i)=zsd*zsd
          z=0.d0
          DO j=1,6
             z=z+b(j,i)*D(j)
@@ -623,9 +411,10 @@ C      if(negdefin) call dblepr("neg. definite",13,D,6)
                X(j)=b(j,i)*z
             END DO
             DO j=1,7
-               dg(j)=dg(j)+X(j)*F(i)
+               xzvar=X(j)/var(i)
+               dg(j)=dg(j)+xzvar*F(i)
                DO k=j,7
-                  ak(j,k)=ak(j,k)+X(j)*X(k)
+                  ak(j,k)=ak(j,k)+xzvar*X(k)
                END DO
             END DO 
          END DO
@@ -639,8 +428,9 @@ C  prepare things for return if gradient is close to 0
             call regularD(D,negdefin)
             if(negdefin) THEN
 C  estimate using reparametrization
-               call islvdtir(s,nb,b,th0,D,F,niter,eps,rss)
+               call islvdtir(s,nb,b,var,th0,D,F,niter,eps,rss)
             ENDIF
+C      call dblepr("islvdti out1",12,var(1),1)
             RETURN
          END IF
          gamma=min(gamma/alpha,1.d0)
@@ -718,11 +508,12 @@ C  check if tensor is positive definite
       call regularD(D,negdefin)
       if(negdefin) THEN
 C  estimate using reparametrization
-         call islvdtir(s,nb,b,th0,D,F,niter,eps,rss)
+         call islvdtir(s,nb,b,var,th0,D,F,niter,eps,rss)
       ENDIF
+C      call dblepr("islvdti out2",12,var(1),1)
       RETURN
       END
-      subroutine dslvdti(s,nb,b,th0,D,F,niter,eps,rss)
+      subroutine dslvdti(s,nb,b,sdcoef,var,th0,D,F,niter,eps,rss)
 C
 C  Implements the regularized Gauss-Newton Algortithm (10.2.8)
 C  from Schwetlick (1979)
@@ -730,12 +521,12 @@ C  same as solvedti except that s is double
 C
       implicit logical (a-z)
       integer nb,niter
-      real*8 s(nb),D(6),b(6,nb),th0,F(nb),eps
+      real*8 s(nb),D(6),b(6,nb),var(nb),th0,F(nb),eps,sdcoef(4)
       integer i,j,k,info,iter,icount
       logical negdefin
-      real*8 z,gamma,alpha,delta,
+      real*8 z,gamma,alpha,delta,xzvar,
      1       dg(7),pk(7),ak(7,7),ck(7,7),rss,nrss,crss,maxabsdg,
-     2       oldrss,relrss,Dn(6),res,X(7),th0n
+     2       oldrss,relrss,Dn(6),res,X(7),th0n,zsd,low,up
 C  first check if D defines a positive definite densor
       call regularD(D,negdefin)
       delta=0.25D0
@@ -743,7 +534,13 @@ C  first check if D defines a positive definite densor
       alpha=0.7d0
       oldrss=1.d50
       rss=0.d0
+      low=sdcoef(1)+sdcoef(3)*sdcoef(2)
+      up=sdcoef(1)+sdcoef(4)*sdcoef(2)
       DO i=1,nb
+         zsd=sdcoef(1)+s(i)*sdcoef(2)
+         if(s(i).lt.sdcoef(3)) zsd=low
+         if(s(i).gt.sdcoef(4)) zsd=up
+         var(i)=zsd*zsd
          z=0.d0
          DO j=1,6
             z=z+b(j,i)*D(j)
@@ -774,9 +571,10 @@ C  first check if D defines a positive definite densor
                X(j)=b(j,i)*z
             END DO
             DO j=1,7
-               dg(j)=dg(j)+X(j)*F(i)
+               xzvar=X(j)/var(i)
+               dg(j)=dg(j)+xzvar*F(i)
                DO k=j,7
-                  ak(j,k)=ak(j,k)+X(j)*X(k)
+                  ak(j,k)=ak(j,k)+xzvar*X(k)
                END DO
             END DO 
          END DO
@@ -790,9 +588,7 @@ C  prepare things for return if gradient is close to 0
             call regularD(D,negdefin)
             if(negdefin) THEN
 C  estimate using reparametrization
-               call dslvdtir(s,nb,b,th0,D,F,niter,eps,rss)
-C            else
-C               call testreg(D,3)
+               call dslvdtir(s,nb,b,var,th0,D,F,niter,eps,rss)
             ENDIF
             RETURN
          END IF
@@ -871,7 +667,7 @@ C  check if tensor is positive definite
       call regularD(D,negdefin)
       if(negdefin) THEN
 C  estimate using reparametrization
-         call dslvdtir(s,nb,b,th0,D,F,niter,eps,rss)
+         call dslvdtir(s,nb,b,var,th0,D,F,niter,eps,rss)
 C      else
 C         call testreg(D,4)
       ENDIF

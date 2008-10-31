@@ -9,3 +9,4 @@ exportMethods("show","plot","print","summary","dti.smooth","dtiTensor","dtiIndic
 exportMethods("extract","show3d")
 export(dtiData,readDWIdata)
 export(tensor2medinria,medinria2tensor)
+exportMethods("sdpar")

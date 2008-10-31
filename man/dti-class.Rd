@@ -30,6 +30,9 @@ For class \code{"dtiData"}:
 
 \describe{
     \item{ \code{si}: }{ Object of class \code{"array"}, Diffusion Weighted Data. }
+    \item{ \code{sdcoef}: }{ Object of class \code{"numeric"}, Parameters of the model for error 
+      standard deviation as a function of the mean. First two entries refer to intercept and slope of a linear function,
+      third and fourth value are the endpoints of the interval of linearity. Contains \code{rep(0,4)} if not set. If the function }
 }
 
 For class \code{"dtiTensor"}:
@@ -78,6 +81,7 @@ For class \code{"dtiIndices"}:
 \seealso{
   \code{\link{dtiData}},
   \code{\link{readDWIdata}},
+  \code{\link{sdpar-methods}},
   \code{\link{dtiTensor-methods}}, 
   \code{\link{dti.smooth-methods}},
   \code{\link{dtiIndices-methods}},

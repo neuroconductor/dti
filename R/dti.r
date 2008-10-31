@@ -399,13 +399,6 @@ dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=
 #  close(zz)
   cat("Data successfully read",date(), "\n")
 
-#  if (is.null(xind)) xind <- 1:ddim[1]
-#  if (is.null(yind)) yind <- 1:ddim[2]
-#  if (is.null(zind)) zind <- 1:ddim[3]
-#  dim(si) <- c(ddim,ngrad)
-#  si <- si[xind,yind,zind,] 
-#  dimsi <- dim(si)
-
 #
 #   set correct orientation
 #
@@ -467,6 +460,7 @@ dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=
                 yind   = yind,
                 zind   = zind,
                 level  = level,
+                sdcoef = rep(0,4),
                 voxelext = voxelext,
                 orientation = as.integer(c(0,2,5)),
                 source = imagefile)
@@ -637,6 +631,7 @@ readDWIdata <- function(gradient, dirlist, format, nslice, order = NULL,
                 yind   = yind,
                 zind   = zind,
                 level  = level,
+                sdcoef = rep(0,4),
                 voxelext = voxelext,
                 orientation = as.integer(c(0,2,5)),
                 source = paste(dirlist,collapse="|"))
@@ -652,8 +647,64 @@ setGeneric("dti", function(object,  ...)
 standardGeneric("dti"))
 
 
-dtiTensor <- function(object,  ...) cat("No DTI tensor calculation defined for this class:",class(object),"\n")
+sdpar <- function(object,  ...) cat("No method defined for class:",class(object),"\n")
 
+setGeneric("sdpar", function(object,  ...) standardGeneric("sdpar"))
+
+setMethod("sdpar","dtiData",function(object,level=NULL,sdmethod="sd",interactive=TRUE){
+# determine interval of linearity
+if(!(sdmethod%in%c("sd","mad"))){
+warning("sdmethod needs to be either 'sd' or 'mad'")
+return(object)
+}
+if(is.null(level)) level <- object@level
+s0ind<-object@s0ind
+s0 <- object@si[,,,s0ind]
+ls0ind <- length(s0ind)
+A0 <- level
+if(ls0ind>1) {
+dim(s0) <- c(prod(object@ddim),ls0ind)
+s0mean <- s0%*%rep(1/ls0ind,ls0ind)
+A1 <- quantile(s0mean[s0mean>0],.98)
+} else {
+A1 <- quantile(s0[s0>0],.98)
+}
+if(interactive) {
+accept <- FALSE
+z <- density(if(ls0ind>1) s0mean else s0)
+while(!accept){
+plot(z,type="l",main="Density of S0 values and cut off point")
+lines(c(A0,A0),c(0,max(z$y)),col=2)
+cat("A good cut off point should correspond, if present, to the minimum between the first two modes of the density estimate\n")
+a <- readline("Accept cut off point (Y/N):")
+if (toupper(a) == "N") {
+cutpoint <-  readline("Provide value for cut off point:")
+cutpoint <- if(!is.null(cutpoint)) as.numeric(cutpoint) else A0
+if(!is.na(cutpoint)) {
+A0 <- cutpoint
+level <- cutpoint
+}
+} else {
+accept <- TRUE
+}
+}
+}
+# determine parameters for linear relation between standard deviation and mean
+if(ls0ind>1) {
+s0sd <- apply(s0,1,sdmethod)
+ind <- s0mean>A0&s0mean<A1
+sdcoef <- coefficients(lm(s0sd[ind]~s0mean[ind]))
+} else {
+sdcoef <- awslinsd(s0,hmax=5,mask=NULL,A0=A0,A1=A1)$vcoef
+}
+object@level <- level
+object@sdcoef <- c(sdcoef,A0,A1)
+cat("Estimated parameters:",signif(sdcoef[1:2],3),"Interval of linearity",signif(A0,3),"-",signif(A1,3),"\n")
+object
+}
+)
+
+dtiTensor <- function(object,  ...) cat("No DTI tensor calculation defined for this class:",class(object),"\n")
 
 setGeneric("dtiTensor", function(object,  ...) standardGeneric("dtiTensor"))
 
@@ -668,6 +719,11 @@ function(object, method="nonlinear",varmethod="replicates",varmodel="local") {
   ddim <- object@ddim
   s0ind <- object@s0ind
   ns0 <- length(s0ind)
+  sdcoef <- object@sdcoef
+  if(all(sdcoef==0)) {
+    cat("No parameters for model of error standard deviation found\n estimating these parameters\n You may prefer to run sdpar before calling dtiTensor")
+    sdcoef <- sdpar(object,interactive=FALSE)@sdcoef
+  }
   z <- .Fortran("outlier",
                 as.integer(object@si),
                 as.integer(prod(ddim)),
@@ -742,12 +798,14 @@ function(object, method="nonlinear",varmethod="replicates",varmodel="local") {
                 as.integer(ddim[3]),
                 as.logical(mask),
                 as.double(object@btb),
+                as.double(sdcoef),
                 th0=as.double(s0),
                 D=double(6*prod(ddim)),
                 as.integer(200),
                 as.double(1e-6),
                 res=double(ngrad*prod(ddim)),
                 rss=double(prod(ddim)),
+                double(ngrad),
                 PACKAGE="dti",DUP=FALSE)[c("th0","D","res","rss")]
      cat("successfully completed nonlinear regression ",date(),"\n")
      dim(z$th0) <- ddim
@@ -1126,7 +1184,7 @@ function(x, i, j, k, what="tensor"){
   }
   if("tensor" %in% what) z$tensor <- x@D
   if("s0" %in% what) z$s0 <- x@th0
-  if("mask" %in% what) z$mask <- x@th0
+  if("mask" %in% what) z$mask <- x@mask
   if("outlier" %in% what) {
     ind <- 1:prod(x@ddim)
     ind <- rep(FALSE,prod(x@ddim))
@@ -1278,7 +1336,7 @@ function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,method=1,level=0,scale=1,bgcolo
   colorvalues <- rgb(andir[1,],andir[2,],andir[3,])
   dim(tens) <- c(3,3,n)
   if(level>0){
-    indpos <- (1:n)[fa>level]
+    indpos <- (1:n)[fa>level&mask]
     tens <- tens[,,indpos]
     tmean <- tmean[,indpos]
     colorvalues <- colorvalues[indpos]

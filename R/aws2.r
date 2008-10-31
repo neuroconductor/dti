@@ -3,7 +3,7 @@
 #   this is also based on an a statistical penalty defined using log-likelihood difference
 #
 dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slice=NULL,quant=.8,
-                         minanindex=NULL,hsig=2.5,lseq=NULL,varmethod="residuals",rician=TRUE,niter=5,varmodel="local",volseq=TRUE){
+                         minanindex=NULL,hsig=2.5,lseq=NULL,varmethod="residuals",rician=TRUE,niter=5,varmodel="local"){
 #
 #     lambda and lseq adjusted for alpha=0.2
 #
@@ -31,6 +31,7 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
   ngrad <- object@ngrad
   ddim0 <- object@ddim0
   ddim <- object@ddim
+  sdcoef <- object@sdcoef
   z <- .Fortran("outlier",
                 as.integer(object@si),
                 as.integer(prod(ddim)),
@@ -134,7 +135,7 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
   }
   hincr <- 1.25^(1/3)
   maxvol <- getvofh(hmax,c(1,0,0,1,0,1),vext)
-  if(volseq) kstar <- as.integer(log(maxvol)/log(1.25)) else kstar <- as.integer(log(hmax)/log(hincr))
+  kstar <- as.integer(log(maxvol)/log(1.25)) 
   if(is.null(hinit)){
   hakt0 <- 1
   hakt <- hincr
@@ -153,15 +154,10 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
   if (length(lseq)<steps) lseq <- c(lseq,rep(1,steps-length(lseq)))
   lseq <- lseq[1:steps]
   k <- 1
-  if(volseq) lambda0 <- lambda else lambda0 <- lambda*lseq[k]
+  lambda0 <- lambda
   while(k <= kstar) {
-    if(volseq) {
       hakt0 <- gethani(1,10,1.25^(k-1),c(1,0,0,1,0,1),vext,1e-4)
       hakt <- gethani(1,10,1.25^k,c(1,0,0,1,0,1),vext,1e-4)
-    } else {
-      hakt0 <- hincr^(k-1)
-      hakt <- hincr^k
-    }
     if (any(h0 >= 0.25)) {
        corrfactor <- Spatialvar.gauss(hakt0/0.42445/4,h0,3) /
        Spatialvar.gauss(h0,1e-5,3) /
@@ -169,7 +165,7 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
        lambda0 <- lambda0 * corrfactor
        cat("Correction factor for spatial correlation",signif(corrfactor,3),"\n")
     }
-    if(volseq) z <- .Fortran("awsrgdt2",
+    z <- .Fortran("awsrgdti",
                     as.integer(si),
                     sihat=as.integer(z$sihat), # needed for statistical penalty
                     double(ngrad*n),# array for predicted Si's from the tensor model 
@@ -179,6 +175,7 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
                     as.integer(n3),
                     as.logical(mask),
                     as.double(btb),
+                    as.double(sdcoef),
                     as.double(sigma2),
                     as.double(z$th0),
                     th0=double(n),
@@ -198,6 +195,7 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
                     double(ngrad),#swsi
                     double(ngrad),#swsi2
                     double(ngrad),#F
+                    double(ngrad),#var
                     as.double(eps),
                     as.logical(rician), 
                     as.integer(maxnw),# maximum number of positive weights
@@ -206,39 +204,7 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
                     integer(maxnw*3),# auxiliary for index of aktive data
                     double(maxnw),# auxiliary for weights
                     double(ngrad),# auxiliary for variances
-                    DUP=FALSE,PACKAGE="dti")[c("th0","D","rss","bi","anindex","andirection","det","sigma2r","sihat")] else z <- .Fortran("awsrgdti",
-                    as.integer(si),
-                    sihat=as.integer(z$sihat), # needed for statistical penalty
-                    double(ngrad*n),# array for predicted Si's from the tensor model 
-                    as.integer(ngrad),
-                    as.integer(n1),
-                    as.integer(n2),
-                    as.integer(n3),
-                    as.logical(mask),
-                    as.double(btb),
-                    as.double(sigma2),
-                    as.double(z$th0),
-                    th0=double(n),
-                    as.double(z$D), 
-                    D=double(6*n),
-                    rss=as.double(z$rss),
-                    bi=as.double(z$bi),
-                    anindex=as.double(z$anindex),
-                    andirection=as.double(z$andirection),
-                    det=as.double(z$det),
-                    sigma2r=double(n),
-                    as.double(hakt),
-                    as.integer(niter),
-                    as.double(vext),
-                    as.double(rho),
-                    as.double(lambda0),
-                    double(ngrad),#swsi
-                    double(ngrad),#swsi2
-                    double(ngrad),#swsi4
-                    double(ngrad),#
-                    as.double(eps),
-                    as.logical(rician), # based on x <- seq(0,100,.1) !!!
-                    DUP=FALSE,PACKAGE="dti")[c("th0","D","rss","bi","anindex","andirection","det","sigma2r","sihat")]
+                    DUP=FALSE,PACKAGE="dti")[c("th0","D","rss","bi","anindex","andirection","det","sigma2r","sihat")] 
      dim(z$th0) <- dim(z$rss) <- dim(z$bi) <- dim(z$anindex) <- dim(z$det) <- dim(z$sigma2r) <- dimy[-1]
      dim(z$D) <- dimy
      dim(z$andirection) <- c(3,dimy[-1]) 
@@ -310,16 +276,16 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=20,rho=1,graph=FALSE,slic
      title(paste("Dyz: min",signif(min(z$D[5,,,][mask]),3),"max",signif(max(z$D[5,,,][mask]),3)))
      andir2.image(z,slice,quant=quant,minanindex=minanindex,xaxt="n",yaxt="n")
      title(paste("Directions (h=",signif(hakt,3),"), slice",slice))
-     ni<-z$bi[,,slice]*sigma2[,,slice]
+     ni<-z$bi[,,slice]
      show.image(make.image(65535*ni/max(ni)),xaxt="n",yaxt="n")
-     title(paste("sum of weights  mean=",signif(mean((z$bi* sigma2)[mask]),3)))
+     title(paste("sum of weights  mean=",signif(mean(z$bi[mask]),3)))
      img<-z$D[6,,,slice]
      show.image(make.image(65535*img/max(img)),xaxt="n",yaxt="n")
      title(paste("Dzz: mean",signif(mean(z$D[6,,,][mask]),3),"max",signif(max(z$D[6,,,][mask]),3)))
      }
      cat("h=",signif(hakt,3),"Quantiles (.5, .75, .9, .95, 1) of anisotropy index",signif(quantile(z$anindex[mask],c(.5, .75, .9, .95, 1)),3),"\n")
     k <- k+1
-     if(volseq) lambda0 <- lambda else lambda*lseq[k]
+     lambda0 <- lambda 
      print(gc())
   }
   rm(si)

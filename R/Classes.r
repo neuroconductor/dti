@@ -17,7 +17,8 @@ setClass("dti",
          )
 
 setClass("dtiData",
-         representation(si   = "array"),
+         representation(si   = "array",
+                        sdcoef = "numeric"),
          contains=c("list","dti"),
          validity=function(object){
           if (any(dim(object@si)!=c(object@ddim,object@ngrad))) {
@@ -38,6 +39,14 @@ setClass("dtiData",
          }
           if (object@level < 0) {
             cat("invalid level \n")
+             return(invisible(FALSE))
+         }
+          if (length(object@sdcoef) != 4) {
+             cat("invalid model for error standard deviation \n")
+             return(invisible(FALSE))
+         }
+          if (any(object@sdcoef<0)||object@sdcoef[3]>object@sdcoef[4]) {
+             cat("illegal interval of linearity in model for  error standard deviation \n")
              return(invisible(FALSE))
          }
          }

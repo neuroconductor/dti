@@ -1,5 +1,5 @@
-      subroutine nlrdtirg(s,nb,n1,n2,n3,mask,b,th0,D,niter,eps,
-     1                    res,rss)
+      subroutine nlrdtirg(s,nb,n1,n2,n3,mask,b,sdcoef,th0,D,niter,eps,
+     1                    res,rss,var)
 C
 C  this is based on a regularized tensor similar to Koay et.al. (2006)
 C
@@ -7,15 +7,15 @@ C
       integer nb,n1,n2,n3,s(nb,n1,n2,n3),niter
       logical mask(n1,n2,n3)
       real*8 D(6,n1,n2,n3),b(6,nb),res(nb,n1,n2,n3),
-     1    th0(n1,n2,n3),eps,rss(n1,n2,n3)
+     1    th0(n1,n2,n3),eps,rss(n1,n2,n3),sdcoef(4),var(nb)
       integer i1,i2,i3,j
       DO i3=1,n3
 C         call intpr("Nonlinear regression for slice No:",34,i3,1)
          DO i2=1,n2
             DO i1=1,n1
                if(mask(i1,i2,i3)) THEN
-                  call islvdti(s(1,i1,i2,i3),nb,b,th0(i1,i2,i3),
-     1                       D(1,i1,i2,i3),
+                  call islvdti(s(1,i1,i2,i3),nb,b,sdcoef,var,
+     1                       th0(i1,i2,i3),D(1,i1,i2,i3),
      2                       res(1,i1,i2,i3),niter,eps,rss(i1,i2,i3))
                ELSE
                   DO j=1,6
@@ -28,7 +28,7 @@ C         call intpr("Nonlinear regression for slice No:",34,i3,1)
       END DO
       RETURN
       END
-      subroutine islvdtir(s,nb,b,th0,D,F,niter,eps,rss)
+      subroutine islvdtir(s,nb,b,var,th0,D,F,niter,eps,rss)
 C
 C  Implements the regularized Gauss-Newton Algortithm (10.2.8)
 C  from Schwetlick (1979)
@@ -37,9 +37,10 @@ C
       integer nb,s(nb),niter
       real*8 D(6),rho(6),b(6,nb),th0,F(nb),eps
       integer i,j,k,info,iter,indvar,icount
-      real*8 z,gamma,alpha,delta,
+      real*8 z,gamma,alpha,delta,var(nb),
      1       dg(7),pk(7),ak(7,7),ck(7,7),rss,nrss,crss,maxabsdg,
-     2       oldrss,relrss,rhon(6),Dn(6),res,X(7),th0n,XX(6)
+     2       oldrss,relrss,rhon(6),Dn(6),res,X(7),th0n,XX(6),xzvar
+      logical negdefin
       external indvar
       delta=0.25D0
       gamma=1.d0
@@ -87,9 +88,10 @@ C includes regularization of D
             X(5)=rho(4)*XX(5)+2.d0*rho(5)*XX(6)
             X(6)=2*rho(6)*XX(6)
             DO j=1,7
-               dg(j)=dg(j)+X(j)*F(i)
+               xzvar=X(j)/var(i)
+               dg(j)=dg(j)+xzvar*F(i)
                DO k=j,7
-                  ak(j,k)=ak(j,k)+X(j)*X(k)
+                  ak(j,k)=ak(j,k)+xzvar*X(k)
                END DO
             END DO 
          END DO
@@ -155,8 +157,8 @@ C  next iteration
                   DO j=1,6
                      z=z+b(j,i)*Dn(j)
                   END DO
-                  res=s(i)-th0n*exp(-z)
-                  nrss=nrss+res*res
+                  res=(s(i)-th0n*exp(-z))
+                  nrss=nrss+res*res/var(i)
                   F(i)=res
                END DO
                crss=0.d0
@@ -185,18 +187,19 @@ C  decrease gamma and try new regularization
       call regularD(D,negdefin)
       RETURN
       END
-      subroutine dslvdtir(s,nb,b,th0,D,F,niter,eps,rss)
+      subroutine dslvdtir(s,nb,b,var,th0,D,F,niter,eps,rss)
 C
 C  Implements the regularized Gauss-Newton Algortithm (10.2.8)
 C  from Schwetlick (1979)
 C
       implicit logical (a-z)
       integer nb,niter
-      real*8 s(nb),D(6),rho(6),b(6,nb),th0,F(nb),eps
+      real*8 s(nb),D(6),rho(6),b(6,nb),var(nb),th0,F(nb),eps
       integer i,j,k,info,iter,indvar,icount
-      real*8 z,gamma,alpha,delta,
+      real*8 z,gamma,alpha,delta,xzvar,
      1       dg(7),pk(7),ak(7,7),ck(7,7),rss,nrss,crss,maxabsdg,
      2       oldrss,relrss,rhon(6),Dn(6),res,X(7),th0n,XX(6)
+      logical negdefin
       external indvar
       delta=0.25D0
       gamma=1.d0
@@ -242,9 +245,10 @@ C      call regularD(D)
             X(5)=rho(4)*XX(5)+2.d0*rho(5)*XX(6)
             X(6)=2*rho(6)*XX(6)
             DO j=1,7
-               dg(j)=dg(j)+X(j)*F(i)
+               xzvar=X(j)/var(i)
+               dg(j)=dg(j)+xzvar*F(i)
                DO k=j,7
-                  ak(j,k)=ak(j,k)+X(j)*X(k)
+                  ak(j,k)=ak(j,k)+xzvar*X(k)
                END DO
             END DO 
          END DO
@@ -337,6 +341,5 @@ C  decrease gamma and try new regularization
          call rchkusr()
       END DO
       call regularD(D,negdefin)
-C      call testreg(D,2)
       RETURN
       END

@@ -8,7 +8,7 @@ lambda <- 47
 # this value was used in the Neuroimage paper
 } else {
   method <- "nonlinear"
-lambda <- 40
+lambda <- 50
 }
 cat("---> using",method,"tensor estimation!\n")
 
@@ -20,12 +20,16 @@ if (toupper(a) == "N") {
   mins0value <- 100
 }
 
+a <- readline("Provide standard deviation in K-space (default: 2400, example in Neuroimage paper: 1600):")
+sigma <- if(!is.null(a)) as.numeric(a) else 2400
+if( is.na(sigma)) sigma <- 2400
+
+
+
 
 
 
 # define some constants
-sigma <- 1600
-sigma <- 2400
 rho <- 1
 ddim <- c(64,64,26)
 ngrad <- 25
@@ -201,6 +205,7 @@ createdata.dti <- function(file,dtensor,btb,s0,sigma,level=250){
 tmpfile1 <- tempfile("S_all")
 createdata.dti(tmpfile1,dtiso,btb,s0,0)
 dt0obj <- dtiData(bvec,tmpfile1,mins0value=mins0value,ddim)
+dt0obj <- sdpar(dt0obj,interactive=FALSE)
 dt0 <- dtiTensor(dt0obj, method=method)
 dt0aniso <- dtiIndices(dt0)
 
@@ -215,6 +220,7 @@ createdata.dti(tmpfile2,dtiso,btb,s0,sigma)
 
 # Read noisy data 
 dtobj <- dtiData(bvec,tmpfile2,mins0value=mins0value,ddim)
+dtobj <- sdpar(dtobj,interactive=FALSE)
 dthat1 <- dtiTensor(dtobj, method=method)
 dthat1aniso <- dtiIndices(dthat1)
 
