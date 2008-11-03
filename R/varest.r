@@ -46,7 +46,7 @@ if(is.null(wghts)) wghts <- c(1,1,1)
 wghts <- wghts[1]/wghts[2:3]
 cpar<-setawsdefaults(mean(y),ladjust,hmax,wghts)
 if(is.null(mask)) {
-    if(length(dy)==0) mask <- repl(TRUE,length(y)) else mask <- array(TRUE,dy)
+    if(length(dy)==0) mask <- rep(TRUE,length(y)) else mask <- array(TRUE,dy)
 }
 lambda <- cpar$lambda
 maxvol <- cpar$maxvol
@@ -99,7 +99,7 @@ while (k<=kstar) {
       hakt0 <- gethani(1,10,1.25^(k-1),c(1,0,0,1,0,1),c(1,wghts),1e-4)
       hakt <- gethani(1,10,1.25^k,c(1,0,0,1,0,1),c(1,wghts),1e-4)
 dlw<-(2*trunc(hakt/c(1,wghts))+1)[1:3]
-if(any(h0>0)) lambda0<-lambda0*Spatialvar.gauss(hakt0/0.42445/4,h0,d)/Spatialvar.gauss(hakt0/0.42445/4,1e-5,d)
+if(any(h0>0)) lambda0<-lambda0*Spatialvar.gauss(hakt0/0.42445/4,h0,3)/Spatialvar.gauss(hakt0/0.42445/4,1e-5,3)
 # Correction for spatial correlation depends on h^{(k)} 
 hakt0<-hakt
 # heteroskedastic Gaussian case

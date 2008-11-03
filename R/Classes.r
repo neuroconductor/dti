@@ -72,7 +72,7 @@ setClass("dtiTensor",
             cat("invalid dimension of array th0\n")
             return(invisible(FALSE))
           }
-          if (any(dim(object@sigma)!=object@ddim)) {
+          if (object@method=="linear"&any(dim(object@sigma)!=object@ddim)) {
             cat("invalid dimension of array sigma\n")
             return(invisible(FALSE))
           }

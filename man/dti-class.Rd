@@ -41,7 +41,7 @@ For class \code{"dtiTensor"}:
     \item{ \code{D}: }{ Object of class \code{"array"}, estimated tensors, dimension \code{c(6,ddim)}.
           Tensors are stored as upper diagonal matrices.} 
     \item{ \code{th0}: }{ Object of class \code{"array"}, estimated intensities in S0 images, dimension \code{ddim}} 
-    \item{ \code{sigma}: }{ Object of class \code{"array"}, estimated error variances} 
+    \item{ \code{sigma}: }{ Object of class \code{"array"}, estimated error variances if \code{method=="linear"}, zero otherwise.} 
     \item{ \code{scorr}: }{ Object of class \code{"numeric"}, estimated spatial correlations in coordinate directions} 
     \item{ \code{bw}: }{ Object of class \code{"numeric"}, bandwidth for a Gaussian kernel that approximately creates the estimated spatial correlations. Needed for adjustments of critical values in the adaptive smoothing algorithm used in function \code{dti.smooth}} 
     \item{ \code{mask}: }{ Object of class \code{"array"}, logical indicating the voxel where the tensor was estimated.} 

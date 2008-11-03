@@ -817,32 +817,10 @@ function(object, method="nonlinear",varmethod="replicates",varmodel="local") {
      D <- z$D
      rss <- z$rss
      th0 <- z$th0
+     sigma2 <- array(0,c(1,1,1))
      rm(z)
      gc()
-     cat("Start variance estimation ",date(),"\n")
-     if(df<1||varmethod!="replicates"){
-        sigma2 <- rss/(ngrad-7)
-     } else {
-#
-#  We may want something more sophisticated here in case of
-#  replicated designs !!!
-#
-        df <- sum(table(object@replind)-1)
-        hmax <- max(1,(125/df)^(1/3))
-        z <- replvar(si,object@replind)
-#
-#   need to correct for underestimtion of variances due to 
-#   truncation of si to integer
-#   standard deviation is underestimated by about 0.385 for sd > 2
-#
-        z <- (sqrt(z)+0.385)^2
-        dim(z) <- ddim
-#  adaptive bw to achive approx. 200 degrees of freedom
-           sigma2 <- awsvar(z,shape=df,hmax=pmax(1,(125/df)^(1/3)),mask=mask)
-     }
   }
-  if(varmodel=="global") sigma2 <- array(median(sigma2[sigma2>0]),dim(sigma2))
-     cat("successfully completed variance estimation ",date(),"\n")
   lags <- c(5,5,3)
   scorr <- .Fortran("mcorr",as.double(res),
                    as.logical(mask),
@@ -1036,7 +1014,7 @@ function(x, i, j, k, drop=FALSE){
                 call  = args, 
                 D     = x@D[,i,j,k,drop=FALSE],
                 th0   = x@th0[i,j,k,drop=FALSE],
-                sigma = x@sigma[i,j,k,drop=FALSE],
+                sigma = if(x@method=="linear") x@sigma[i,j,k,drop=FALSE] else array(0,c(1,1,1)),
                 scorr = x@scorr, 
                 bw = x@bw,
                 mask = x@mask[i,j,k,drop=FALSE],
@@ -1324,6 +1302,7 @@ function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,method=1,level=0,scale=1,bgcolo
   dim(andir) <- c(3,n1*n2*n3)
   andir <- andir[,indpos]
   fa <- z$fa[indpos]
+  mask <- obj@mask[indpos]
   n <- length(indpos)
   if(method==1) {
     andir <- abs(andir)
@@ -1336,7 +1315,7 @@ function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,method=1,level=0,scale=1,bgcolo
   colorvalues <- rgb(andir[1,],andir[2,],andir[3,])
   dim(tens) <- c(3,3,n)
   if(level>0){
-    indpos <- (1:n)[fa>level&obj@mask]
+    indpos <- (1:n)[(fa>level)&mask]
     tens <- tens[,,indpos]
     tmean <- tmean[,indpos]
     colorvalues <- colorvalues[indpos]

@@ -105,7 +105,7 @@ C  prepare things for return if gradient is close to 0
             call regularD(D,negdefin)
             RETURN
          END IF
-         IF(iter.gt.1.and.abs(rhon(1)*rhon(4)*rhon(6)).lt.1.d-10) THEN
+         IF(iter.gt.1.and.abs(rho(1)*rho(4)*rho(6)).lt.1.d-10) THEN
 C  prepare things for return if gradient is close to 0
             call regularD(D,negdefin)
             RETURN
@@ -262,7 +262,7 @@ C  prepare things for return if gradient is close to 0
             call regularD(D,negdefin)
             RETURN
          END IF
-         IF(iter.gt.1.and.abs(rhon(1)*rhon(4)*rhon(6)).lt.1.d-10) THEN
+         IF(iter.gt.1.and.abs(rho(1)*rho(4)*rho(6)).lt.1.d-10) THEN
 C  prepare things for return if gradient is close to 0
             call regularD(D,negdefin)
             RETURN

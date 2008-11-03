@@ -11,8 +11,7 @@
 }
 \usage{
   \S4method{dti.smooth}{dtiData}(object, hmax=5, hinit=NULL, lambda=20, rho=1, graph=FALSE, slice=NULL, quant=.8, minanindex=NULL, hsig=2.5, lseq=NULL, method="nonlinear", varmethod="residuals", rician=TRUE, niter=5, varmodel="local")
-  \S4method{dti.smooth}{dtiTensor}(object, hmax=5, lambda=20, rho=1, graph=FALSE, slice=NULL, quant=.8, minanindex=NULL)
-}
+ }
 \arguments{
   \item{object}{ Either an object of class \code{"dtiData"} or an object of class \code{"dtiTensor"}}
   \item{hmax}{Maximal bandwidth}
@@ -40,7 +39,6 @@
   
   If \code{model=="linear"} estimates are obtained using a linearization of the tensor model. This was the estimate used in Tabelow et.al. (2008). \code{model=="nonlinear"} uses a nonlinear regression model with reparametrization that ensures the tensor to be  positive semidefinite, see  Koay et.al. (2006).  If \code{varmethod=="replicates"} the error variance is estimated from replicated gradient directions if possible, otherwise (default) an estimate is obtained from the residual sum of squares.  If \code{volseq==TRUE} the sum of location weights is fixed to \eqn{1.25^k}{1.25^k} within iteration \eqn{k}{k} (does not depend on the actual tensor). Otherwise the ellipsoid of positive location weights is determined by a bandwidth \eqn{h_k = 1.25^(k/3)}{h_k = 1.25^(k/3)}. }
 
-  \item{object = "dtiTensor"}{ Use Riemannian Metric in tensor space to smooth. }
 }}
 \value{
   An object of class \code{dtiTensor}.

@@ -111,6 +111,21 @@ Spatialvar.gauss<-function(h,h0,d,interv=1){
   sum(z^2)/sum(z)^2*interv^d
 }
 
+Varcor.gauss<-function(h){
+#
+#   Calculates a correction for the variance estimate obtained by (IQRdiff(y)/1.908)^2
+#
+#   in case of colored noise that was produced by smoothing with lkern and bandwidth h
+#
+h<-pmax(h/2.3548,1e-5)
+ih<-trunc(4*h)+1
+dx<-2*ih+1
+d<-length(h)
+penl <- dnorm(((-ih[1]):ih[1])/h[1])
+if(d==2) penl <- outer(penl,dnorm(((-ih[2]):ih[2])/h[2]),"*")
+if(d==3) penl <- outer(penl,outer(dnorm(((-ih[2]):ih[2])/h[2]),dnorm(((-ih[3]):ih[3])/h[3]),"*"),"*")
+2*sum(penl)^2/sum(diff(penl)^2)
+}
 
 
 corrrisk <- function(bw,lag,data){

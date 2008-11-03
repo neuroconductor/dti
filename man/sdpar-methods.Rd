@@ -3,7 +3,7 @@
 \alias{sdpar}
 \alias{sdpar-methods}
 \alias{sdpar,ANY-method}
-\alias{sdpar,dtiData}
+\alias{sdpar,dtiData-method}
 \title{ Methods for Function `sdpar' in Package `dti' }
 \description{
 This function estimates the parameters of a piecewise linear model for 

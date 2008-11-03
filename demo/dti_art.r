@@ -8,7 +8,7 @@ lambda <- 47
 # this value was used in the Neuroimage paper
 } else {
   method <- "nonlinear"
-lambda <- 50
+lambda <- 30
 }
 cat("---> using",method,"tensor estimation!\n")
 
