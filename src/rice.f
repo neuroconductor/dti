@@ -11,26 +11,7 @@
       END DO
       RETURN
       END
-      subroutine ricecor1(si,w,n,sw,th,sigma2,fw)
-      implicit logical (a-z) 
-      integer n,si(n)
-      real*8 w(n),th,sigma2,sw,fw(10000)
-      integer i,j
-      real*8 z,sth
-      sth=0.d0
-      z=th/sigma2/1.d-2
-      DO i=1,n
-         j=si(i)*z+1
-         if(j.gt.10000) THEN
-            sth=sth+si(i)*w(i)
-         ELSE
-            sth=sth+fw(j)*si(i)*w(i)
-         END IF
-      END DO
-      th=sth/sw
-      RETURN
-      END
-      subroutine ricecor2(si,w,n,nb,niter,sw,th,s2,sigma2,fw)
+      subroutine ricecorr(si,w,n,nb,niter,sw,th,s2,sigma2,fw)
       implicit logical (a-z) 
       integer n,nb,si(nb,n),niter(nb)
       real*8 w(n),th(nb),s2(nb),sigma2,sw,fw(10000)

@@ -708,8 +708,7 @@ dtiTensor <- function(object,  ...) cat("No DTI tensor calculation defined for t
 
 setGeneric("dtiTensor", function(object,  ...) standardGeneric("dtiTensor"))
 
-setMethod("dtiTensor","dtiData",
-function(object, method="nonlinear",varmethod="replicates",varmodel="local") {
+setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="replicates",varmodel="local") {
 #  available methods are 
 #  "linear" - use linearized model (log-transformed)
 #  "nonlinear" - use nonlinear model with parametrization according to Koay et.al. (2006)
@@ -958,8 +957,7 @@ function(object, which) {
             )
 })
 
-setMethod("[","dtiData",
-function(x, i, j, k, drop=FALSE){
+setMethod("[","dtiData",function(x, i, j, k, drop=FALSE){
   args <- sys.call(-1)
   args <- c(x@call,args)
   if (missing(i)) i <- TRUE
@@ -988,8 +986,7 @@ function(x, i, j, k, drop=FALSE){
             )
 })
 
-setMethod("[","dtiTensor",
-function(x, i, j, k, drop=FALSE){
+setMethod("[","dtiTensor",function(x, i, j, k, drop=FALSE){
   args <- sys.call(-1)
   args <- c(x@call,args)
   if (missing(i)) i <- TRUE
@@ -1038,8 +1035,7 @@ function(x, i, j, k, drop=FALSE){
             )
 })
 
-setMethod("[","dtiIndices",
-function(x, i, j, k, drop=FALSE){
+setMethod("[","dtiIndices",function(x, i, j, k, drop=FALSE){
   args <- sys.call(-1)
   args <- c(x@call,args)
   if (missing(i)) i <- TRUE
@@ -1076,8 +1072,7 @@ extract <- function(x, i, j, k, what) cat("Data extraction not defined for this 
 
 setGeneric("extract", function(x, i=TRUE, j=TRUE, k=TRUE, what) standardGeneric("extract"))
 
-setMethod("extract",c(x="dtiData", what="character"),
-function(x, i, j, k, what="data"){
+setMethod("extract",c(x="dtiData", what="character"),function(x, i, j, k, what="data"){
   what <- tolower(what) 
   x <- x[i,j,k]
 
@@ -1089,8 +1084,7 @@ function(x, i, j, k, what="data"){
   invisible(z)
 })
 
-setMethod("extract","dtiTensor",
-function(x, i, j, k, what="tensor"){
+setMethod("extract","dtiTensor",function(x, i, j, k, what="tensor"){
   what <- tolower(what) 
 
   x <- x[i,j,k]
@@ -1172,8 +1166,7 @@ function(x, i, j, k, what="tensor"){
   invisible(z)
 })
 
-setMethod("extract","dtiIndices",
-function(x, i, j, k, what=c("fa","andir")){
+setMethod("extract","dtiIndices",function(x, i, j, k, what=c("fa","andir")){
   what <- tolower(what) 
 
   x <- x[i,j,k]
@@ -1194,8 +1187,7 @@ show3d <- function(obj,  ...) cat("3D Visualization not implemented for this cla
 
 setGeneric("show3d", function(obj,  ...) standardGeneric("show3d"))
 
-setMethod("show3d","dtiIndices",
-function(obj, index="FA", nx=NULL, ny=NULL, nz=NULL, center=NULL, method=1, level=0, bgcolor="black", add=FALSE, lwd=1,...){
+setMethod("show3d","dtiIndices",function(obj, index="FA", nx=NULL, ny=NULL, nz=NULL, center=NULL, method=1, level=0, bgcolor="black", add=FALSE, lwd=1,...){
   if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
   index <- tolower(index) 
   if(!(index%in%c("fa","ga"))) stop("index should be either 'FA' or 'GA'\n")
@@ -1250,8 +1242,7 @@ function(obj, index="FA", nx=NULL, ny=NULL, nz=NULL, center=NULL, method=1, leve
   invisible(rgl.cur())
 })
 
-setMethod("show3d","dtiTensor",
-function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,method=1,level=0,scale=1,bgcolor="black",add=FALSE,subdivide=2,smooth=TRUE,maxobjects=729,...){
+setMethod("show3d","dtiTensor",function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,method=1,level=0,scale=1,bgcolor="black",add=FALSE,subdivide=2,smooth=TRUE,maxobjects=729,...){
   if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
   if(is.null(nx)) nx <- obj@ddim[1]
   if(is.null(ny)) ny <- obj@ddim[2]

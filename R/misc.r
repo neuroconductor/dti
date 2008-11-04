@@ -16,32 +16,6 @@ replind <- function(gradient){
   as.integer(replind)
 }
 
-replvar <- function(x,ind){
-# Estimate voxelwise variances using replications
-# of gradients
-tind <- table(ind)
-df <- sum(tind-1)
-if(df<1) {
-warning("No replications available")
-return(NULL)
-}
-lind <- sort(unique(ind))
-dx <- dim(x)
-z<-.Fortran("replvar",
-              as.integer(x),
-              as.integer(dx[1]),
-              as.integer(dx[2]),
-              as.integer(dx[3]),
-              as.integer(dx[4]),
-              as.integer(ind),
-              as.integer(tind),
-              as.integer(lind),
-              as.integer(length(tind)),
-              sigma2=double(prod(dx[2:4])),
-              double(prod(dx[2:4])),
-              PACKAGE="dti",DUP=FALSE)$sigma2
-z/df
-}
 
 
 Spatialvar.gauss<-function(h,h0,d,interv=1){

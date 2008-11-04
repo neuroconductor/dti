@@ -113,7 +113,7 @@ C    ia,ie -  rane of x values (restricted to the grid)
       implicit logical (a-z)
       integer ia,ie
       real*8 a(6),h,vext(3)
-      real*8 p1,p2,p3,p4,p5,p6,z,s,t,p55,p66,p44
+      real*8 p1,p2,p3,p4,p5,p6,z,s,t,p55,p66,p44,h1
       p1=a(1)
       p2=a(4)
       p3=a(6)
@@ -128,7 +128,6 @@ C    ia,ie -  rane of x values (restricted to the grid)
       z=(p1-p44/p2-p55/p3+2.d0*p6*t)*s-p66*p55/p3-p66*p44/p2+
      1                                             2.d0*p66*p6*t
       if(abs(z).le.1e-40) THEN
-C         call dblepr("denominator in rangex",21,z,1)
          z=1
       END IF
       z=s/z
@@ -137,8 +136,9 @@ C         call dblepr("denominator in rangex",21,z,1)
       ELSE 
          z=sqrt(z)
       END IF
-      ia=-z*h/vext(1)
-      ie=z*h/vext(1)
+      h1=h/vext(1)
+      ia=-z*h1
+      ie=z*h1
       RETURN
       END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
@@ -157,7 +157,7 @@ C    ia,ie -  rane of x values (restricted to the grid)
       implicit logical (a-z)
       integer ja,je,ix
       real*8 a(6),h,vext(3)
-      real*8 p1,p2,p3,p4,p5,p6,z,s,t,p55,p66,p44,x
+      real*8 p1,p2,p3,p4,p5,p6,z,s,t,p55,p66,p44,x,h2s
       x=ix/h*vext(1)
       p1=a(1)
       p2=a(4)
@@ -170,7 +170,6 @@ C    ia,ie -  rane of x values (restricted to the grid)
       p66=p6*p6
       s=p2*p3-p6*p6
       if(s.le.1e-10) THEN
-C         call dblepr("denominator in rangey",21,s,1)
          z=1
       END IF
       t=-(p4*p3 - p6*p5)* x
@@ -180,9 +179,10 @@ C         call dblepr("denominator in rangey",21,s,1)
       ELSE 
          z=sqrt(z)
       END IF
-      ja=(t-z)*h/s/vext(2)
-      je=(t+z)*h/s/vext(2)
-      z=z*h/s/vext(2)
+      h2s=h/vext(2)/s
+      ja=(t-z)*h2s
+      je=(t+z)*h2s
+      z=z*h2s
       RETURN
       END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
@@ -201,25 +201,21 @@ C    ia,ie -  rane of x values (restricted to the grid)
       implicit logical (a-z)
       integer ka,ke,ix,jy
       real*8 a(6),h,vext(3)
-      real*8 p1,p2,p3,p4,p5,p6,z,t,x,y
+      real*8 p3,z,t,x,y,h3
       x=ix/h*vext(1)
       y=jy/h*vext(2)
-      p1=a(1)
-      p2=a(4)
+      h3=h/vext(3)
       p3=a(6)
-      p4=a(2)
-      p5=a(3)
-      p6=a(5)
-      z=(p6*y + p5*x)
+      z=(a(5)*y + a(3)*x)
       t= - z/p3
-      z=(-z*t - p2*y*y - p1*x*x - 2.d0*p4*x*y + 1.d0)/p3
+      z=(-z*t - a(4)*y*y - a(1)*x*x - 2.d0*a(2)*x*y + 1.d0)/p3
       if(z.le.0) THEN
          z=0.d0
       ELSE 
          z=sqrt(z)
       END IF
-      ka=(t-z)*h/vext(3)
-      ke=(t+z)*h/vext(3)
+      ka=(t-z)*h3
+      ke=(t+z)*h3
       RETURN
       END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
@@ -575,41 +571,5 @@ C  now case i1=i2=0
             sw=sw+2.d0*wij
          END DO
       sofw3D=sw
-      RETURN
-      END
-      subroutine sofw3Ds(a,bw,vext,sw)
-      implicit logical(a-z)
-      real*8 a(6),bw,vext(3)
-      integer ia1,ie1,ia2,ie2,ia3,ie3,i1,i2,i3
-      real*8 wij,sw,h2,adist
-      external adist
-      h2=bw*bw
-      sw=1.d0
-      call rangex(a,bw,ia1,ie1,vext)
-      DO i1=1,ie1
-         call rangey(a,i1,bw,ia2,ie2,vext)
-         DO i2=ia2,ie2
-            call rangez(a,i1,i2,bw,ia3,ie3,vext)
-            DO i3=ia3,ie3
-               wij=max(0.d0,1.d0-adist(a,i1,i2,i3,vext)/h2)
-               sw=sw+2.d0*wij
-            END DO
-         END DO
-      END DO
-C  now case i1=0
-      call rangey(a,0,bw,ia2,ie2,vext)
-      DO i2=1,ie2
-         call rangez(a,0,i2,bw,ia3,ie3,vext)
-         DO i3=ia3,ie3
-            wij=max(0.d0,1.d0-adist(a,0,i2,i3,vext)/h2)
-            sw=sw+2.d0*wij
-         END DO
-      END DO
-C  now case i1=i2=0
-      call rangez(a,0,0,bw,ia3,ie3,vext)
-         DO i3=1,ie3
-            wij=max(0.d0,1.d0-adist(a,0,0,i3,vext)/h2)
-            sw=sw+2.d0*wij
-         END DO
       RETURN
       END

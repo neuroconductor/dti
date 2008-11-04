@@ -278,7 +278,7 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
      cat("h=",signif(hakt,3),"Quantiles (.5, .75, .9, .95, 1) of anisotropy index",signif(quantile(z$anindex[mask],c(.5, .75, .9, .95, 1)),3),"\n")
     k <- k+1
      lambda0 <- lambda 
-     print(gc())
+     gc()
   }
   rm(si)
   gc()
