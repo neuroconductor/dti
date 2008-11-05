@@ -201,10 +201,10 @@ setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, mi
    title(paste("Dxz: min",signif(min(D[3,,][mask]),3),"max",signif(max(D[3,,][mask]),3)))
    show.image(make.image(matrix(z$fa,n1,n2)))
    if(what=="GA"){
-   title(paste("Anisotropy Index  (FA)  range:",signif(min(z$fa[mask]),3),"-",
+   title(paste("Anisotropy Index  (GA)  range:",signif(min(z$fa[mask]),3),"-",
                 signif(max(z$fa[mask]),3)))
    } else {
-   title(paste("Geodesic Anisotropy (GA)  range:",signif(min(z$fa[mask]),3),"-",
+   title(paste("Geodesic Anisotropy (FA)  range:",signif(min(z$fa[mask]),3),"-",
                 signif(max(z$fa[mask]),3)))
    }
    img<-D[4,,]
@@ -311,14 +311,16 @@ function(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=
   }
   adimpro <- require(adimpro)
   oldpar <- par(mar=mar,mgp=mgp, ...)
+  if(what=="GA") maxga <- max(x@ga) 
+#  resulting image needs to be rescaled 
   if (view == "sagittal") {
-    anindex <- if(what=="GA") x@ga[slice,yind,zind] else x@fa[slice,yind,zind]
+    anindex <- if(what=="GA") x@ga[slice,yind,zind]/maxga else x@fa[slice,yind,zind]
     andirection <- x@andir[,slice,yind,zind]
   } else if (view == "coronal") {
-    anindex <- if(what=="GA") x@ga[xind,slice,zind] else x@fa[xind,slice,zind]
+    anindex <- if(what=="GA") x@ga[xind,slice,zind]/maxga else x@fa[xind,slice,zind]
     andirection <- x@andir[,xind,slice,zind]
   } else {
-    anindex <- if(what=="GA") x@ga[xind,yind,slice] else x@fa[xind,yind,slice]
+    anindex <- if(what=="GA") x@ga[xind,yind,slice]/maxga else x@fa[xind,yind,slice]
     andirection <- x@andir[,xind,yind,slice]
   }
     anindex[anindex>1]<-0
@@ -770,6 +772,20 @@ setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="r
      sigma2 <- rss/(ngrad0-6)
      D[c(1,4,6),!mask] <- 1e-6
      D[c(2,3,5),!mask] <- 0
+#  replace non-tensors (with negative eigenvalues) by a small isotropic tensor 
+      ind <- array(.Fortran("dti3Dev",
+                           as.double(D),
+                           as.integer(ddim[1]),
+                           as.integer(ddim[2]),
+                           as.integer(ddim[3]),
+                           as.logical(mask),
+                           ev=double(3*prod(ddim)),
+                           DUPL=FALSE,
+                           PACKAGE="dti")$ev,c(3,ddim))[1,,,]<1e-6
+       if(sum(ind&mask)>0){
+           D[c(1,4,6),ind&mask] <- 1e-6
+           D[c(2,3,5),ind&mask] <- 0
+       }
      dim(D) <- c(6,ddim)
      dim(res) <- c(ngrad0,ddim)
      cat("Variance estimates generated ",date(),"\n")

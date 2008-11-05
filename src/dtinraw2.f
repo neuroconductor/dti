@@ -205,7 +205,6 @@ C  now anisotropic smoothing
                END DO
                deti=exp(log(det(i1,i2,i3))/3)
                bii=bi(i1,i2,i3)
-C              sqrbii=sigma2(i1,i2,i3)/sqrt(bii)
                sqrbii=1.d0/sqrt(bii)
                th0i=th0(i1,i2,i3)
                th0n(i1,i2,i3)=th0i
@@ -258,6 +257,7 @@ C   now get bandwidth such that the ellopsoid has specified volume
                h2=h*h
 C   create needed estimates of s_i
                nselect=0
+               bii=bii/lambda
                call rangex(thi,h,j1a,j1e,vext)
                DO j1=j1a,j1e
                   jj1=i1+j1
@@ -279,7 +279,7 @@ C     triangular location kernel
                         IF(aws) THEN
                            rssj = dtidisrg(siest(1,i1,i2,i3),
      1                               sipred(1,jj1,jj2,jj3),varinv,nb)
-                           sij = bii*max(0.d0,rssj-rssi)/lambda
+                           sij = bii*max(0.d0,rssj-rssi)
                            if(center.eq.0) sij=0.d0
                            if(sij.gt.1.d0) CYCLE
                            wij=wij*(1.d0-sij)
@@ -413,8 +413,8 @@ C  first check if D defines a positive definite densor
          if(s(i).lt.sdcoef(3)) zsd=low
          if(s(i).gt.sdcoef(4)) zsd=up
          varinv(i)=1.d0/zsd/zsd
-         z=0.d0
-         DO j=1,6
+         z=b(1,i)*D(1)
+         DO j=2,6
             z=z+b(j,i)*D(j)
          END DO
          z=exp(-z)
@@ -432,8 +432,8 @@ C  first check if D defines a positive definite densor
             END DO
          END DO
          DO i=1,nb
-            z=0.d0
-            DO j=1,6
+            z=b(1,i)*D(1)
+            DO j=2,6
                z=z+b(j,i)*D(j)
             END DO
             z=exp(-z)
@@ -505,16 +505,16 @@ C  next iteration
                th0n=th0-gamma*pk(7)
                nrss=0.d0
                DO i=1,nb
-                  z=0.d0
-                  DO j=1,6
+                  z=b(1,i)*Dn(1)
+                  DO j=2,6
                      z=z+b(j,i)*Dn(j)
                   END DO
                   res=s(i)-th0n*exp(-z)
                   nrss=nrss+res*res
                   F(i)=res
                END DO
-               crss=0.d0
-               DO j=1,7
+               crss=dg(1)*pk(1)
+               DO j=2,7
                   crss=crss+dg(j)*pk(j)
                END DO
                crss=rss-delta*gamma*crss
@@ -571,8 +571,8 @@ C  first check if D defines a positive definite densor
          if(s(i).lt.sdcoef(3)) zsd=low
          if(s(i).gt.sdcoef(4)) zsd=up
          varinv(i)=1.d0/zsd/zsd
-         z=0.d0
-         DO j=1,6
+         z=b(1,i)*D(1)
+         DO j=2,6
             z=z+b(j,i)*D(j)
          END DO
          z=exp(-z)
@@ -590,8 +590,8 @@ C  first check if D defines a positive definite densor
             END DO
          END DO
          DO i=1,nb
-            z=0.d0
-            DO j=1,6
+            z=b(1,i)*D(1)
+            DO j=2,6
                z=z+b(j,i)*D(j)
             END DO
             z=exp(-z)
@@ -663,16 +663,16 @@ C  next iteration
                th0n=th0-gamma*pk(7)
                nrss=0.d0
                DO i=1,nb
-                  z=0.d0
-                  DO j=1,6
+                  z=b(1,i)*Dn(1)
+                  DO j=2,6
                      z=z+b(j,i)*Dn(j)
                   END DO
                   res=s(i)-th0n*exp(-z)
                   nrss=nrss+res*res
                   F(i)=res
                END DO
-               crss=0.d0
-               DO j=1,7
+               crss=dg(1)*pk(1)
+               DO j=2,7
                   crss=crss+dg(j)*pk(j)
                END DO
                crss=rss-delta*gamma*crss

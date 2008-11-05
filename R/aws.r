@@ -34,6 +34,9 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
   args <- c(object@call,args)
   s0ind <- object@s0ind
   ns0 <- length(s0ind)
+  ngrad <- object@ngrad
+  ddim0 <- object@ddim0
+  ddim <- object@ddim
   z <- .Fortran("outlier",
                 as.integer(object@si),
                 as.integer(prod(ddim)),
@@ -45,15 +48,12 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
                 lindex=integer(1),
                 DUPL=FALSE,
                 PACKAGE="dti")[c("si","index","lindex")]
-  si <- array(si,c(ddim,ngrad))
+  si <- array(z$si,c(ddim,ngrad))
+  object@si <- si
   index <- if(z$lindex>0) z$index[1:z$lindex] else numeric(0)
-  si <- aperm(si,c(4,1:3))
   s0 <- si[,,,s0ind]
   if(length(s0ind)>1) s0 <- apply(s0,1:3,mean) 
   si <- si[,,,-s0ind]
-  ngrad <- object@ngrad-length(s0ind)
-  ddim0 <- object@ddim0
-  ddim <- object@ddim
   xind <- object@xind
   yind <- object@yind
   zind <- object@zind
@@ -158,6 +158,7 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
      show.image(make.image(65535*img/max(img)),xaxt="n",yaxt="n")
      title(paste("Dzz: mean",signif(mean(z$D[6,,,][mask]),3),"max",signif(max(z$D[6,,,][mask]),3)))
   }
+  ngrad <- ngrad-length(s0ind)
   hincr <- 1.25^(1/3)
   if(is.null(hinit)){
   hakt0 <- 1
@@ -272,7 +273,23 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
     k <- k+1
     lambda0 <- lambda*lseq[k]*scorrfactor     
   }
-
+#  replace non-tensors (with negative eigenvalues) by a small isotropic tensor 
+      ind <- array(.Fortran("dti3Dev",
+                           as.double(z$D),
+                           as.integer(n1),
+                           as.integer(n2),
+                           as.integer(n3),
+                           as.logical(mask),
+                           ev=double(3*n1*n2*n3),
+                           DUPL=FALSE,
+                           PACKAGE="dti")$ev,c(3,n1,n2,n3))[1,,,]<1e-6
+       if(sum(ind&mask)>0){
+           dim(z$D) <- c(6,n1*n2*n3)
+           z$D[c(1,4,6),ind&mask] <- 1e-6
+           z$D[c(2,3,5),ind&mask] <- 0
+           dim(z$D) <- c(6,n1,n2,n3)
+       }
+  
   invisible(new("dtiTensor",
                 list( hmax = hmax),
                 call = args,

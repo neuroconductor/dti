@@ -50,8 +50,8 @@ C   for test purposes only
       call D2rho(D,rho)
 C includes regularization of D
       DO i=1,nb
-         z=0.d0
-         DO j=1,6
+         z=b(1,i)*D(1)
+         DO j=2,6
             z=z+b(j,i)*D(j)
          END DO
          z=exp(-z)
@@ -69,8 +69,8 @@ C includes regularization of D
             END DO
          END DO
          DO i=1,nb
-            z=0.d0
-            DO j=1,6
+            z=b(1,i)*D(1)
+            DO j=2,6
                z=z+b(j,i)*D(j)
             END DO
             z=exp(-z)
@@ -151,16 +151,16 @@ C  next iteration
                nrss=0.d0
                call rho2D(rhon,Dn)
                DO i=1,nb
-                  z=0.d0
-                  DO j=1,6
+                  z=b(1,i)*Dn(1)
+                  DO j=2,6
                      z=z+b(j,i)*Dn(j)
                   END DO
                   res=(s(i)-th0n*exp(-z))
                   nrss=nrss+res*res*varinv(i)
                   F(i)=res
                END DO
-               crss=0.d0
-               DO j=1,7
+               crss=dg(1)*pk(1)
+               DO j=2,7
                   crss=crss+dg(j)*pk(j)
                END DO
                crss=rss-delta*gamma*crss
@@ -205,8 +205,8 @@ C
       rss=0.d0
       call D2rho(D,rho)
       DO i=1,nb
-         z=0.d0
-         DO j=1,6
+         z=b(1,i)*D(1)
+         DO j=2,6
             z=z+b(j,i)*D(j)
          END DO
          z=exp(-z)
@@ -224,8 +224,8 @@ C
             END DO
          END DO            
          DO i=1,nb
-            z=0.d0
-            DO j=1,6
+            z=b(1,i)*D(1)
+            DO j=2,6
                z=z+b(j,i)*D(j)
             END DO
             z=exp(-z)
@@ -305,16 +305,16 @@ C  next iteration
                nrss=0.d0
                call rho2D(rhon,Dn)
                DO i=1,nb
-                  z=0.d0
-                  DO j=1,6
+                  z=b(1,i)*Dn(1)
+                  DO j=2,6
                      z=z+b(j,i)*Dn(j)
                   END DO
                   res=s(i)-th0n*exp(-z)
                   nrss=nrss+res*res
                   F(i)=res
                END DO
-               crss=0.d0
-               DO j=1,7
+               crss=dg(1)*pk(1)
+               DO j=2,7
                   crss=crss+dg(j)*pk(j)
                END DO
                crss=rss-delta*gamma*crss
