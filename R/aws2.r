@@ -268,7 +268,7 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
      title(paste("Dyz: min",signif(min(z$D[5,,,][mask]),3),"max",signif(max(z$D[5,,,][mask]),3)))
      andir2.image(z,slice,quant=quant,minanindex=minanindex,xaxt="n",yaxt="n")
      title(paste("Directions (h=",signif(hakt,3),"), slice",slice))
-     ni<-z$bi[,,slice]*as.integer(mask[,,slice])
+     ni<-z$bi[,,slice]*mask[,,slice]
      show.image(make.image(65535*ni/max(ni)),xaxt="n",yaxt="n")
      title(paste("sum of weights  mean=",signif(mean(z$bi[mask]),3)))
      img<-z$D[6,,,slice]
