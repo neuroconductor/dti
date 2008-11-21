@@ -294,7 +294,7 @@ setMethod("plot", "dti", function(x, y, ...) cat("No implementation for class dt
 setMethod("plot", "dtiIndices", 
 function(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=TRUE, density=FALSE, contrast.enh=1,what="FA",xind=NULL,yind=NULL,zind=NULL, mar=c(3,3,3,.3),mgp=c(2,1,0), ...) {
   if(is.null(x@fa)) cat("No anisotropy index yet")
-  if(!(method %in% 1:3)) {
+  if(!(method %in% 1:4)) {
       warning("method out of range, reset to 1")
       method <- 1
   }
@@ -311,21 +311,34 @@ function(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=
   }
   adimpro <- require(adimpro)
   oldpar <- par(mar=mar,mgp=mgp, ...)
-  if(what=="GA") maxga <- max(x@ga) 
+#  if(what=="GA") maxga <- max(x@ga) 
+  if(what=="GA") maxga <- quantile(x@ga,0.99) 
 #  resulting image needs to be rescaled 
   if (view == "sagittal") {
-    anindex <- if(what=="GA") x@ga[slice,yind,zind]/maxga else x@fa[slice,yind,zind]
-    andirection <- x@andir[,slice,yind,zind]
+    anindex <- if(what=="GA") pmin(x@ga[slice,yind,zind]/maxga, 1) else x@fa[slice,yind,zind]
+    if (method == 3) {
+      andirection <- x@bary[,slice,yind,zind]
+    } else {
+      andirection <- x@andir[,slice,yind,zind]
+    }
   } else if (view == "coronal") {
-    anindex <- if(what=="GA") x@ga[xind,slice,zind]/maxga else x@fa[xind,slice,zind]
-    andirection <- x@andir[,xind,slice,zind]
+    anindex <- if(what=="GA") pmin(x@ga[xind,slice,zind]/maxga, 1) else x@fa[xind,slice,zind]
+    if (method == 3) {
+      andirection <- x@bary[,xind,slice,zind]
+    } else {
+      andirection <- x@andir[,xind,slice,zind]
+    }
   } else {
-    anindex <- if(what=="GA") x@ga[xind,yind,slice]/maxga else x@fa[xind,yind,slice]
-    andirection <- x@andir[,xind,yind,slice]
+    anindex <- if(what=="GA") pmin(x@ga[xind,yind,slice]/maxga, 1) else x@fa[xind,yind,slice]
+    if (method == 3) {
+      andirection <- x@bary[,xind,yind,slice]
+    } else {
+      andirection <- x@andir[,xind,yind,slice]
+    }
   }
-    anindex[anindex>1]<-0
-    anindex[anindex<0]<-0
-  if ((method==1) || (method==2)) {
+  anindex[anindex>1] <- 0
+  anindex[anindex<0] <- 0
+  if ((method==1) || (method==2) || (method==4)) {
     if(contrast.enh<1&&fa.contrast.enh>0) anindex <- pmin(anindex/contrast.enh,1)
     if(is.null(minanindex)) minanindex <- quantile(anindex,quant,na.rm=TRUE)
     if (diff(range(anindex,na.rm=TRUE)) == 0) minanindex <- 0
@@ -333,13 +346,17 @@ function(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=
       andirection[1,,] <- abs(andirection[1,,])
       andirection[2,,] <- abs(andirection[2,,])
       andirection[3,,] <- abs(andirection[3,,])
-    } else {
+    } else if (method==2) {
       ind<-andirection[1,,]<0
       dim(andirection) <- c(3,prod(dim(ind)))
       andirection[,ind] <- - andirection[,ind]
       andirection[2,] <- (1+andirection[2,])/2
       andirection[3,] <- (1+andirection[3,])/2
       dim(andirection) <- c(3,dim(ind))
+    } else {
+      andirection[1,,] <- andirection[1,,]^2
+      andirection[2,,] <- andirection[2,,]^2
+      andirection[3,,] <- andirection[3,,]^2
     }
     andirection <- aperm(andirection,c(2,3,1))
     andirection <- andirection*as.vector(anindex)*as.numeric(anindex>minanindex)
@@ -355,8 +372,8 @@ function(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=
     invisible(andirection)
   } else if (method==3) {
     if(adimpro) {
-      bary[is.na(bary)] <- 0
-      bary <- make.image(aperm(bary,c(2,3,1)))
+      andirection[is.na(andirection)] <- 0
+      bary <- make.image(aperm(andirection,c(2,3,1)))
       if(show) show.image(bary,...)
     } else if(show) {
       image(bary[1,,],...)

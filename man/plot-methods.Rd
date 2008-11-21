@@ -44,7 +44,7 @@
 
   \item{x = "dtiData"}{ \code{gradient} can be used to specify a specific data cube associated with the index of a gradient direction. For objects of class \code{"dtiData"} images are produces that are scaled by the maximal observed image value. This guarantees that subsequently produced images are on a comparable grey scale. The resulting image of class \code{"adimpro"} from package \pkg{adimpro} is returned. }
 
-  \item{x = "dtiIndices"}{ Color coded anisotropy maps are produced depending on the specification in \code{method}. \code{method==1} and \code{method==2} specify two different color schemes for directional FA-maps. \code{method==3} specifies visualization of dtiIndices using color coded shape parameters. The resulting image of class \code{"adimpro"} from package \pkg{adimpro} is returned.}
+  \item{x = "dtiIndices"}{ Color coded anisotropy maps are produced depending on the specification in \code{method}. \code{method==1}, \code{method==2}  and \code{method==4} specify three different color schemes for directional FA-maps. \code{method==3} specifies visualization of dtiIndices using color coded shape parameters. The resulting image of class \code{"adimpro"} from package \pkg{adimpro} is returned.}
 
   \item{x = "dtiTensor"}{ The tensor itself, fractional anisotropy (FA), mean diffusivity (MD) and a color coded anisotropy map are provided. \code{NULL} is returned. }
   
