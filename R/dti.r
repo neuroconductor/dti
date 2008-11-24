@@ -294,7 +294,7 @@ setMethod("plot", "dti", function(x, y, ...) cat("No implementation for class dt
 setMethod("plot", "dtiIndices", 
 function(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=TRUE, density=FALSE, contrast.enh=1,what="FA",xind=NULL,yind=NULL,zind=NULL, mar=c(3,3,3,.3),mgp=c(2,1,0), ...) {
   if(is.null(x@fa)) cat("No anisotropy index yet")
-  if(!(method %in% 1:4)) {
+  if(!(method %in% 1:5)) {
       warning("method out of range, reset to 1")
       method <- 1
   }
@@ -312,24 +312,27 @@ function(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=
   adimpro <- require(adimpro)
   oldpar <- par(mar=mar,mgp=mgp, ...)
 #  if(what=="GA") maxga <- max(x@ga) 
-  if(what=="GA") maxga <- quantile(x@ga,0.99) 
+#  if(what=="GA") maxga <- quantile(x@ga,0.99) 
 #  resulting image needs to be rescaled 
   if (view == "sagittal") {
-    anindex <- if(what=="GA") pmin(x@ga[slice,yind,zind]/maxga, 1) else x@fa[slice,yind,zind]
+#    anindex <- if(what=="GA") pmin(x@ga[slice,yind,zind]/maxga, 1) else x@fa[slice,yind,zind]
+    anindex <- if(what=="GA") tanh(x@ga[slice,yind,zind]) else x@fa[slice,yind,zind]
     if (method == 3) {
       andirection <- x@bary[,slice,yind,zind]
     } else {
       andirection <- x@andir[,slice,yind,zind]
     }
   } else if (view == "coronal") {
-    anindex <- if(what=="GA") pmin(x@ga[xind,slice,zind]/maxga, 1) else x@fa[xind,slice,zind]
+#    anindex <- if(what=="GA") pmin(x@ga[xind,slice,zind]/maxga, 1) else x@fa[xind,slice,zind]
+    anindex <- if(what=="GA") tanh(x@ga[xind,slice,zind]) else x@fa[xind,slice,zind]
     if (method == 3) {
       andirection <- x@bary[,xind,slice,zind]
     } else {
       andirection <- x@andir[,xind,slice,zind]
     }
   } else {
-    anindex <- if(what=="GA") pmin(x@ga[xind,yind,slice]/maxga, 1) else x@fa[xind,yind,slice]
+#    anindex <- if(what=="GA") pmin(x@ga[xind,yind,slice]/maxga, 1) else x@fa[xind,yind,slice]
+    anindex <- if(what=="GA") tanh(x@ga[xind,yind,slice]) else x@fa[xind,yind,slice]
     if (method == 3) {
       andirection <- x@bary[,xind,yind,slice]
     } else {
@@ -375,12 +378,31 @@ function(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=
       andirection[is.na(andirection)] <- 0
       bary <- make.image(aperm(andirection,c(2,3,1)))
       if(show) show.image(bary,...)
+      par(oldpar)
+      invisible(bary)
     } else if(show) {
-      image(bary[1,,],...)
+      image(andirection[1,,],...)
     }
     par(oldpar)
-    invisible(bary)
-  } 
+    invisible(NULL)
+  } else if (method==5) {
+    if(adimpro) {
+      andirection[is.na(andirection)] <- 0
+      img.hsi.data <- array(0,dim=c(dim(andirection)[2:3],3))
+      img.hsi.data[,,1] <- atan2(andirection[2,,],andirection[1,,])
+      img.hsi.data[,,1] <- img.hsi.data[,,1] + pi*(img.hsi.data[,,1]<0)
+      img.hsi.data[,,2] <- abs(acos(andirection[3,,]))
+      img.hsi.data[,,3] <- anindex
+      img.hsi <- make.image(img.hsi.data,gamma=TRUE,xmode="HSI")
+      if(show) show.image(img.hsi,...)
+      par(oldpar)
+      invisible(img.hsi)
+    } else if(show) {
+      image(andirection[1,,],...)
+    }
+    par(oldpar)
+    invisible(NULL)
+  }
 })
 
 #
@@ -670,82 +692,82 @@ sdpar <- function(object,  ...) cat("No method defined for class:",class(object)
 
 setGeneric("sdpar", function(object,  ...) standardGeneric("sdpar"))
 
-setMethod("sdpar","dtiData",function(object,level=NULL,sdmethod="sd",interactive=TRUE){
-# determine interval of linearity
-if(!(sdmethod%in%c("sd","mad"))){
-warning("sdmethod needs to be either 'sd' or 'mad'")
-return(object)
-}
-if(is.null(level)) level <- object@level
-s0ind<-object@s0ind
-s0 <- object@si[,,,s0ind]
-ls0ind <- length(s0ind)
-A0 <- level
-if(ls0ind>1) {
-dim(s0) <- c(prod(object@ddim),ls0ind)
-s0mean <- s0%*%rep(1/ls0ind,ls0ind)
-A1 <- quantile(s0mean[s0mean>0],.98)
-} else {
-A1 <- quantile(s0[s0>0],.98)
-}
-if(interactive) {
-accept <- FALSE
-ddim <- object@ddim
-bw <- min(bw.nrd(if(ls0ind>1) s0mean else s0),diff(range(if(ls0ind>1) s0mean else s0))/256)
-z <- density(if(ls0ind>1) s0mean else s0,bw = bw,n=1024)
-indx1 <- trunc(0.05*ddim[1]):trunc(0.95*ddim[1])
-indx2 <- trunc(0.1*ddim[1]):trunc(0.9*ddim[1])
-indx3 <- trunc(0.15*ddim[1]):trunc(0.85*ddim[1])
-indy1 <- trunc(0.05*ddim[2]):trunc(0.95*ddim[2])
-indy2 <- trunc(0.1*ddim[2]):trunc(0.9*ddim[2])
-indy3 <- trunc(0.15*ddim[2]):trunc(0.85*ddim[2])
-indz1 <- trunc(0.05*ddim[3]):trunc(0.95*ddim[3])
-indz2 <- trunc(0.1*ddim[3]):trunc(0.9*ddim[3])
-indz3 <- trunc(0.15*ddim[3]):trunc(0.85*ddim[3])
-z1 <- density(if(ls0ind>1) s0mean[indx1,indy1,indz1] else s0[indx1,indy1,indz1],bw=bw,n=1024)
-z2 <- density(if(ls0ind>1) s0mean[indx2,indy2,indz2] else s0[indx2,indy2,indz2],bw=bw,n=1024)
-z3 <- density(if(ls0ind>1) s0mean[indx3,indy3,indz3] else s0[indx3,indy3,indz3],bw=bw,n=1024)
-n <- prod(ddim)
-n1 <- length(indx1)*length(indy1)*length(indz1)
-n2 <- length(indx2)*length(indy2)*length(indz2)
-n3 <- length(indx3)*length(indy3)*length(indz3)
-ylim <- range(z$y,z1$y*n/n1,z2$y*n/n2,z3$y*n/n3)
-while(!accept){
-plot(z,type="l",main="Density of S0 values and cut off point",ylim=ylim)
-lines(z1$x,z1$y*n/n1,col=2)
-lines(z2$x,z2$y*n/n2,col=3)
-lines(z3$x,z3$y*n/n3,col=4)
-lines(c(A0,A0),c(0,max(z$y)),col=2,lwd=2)
-legend(min(z$x),ylim[2],c("Full cube",paste("Central",(n1*100)%/%n,"%"),
-paste("Central",(n2*100)%/%n,"%"),paste("Central",(n3*100)%/%n,"%")),col=1:4,lwd=rep(1,4))
-cat("A good cut off point should be left of support of the density of grayvalues within the head\n")
-a <- readline("Accept cut off point (Y/N):")
-if (toupper(a) == "N") {
-cutpoint <-  readline("Provide value for cut off point:")
-cutpoint <- if(!is.null(cutpoint)) as.numeric(cutpoint) else A0
-if(!is.na(cutpoint)) {
-A0 <- cutpoint
-level <- cutpoint
-}
-} else {
-accept <- TRUE
-}
-}
-}
-# determine parameters for linear relation between standard deviation and mean
-if(ls0ind>1) {
-s0sd <- apply(s0,1,sdmethod)
-ind <- s0mean>A0&s0mean<A1
-sdcoef <- coefficients(lm(s0sd[ind]~s0mean[ind]))
-} else {
-sdcoef <- awslinsd(s0,hmax=5,mask=NULL,A0=A0,A1=A1)$vcoef
-}
-object@level <- level
-object@sdcoef <- c(sdcoef,A0,A1)
-cat("Estimated parameters:",signif(sdcoef[1:2],3),"Interval of linearity",signif(A0,3),"-",signif(A1,3),"\n")
-object
-}
-)
+setMethod("sdpar","dtiData",
+function(object,level=NULL,sdmethod="sd",interactive=TRUE){
+  # determine interval of linearity
+  if(!(sdmethod%in%c("sd","mad"))){
+    warning("sdmethod needs to be either 'sd' or 'mad'")
+    return(object)
+  }
+  if(is.null(level)) level <- object@level
+  s0ind <- object@s0ind
+  s0 <- object@si[,,,s0ind]
+  ls0ind <- length(s0ind)
+  A0 <- level
+  if(ls0ind>1) {
+    dim(s0) <- c(prod(object@ddim),ls0ind)
+    s0mean <- s0%*%rep(1/ls0ind,ls0ind)
+    A1 <- quantile(s0mean[s0mean>0],.98)
+  } else {
+    A1 <- quantile(s0[s0>0],.98)
+  }
+  if(interactive) {
+    accept <- FALSE
+    ddim <- object@ddim
+    bw <- min(bw.nrd(if(ls0ind>1) s0mean else s0),diff(range(if(ls0ind>1) s0mean else s0))/256)
+    z <- density(if(ls0ind>1) s0mean else s0,bw = bw,n=1024)
+    indx1 <- trunc(0.05*ddim[1]):trunc(0.95*ddim[1])
+    indx2 <- trunc(0.1*ddim[1]):trunc(0.9*ddim[1])
+    indx3 <- trunc(0.15*ddim[1]):trunc(0.85*ddim[1])
+    indy1 <- trunc(0.05*ddim[2]):trunc(0.95*ddim[2])
+    indy2 <- trunc(0.1*ddim[2]):trunc(0.9*ddim[2])
+    indy3 <- trunc(0.15*ddim[2]):trunc(0.85*ddim[2])
+    indz1 <- trunc(0.05*ddim[3]):trunc(0.95*ddim[3])
+    indz2 <- trunc(0.1*ddim[3]):trunc(0.9*ddim[3])
+    indz3 <- trunc(0.15*ddim[3]):trunc(0.85*ddim[3])
+    z1 <- density(if(ls0ind>1) s0mean[indx1,indy1,indz1] else s0[indx1,indy1,indz1],bw=bw,n=1024)
+    z2 <- density(if(ls0ind>1) s0mean[indx2,indy2,indz2] else s0[indx2,indy2,indz2],bw=bw,n=1024)
+    z3 <- density(if(ls0ind>1) s0mean[indx3,indy3,indz3] else s0[indx3,indy3,indz3],bw=bw,n=1024)
+    n <- prod(ddim)
+    n1 <- length(indx1)*length(indy1)*length(indz1)
+    n2 <- length(indx2)*length(indy2)*length(indz2)
+    n3 <- length(indx3)*length(indy3)*length(indz3)
+    ylim <- range(z$y,z1$y*n/n1,z2$y*n/n2,z3$y*n/n3)
+    while(!accept){
+      plot(z,type="l",main="Density of S0 values and cut off point",ylim=ylim)
+      lines(z1$x,z1$y*n/n1,col=2)
+      lines(z2$x,z2$y*n/n2,col=3)
+      lines(z3$x,z3$y*n/n3,col=4)
+      lines(c(A0,A0),c(0,max(z$y)),col=2,lwd=2)
+      legend(min(z$x),ylim[2],c("Full cube",paste("Central",(n1*100)%/%n,"%"),
+      paste("Central",(n2*100)%/%n,"%"),paste("Central",(n3*100)%/%n,"%")),col=1:4,lwd=rep(1,4))
+      cat("A good cut off point should be left of support of the density of grayvalues within the head\n")
+      a <- readline("Accept cut off point (Y/N):")
+      if (toupper(a) == "N") {
+        cutpoint <-  readline("Provide value for cut off point:")
+        cutpoint <- if(!is.null(cutpoint)) as.numeric(cutpoint) else A0
+        if(!is.na(cutpoint)) {
+          A0 <- cutpoint
+          level <- cutpoint
+        }
+      } else {
+        accept <- TRUE
+      }
+    }
+  }
+  # determine parameters for linear relation between standard deviation and mean
+  if(ls0ind>1) {
+    s0sd <- apply(s0,1,sdmethod)
+    ind <- s0mean>A0&s0mean<A1
+    sdcoef <- coefficients(lm(s0sd[ind]~s0mean[ind]))
+  } else {
+    sdcoef <- awslinsd(s0,hmax=5,mask=NULL,A0=A0,A1=A1)$vcoef
+  }
+  object@level <- level
+  object@sdcoef <- c(sdcoef,A0,A1)
+  cat("Estimated parameters:",signif(sdcoef[1:2],3),"Interval of linearity",signif(A0,3),"-",signif(A1,3),"\n")
+  object
+})
 
 dtiTensor <- function(object,  ...) cat("No DTI tensor calculation defined for this class:",class(object),"\n")
 
