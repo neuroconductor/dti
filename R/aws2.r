@@ -170,6 +170,7 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
                     as.integer(n2),
                     as.integer(n3),
                     as.logical(mask),
+                    as.logical(!((1:ngrad)%in%s0ind)),
                     as.double(btb),
                     as.double(sdcoef),
                     as.double(z$th0),

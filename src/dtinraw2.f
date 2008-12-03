@@ -9,10 +9,10 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       real*8 D(6),ew(3),ev(3,3),ewmax
       integer ierr
       call eigen3(D,ew,ev,ierr)
-      if(ew(1).le.1.d-5) THEN
+      if(ew(1).le.1.d-4) THEN
 C  first regularize
          negdefin=.TRUE.
-         ewmax=max(1.d-5,(ew(1)+ew(2)+ew(3))/3.d0)
+         ewmax=max(1.d-4,(ew(1)+ew(2)+ew(3))/3.d0)
          D(1)=ewmax
          D(2)=0.d0
          D(3)=0.d0
@@ -35,7 +35,7 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       real*8 D(6),ew(3),ev(3,3),ewmax
       integer ierr
       call eigen3(D,ew,ev,ierr)
-      if(ew(1).le.1.d-5) THEN
+      if(ew(1).le.1.d-4) THEN
 C  first regularize
          negdefin=.TRUE.
          ewmax=max(1.d-4,ew(3))
@@ -67,13 +67,13 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine D2rho(D,rho)
       implicit logical(a-z)
       real*8 D(6),rho(6),eps
-      eps=0.d0
-      rho(1)=sqrt(D(1)-eps)
+      eps=1.d-6
+      rho(1)=sqrt(D(1)+eps)
       rho(2)=D(2)/rho(1)
       rho(3)=D(3)/rho(1)
-      rho(4)=sqrt(D(4)-rho(2)*rho(2)-eps)
+      rho(4)=sqrt(D(4)-rho(2)*rho(2)+eps)
       rho(5)=(D(5)-rho(2)*rho(3))/rho(4)
-      rho(6)=sqrt(D(6)-rho(3)*rho(3)-rho(5)*rho(5)-eps)
+      rho(6)=sqrt(D(6)-rho(3)*rho(3)-rho(5)*rho(5)+eps)
       RETURN
       END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
@@ -84,7 +84,7 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine rho2D(rho,D)
       implicit logical(a-z)
       real*8 D(6),rho(6),eps
-      eps=1.d-7
+      eps=0.d-6
       D(1)=rho(1)*rho(1)+eps
       D(2)=rho(1)*rho(2)
       D(3)=rho(1)*rho(3)
@@ -119,10 +119,11 @@ C
 C   3D anisotropic smoothing of diffusion tensor data
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-      subroutine awsrgdti(si,siest,sipred,nb,n1,n2,n3,mask,btb,sdcoef,
-     1                    th0,th0n,D,Dn,bi,ani,andir,det,sigma2r,vol,
-     2                    niter,vext,rho0,lambda,swsi,swsi2,F,varinv,
-     3                    eps,rician,nw,nriter,sisel,isel,wselect,s2)
+      subroutine awsrgdti(si,siest,sipred,nb,n1,n2,n3,mask,sbind,btb,
+     1                    sdcoef,th0,th0n,D,Dn,bi,ani,andir,det,
+     2                    sigma2r,vol,niter,vext,rho0,lambda,swsi,
+     3                    swsi2,F,varinv,eps,rician,nw,nriter,sisel,
+     4                    isel,wselect,s2)
 C
 C   si       -  observed diffusion weighted images
 C   nb       -  number of gradients (including zero gradients)
@@ -156,9 +157,9 @@ C   eps      -  something small and positive
      3       ani(n1,n2,n3),andir(3,n1,n2,n3),s2(nb),det(n1,n2,n3),h,
      4       rho0,vext(3),lambda,swsi(nb),F(nb),varinv(nb),eps,rss,
      5       wselect(nw),vol
-      logical mask(n1,n2,n3),rician
+      logical mask(n1,n2,n3),rician,sbind(nb)
       integer i1,j1,j1a,j1e,jj1,i2,j2,j2a,j2e,jj2,i3,j3,j3a,j3e,jj3,
-     1        ierr,k,center,l
+     1        ierr,k,center,l,ns0
       real*8 wij,adist,sw,h2,thi(7),bii,sqrbii,ew(3),ev(3,3),rssj,
      1       mew,z1,z2,z3,sij,deti,z,sew,sw2,Di(6),dtidisrg,
      2       th0i,s2hat,ssigma2,rssi,h0,h1,squot,shat,low,up,zsd
@@ -182,6 +183,12 @@ C  first fill predicted
          END DO
       END DO
 C  now anisotropic smoothing 
+      ns0=0
+      DO k=1,nb
+         if(sbind(k)) THEN
+            ns0=ns0+1
+         END IF
+      END DO
       low=sdcoef(1)+sdcoef(3)*sdcoef(2)
       up=sdcoef(1)+sdcoef(4)*sdcoef(2)
       DO i1=1,n1
@@ -317,11 +324,14 @@ C     triangular location kernel
                if(rician.and.sw.gt.1.d0) THEN
                   ssigma2=0.d0
                   DO k=1,nb
-                     s2hat = swsi2(k)/sw-swsi(k)*swsi(k)
-                     s2(k) = s2hat
-                     ssigma2=ssigma2+s2hat
+                     if(sbind(k)) THEN
+                        s2hat = swsi2(k)/sw-swsi(k)*swsi(k)
+                        s2(k) = s2hat
+                        ssigma2=ssigma2+s2hat
+                        ns0=ns0+1
+                     END IF
                   END DO
-                  s2hat = sw*sw/(sw*sw-sw2)*ssigma2/nb
+                  s2hat = sw*sw/(sw*sw-sw2)*ssigma2/ns0
                   shat = sqrt(s2hat)
 C   this also adjusts for eliminating \theta by combining the second and 4th moment
                  DO k=1,nb
@@ -337,7 +347,7 @@ C   this also adjusts for eliminating \theta by combining the second and 4th mom
                         sisel(k,l)=si(k,isel(1,l),isel(2,l),isel(3,l))
                      END DO
                   END DO
-                  call ricecorr(sisel,wselect,nselect,nb,
+                  call ricecorr(sisel,wselect,nselect,nb,sbind,ns0,
      1                          nriter,sw,swsi,s2,s2hat,fw)
                   sigma2r(i1,i2,i3)=s2hat
                END IF
@@ -419,7 +429,7 @@ C  first check if D defines a positive definite densor
          END DO
          z=exp(-z)
          res=s(i)-th0*z
-         rss=rss+res*res
+         rss=rss+res*res*varinv(i)
          F(i)=res
       END DO
       th0n = th0
@@ -510,7 +520,7 @@ C  next iteration
                      z=z+b(j,i)*Dn(j)
                   END DO
                   res=s(i)-th0n*exp(-z)
-                  nrss=nrss+res*res
+                  nrss=nrss+res*res*varinv(i)
                   F(i)=res
                END DO
                crss=dg(1)*pk(1)
@@ -577,7 +587,7 @@ C  first check if D defines a positive definite densor
          END DO
          z=exp(-z)
          res=s(i)-th0*z
-         rss=rss+res*res
+         rss=rss+res*res*varinv(i)
          F(i)=res
       END DO
       th0n = th0
@@ -668,7 +678,7 @@ C  next iteration
                      z=z+b(j,i)*Dn(j)
                   END DO
                   res=s(i)-th0n*exp(-z)
-                  nrss=nrss+res*res
+                  nrss=nrss+res*res*varinv(i)
                   F(i)=res
                END DO
                crss=dg(1)*pk(1)

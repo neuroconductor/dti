@@ -56,7 +56,7 @@ C includes regularization of D
          END DO
          z=exp(-z)
          res=s(i)-th0*z
-         rss=rss+res*res
+         rss=rss+res*res*varinv(i)
          F(i)=res
       END DO
       th0n = th0
@@ -211,7 +211,7 @@ C
          END DO
          z=exp(-z)
          res=s(i)-th0*z
-         rss=rss+res*res
+         rss=rss+res*res*varinv(i)
          F(i)=res
       END DO
       th0n = th0
@@ -310,7 +310,7 @@ C  next iteration
                      z=z+b(j,i)*Dn(j)
                   END DO
                   res=s(i)-th0n*exp(-z)
-                  nrss=nrss+res*res
+                  nrss=nrss+res*res*varinv(i)
                   F(i)=res
                END DO
                crss=dg(1)*pk(1)
