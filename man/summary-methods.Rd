@@ -3,6 +3,9 @@
 \alias{summary-methods}
 \alias{summary,ANY-method}
 \alias{summary,dti-method}
+\alias{summary,dtiData-method}
+\alias{summary,dtiTensor-method}
+\alias{summary,dtiIndices-method}
 \title{ Methods for Function `summary' in Package `dti' }
 \description{
   The method provides summary information for objects of class \code{"dti"}.

@@ -1147,11 +1147,11 @@ setMethod("[","dtiIndices",function(x, i, j, k, drop=FALSE){
             )
 })
 
-extract <- function(x, i, j, k, what) cat("Data extraction not defined for this class:",class(x),"and type",what,"\n")
+extract <- function(x, ...) cat("Data extraction not defined for this class:",class(x),"\n")
 
-setGeneric("extract", function(x, i=TRUE, j=TRUE, k=TRUE, what) standardGeneric("extract"))
+setGeneric("extract", function(x, ...) standardGeneric("extract"))
 
-setMethod("extract",c(x="dtiData", what="character"),function(x, i, j, k, what="data"){
+setMethod("extract","dtiData",function(x, what="data", i=TRUE, j=TRUE, k=TRUE){
   what <- tolower(what) 
   x <- x[i,j,k]
 
@@ -1163,7 +1163,7 @@ setMethod("extract",c(x="dtiData", what="character"),function(x, i, j, k, what="
   invisible(z)
 })
 
-setMethod("extract","dtiTensor",function(x, i, j, k, what="tensor"){
+setMethod("extract","dtiTensor",function(x, what="tensor", i=TRUE, j=TRUE, k=TRUE){
   what <- tolower(what) 
 
   x <- x[i,j,k]
@@ -1245,7 +1245,7 @@ setMethod("extract","dtiTensor",function(x, i, j, k, what="tensor"){
   invisible(z)
 })
 
-setMethod("extract","dtiIndices",function(x, i, j, k, what=c("fa","andir")){
+setMethod("extract","dtiIndices",function(x, what=c("fa","andir"), i=TRUE, j=TRUE, k=TRUE){
   what <- tolower(what) 
 
   x <- x[i,j,k]
@@ -1262,7 +1262,7 @@ setMethod("extract","dtiIndices",function(x, i, j, k, what=c("fa","andir")){
   invisible(z)
 })
 
-show3d <- function(obj,  ...) cat("3D Visualization not implemented for this class:",class(object),"\n")
+show3d <- function(obj,  ...) cat("3D Visualization not implemented for this class:",class(obj),"\n")
 
 setGeneric("show3d", function(obj,  ...) standardGeneric("show3d"))
 
@@ -1365,8 +1365,8 @@ setMethod("show3d","dtiTensor",function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,
   tmean[3,,,] <- outer(rep(1,n1),outer(rep(1,n2),zind))*vext[3]
   dim(tmean) <- c(3,n)
   tmean <- tmean[,indpos]
-  z <- extract(obj,,,,c("andir","fa"))
-  maxev <- extract(obj,,,,"evalues")$evalues[3,,,]
+  z <- extract(obj,what=c("andir","fa"))
+  maxev <- extract(obj,what="evalues")$evalues[3,,,]
   maxev <- maxev[indpos]
   andir <- z$andir
   dim(andir) <- c(3,n1*n2*n3)
