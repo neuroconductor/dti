@@ -1153,7 +1153,7 @@ setGeneric("extract", function(x, ...) standardGeneric("extract"))
 
 setMethod("extract","dtiData",function(x, what="data", xind=TRUE, yind=TRUE, zind=TRUE){
   what <- tolower(what) 
-  x <- x[i,j,k]
+  x <- x[xind,yind,zind]
 
   z <- list(NULL)
   if("btb" %in% what) z$btb <- x@btb
@@ -1166,7 +1166,7 @@ setMethod("extract","dtiData",function(x, what="data", xind=TRUE, yind=TRUE, zin
 setMethod("extract","dtiTensor",function(x, what="tensor", xind=TRUE, yind=TRUE, zind=TRUE){
   what <- tolower(what) 
 
-  x <- x[i,j,k]
+  x <- x[xind,yind,zind]
   n1 <- x@ddim[1]
   n2 <- x@ddim[2]
   n3 <- x@ddim[3]
@@ -1248,7 +1248,7 @@ setMethod("extract","dtiTensor",function(x, what="tensor", xind=TRUE, yind=TRUE,
 setMethod("extract","dtiIndices",function(x, what=c("fa","andir"), xind=TRUE, yind=TRUE, zind=TRUE){
   what <- tolower(what) 
 
-  x <- x[i,j,k]
+  x <- x[xind,yind,zind]
   n1 <- x@ddim[1]
   n2 <- x@ddim[2]
   n3 <- x@ddim[3]
