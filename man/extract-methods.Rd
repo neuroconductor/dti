@@ -16,9 +16,9 @@
   The methods extract and/or compute specified statistics from object of class \code{"dtiData"}, \code{"dtiTensor"}, and \code{"dtiIndices"}. This can be restricted to a subset of voxel.
 }
 \usage{
-  \S4method{extract}{dtiData}(x, i, j, k, what="data")
-  \S4method{extract}{dtiTensor}(x, i, j, k, what="tensor")
-  \S4method{extract}{dtiIndices}(x, i, j, k, what=c("fa","andir"))
+  \S4method{extract}{dtiData}(x, what="data", xind, yind, zind)
+  \S4method{extract}{dtiTensor}(x, what="tensor", xind, yind, zind)
+  \S4method{extract}{dtiIndices}(x, what=c("fa","andir"), xind, yind, zind)
   \S4method{[}{dtiData}(x, i, j, k, drop=FALSE)
   \S4method{[}{dtiTensor}(x, i, j, k, drop=FALSE)
   \S4method{[}{dtiIndices}(x, i, j, k, drop=FALSE)
@@ -28,6 +28,9 @@
   \item{i}{ vector of x-coordinates, defaults to whole range. }
   \item{j}{ vector of y-coordinates, defaults to whole range. }
   \item{k}{ vector of z-coordinates, defaults to whole range. }
+  \item{xind}{ vector of x-coordinates, defaults to whole range. }
+  \item{yind}{ vector of y-coordinates, defaults to whole range. }
+  \item{zind}{ vector of z-coordinates, defaults to whole range. }
   \item{what}{ Statistic to extract. See Methods Section for details. }
   \item{drop}{ unused. }
 }

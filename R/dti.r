@@ -1151,7 +1151,7 @@ extract <- function(x, ...) cat("Data extraction not defined for this class:",cl
 
 setGeneric("extract", function(x, ...) standardGeneric("extract"))
 
-setMethod("extract","dtiData",function(x, what="data", i=TRUE, j=TRUE, k=TRUE){
+setMethod("extract","dtiData",function(x, what="data", xind=TRUE, yind=TRUE, zind=TRUE){
   what <- tolower(what) 
   x <- x[i,j,k]
 
@@ -1163,7 +1163,7 @@ setMethod("extract","dtiData",function(x, what="data", i=TRUE, j=TRUE, k=TRUE){
   invisible(z)
 })
 
-setMethod("extract","dtiTensor",function(x, what="tensor", i=TRUE, j=TRUE, k=TRUE){
+setMethod("extract","dtiTensor",function(x, what="tensor", xind=TRUE, yind=TRUE, zind=TRUE){
   what <- tolower(what) 
 
   x <- x[i,j,k]
@@ -1245,7 +1245,7 @@ setMethod("extract","dtiTensor",function(x, what="tensor", i=TRUE, j=TRUE, k=TRU
   invisible(z)
 })
 
-setMethod("extract","dtiIndices",function(x, what=c("fa","andir"), i=TRUE, j=TRUE, k=TRUE){
+setMethod("extract","dtiIndices",function(x, what=c("fa","andir"), xind=TRUE, yind=TRUE, zind=TRUE){
   what <- tolower(what) 
 
   x <- x[i,j,k]
