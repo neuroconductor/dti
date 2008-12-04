@@ -57,8 +57,8 @@ Maintainer: Karsten Tabelow \email{tabelow@wias-berlin.de}
               \emph{NeuroImage} \bold{39(4)}, 1763--1773.
 
               Polzehl, J. and Tabelow, K. (2008)
-              Structural Adaptive Smoothing in Diffusion Tensor Imaging:  the R Package dti,
-              WIAS-Preprint .
+              Structural Adaptive Smoothing in Diffusion Tensor Imaging:  the R package dti,
+              WIAS-Preprint 1382.
 
               \url{ http://www.wias-berlin.de/projects/matheon_a3/} 
 }
