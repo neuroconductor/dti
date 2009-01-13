@@ -1254,11 +1254,11 @@ setMethod("extract","dtiIndices",function(x, what=c("fa","andir"), xind=TRUE, yi
   n3 <- x@ddim[3]
 
   z <- list(NULL)
-  if("fa" %in% what) z$fa <- x$fa
-  if("ga" %in% what) z$ga <- x$ga
-  if("md" %in% what) z$md <- x$md
-  if("andir" %in% what) z$andir <- x$andir
-  if("bary" %in% what) z$bary <- x$bary
+  if("fa" %in% what) z$fa <- x@fa
+  if("ga" %in% what) z$ga <- x@ga
+  if("md" %in% what) z$md <- x@md
+  if("andir" %in% what) z$andir <- x@andir
+  if("bary" %in% what) z$bary <- x@bary
   invisible(z)
 })
 

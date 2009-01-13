@@ -19,10 +19,14 @@ switch(method,"linear" = dtilin.smooth(object,hmax,hinit,lambda,rho,graph,slice,
 )
 dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
                                             rho=1,graph=FALSE,slice=NULL,quant=.8,
-                                            minanindex=NULL,hsig=2.5,lseq=NULL,varmethod="residuals",varmodel="local"){
+                                            minanindex=NULL,hsig=2.5,lseq=NULL,varmethod="residuals",varmodel="local",result="Tensor"){
 #
 #     lambda and lseq adjusted for alpha=0.2
 #
+  if(!is.null(object$ni)){
+     warning("DWI object has been smoothed already, smoothing omitted")
+     return(if(result=="Tensor") dtiTensor(object,method="linear",varmethod=varmethod,varmodel=varmodel) else object)
+  }
   wlse <- TRUE
   eps <- 1e-6
   if (graph) {
@@ -291,7 +295,7 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
        }
   
   invisible(new("dtiTensor",
-                list( hmax = hmax),
+                list( hmax = hmax, ni=z$bi),
                 call = args,
                 D     = z$D,
                 th0   = th0,

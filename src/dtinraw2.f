@@ -300,8 +300,8 @@ C     triangular location kernel
                               z=z*z
                               swsi2(k)=swsi2(k)+wij*z
                            END DO
-                          if(nselect.gt.nw) THEN
-                              call intpr("nselect>nw",10,nselect,1)
+                          if(nselect.ge.nw) THEN
+C                              call intpr("nselect>nw",10,nselect,1)
                               CYCLE
                            ENDIF 
                            nselect=nselect+1

@@ -21,6 +21,7 @@ if (toupper(a) == "N") {
 }
 
 a <- readline("Provide standard deviation in K-space (default: 2400, example in Neuroimage paper: 1600):")
+
 sigma <- if(!is.null(a)) as.numeric(a) else 2400
 if( is.na(sigma)) sigma <- 2400
 
@@ -70,9 +71,13 @@ dthat1 <- dtiTensor(dtobj, method=method)
 
 dthat1aniso <- dtiIndices(dthat1)
 
-# adaptive smoothing bandwidth=4
+# adaptive smoothing
+a <- readline("Provide bandwidth for adaptive smoothing (default 4)")
 
-dthat4 <- dti.smooth(dtobj,hmax=4,graph=TRUE,lambda=lambda,minanindex=0,slice=15,rho=rho,lseq=NULL,method=method)
+hmax <- if(!is.null(a)) as.numeric(a) else 4
+if( is.na(hmax) || hmax<1) hmax <- 4
+
+dthat4 <- dti.smooth(dtobj,hmax=hmax,graph=TRUE,lambda=lambda,minanindex=0,slice=15,rho=rho,lseq=NULL,method=method)
 
 # Compute indices of estimated smoothed tensors 
 
