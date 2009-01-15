@@ -317,7 +317,7 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
             ) else invisible(new("dtiData",
                 list(s2rician=if(rician) z$sigma2r else NULL, ni=z$bi),
                 call = args,
-                si = array(as.integer(z$sihat),dimsi),
+                si = aperm(array(as.integer(z$sihat),dimsi),c(2:4,1)),
                 sdcoef = sdcoef,
                 btb    = btb,
                 ngrad  = ngrad, # = dim(btb)[2]
@@ -330,7 +330,6 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
                 zind  = zind,
                 voxelext = object@voxelext,
                 level  = object@level,
-                sdcoef = object@sdcoef,
                 orientation = object@orientation ,
                 source= object@source)
             )

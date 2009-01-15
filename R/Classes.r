@@ -22,7 +22,7 @@ setClass("dtiData",
          contains=c("list","dti"),
          validity=function(object){
           if (any(dim(object@si)!=c(object@ddim,object@ngrad))) {
-            cat("incorrect dimension of image data\n")
+            cat("incorrect dimension of image data",dim(object@si),"\n")
             return(invisible(FALSE))
           }
           if (length(object@s0ind)<1) {
