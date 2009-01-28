@@ -42,9 +42,11 @@ bvec <- read.table(system.file("dat/b-directions.txt",package="dti"))
 #
 #  generate files containing the phantom- and noisy diffusion weighted images
 #
+a <- readline("Use phantom nr. 1 or 2 ? (1/2)?")
 
-source(system.file("rcode/generatedata.r",package="dti"))
-
+a <- if(a %in% c("1","2")) as.numeric(a) else 1
+switch(a,source(system.file("rcode/generatedata.r",package="dti")),
+         source(system.file("rcode/generatedata2.r",package="dti")))
 # Read Phantom data 
 
 dt0obj <- dtiData(bvec,tmpfile1,mins0value=mins0value,ddim)

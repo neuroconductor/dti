@@ -10,23 +10,20 @@ dti.smooth <- function(object, ...) cat("No DTI smoothing defined for this class
 
 setGeneric("dti.smooth", function(object, ...) standardGeneric("dti.smooth"))
 
-setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=20,
+setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=20,tau=10,
                                             rho=1,graph=FALSE,slice=NULL,quant=.8,
                                             minanindex=NULL,hsig=2.5,lseq=NULL, method="nonlinear",varmethod="residuals",rician=TRUE,niter=5,varmodel="local",result="Tensor") {
-switch(method,"linear" = dtilin.smooth(object,hmax,hinit,lambda,rho,graph,slice,quant,minanindex,hsig,lseq,varmethod,varmodel,result),
-              "nonlinear" =  dtireg.smooth(object,hmax,hinit,lambda,rho,graph,slice,quant,minanindex,hsig,lseq,varmethod,rician,niter,varmodel,result))
+switch(method,"linear" = dtilin.smooth(object,hmax,hinit,lambda,rho,graph,slice,quant,minanindex,hsig,lseq,varmethod,varmodel),
+              "nonlinear" =  dtireg.smooth(object,hmax,hinit,lambda,rho,graph,slice,quant,minanindex,hsig,lseq,varmethod,rician,niter,varmodel,result),
+              "osmooth" =  dtireg.osmooth(object,hmax,hinit,lambda,tau,graph,slice,quant,minanindex,hsig,lseq,varmethod,rician=FALSE,niter,varmodel,result))
 }
 )
 dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
                                             rho=1,graph=FALSE,slice=NULL,quant=.8,
-                                            minanindex=NULL,hsig=2.5,lseq=NULL,varmethod="residuals",varmodel="local",result="Tensor"){
+                                            minanindex=NULL,hsig=2.5,lseq=NULL,varmethod="residuals",varmodel="local"){
 #
 #     lambda and lseq adjusted for alpha=0.2
 #
-  if(!is.null(object$ni)){
-     warning("DWI object has been smoothed already, smoothing omitted")
-     return(if(result=="Tensor") dtiTensor(object,method="linear",varmethod=varmethod,varmodel=varmodel) else object)
-  }
   wlse <- TRUE
   eps <- 1e-6
   if (graph) {

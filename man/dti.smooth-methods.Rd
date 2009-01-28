@@ -10,13 +10,14 @@
   The function provides structural adaptive smoothing for diffusion weighted image data within the context of an diffusion tensor (DTI) model.  It implements smoothing of DWI data using a structural assumption of a local (anisotropic) homogeneous  diffusion tensor model (in case a \code{"dtiData"}-object is provided).  It also implements structural adaptive smoothing of a diffusion tensor using a Riemannian metric (in case a \code{"dtiTensor"}-object is given), although we strictly recommend to use the first variant due to methodological reasons.
 }
 \usage{
-  \S4method{dti.smooth}{dtiData}(object, hmax=5, hinit=NULL, lambda=20, rho=1, graph=FALSE, slice=NULL, quant=.8, minanindex=NULL, hsig=2.5, lseq=NULL, method="nonlinear", varmethod="residuals", rician=TRUE, niter=5, varmodel="local")
+  \S4method{dti.smooth}{dtiData}(object, hmax=5, hinit=NULL, lambda=20, tau=10, rho=1, graph=FALSE, slice=NULL, quant=.8, minanindex=NULL, hsig=2.5, lseq=NULL, method="nonlinear", varmethod="residuals", rician=TRUE, niter=5, varmodel="local")
  }
 \arguments{
   \item{object}{ Either an object of class \code{"dtiData"} or an object of class \code{"dtiTensor"}}
   \item{hmax}{Maximal bandwidth}
   \item{hinit}{Initial bandwidth (default 1)}
   \item{lambda}{Critical parameter (default 20)}
+  \item{tau}{Critical parameter for orientation scores (default 10)}
   \item{rho}{Regularization parameter for anisotropic vicinities (default 1)}
   \item{graph}{"logical": Visualize intermediate results (default FALSE)}
   \item{slice}{slice number, determines the slice used in visualization}
@@ -24,9 +25,10 @@
   \item{minanindex}{minimal anisotropy index to use in visualization}
   \item{hsig}{bandwidth for presmoothing of variance estimates}
   \item{lseq}{ sequence of correction factors for \code{lambda}}
-  \item{method}{ Method for tensor estimation. May be \code{"linear"}, or \code{"nonlinear"}. }
+  \item{method}{ Method for tensor estimation. May be \code{"linear"}, \code{"nonlinear"} or \code{"osmooth"}. \code{"osmooth"} implies using 
+   heteroscedastic nonlinear regression but additionaly uses gradient orientations to determine weights for smoothing the DWI's.}
   \item{result}{ If \code{result=="Tensor} (default) return dtiTensor object computed from smoothed DWI
-   data, otherwise return the smoothed DWI data as an dtiData object.}
+   data, otherwise return the smoothed DWI data as an dtiData object. Implemented for \code{method=="nonlinear"} and \code{method=="osmooth"} only.}
   \item{varmethod}{ Specifies the method for estimating the error variance. May be \code{varmethod=="replicates"}, or \code{"residuals"}. }
   \item{varmodel}{ Specifies the model for the variance. May be \code{"global"}, or \code{"local"}. }
   \item{rician}{ "logical": apply a correction for Rician bias. This is still experimental and depends on spatial independence of errors.}
