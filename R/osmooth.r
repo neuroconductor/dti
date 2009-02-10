@@ -11,7 +11,7 @@ sqrt(1-mean((c(1,1,1)%*%(andir1[,mask]*andir2[,mask]))^2))
 #   Nonlinear regression; regularized version according to Koay et. al. (2006)
 #   this is also based on an a statistical penalty defined using log-likelihood difference
 #
-dtireg.osmooth <- function(object,hmax=5,hinit=1,lambda=30,tau=10,graph=FALSE,slice=NULL,quant=.8,
+dtireg.osmooth0 <- function(object,hmax=5,hinit=1,lambda=30,tau=10,graph=FALSE,slice=NULL,quant=.8,
                          minanindex=NULL,hsig=2.5,lseq=NULL,varmethod="residuals",rician=FALSE,niter=5,varmodel="local",result="Tensor"){
 #
 #     lambda and lseq adjusted for alpha=0.2
@@ -204,7 +204,6 @@ dtireg.osmooth <- function(object,hmax=5,hinit=1,lambda=30,tau=10,graph=FALSE,sl
                     as.double(vext),
                     as.double(lambda0),
                     as.double(tau),
-                    double(ngrad),#wijk
                     double(ngrad),#swsi
                     double(ngrad),#swsi2
                     double(ngrad),#sw

@@ -5,7 +5,7 @@ C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine osmdti(si,siest,varinv,sipred,nb,n1,n2,n3,mask,
      1                  btb,sdcoef,th0,th0n,D,Dn,ani,andir,det,vol,
-     2                  niter,vext,lambda,tau,wijk,swsi,swsi2,sw,sw2,
+     2                  niter,vext,lambda,tau,swsi,swsi2,sw,sw2,
      3                  oibd,F,vari,sig2bi,s0ind,eps)
 C
 C   si       -  observed diffusion weighted images
@@ -35,12 +35,12 @@ C   eps      -  something small and positive
      2       Dn(6,n1,n2,n3),sipred(nb,n1,n2,n3),varinv(nb,n1,n2,n3),
      3       ani(n1,n2,n3),andir(3,n1,n2,n3),det(n1,n2,n3),h,
      4       vext(3),lambda,tau,swsi(nb),F(nb),vari(nb),eps,rss,
-     5       vol,sw(nb),sw2(nb),wijk(nb),sdcoef(4),sig2bi(nb)
+     5       vol,sw(nb),sw2(nb),sdcoef(4),sig2bi(nb)
       logical mask(n1,n2,n3),s0ind(nb)
       integer i1,j1,j1a,j1e,jj1,i2,j2,j2a,j2e,jj2,i3,j3,j3a,j3e,jj3,
      1        ierr,k,l,center
       real*8 wij,adist0,h2,ew(3),ev(3,3),rssj,la12,la13,oibd(nb),
-     1       mew,z1,z2,z3,sij,z,Di(6),dtidisrg,minoibd,
+     1       mew,z1,z2,z3,sij,z,Di(6),dtidisrg,minoibd,wijk,
      2       th0i,rssi,h0,h1,zsd,up,low,zsd2,meanni,taui
       integer nselect
       external adist0,dtidisrg
@@ -160,19 +160,245 @@ C  use Plateau kernel
                         END IF
                         DO k=1,nb
                            if(center.eq.0) THEN
-                              wijk(k)=wij
+                              wijk=wij
                            ELSE
-                              wijk(k)=wij*oibd(k)
+                              wijk=wij*oibd(k)
                            END IF
                            z=si(k,jj1,jj2,jj3)
                            zsd=sdcoef(1)+z*sdcoef(2)
                            if(z.lt.sdcoef(3)) zsd=low
                            if(z.gt.sdcoef(4)) zsd=up
                            zsd2=zsd*zsd
-                           wijk(k)=wijk(k)/zsd2
-                           sw(k)=sw(k)+wijk(k)
-                           sw2(k)=sw2(k)+wijk(k)*wijk(k)*zsd2
-                           swsi(k)=swsi(k)+wijk(k)*si(k,jj1,jj2,jj3)
+                           wijk=wijk/zsd2
+                           sw(k)=sw(k)+wijk
+                           sw2(k)=sw2(k)+wijk*wijk*zsd2
+                           swsi(k)=swsi(k)+wijk*si(k,jj1,jj2,jj3)
+                        END DO
+                    END DO
+                  END DO
+               END DO
+               Do k=1,nb
+                  swsi(k)=swsi(k)/sw(k)
+               END DO
+               DO k=1,nb
+                  siest(k,i1,i2,i3)=swsi(k)
+                  vari(k)=sw(k)*sw(k)/sw2(k)
+                  varinv(k,i1,i2,i3)=vari(k)
+               END DO
+C               if(i1.eq.20.and.i2.eq.20.and.i3.eq.21) THEN
+C                     call dblepr("oibd",4,oibd,nb)
+C                     call dblepr("sw(k)",5,sw,nb)
+C                     call dblepr("swsi(k)",7,swsi,nb)
+C               END IF
+               call dslvdti0(swsi,nb,btb,vari,th0n(i1,i2,i3),
+     1                          Dn(1,i1,i2,i3),F,niter,eps,rss)
+               call eigen3(Dn(1,i1,i2,i3),ew,ev,ierr)
+               IF(ew(1).lt.0.d0) call dblepr("C0",2,ew,3)
+               mew=(ew(1)+ew(2)+ew(3))/3.d0
+               z1=ew(1)-mew
+               z2=ew(2)-mew
+               z3=ew(3)-mew
+               z=3.d0*(z1*z1+z2*z2+z3*z3)
+               z1=ew(1)
+               z2=ew(2)
+               z3=ew(3)
+               mew=2.d0*(z1*z1+z2*z2+z3*z3)
+               if(mew.le.eps*eps) mew=1.d0
+               ani(i1,i2,i3)=sqrt(z/mew)
+               det(i1,i2,i3)=ew(1)*ew(2)*ew(3)
+               DO k=1,3
+                  andir(k,i1,i2,i3)=ev(k,3)
+               END DO
+               call rchkusr()
+            END DO
+         END DO
+      END DO
+      RETURN
+      END
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+C
+C   3D anisotropic smoothing of diffusion tensor data
+C   This version uses a modified orientation dependent statistical penalty
+C
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+      subroutine osmdti2(si,siest,varinv,sipred,nb,n1,n2,n3,mask,
+     1                  btb,sdcoef,th0,th0n,D,Dn,ani,andir,det,vol,
+     2                  niter,vext,lambda,tau,swsi,swsi2,sw,sw2,
+     3                  oibd,ojbd,F,vari,sig2bi,s0ind,eps)
+C
+C   si       -  observed diffusion weighted images
+C   nb       -  number of gradients (including zero gradients)
+C   n1,n2,n3 -  dimensions of data cube
+C   mask     -  logical: 1 for voxel inside region of interest
+C   btb      -  b^T%*%b obtained from matrix of gradients b
+C   sigma2   -  voxelwise varinviance estimates (data)
+C   th0      -  current estimate of mean s_0 values
+C   th0n     -  new  estimate of mean s_0 values (output)
+C   D        -  current estimate of tensor
+C   Dn       -  new estimate of tensor (output)
+C   ani      -  anisotropy index 
+C   dir      -  direction of main anisotropy 
+C   det      -  det(D)
+C   h        -  actual bandwidth
+C   niter    -  number of iterations for imbedded nl-regression
+C   zext     -   
+C   lambda   -  scale factor in the statistical penalty
+C   swsi     -  auxiliary for sum_j w_j si(j)
+C   F        -  auxiliary for function values in LSE
+C   eps      -  something small and positive
+      implicit logical (a-z)
+      integer n1,n2,n3,nb,si(nb,n1,n2,n3),siest(nb,n1,n2,n3),niter
+      real*8 btb(6,nb),swsi2(nb),th0(n1,n2,n3),
+     1       th0n(n1,n2,n3),D(6,n1,n2,n3),oibd(nb),ojbd(nb),
+     2       Dn(6,n1,n2,n3),sipred(nb,n1,n2,n3),varinv(nb,n1,n2,n3),
+     3       ani(n1,n2,n3),andir(3,n1,n2,n3),det(n1,n2,n3),h,
+     4       vext(3),lambda,tau,swsi(nb),F(nb),vari(nb),eps,rss,
+     5       vol,sw(nb),sw2(nb),sdcoef(4),sig2bi(nb)
+      logical mask(n1,n2,n3),s0ind(nb)
+      integer i1,j1,j1a,j1e,jj1,i2,j2,j2a,j2e,jj2,i3,j3,j3a,j3e,jj3,
+     1        ierr,k,l,center
+      real*8 wij,adist0,h2,ew(3),ev(3,3),rssj,la12,la13,laj12,laj13,
+     1       mew,z1,z2,z3,sij,z,Di(6),dtidisrg,minoibd,wijk,
+     2       th0i,rssi,h0,h1,zsd,up,low,zsd2,meanni,taui
+      integer nselect
+      external adist0,dtidisrg
+      logical aws
+      aws=lambda.lt.1e20
+      h1=exp(log(vol*vext(1)*vext(2)*vext(3))/3.d0)
+      h0=exp(log(vol*vext(1)*vext(2)*vext(3))/3.d0)/1.4
+C  first fill predicted 
+      low=sdcoef(1)+sdcoef(3)*sdcoef(2)
+      up=sdcoef(1)+sdcoef(4)*sdcoef(2)
+      DO i1=1,n1
+         DO i2=1,n2
+            DO i3=1,n3
+               call sihat(th0(i1,i2,i3),D(1,i1,i2,i3),btb,
+     1                    sipred(1,i1,i2,i3),nb)
+            END DO
+         END DO
+      END DO
+C  now anisotropic smoothing 
+      DO i1=1,n1
+         DO i2=1,n2
+            DO i3=1,n3
+               if(.not.mask(i1,i2,i3)) CYCLE
+
+               DO k=1,nb
+                  z=siest(k,i1,i2,i3)
+                  zsd=sdcoef(1)+z*sdcoef(2)
+                  if(z.lt.sdcoef(3)) zsd=low
+                  if(z.gt.sdcoef(4)) zsd=up
+                  sig2bi(k)=zsd*zsd
+                  vari(k)=varinv(k,i1,i2,i3)
+               END DO
+               rssi = dtidisrg(siest(1,i1,i2,i3),
+     1                         sipred(1,i1,i2,i3),vari,nb)
+               DO k=1,nb
+                  sw(k)=0.d0
+                  sw2(k)=0.d0
+                  swsi(k)=0.d0
+                  swsi2(k)=0.d0
+               END DO
+               th0i=th0(i1,i2,i3)
+               th0n(i1,i2,i3)=th0i
+C    used as initial values
+               IF(ew(1).lt.0.d0) call dblepr("C0",2,ew,3)
+               DO k=1,6
+                  Di(k)=D(k,i1,i2,i3)
+                  Dn(k,i1,i2,i3)=Di(k)
+C    used as initial values
+               END DO
+               call eigen3(Di,ew,ev,ierr)
+C produces largest EW in last position
+               la12 = (ew(2)-ew(3))/ew(3)
+               la13 = (ew(1)-ew(3))/ew(3)
+C   now get bandwidth such that the ellopsoid has specified volume
+               call gethani0(h0,h1,vol,vext,1.d-2,h)
+               h2=h*h
+C   create needed estimates of s_i
+               nselect=0
+               call rangex0(h,j1a,j1e,vext)
+               call oriscor2(la12,la13,ev,nb,btb,oibd)
+C               call oriscore(la12,la13,ev,nb,btb,oibd)
+               meanni=0.d0
+               minoibd=-1.d0
+               l=0
+               DO k=1,nb
+                  if(s0ind(k)) CYCLE
+                  meanni=meanni+vari(k)*sig2bi(k)
+                  minoibd=max(minoibd,oibd(k))
+                  l=l+1
+               END DO
+               meanni=meanni/l
+C               meanni=sqrt(meanni/l)
+C               meanni=exp(log(meanni/l)/3.d0)
+C               taui=ani(i1,i2,i3)/tau
+               taui=1.d0/tau
+               DO k=1,nb
+                  if(s0ind(k)) THEN
+                     oibd(k)=1.d0
+                  ELSE
+C                     oibd(k)=exp((oibd(k)-minoibd)*meanni*taui)
+C                     oibd(k)=exp((oibd(k)-minoibd)*taui)
+                     oibd(k)=exp(oibd(k)*meanni*taui)
+                  END IF
+               END DO
+               DO j1=j1a,j1e
+                  jj1=i1+j1
+                  if(jj1.le.0.or.jj1.gt.n1) CYCLE
+                  call rangey0(j1,h,j2a,j2e,vext)
+                  DO j2=j2a,j2e
+                     jj2=i2+j2
+                     if(jj2.le.0.or.jj2.gt.n2) CYCLE
+                     call rangez0(j1,j2,h,j3a,j3e,vext)
+                     DO j3=j3a,j3e
+                        jj3=i3+j3
+                        if(jj3.le.0.or.jj3.gt.n3) CYCLE
+                        if(.not.mask(jj1,jj2,jj3)) CYCLE
+                        wij=adist0(j1,j2,j3,vext)
+C     triangular location kernel
+                        if(wij.ge.h2) CYCLE
+                        center=abs(i1-jj1)+abs(i2-jj2)+abs(i3-jj3)
+                        wij = (1.d0 - wij/h2)
+                        IF(aws) THEN
+                           rssj = dtidisrg(siest(1,i1,i2,i3),
+     1                               sipred(1,jj1,jj2,jj3),vari,nb)
+                           sij = max(0.d0,rssj-rssi)/lambda
+                           if(center.eq.0) sij=0.d0
+                           if(sij.gt.1.d0) CYCLE
+C  use Plateau kernel
+                           if(sij.gt.0.5d0) THEN
+                              wij=wij*2.d0*(1.d0-sij)
+                           END IF
+                           call eigen3(D(1,jj1,jj2,jj3),ew,ev,ierr)
+C produces largest EW in last position
+                           laj12 = (ew(2)-ew(3))/ew(3)
+                           laj13 = (ew(1)-ew(3))/ew(3)
+                           call oriscor2(laj12,laj13,ev,nb,btb,ojbd)
+                        END IF
+                        DO k=1,nb
+                           if(center.eq.0) THEN
+                              wijk=1.d0
+                           ELSE 
+                             IF(s0ind(k)) THEN
+                                wijk=0.d0
+                             ELSE
+                             wijk=wij*oibd(k)*exp(ojbd(k)*meanni*taui)
+C                             wijk=wijk*min(1.d0,laj12*laj12/la12*la12)
+C  only use information from voxel that have "more" directional information
+                             END IF
+                           END IF
+                           IF(wijk.gt.0.d0) THEN
+                              z=si(k,jj1,jj2,jj3)
+                              zsd=sdcoef(1)+z*sdcoef(2)
+                              if(z.lt.sdcoef(3)) zsd=low
+                              if(z.gt.sdcoef(4)) zsd=up
+                              zsd2=zsd*zsd
+                              wijk=wijk/zsd2
+                              sw(k)=sw(k)+wijk
+                              sw2(k)=sw2(k)+wijk*wijk*zsd2
+                              swsi(k)=swsi(k)+wijk*si(k,jj1,jj2,jj3)
+                           END IF
                         END DO
                     END DO
                   END DO

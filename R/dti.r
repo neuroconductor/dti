@@ -707,6 +707,7 @@ if(ls0ind>1) {
    dim(s0) <- c(prod(object@ddim),ls0ind)
    s0mean <- s0%*%rep(1/ls0ind,ls0ind)
    A1 <- quantile(s0mean[s0mean>0],.98)
+   dim(s0mean) <- object@ddim
 } else {
    A1 <- quantile(s0[s0>0],.98)
 }
