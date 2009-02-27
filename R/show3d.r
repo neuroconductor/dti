@@ -120,11 +120,15 @@ setMethod("show3d","dtiTensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL
                     as.integer(polyeder$nv),
                     as.double(tens),
                     as.integer(n),
-                    as.double(scale),
+                    as.double(scale/2),
                     radii=double(n*polyeder$nv),
                     DUPL=FALSE,
                     PACKAGE="dti")$radii
-  if(!add) rgl.open()
+  if(!add) {
+     rgl.open()
+     par3d(...)
+     rgl.bg(color=bgcolor)
+     }
   show3d.odf(radii,polyeder,centers=tmean,colors=colorvalues,alpha=fa)
   invisible(rgl.cur())
 })
