@@ -224,6 +224,7 @@ medinria2tensor <- function(filename) {
                 method = "unknown",
                 hmax  = 1,
                 th0   = array(0,dim=data$dim[1:3]),
+                gradient = matrix(0,1,1),
                 btb   = matrix(0,1,1),
                 ngrad = as.integer(0), # = dim(btb)[2]
                 s0ind = as.integer(0),

@@ -12,6 +12,7 @@
 \section{Slots}{
 \describe{
     \item{ \code{.Data}: }{ Object of class \code{"list"}, usually empty. }
+    \item{ \code{gradient}: }{ Object of class \code{"matrix"}, matrix of dimension \code{c(3,ngrad)} containing gradient directions. }
     \item{ \code{btb}: }{ Object of class \code{"matrix"}, matrix of dimension \code{c(6,ngrad)} obtained from gradient directions. }
     \item{ \code{ngrad}: }{ Object of class \code{"integer"}, number of gradients (including zero gradients). }
     \item{ \code{s0ind}: }{ Object of class \code{"integer"}, index of zero gradients within the sequence \code{1:ngrad}. }

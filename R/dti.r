@@ -485,13 +485,13 @@ dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=
   ddim <- as.integer(dim(si)[1:3])
 
   cat("Create auxiliary statistics",date(), " \n")
-  btb <- create.designmatrix.dti(gradient)
   rind <- replind(gradient)
   
   invisible(new("dtiData",
                 call = args,
                 si     = si,
-                btb    = btb,
+                gradient = gradient,
+                btb    = create.designmatrix.dti(gradient),
                 ngrad  = ngrad, # = dim(btb)[2]
                 s0ind  = s0ind, # indices of S_0 images
                 replind = rind,
@@ -656,13 +656,13 @@ readDWIdata <- function(gradient, dirlist, format, nslice, order = NULL,
   ddim <- as.integer(dim(si)[1:3])
     
   cat("Create auxiliary statistics",date(), " \n")
-  btb <- create.designmatrix.dti(gradient)
   rind <- replind(gradient)
   
   invisible(new("dtiData",
                 call = args,
                 si     = si,
-                btb    = btb,
+                gradient = gradient,
+                btb    = create.designmatrix.dti(gradient),
                 ngrad  = ngrad, # = dim(btb)[2]
                 s0ind  = s0ind, # indices of S_0 images
                 replind = rind,
@@ -946,6 +946,7 @@ setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="r
                 bw = bw, 
                 mask = mask,
                 hmax = 1,
+                gradient = object@gradient,
                 btb   = object@btb,
                 ngrad = object@ngrad, # = dim(btb)[2]
                 s0ind = object@s0ind,
@@ -1021,6 +1022,7 @@ function(object, which) {
                 md = array(z$md,object@ddim),
                 andir = array(z$andir,c(3,object@ddim)),
                 bary = array(z$bary,c(3,object@ddim)),
+                gradient = object@gradient,
                 btb   = object@btb,
                 ngrad = object@ngrad, # = dim(btb)[2]
                 s0ind = object@s0ind,
@@ -1050,6 +1052,7 @@ setMethod("[","dtiData",function(x, i, j, k, drop=FALSE){
   invisible(new("dtiData",
                 call   = args,
                 si     = x@si[i,j,k,,drop=FALSE],
+                gradient = x@gradient,
                 btb    = x@btb,
                 ngrad  = x@ngrad,
                 s0ind  = x@s0ind,
@@ -1096,6 +1099,7 @@ setMethod("[","dtiTensor",function(x, i, j, k, drop=FALSE){
                 bw = x@bw,
                 mask = x@mask[i,j,k,drop=FALSE],
                 hmax = x@hmax,
+                gradient = x@gradient,
                 btb   = x@btb,
                 ngrad = x@ngrad,
                 s0ind = x@s0ind,
@@ -1132,6 +1136,7 @@ setMethod("[","dtiIndices",function(x, i, j, k, drop=FALSE){
                 md = x@md[i,j,k,drop=FALSE],
                 andir = x@andir[,i,j,k,drop=FALSE],
                 bary = x@bary[,i,j,k,drop=FALSE],
+                gradient = x@gradient,
                 btb   = x@btb,
                 ngrad = x@ngrad,
                 s0ind = x@s0ind,
@@ -1157,6 +1162,7 @@ setMethod("extract","dtiData",function(x, what="data", xind=TRUE, yind=TRUE, zin
   x <- x[xind,yind,zind]
 
   z <- list(NULL)
+  if("gradient" %in% what) z$gradient <- x@gradient
   if("btb" %in% what) z$btb <- x@btb
   if("s0" %in% what) z$S0 <- x@si[,,,x@s0ind]
   if("sb" %in% what) z$Si <- x@si[,,,-x@s0ind]
@@ -1322,103 +1328,4 @@ setMethod("show3d","dtiIndices",function(obj, index="FA", nx=NULL, ny=NULL, nz=N
   invisible(rgl.cur())
 })
 
-setMethod("show3d","dtiTensor",function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,method=1,level=0,scale=1,bgcolor="black",add=FALSE,subdivide=2,smooth=TRUE,maxobjects=729,...){
-  if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
-  if(is.null(nx)) nx <- obj@ddim[1]
-  if(is.null(ny)) ny <- obj@ddim[2]
-  if(is.null(nz)) nz <- obj@ddim[3]
-  n <- nx*ny*nz
-  if(is.null(center)) center <- floor(obj@ddim/2)
-  if(nx*ny*nz>maxobjects) {
-  cat("size of data cube",n," exceeds maximum of",maxobjects,"\n")
-  if(nz > maxobjects^(1/3)) n3 <- 1 else n3 <- nz
-    n1 <- n2 <- floor(sqrt(maxobjects/n3))
-  } else {
-    n1 <- nx
-    n2 <- ny
-    n3 <- nz
-  }
-  xind <- (center[1]-(n1%/%2)):(center[1]+(n1%/%2))
-  yind <- (center[2]-(n2%/%2)):(center[2]+(n2%/%2))
-  zind <- (center[3]-(n3%/%2)):(center[3]+(n3%/%2))
-  xind <- xind[xind>0&xind<=obj@ddim[1]]
-  yind <- yind[yind>0&yind<=obj@ddim[2]]
-  zind <- zind[zind>0&zind<=obj@ddim[3]]
-  n1 <- length(xind)
-  n2 <- length(yind)
-  n3 <- length(zind)
-  n <- n1*n2*n3
-  if(n==0) stop("Empty cube specified")
-  cat(" selected cube specified by \n xind=",min(xind),":",max(xind),
-      "\n yind=",min(yind),":",max(yind),
-      "\n zind=",min(zind),":",max(zind),"\n")
-  obj <- obj[xind,yind,zind]
-  vext <- obj@voxelext
-  center <- center*vext
-  D <- obj@D
-  D <- D/max(D)
-  dim(D) <- c(6,n)
-  indpos <- (1:n)[D[1,]*D[4,]*D[6,]>0]
-  tens <- D[c(1,2,3,2,4,5,3,5,6),indpos]
-  tmean <- array(0,c(3,n1,n2,n3))
-  tmean[1,,,] <- xind*vext[1]
-  tmean[2,,,] <- outer(rep(1,n1),yind)*vext[2]
-  tmean[3,,,] <- outer(rep(1,n1),outer(rep(1,n2),zind))*vext[3]
-  dim(tmean) <- c(3,n)
-  tmean <- tmean[,indpos]
-  z <- extract(obj,what=c("andir","fa"))
-  maxev <- extract(obj,what="evalues")$evalues[3,,,]
-  maxev <- maxev[indpos]
-  andir <- z$andir
-  dim(andir) <- c(3,n1*n2*n3)
-  andir <- andir[,indpos]
-  fa <- z$fa[indpos]
-  mask <- obj@mask[indpos]
-  n <- length(indpos)
-  if(method==1) {
-    andir <- abs(andir)
-  } else {
-    ind<-andir[1,]<0
-    andir[,ind] <- - andir[,ind]
-    andir[2,] <- (1+andir[2,])/2
-    andir[3,] <- (1+andir[3,])/2
-  }
-  colorvalues <- rgb(andir[1,],andir[2,],andir[3,])
-  dim(tens) <- c(3,3,n)
-  if(level>0){
-    indpos <- (1:n)[(fa>level)&mask]
-    tens <- tens[,,indpos]
-    tmean <- tmean[,indpos]
-    colorvalues <- colorvalues[indpos]
-    fa <- fa[indpos]
-    maxev <- maxev[indpos]
-    n <- length(indpos)
-  }
-  if(!add) {
-    open3d()
-    par3d(...)
-    rgl.bg(color=bgcolor)
-  }
-  sphere <- subdivision3d(cube3d(smooth=smooth), subdivide)
-  norm <- sqrt( sphere$vb[1,]^2 + sphere$vb[2,]^2 + sphere$vb[3,]^2 )
-  for (i in 1:3) sphere$vb[i,] <- sphere$vb[i,]/norm
-  sphere$vb[4,] <- 1
-  sphere$normals <- sphere$vb
-  tens <- (0.5*scale/obj@scale)*tens
-  par3d(skipRedraw=TRUE)
-  cat("Start creating rgl-object\n Progress (out of",n,"):")
-  for(i in 1:n) {
-    if((i%/%100)*100==i) cat(i," ")
-    if(i==n) par3d(skipRedraw=FALSE)
-    plot3d( ell(sphere, tens[,,i], center=tmean[,i]), color=colorvalues[i], alpha=fa[i], add = TRUE, ...)
-  }
-  cat("\n")
-  invisible(rgl.cur())
-})
-
-ell <- function (sphere, cov, center = c(0, 0, 0)){
-  # Adapted from package rgl: 3D visualization device system (OpenGL)
-  # Authors: Daniel Adler, Duncan Murdoch
-  translate3d(rotate3d( sphere, matrix=chol(cov)), center[1], center[2], center[3])
-}
 

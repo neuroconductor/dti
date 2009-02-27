@@ -1,8 +1,9 @@
 setClass("dti",
          representation(.Data = "list",
                         call = "list",
+                        gradient = "matrix",
                         btb    = "matrix",
-                        ngrad  = "integer", # = dim(btb)[2]
+                        ngrad  = "integer", # = dim(btb)[2] = dim(gradient)[2]
                         s0ind  = "integer", # indices of s0 images
                         replind = "integer", # replications in gradient design
                         ddim   = "integer",

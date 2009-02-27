@@ -300,6 +300,7 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
                 scorr = scorr,
                 bw = h0,
                 mask = mask,
+                gradient = object@gradient,
                 btb   = btb,
                 hmax  = hmax,
                 ngrad = ngrad, # = dim(btb)[2]
@@ -319,6 +320,7 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
                 call = args,
                 si = aperm(array(as.integer(z$sihat),dimsi),c(2:4,1)),
                 sdcoef = sdcoef,
+                gradient = object@gradient,
                 btb    = btb,
                 ngrad  = ngrad, # = dim(btb)[2]
                 s0ind  = object@s0ind, # indices of s0 images
