@@ -1,11 +1,12 @@
 Package: dti
 Version: 0.6-2
-Date: 2008-12-04
+Date: 2009-3-6
 Title: DTI Analysis
 Author: Karsten Tabelow <tabelow@wias-berlin.de>
         Joerg Polzehl <polzehl@wias-berlin.de>
 Maintainer: Karsten Tabelow <tabelow@wias-berlin.de>
 Depends: R (>= 2.5.0), methods, adimpro, fmri, rgl
+Suggests: gsl
 Description: Diffusion Weighted Imaging is a Magnetic Resonance Imaging
              modality, that measures diffusion of water in tissues like the human brain.
              The package contains R-functions to process diffusion-weighted data in the 

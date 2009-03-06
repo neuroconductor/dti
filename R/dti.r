@@ -1062,6 +1062,7 @@ setMethod("[","dtiData",function(x, i, j, k, drop=FALSE){
                 xind   = x@xind[i],
                 yind   = x@yind[j],
                 zind   = x@zind[k],
+                sdcoef = x@sdcoef,
                 level  = x@level,
                 voxelext = x@voxelext,
                 orientation = x@orientation,

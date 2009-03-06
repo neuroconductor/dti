@@ -10,29 +10,28 @@
   The function provides 3D visualization of \code{"dtiTensor"} and \code{"dtiIndices"} objects using the \code{"rgl"}-package. Functionality of the rgl-package allows to rotate and zoom the displayed object.
 }
 \usage{
-  \S4method{show3d}{dtiTensor}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, method=1, level=0, scale=1, bgcolor="black", add=FALSE, subdivide=2, smooth=TRUE, maxobjects=729, what="ADC",\dots)
+  \S4method{show3d}{dtiData}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, scale=1, bgcolor="black", add=FALSE, maxobjects=729,minalpha=1,\dots)
+  \S4method{show3d}{dtiTensor}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, method=1, level=0, scale=1, bgcolor="black", add=FALSE, subdivide=2, maxobjects=729, what="ADC",\dots)
   \S4method{show3d}{dtiIndices}(obj, index="FA", nx=NULL, ny=NULL, nz=NULL, center=NULL, method=1, level=0, bgcolor="black", add=FALSE, lwd=1, \dots)
 }
 \arguments{
-  \item{obj}{ An object of class \code{dtiTensor} or \code{dtiIndices} }
+\item{obj}{ An object of class \code{dtiTensor} or \code{dtiIndices} }
 \item{nx}{Number of voxel in x-direction}
 \item{ny}{Number of voxel in y-direction}
 \item{nz}{Number of slices}
-\item{center}{Vector of length 3 specifying the center of the data cube (class \code{dtiTensor}) or center of display (class \code{dtiIndices})}
-\item{method}{\code{method==1} and \code{method==2} specify two different color schemes for 
-    directional FA-maps.}
-\item{level}{Minimal FA value of tensors.}
-\item{scale}{Scale factor for the size of ellipsoids}
+\item{center}{Vector of length 3 specifying the center of the data cube (class \code{dtiData} or \code{dtiTensor}) or center of display (class \code{dtiIndices})}
+\item{scale}{Scale factor for the size of polyeders \code{dtiData} and ellipsoids (\code{dtiTensor})}
 \item{bgcolor}{Backgroundcolor for rgl-display}
 \item{add}{If true information is added to the current device, otherwise a new device is opened.}
+\item{maxobjects}{Maximal size of data cube (in voxel) to display}
+\item{minalpha}{Minimum value for transparency.}
+\item{method}{\code{method==1} and \code{method==2} specify two different color schemes for directional FA-maps.}
+\item{level}{Minimal FA value of tensors.}
 \item{subdivide}{Level of subdivisions for meshing, level \code{0:4} correspond to use of
 \code{c(12,42,162,642,2562)} vertices per tensor, respectively.}
-\item{smooth}{Use smooted surfaces, see package rgl.}
-\item{maxobjects}{Maximal size of data cube (in voxel) to display}
 \item{what}{For dtiTensor-objects either \code{"tensor"} for visualization using ellipsoids or \code{"ADC"} for Apparent Diffusion Coefficients.}
 \item{index}{Eiter \code{"FA"} for fractional anisotropy index or 
 \code{"GA"} for geodesic anisotropy index.}
-\item{lwd}{Line width to use.}
 \item{\dots}{Additional parameters passed to function \code{rgl.par} from the rgl-package.}
 }
 \section{Methods}{

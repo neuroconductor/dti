@@ -263,3 +263,26 @@ dim(mask1) <- dm
 mask1
 }
 
+getsphericalharmonics <- function(order,theta,phi){
+require(gsl)
+kmax <- 2*order
+if(length(theta)!=length(phi)) stop("need same length of theta and phi")
+kseq <- seq(0,kmax,2)
+n <- length(phi)
+values <- matrix(0,2*order^2+3*order+1,n)
+for(k in kseq){
+mseq <- seq(-k,k,1)
+for(m in mseq){
+ind <- (k^2+k+2)/2+m
+z <- legendre_sphPlm(k,abs(m),cos(theta))
+if(m < 0){
+z <- sqrt(2)*z*cos(phi)*(-1)^m
+} 
+if(m > 0){
+z <- sqrt(2)*z*sin(phi)
+}
+values[(k^2+k+2)/2+m,] <- z
+}
+}
+values
+}
