@@ -289,7 +289,7 @@ if (view == "sagittal") {
     invisible(img)
 }
 )
-setMethod("plot", "dti", function(x, y, ...) cat("No implementation for class dti\n"))
+setMethod("plot", "dwi", function(x, y, ...) cat("No implementation for class dwi\n"))
 
 setMethod("plot", "dtiIndices", 
 function(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=TRUE, density=FALSE, contrast.enh=1,what="FA",xind=NULL,yind=NULL,zind=NULL, mar=c(3,3,3,.3),mgp=c(2,1,0), ...) {
@@ -683,9 +683,9 @@ readDWIdata <- function(gradient, dirlist, format, nslice, order = NULL,
 #
 
 
-dti <- function(object,  ...) cat("This object has class",class(object),"\n")
-setGeneric("dti", function(object,  ...) 
-standardGeneric("dti"))
+dwi <- function(object,  ...) cat("This object has class",class(object),"\n")
+setGeneric("dwi", function(object,  ...) 
+standardGeneric("dwi"))
 
 
 sdpar <- function(object,  ...) cat("No method defined for class:",class(object),"\n")
@@ -966,6 +966,134 @@ setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="r
             )
 })
 
+dwiQball <- function(object,  ...) cat("No DWI Q-ball calculation defined for this class:",class(object),"\n")
+
+setGeneric("dwiQball", function(object,  ...) standardGeneric("dwiQball"))
+
+setMethod("dwiQball","dtiData",function(object,method="linear",order=0,lambda=0){
+  args <- sys.call(-1)
+  args <- c(object@call,args)
+  ngrad <- object@ngrad
+  ddim <- object@ddim
+  s0ind <- object@s0ind
+  ns0 <- length(s0ind)
+  sdcoef <- object@sdcoef
+  if(all(sdcoef==0)) {
+    cat("No parameters for model of error standard deviation found\n estimating these parameters\n You may prefer to run sdpar before calling dwiQball")
+    sdcoef <- sdpar(object,interactive=FALSE)@sdcoef
+  }
+  z <- .Fortran("outlier",
+                as.integer(object@si),
+                as.integer(prod(ddim)),
+                as.integer(ngrad),
+                as.logical((1:ngrad)%in%s0ind),
+                as.integer(ns0),
+                si=integer(prod(ddim)*ngrad),
+                index=integer(prod(ddim)),
+                lindex=integer(1),
+                DUPL=FALSE,
+                PACKAGE="dti")[c("si","index","lindex")]
+  si <- array(z$si,c(ddim,ngrad))
+  index <- if(z$lindex>0) z$index[1:z$lindex] else numeric(0)
+  rm(z)
+  gc()
+  if(method=="linear"){
+     ngrad0 <- ngrad - length(s0ind)
+     s0 <- si[,,,s0ind]
+     si <- si[,,,-s0ind]
+     if(ns0>1) {
+         dim(s0) <- c(prod(ddim),ns0)
+         s0 <- s0 %*% rep(1/ns0,ns0)
+         dim(s0) <- ddim
+     }
+     mask <- s0 > object@level
+     mask <- connect.mask(mask)
+     dim(s0) <- dim(si) <- NULL
+     ttt <- -log(si/s0)
+     ttt[is.na(ttt)] <- 0
+     ttt[(ttt == Inf)] <- 0
+     ttt[(ttt == -Inf)] <- 0
+     dim(ttt) <- c(prod(ddim),ngrad0)
+     ttt <- t(ttt)
+     cat("Data transformation completed ",date(),"\n")
+
+     z <- design.sph(order,object@gradient[,-s0ind],lambda)
+     sphcoef <- z$matrix%*% ttt
+     cat("Estimated coefficients for Q-ball (order=",order,") ",date(),"\n")
+
+     res <- ttt - t(z$design) %*% sphcoef
+     rss <- res[1,]^2
+     for(i in 2:ngrad0) rss <- rss + res[i,]^2
+     dim(rss) <- ddim
+     sigma2 <- rss/(ngrad0-6)
+     sphcoef[,!mask] <- 0
+     dim(sphcoef) <- c((order+1)*(order+2)/2,ddim)
+     dim(res) <- c(ngrad0,ddim)
+     cat("Variance estimates generated ",date(),"\n")
+     th0 <- array(s0,object@ddim)
+     th0[!mask] <- 0
+     gc()
+  } else {
+#  method == "nonlinear" 
+    stop("nonlinear Q-ball model is not yet implemented")
+  }
+  lags <- c(5,5,3)
+  scorr <- .Fortran("mcorr",as.double(res),
+                   as.logical(mask),
+                   as.integer(ddim[1]),
+                   as.integer(ddim[2]),
+                   as.integer(ddim[3]),
+                   as.integer(ngrad0),
+                   double(prod(ddim)),
+                   double(prod(ddim)),
+                   scorr = double(prod(lags)),
+                   as.integer(lags[1]),
+                   as.integer(lags[2]),
+                   as.integer(lags[3]),
+                   PACKAGE="dti",DUP=FALSE)$scorr
+  dim(scorr) <- lags
+  scorr[is.na(scorr)] <- 0
+  cat("estimated spatial correlations",date(),"\n")
+  cat("first order  correlation in x-direction",signif(scorr[2,1,1],3),"\n")
+  cat("first order  correlation in y-direction",signif(scorr[1,2,1],3),"\n")
+  cat("first order  correlation in z-direction",signif(scorr[1,1,2],3),"\n")
+
+  scorr[is.na(scorr)] <- 0
+  bw <- optim(c(2,2,2),corrrisk,method="L-BFGS-B",lower=c(.2,.2,.2),
+  upper=c(3,3,3),lag=lags,data=scorr)$par
+  bw[bw <= .25] <- 0
+  cat("estimated corresponding bandwidths",date(),"\n")
+  invisible(new("dwiQball",
+                call  = args,
+                order = as.integer(order),
+                lambda = lambda,
+                sphcoef = sphcoef,
+                th0   = th0,
+                sigma = sigma2,
+                scorr = scorr, 
+                bw = bw, 
+                mask = mask,
+                hmax = 1,
+                gradient = object@gradient,
+                btb   = object@btb,
+                ngrad = object@ngrad, # = dim(btb)[2]
+                s0ind = object@s0ind,
+                replind = object@replind,
+                ddim  = object@ddim,
+                ddim0 = object@ddim0,
+                xind  = object@xind,
+                yind  = object@yind,
+                zind  = object@zind,
+                voxelext = object@voxelext,
+                level = object@level,
+                orientation = object@orientation,
+                source = object@source,
+                outlier = index,
+                scale = 0.5,
+                method = method)
+            )
+})
+
 #
 #
 #
@@ -1154,6 +1282,58 @@ setMethod("[","dtiIndices",function(x, i, j, k, drop=FALSE){
             )
 })
 
+setMethod("[","dwiQball",function(x, i, j, k, drop=FALSE){
+  args <- sys.call(-1)
+  args <- c(x@call,args)
+  if (missing(i)) i <- TRUE
+  if (missing(j)) j <- TRUE
+  if (missing(k)) k <- TRUE
+  if (is.logical(i)) ddimi <- x@ddim[1] else ddimi <- length(i)
+  if (is.logical(j)) ddimj <- x@ddim[2] else ddimj <- length(j)
+  if (is.logical(k)) ddimk <- x@ddim[3] else ddimk <- length(k)
+
+  ind <- 1:prod(x@ddim)
+  if(length(x@outlier)>0){
+    ind <- rep(FALSE,prod(x@ddim))
+    ind[x@outlier] <- TRUE
+    dim(ind) <- x@ddim
+    ind <- ind[i,j,k]
+    outlier <- (1:length(ind))[ind]
+  } else {
+    outlier <- numeric(0)
+  }
+
+  invisible(new("dwiQball",
+                call  = args, 
+                order = x@order,
+                lambda = x@lambda,
+                sphcoef = x@sphcoef[,i,j,k,drop=FALSE],
+                th0   = x@th0[i,j,k,drop=FALSE],
+                sigma = if(x@method=="linear") x@sigma[i,j,k,drop=FALSE] else array(0,c(1,1,1)),
+                scorr = x@scorr, 
+                bw = x@bw,
+                mask = x@mask[i,j,k,drop=FALSE],
+                hmax = x@hmax,
+                gradient = x@gradient,
+                btb   = x@btb,
+                ngrad = x@ngrad,
+                s0ind = x@s0ind,
+                replind = x@replind,
+                ddim  = c(ddimi,ddimj,ddimk),
+                ddim0 = x@ddim0,
+                xind  = x@xind[i],
+                yind  = x@yind[j],
+                zind  = x@zind[k],
+                voxelext = x@voxelext,
+                level = x@level,
+                orientation = x@orientation,
+                outlier = outlier,
+                scale = x@scale,
+                source = x@source,
+                method = x@method)
+            )
+})
+
 extract <- function(x, ...) cat("Data extraction not defined for this class:",class(x),"\n")
 
 setGeneric("extract", function(x, ...) standardGeneric("extract"))
@@ -1267,6 +1447,27 @@ setMethod("extract","dtiIndices",function(x, what=c("fa","andir"), xind=TRUE, yi
   if("md" %in% what) z$md <- x@md
   if("andir" %in% what) z$andir <- x@andir
   if("bary" %in% what) z$bary <- x@bary
+  invisible(z)
+})
+
+setMethod("extract","dwiQball",function(x, what=c("sphcoef"), xind=TRUE, yind=TRUE, zind=TRUE){
+  what <- tolower(what) 
+
+  x <- x[xind,yind,zind]
+  n1 <- x@ddim[1]
+  n2 <- x@ddim[2]
+  n3 <- x@ddim[3]
+
+  z <- list(NULL)
+  if("sphcoef" %in% what) z$sphcoef <- x@sphcoef
+  if("s0" %in% what) z$s0 <- x@th0
+  if("mask" %in% what) z$mask <- x@mask
+  if("outlier" %in% what) {
+    ind <- 1:prod(x@ddim)
+    ind <- rep(FALSE,prod(x@ddim))
+    if(length(x@outlier)>0) ind[x@outlier] <- TRUE
+    dim(ind) <- x@ddim
+  }
   invisible(z)
 })
 

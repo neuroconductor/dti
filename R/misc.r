@@ -264,12 +264,19 @@ mask1
 }
 
 getsphericalharmonics <- function(order,theta,phi){
+#
+#   compute spherical harmonics
+#
 require(gsl)
-kmax <- 2*order
+order <- as.integer(max(0,order))
+if(order%%2==1){
+warning("maximum order needs to be even, increase order by one")
+order <- order+1
+} 
 if(length(theta)!=length(phi)) stop("need same length of theta and phi")
-kseq <- seq(0,kmax,2)
+kseq <- seq(0,order,2)
 n <- length(phi)
-values <- matrix(0,2*order^2+3*order+1,n)
+values <- matrix(0,(order+1)*(order+2)/2,n)
 for(k in kseq){
 mseq <- seq(-k,k,1)
 for(m in mseq){
@@ -286,3 +293,42 @@ values[(k^2+k+2)/2+m,] <- z
 }
 values
 }
+
+sphcoord <- function(ccoord){
+#
+#  transform cartesian into sherical coordinates
+#
+ccoord <- ccoord/sqrt(sum(ccoord^2))
+if(ccoord[1] < 0 ) ccoord <- -ccoord 
+if(abs(ccoord[3]) < 1-1e-6) {
+theta <- acos(ccoord[3])
+phi <- asin(min(1,max(-1,ccoord[2]/sqrt(1-ccoord[3]^2))))
+} else {
+theta <- 0
+phi <- 0
+}
+c(theta,phi)
+}
+
+design.sph <- function(order,gradients,lambda,smatrix=TRUE){
+#
+#  compute design matrix for Q-ball
+#
+order <- as.integer(max(0,order))
+if(order%%2==1){
+warning("maximum order needs to be even, increase order by one")
+order <- order+1
+} 
+n <- dim(gradients)[2]
+theta <- phi <- numeric(n)
+for( i in 1:n){
+angles <- sphcoord(gradients[,i])
+theta[i] <- angles[1]
+phi[i] <-  angles[2]
+}
+sphharmonics <- getsphericalharmonics(order,theta,phi)
+L <- lambda*diag(rep(seq(0,order,2),2*seq(0,order,2)+1))
+ttt <- if(smatrix) solve(sphharmonics%*%t(sphharmonics)+L)%*%sphharmonics  else  NULL
+ list(design=sphharmonics,matrix=ttt)
+}
+

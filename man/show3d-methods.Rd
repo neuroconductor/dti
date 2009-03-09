@@ -3,8 +3,10 @@
 \alias{show3d}
 \alias{show3d-methods}
 \alias{show3d,ANY-method}
+\alias{show3d,dtiData-method}
 \alias{show3d,dtiIndices-method}
 \alias{show3d,dtiTensor-method}
+\alias{show3d,dwiQball-method}
 \title{ Methods for Function `show3d' in Package `dti' }
 \description{
   The function provides 3D visualization of \code{"dtiTensor"} and \code{"dtiIndices"} objects using the \code{"rgl"}-package. Functionality of the rgl-package allows to rotate and zoom the displayed object.
@@ -39,6 +41,11 @@
 
   \item{obj = "ANY"}{ Returns a warning }
 
+  \item{obj = "dtiData"}{Empirical ADC's are visualized at the voxel centers. Color 
+  is determined by gradient directions, ADC values are reflected by both radial extend and
+  transparancy. The value of \code{maxobjects} limits the size of datacube and may be increased
+ on hardware with suitable graphics capabilities. }
+
   \item{obj = "dtiIndices"}{ Objects are visualized as a collection of line segments with location given by the voxel center, orientation and color determined by the main direction of inisotropy and length corresponding to either fractional or geodesic anisotropy as specified in \code{index}. 
 
   Displayed objects are restricted to voxel with an fractional (geodesic) anisotropy larger than \code{level}.}
@@ -47,6 +54,11 @@
   values, color is determined by the main direction of anisotropy using the colorsceme specified with \code{method}. The fractional anisotropy value is coded as transparency. The value of \code{maxobjects} limits the size of datacube and may be increased
  on hardware with suitable graphics capabilities. }
  
+  \item{obj = "dwiQball"}{Estimated ADC's are visualized at the voxel centers. Color 
+  is determined by directions, ADC values are reflected by both radial extend and
+  transparancy. The value of \code{maxobjects} limits the size of datacube and may be increased
+ on hardware with suitable graphics capabilities. }
+
   Displays can be closed using function \code{rgl.close}
 }
 }
