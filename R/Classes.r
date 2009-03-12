@@ -135,7 +135,7 @@ setClass("dtiIndices",
         )
 
 setClass("dwiQball",
-         representation(method = "character",
+         representation(what = "character",
                         order  = "integer",
                         lambda = "numeric",
                         sphcoef = "array",
@@ -179,8 +179,8 @@ setClass("dwiQball",
             cat("invalid length of bw\n")
             return(invisible(FALSE))
           }
-          if (!(object@method %in% c("linear","nonlinear","unknown"))) {
-            cat("method should specify either linear or nonlinear or unknown\n")
+          if (!(object@what %in% c("Qball","ADC"))) {
+            cat("what should specify either Qball or ADC\n")
             return(invisible(FALSE))
           }
          }

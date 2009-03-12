@@ -12,9 +12,10 @@
   The function provides 3D visualization of \code{"dtiTensor"} and \code{"dtiIndices"} objects using the \code{"rgl"}-package. Functionality of the rgl-package allows to rotate and zoom the displayed object.
 }
 \usage{
-  \S4method{show3d}{dtiData}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, scale=1, bgcolor="black", add=FALSE, maxobjects=729,minalpha=1,\dots)
-  \S4method{show3d}{dtiTensor}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, method=1, level=0, scale=1, bgcolor="black", add=FALSE, subdivide=2, maxobjects=729, what="ADC",\dots)
-  \S4method{show3d}{dtiIndices}(obj, index="FA", nx=NULL, ny=NULL, nz=NULL, center=NULL, method=1, level=0, bgcolor="black", add=FALSE, lwd=1, \dots)
+  \S4method{show3d}{dtiData}(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,scale=.5,bgcolor="black",add=FALSE,maxobjects=729,what="ADC",minalpha=1,power=1,normalize=TRUE,box=FALSE,title=FALSE,\dots)
+  \S4method{show3d}{dtiTensor}(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,method=1,level=0,scale=.5,bgcolor="black",add=FALSE,subdivide=2,maxobjects=729,what="ADC",minalpha=.25,normalize=NULL,box=FALSE,title=FALSE,\dots)
+  \S4method{show3d}{dtiIndices}(obj, index="FA", nx=NULL, ny=NULL, nz=NULL, center=NULL, method=1, level=0, bgcolor="black", add=FALSE, lwd=1,box=FALSE,title=FALSE, \dots)
+  \S4method{show3d}{dwiQball}(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,scale=0.5,bgcolor="black",add=FALSE,subdivide=3,maxobjects=729,minalpha=1,power=1,normalize=TRUE,box=FALSE,title=FALSE, \dots)
 }
 \arguments{
 \item{obj}{ An object of class \code{dtiTensor} or \code{dtiIndices} }
@@ -31,10 +32,15 @@
 \item{level}{Minimal FA value of tensors.}
 \item{subdivide}{Level of subdivisions for meshing, level \code{0:4} correspond to use of
 \code{c(12,42,162,642,2562)} vertices per tensor, respectively.}
-\item{what}{For dtiTensor-objects either \code{"tensor"} for visualization using ellipsoids or \code{"ADC"} for Apparent Diffusion Coefficients.}
+\item{what}{For dtiTensor-objects either \code{"tensor"} for visualization using ellipsoids or \code{"ADC"} for Apparent Diffusion Coefficients. For dtiData-objects choices are either \code{"data"}  or \code{"ADC"}.}
+\item{lwd}{Linewidth for visualization of dtiIndices objects.}
 \item{index}{Eiter \code{"FA"} for fractional anisotropy index or 
 \code{"GA"} for geodesic anisotropy index.}
 \item{\dots}{Additional parameters passed to function \code{rgl.par} from the rgl-package.}
+\item{"power"}{}
+\item{"normalize"}{}
+\item{"title"}{}
+\item{"box"}{}
 }
 \section{Methods}{
 \describe{

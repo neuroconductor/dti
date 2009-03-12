@@ -304,7 +304,7 @@ theta <- atan2(sqrt(ccoord[2]^2+ccoord[1]^2),ccoord[3])
 c(theta,phi)
 }
 
-design.sph <- function(order,gradients,lambda,smatrix=TRUE){
+design.sph <- function(order,gradients,lambda,smatrix=TRUE,plzero=TRUE){
 #
 #  compute design matrix for Q-ball
 #
@@ -324,7 +324,7 @@ sphharmonics <- getsphericalharmonics(order,theta,phi)
 lord <- rep(seq(0,order,2),2*seq(0,order,2)+1)
 L <- lambda*diag(lord^2*(lord+1)^2)
 ttt <- if(smatrix) solve(sphharmonics%*%t(sphharmonics)+L)%*%sphharmonics  else  NULL
-if(smatrix) ttt <- plzero(order)%*%ttt
+if(smatrix&plzero) ttt <- plzero(order)%*%ttt
  list(design=sphharmonics,matrix=ttt,theta=theta,phi=phi)
 }
 

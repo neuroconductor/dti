@@ -65,6 +65,7 @@
   \code{\linkS4class{dtiData}}, 
   \code{\linkS4class{dtiTensor}}, 
   \code{\linkS4class{dtiIndices}}  
+  \code{\linkS4class{dwiQball}}
 }
 \keyword{ methods }
 \keyword{ manip }

@@ -2,7 +2,7 @@
 \docType{methods}
 \alias{plot-methods}
 \alias{plot,ANY-method}
-\alias{plot,dti-method}
+\alias{plot,dwi-method}
 \alias{plot,dtiData-method}
 \alias{plot,dtiIndices-method}
 \alias{plot,dtiTensor-method}
@@ -40,7 +40,7 @@
 \describe{
   \item{x = "ANY"}{ Generic function: see \code{\link[graphics]{plot}}. }
 
-  \item{x =  "dti"}{ Returns a warning. }
+  \item{x =  "dwi"}{ Returns a warning. }
 
   \item{x = "dtiData"}{ \code{gradient} can be used to specify a specific data cube associated with the index of a gradient direction. For objects of class \code{"dtiData"} images are produces that are scaled by the maximal observed image value. This guarantees that subsequently produced images are on a comparable grey scale. The resulting image of class \code{"adimpro"} from package \pkg{adimpro} is returned. }
 
