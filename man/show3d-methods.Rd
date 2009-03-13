@@ -9,7 +9,7 @@
 \alias{show3d,dwiQball-method}
 \title{ Methods for Function `show3d' in Package `dti' }
 \description{
-  The function provides 3D visualization of \code{"dtiTensor"} and \code{"dtiIndices"} objects using the \code{"rgl"}-package. Functionality of the rgl-package allows to rotate and zoom the displayed object.
+  The function provides 3D visualization of \code{"dtiData"}, \code{"dtiTensor"}, \code{"dwiQball"} and \code{"dtiIndices"} objects using the \code{"rgl"}-package. Functionality of the rgl-package allows to rotate and zoom the displayed object.
 }
 \usage{
   \S4method{show3d}{dtiData}(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,scale=.5,bgcolor="black",add=FALSE,maxobjects=729,what="ADC",minalpha=1,power=1,normalize=TRUE,box=FALSE,title=FALSE,\dots)
@@ -28,6 +28,10 @@
 \item{add}{If true information is added to the current device, otherwise a new device is opened.}
 \item{maxobjects}{Maximal size of data cube (in voxel) to display}
 \item{minalpha}{Minimum value for transparency.}
+\item{"power"}{Exponent in visualization, defaults to 1. heighter values may be used for increased contrast.}
+\item{"normalize"}{If \code{TRUE} normalize values (project to interval (0,1) within each voxel).}
+\item{"box"}{Logical, add a bounding box.}
+\item{"title"}{Either a character string specifying a title or a logical. If \code{title==TRUE} a default title characterizing the type of plot is generated. }
 \item{method}{\code{method==1} and \code{method==2} specify two different color schemes for directional FA-maps.}
 \item{level}{Minimal FA value of tensors.}
 \item{subdivide}{Level of subdivisions for meshing, level \code{0:4} correspond to use of
@@ -37,10 +41,6 @@
 \item{index}{Eiter \code{"FA"} for fractional anisotropy index or 
 \code{"GA"} for geodesic anisotropy index.}
 \item{\dots}{Additional parameters passed to function \code{rgl.par} from the rgl-package.}
-\item{"power"}{}
-\item{"normalize"}{}
-\item{"title"}{}
-\item{"box"}{}
 }
 \section{Methods}{
 \describe{
@@ -60,8 +60,8 @@
   values, color is determined by the main direction of anisotropy using the colorsceme specified with \code{method}. The fractional anisotropy value is coded as transparency. The value of \code{maxobjects} limits the size of datacube and may be increased
  on hardware with suitable graphics capabilities. }
  
-  \item{obj = "dwiQball"}{Estimated ADC's are visualized at the voxel centers. Color 
-  is determined by directions, ADC values are reflected by both radial extend and
+  \item{obj = "dwiQball"}{Estimated ODF/ADC's are visualized at the voxel centers. Color 
+  is determined by directions, ODF/ADC values are reflected by both radial extend and
   transparancy. The value of \code{maxobjects} limits the size of datacube and may be increased
  on hardware with suitable graphics capabilities. }
 

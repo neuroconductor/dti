@@ -9,11 +9,12 @@
   The method estimates, in each voxel, the coefficients of an expansion of the apparent diffusion cefficient (ADC) with respect to a apherical harmonics  orthonormal system  from the DWI data contained in an object of class \code{"dtiData"}.
 }
 \usage{
-  \S4method{dwiQball}{dtiData}(object, method="linear", order=0, lambda=0)
+  \S4method{dwiQball}{dtiData}(object, what="Qball", order=0, lambda=0)
 }
 \arguments{
   \item{object}{ Object of class \code{"dtiData"}}
-  \item{method}{ Method for tensor estimation. May be \code{"linear"}, or \code{"nonlinear"}. }
+  \item{what}{ Determines quantity to estimate, either coefficients ot the orientation density function (ODF) (\code{what="Qball"} or the apparent diffusion 
+  coefficient (ADC) (\code{what="ADC"}) with respect to spherical harmonics of the up to the specified order.  }
   \item{order}{ even integer: maximum order of the sperical harmonics expansion }
   \item{lambda}{ nonnegative regularization parameter. }
 }
@@ -25,8 +26,8 @@
 
   \item{obj = "ANY"}{ Returns a warning. }
 
-  \item{obj = "dtiData"}{ Estimate, in each voxel, the coefficients of an expansion of the apparent diffusion cefficient (ADC) with respect to a apherical harmonics  orthonormal system.  If \code{method=="linear"} estimates are obtained using a linearization of the ADC model, see Descoteux (2007). \code{method=="nonlinear"}
-not yet implemented.  }
+  \item{obj = "dtiData"}{ Estimate, in each voxel, the coefficients of an expansion of the orientation density function (ODF) or the apparent diffusion coefficient (ADC) with respect to a apherical harmonics  orthonormal system.  Note that the 
+  maxima of the ADC have no direct interpretation as fibre orientations. }
 
 }
 }
