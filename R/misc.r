@@ -263,7 +263,7 @@ dim(mask1) <- dm
 mask1
 }
 
-getsphericalharmonics <- function(order,theta,phi){
+getsphericalharmonicseven <- function(order,theta,phi){
 #
 #   compute spherical harmonics
 #
@@ -294,6 +294,34 @@ values[ind,] <- z
 values
 }
 
+getsphericalharmonicsall <- function(order,theta,phi){
+#
+#   compute spherical harmonics
+#
+require(gsl)
+order <- as.integer(max(0,order))
+if(length(theta)!=length(phi)) stop("need same length of theta and phi")
+kseq <- 0:order
+n <- length(phi)
+values <- matrix(0,(order+1)^2,n)
+l <- 1
+for(k in kseq){
+mseq <- (-k):k
+for(m in mseq){
+z <- legendre_sphPlm(k,abs(m),cos(theta))
+if(m < 0){
+z <- sqrt(2)*z*cos(m*phi)
+} 
+if(m > 0){
+z <- sqrt(2)*z*sin(m*phi)
+}
+values[l,] <- z
+l <- l+1
+}
+}
+values
+}
+
 sphcoord <- function(ccoord){
 #
 #  transform cartesian into sherical coordinates
@@ -304,7 +332,7 @@ theta <- atan2(sqrt(ccoord[2]^2+ccoord[1]^2),ccoord[3])
 c(theta,phi)
 }
 
-design.sph <- function(order,gradients,lambda,smatrix=TRUE,plzero=TRUE){
+design.spheven <- function(order,gradients,lambda,smatrix=TRUE,plz=TRUE){
 #
 #  compute design matrix for Q-ball
 #
@@ -320,11 +348,29 @@ angles <- sphcoord(gradients[,i])
 theta[i] <- angles[1]
 phi[i] <-  angles[2]
 }
-sphharmonics <- getsphericalharmonics(order,theta,phi)
+sphharmonics <- getsphericalharmonicseven(order,theta,phi)
 lord <- rep(seq(0,order,2),2*seq(0,order,2)+1)
 L <- lambda*diag(lord^2*(lord+1)^2)
 ttt <- if(smatrix) solve(sphharmonics%*%t(sphharmonics)+L)%*%sphharmonics  else  NULL
-if(smatrix&plzero) ttt <- plzero(order)%*%ttt
+if(smatrix&plz) ttt <- plzero(order)%*%ttt
+ list(design=sphharmonics,matrix=ttt,theta=theta,phi=phi)
+}
+design.sphall <- function(order,gradients,lambda,smatrix=TRUE){
+#
+#  compute design matrix for Q-ball
+#
+order <- as.integer(max(0,order))
+n <- dim(gradients)[2]
+theta <- phi <- numeric(n)
+for( i in 1:n){
+angles <- sphcoord(gradients[,i])
+theta[i] <- angles[1]
+phi[i] <-  angles[2]
+}
+sphharmonics <- getsphericalharmonicsall(order,theta,phi)
+lord <- rep(0:order,2*(0:order)+1)
+L <- lambda*diag(lord^2*(lord+1)^2)
+ttt <- if(smatrix) solve(sphharmonics%*%t(sphharmonics)+L)%*%sphharmonics  else  NULL
  list(design=sphharmonics,matrix=ttt,theta=theta,phi=phi)
 }
 

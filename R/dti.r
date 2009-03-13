@@ -1055,7 +1055,7 @@ setMethod("dwiQball","dtiData",function(object,what="Qball",order=0,lambda=0){
      si <- t(si)
      cat("Data transformation completed ",date(),"\n")
 
-     z <- design.sph(order,object@gradient[,-s0ind],lambda)
+     z <- design.spheven(order,object@gradient[,-s0ind],lambda)
      sphcoef <- z$matrix%*% si
      cat("Estimated coefficients for Q-ball (order=",order,") ",date(),"\n")
 
@@ -1092,7 +1092,7 @@ setMethod("dwiQball","dtiData",function(object,what="Qball",order=0,lambda=0){
      si <- t(si)
      cat("Data transformation completed ",date(),"\n")
 
-     z <- design.sph(order,object@gradient[,-s0ind],lambda,plzero=FALSE)
+     z <- design.spheven(order,object@gradient[,-s0ind],lambda,plz=FALSE)
      sphcoef <- z$matrix%*% si
      cat("Estimated coefficients for ADC expansion in spherical harmonics (order=",order,") ",date(),"\n")
 
@@ -1719,7 +1719,7 @@ setMethod("show3d","dtiTensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL
   if(obj@hmax>1) paste("smoothed with hmax=",obj@hmax),if(normalize) "normalized","\n")
   invisible(rgl.cur())
 })
-setMethod("show3d","dtiData", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,scale=.5,bgcolor="black",add=FALSE,maxobjects=729,what="ADC",minalpha=1,power=1,normalize=TRUE,box=FALSE,title=FALSE,...){
+setMethod("show3d","dtiData", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,scale=.5,bgcolor="black",add=FALSE,maxobjects=729,what="ADC",minalpha=1,power=1,normalize=FALSE,box=FALSE,title=FALSE,...){
   if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
   if(is.null(nx)) nx <- obj@ddim[1]
   if(is.null(ny)) ny <- obj@ddim[2]
@@ -1757,6 +1757,9 @@ setMethod("show3d","dtiData", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,s
   tmean[3,,,] <- outer(rep(1,n1),outer(rep(1,n2),zind))*vext[3]
   dim(tmean) <- c(3,n)
   radii <- extract(obj,"sb")$Si
+  s0 <- extract(obj,"S0")$S0
+  if(length(dim(s0))==4) s0 <- apply(s0,1:3,mean)
+  radii <- sweep(radii,1:3,s0,"/")
   if(what=="ADC") radii <- -log(radii)
   ngrad <- dim(radii)[length(dim(radii))]
   dim(radii) <- c(length(radii)/ngrad,ngrad)
@@ -1829,7 +1832,7 @@ setMethod("show3d","dwiQball", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,
   tmean[3,,,] <- outer(rep(1,n1),outer(rep(1,n2),zind))*vext[3]
   dim(tmean) <- c(3,n)
   polyeder <- switch(subdivide+1,icosa0,icosa1,icosa2,icosa3,icosa4)
-  sphdesign <- design.sph(obj@order,polyeder$vertices,obj@lambda,smatrix=FALSE)$design
+  sphdesign <- design.spheven(obj@order,polyeder$vertices,obj@lambda,smatrix=FALSE)$design
   radii <- t(sphdesign)%*%sphcoef
   if(normalize){
      minradii <- apply(radii,2,min)

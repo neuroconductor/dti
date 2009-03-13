@@ -153,7 +153,7 @@ setClass("dwiQball",
             cat("invalid order of spherical harmonics \n")
             return(invisible(FALSE))
           }
-          if (any(dim(object@sphcoef)!=c((object@order+1)*(object@order+2)/2,object@ddim))) {
+          if(object@what=="Qball"&any(dim(object@sphcoef)!=c((object@order+1)*(object@order+2)/2,object@ddim))) {
             cat("invalid dimension of ceofficient array \n")
             return(invisible(FALSE))
           }
