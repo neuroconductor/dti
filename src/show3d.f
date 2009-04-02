@@ -310,6 +310,7 @@ C
       external dotprod3
       DO i=1,nv
          mindnn=1.d0
+         mininn=1
          DO j=1,nn
             dnn(j)=dotprod3(vert(1,i),grad(1,j))
             inn(j)=j
