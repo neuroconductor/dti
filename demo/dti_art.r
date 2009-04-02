@@ -111,6 +111,7 @@ dthat4b <- medinria2tensor(tmpfile3)
 # plot the resulting object
 plot(dthat4b,slice=15)
 
+source(system.file("rcode/mousecallbacks.r",package="dti"))
 z <- readline("Visualize and compare estimated tensors (Y/N) :")
 
 size <- as.integer(min(.adimpro$xsize/3.2,.adimpro$ysize/2.4))
@@ -121,7 +122,6 @@ dthat4@scale <- dt0@scale
 w1<-show3d(dt0,level=.3,nz=5,center=c(20,20,13),maxobjects=2000,FOV=1,windowRect = c(1, 1, size, size),what="tensor")
 w2<-show3d(dthat1,level=.3,nz=5,center=c(20,20,13),maxobjects=2000,FOV=1,windowRect = c(size+11, 1, 2*size+10, size),what="tensor")
 w3<-show3d(dthat4,level=.3,nz=5,center=c(20,20,13),maxobjects=2000,FOV=1,windowRect = c(2*size+21, 1, 3*size+20, size),what="tensor")
-source(system.file("rcode/mousecallbacks.r",package="dti"))
 #
 #  from package rgl::demo(mouseCallbacks)
 #
