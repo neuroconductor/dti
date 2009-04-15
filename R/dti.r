@@ -1522,7 +1522,7 @@ setMethod("extract","dtiIndices",function(x, what=c("fa","andir"), xind=TRUE, yi
   invisible(z)
 })
 
-setMethod("extract","dwiQball",function(x, what=c("sphcoef"), xind=TRUE, yind=TRUE, zind=TRUE){
+setMethod("extract","dwiQball",function(x, what="sphcoef", xind=TRUE, yind=TRUE, zind=TRUE){
   what <- tolower(what) 
 
   x <- x[xind,yind,zind]

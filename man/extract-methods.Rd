@@ -18,10 +18,10 @@
   The methods extract and/or compute specified statistics from object of class \code{"dtiData"}, \code{"dtiTensor"}, and \code{"dtiIndices"}. This can be restricted to a subset of voxel.
 }
 \usage{
-  \S4method{extract}{dtiData}(x, what="data", xind, yind, zind)
-  \S4method{extract}{dtiTensor}(x, what="tensor", xind, yind, zind)
-  \S4method{extract}{dtiIndices}(x, what=c("fa","andir"), xind, yind, zind)
-  \S4method{extract}{dwiQball}(x, what="sphcoef", xind, yind, zind)
+  \S4method{extract}{dtiData}(x, what="data", xind=TRUE, yind=TRUE, zind=TRUE)
+  \S4method{extract}{dtiTensor}(x, what="tensor", xind=TRUE, yind=TRUE, zind=TRUE)
+  \S4method{extract}{dtiIndices}(x, what=c("fa","andir"), xind=TRUE, yind=TRUE, zind=TRUE)
+  \S4method{extract}{dwiQball}(x, what="sphcoef", xind=TRUE, yind=TRUE, zind=TRUE)
   \S4method{[}{dtiData}(x, i, j, k, drop=FALSE)
   \S4method{[}{dtiTensor}(x, i, j, k, drop=FALSE)
   \S4method{[}{dtiIndices}(x, i, j, k, drop=FALSE)
