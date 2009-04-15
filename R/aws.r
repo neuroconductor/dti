@@ -14,8 +14,7 @@ setMethod("dti.smooth", "dtiData", function(object,hmax=5,hinit=NULL,lambda=20,t
                                             rho=1,graph=FALSE,slice=NULL,quant=.8,
                                             minanindex=NULL,hsig=2.5,lseq=NULL, method="nonlinear",varmethod="residuals",rician=TRUE,niter=5,varmodel="local",result="Tensor") {
 switch(method,"linear" = dtilin.smooth(object,hmax,hinit,lambda,rho,graph,slice,quant,minanindex,hsig,lseq,varmethod,varmodel),
-              "nonlinear" =  dtireg.smooth(object,hmax,hinit,lambda,rho,graph,slice,quant,minanindex,hsig,lseq,varmethod,rician,niter,varmodel,result),
-              "osmooth" =  dtireg.osmooth(object,hmax,hinit,lambda,tau,graph,slice,quant,minanindex,hsig,lseq,varmethod,rician=FALSE,niter,varmodel,result))
+              "nonlinear" =  dtireg.smooth(object,hmax,hinit,lambda,rho,graph,slice,quant,minanindex,hsig,lseq,varmethod,rician,niter,varmodel,result))
 }
 )
 dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,

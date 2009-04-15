@@ -25,8 +25,7 @@
   \item{minanindex}{minimal anisotropy index to use in visualization}
   \item{hsig}{bandwidth for presmoothing of variance estimates}
   \item{lseq}{ sequence of correction factors for \code{lambda}}
-  \item{method}{ Method for tensor estimation. May be \code{"linear"}, \code{"nonlinear"} or \code{"osmooth"}. \code{"osmooth"} implies using 
-   heteroscedastic nonlinear regression but additionaly uses gradient orientations to determine weights for smoothing the DWI's.}
+  \item{method}{ Method for tensor estimation. May be \code{"linear"}, \code{"nonlinear"}}
   \item{varmethod}{ Specifies the method for estimating the error variance. May be \code{varmethod=="replicates"}, or \code{"residuals"}. }
   \item{varmodel}{ Specifies the model for the variance. May be \code{"global"}, or \code{"local"}. }
   \item{rician}{ "logical": apply a correction for Rician bias. This is still experimental and depends on spatial independence of errors.}
