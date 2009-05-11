@@ -17,6 +17,10 @@ setClass("dwi",
                         source = "character"),
          )
 
+dwi <- function(object,  ...) cat("This object has class",class(object),"\n")
+setGeneric("dwi", function(object,  ...) 
+standardGeneric("dwi"))
+
 setClass("dtiData",
          representation(si   = "array",
                         sdcoef = "numeric"),
