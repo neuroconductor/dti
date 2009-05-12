@@ -157,7 +157,7 @@ setClass("dwiQball",
             cat("invalid order of spherical harmonics \n")
             return(invisible(FALSE))
           }
-          if(object@what=="Qball"&any(dim(object@sphcoef)!=c((object@order+1)*(object@order+2)/2,object@ddim))) {
+          if(object@what%in%c("ODF","wODF","aODF")&any(dim(object@sphcoef)!=c((object@order+1)*(object@order+2)/2,object@ddim))) {
             cat("invalid dimension of ceofficient array \n")
             return(invisible(FALSE))
           }
@@ -183,8 +183,8 @@ setClass("dwiQball",
             cat("invalid length of bw\n")
             return(invisible(FALSE))
           }
-          if (!(object@what %in% c("Qball","ADC"))) {
-            cat("what should specify either Qball or ADC\n")
+          if (!(object@what %in% c("ODF","wODF","aODF","ADC"))) {
+            cat("what should specify ODF, wODF, aODF or ADC\n")
             return(invisible(FALSE))
           }
          }

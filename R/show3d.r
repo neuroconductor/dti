@@ -326,7 +326,7 @@ setMethod("show3d","dwiQball", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,
   tmean[3,,,] <- outer(rep(1,n1),outer(rep(1,n2),zind))*vext[3]
   dim(tmean) <- c(3,n)
   polyeder <- switch(subdivide+1,icosa0,icosa1,icosa2,icosa3,icosa4)
-  sphdesign <- design.spheven(obj@order,polyeder$vertices,obj@lambda,smatrix=FALSE)$design
+  sphdesign <- design.spheven(obj@order,polyeder$vertices,obj@lambda)$design
   radii <- t(sphdesign)%*%sphcoef
   if(normalize){
      minradii <- apply(radii,2,min)
@@ -347,7 +347,7 @@ setMethod("show3d","dwiQball", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,
   if(is.character(title)) {
      title3d(title,color="white",cex=1.5)
   } else {
-     if(title) title3d(switch(tolower(obj@what),"qball"="ODF (Qball)","adc"="ADC (Sph. Harmonics)"),color="white",cex=1.5)
+     if(title) title3d(switch(tolower(obj@what),"ODF"="ODF","wODF"="Weighted ODF","aODF"="alternative ODF","adc"="ADC (Sph. Harmonics)"),color="white",cex=1.5)
   }
   cat("\n rgl-device",rgl.cur(),switch(tolower(obj@what),"qball"="Estimated orientation density function (Qball)","adc"="estimated apparent diffusion coefficients (sperical harmonics"),"\n",
   if(normalize) "normalized","\n")

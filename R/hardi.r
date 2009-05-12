@@ -11,8 +11,8 @@ setGeneric("dwiQball", function(object,  ...) standardGeneric("dwiQball"))
 setMethod("dwiQball","dtiData",function(object,what="Qball",order=4,lambda=0){
   args <- sys.call(-1)
   args <- c(object@call,args)
-  if (!(what %in% c("Qball","wQball","myQball","ADC"))) {
-      stop("what should specify either Qball, wQball, myQBall, or ADC\n")
+  if (!(what %in% c("ODF","wODF","aODF","ADC"))) {
+      stop("what should specify either ODF, wODF, aODF, or ADC\n")
           }
   ngrad <- object@ngrad
   ddim <- object@ddim
@@ -52,7 +52,7 @@ setMethod("dwiQball","dtiData",function(object,what="Qball",order=4,lambda=0){
   mask <- connect.mask(mask)
 
   # now switch for different cases
-  if (what=="Qball") {
+  if (what=="ODF") {
      cat("Data transformation started ",date(),"\n")
      dim(s0) <- dim(si) <- NULL
      si[is.na(si)] <- 0
@@ -82,10 +82,13 @@ setMethod("dwiQball","dtiData",function(object,what="Qball",order=4,lambda=0){
      th0 <- array(s0,object@ddim)
      th0[!mask] <- 0
      gc()
-  } else if (what=="wQball") {
+  } else if (what=="wODF") {
      cat("Data transformation started ",date(),"\n")
      dim(s0) <- dim(si) <- NULL
-     si <- log( -log(si/s0))
+     si <- si/s0
+     si[is.na(si)] <- 0
+     si[si>=1] <- 1-.Machine$double.neg.eps
+     si <- log( -log(si))
      si[is.na(si)] <- 0
      si[(si == Inf)] <- 0
      si[(si == -Inf)] <- 0
@@ -119,6 +122,8 @@ setMethod("dwiQball","dtiData",function(object,what="Qball",order=4,lambda=0){
      cat("Data transformation started ",date(),"\n")
      dim(s0) <- dim(si) <- NULL
      si <- si/s0
+     si[is.na(si)] <- 0
+     si[si>=1] <- 1-.Machine$double.neg.eps
      si <- 1/(-log(si))
      si[is.na(si)] <- 0
      si[(si == Inf)] <- 0

@@ -79,7 +79,7 @@ For class \code{"dwiQball"}:
     \item{ \code{outlier}: }{ Object of class \code{"numeric"}, index of voxel where physical constraints are not met, i.e. where the observed values in gradient images Si were larger than the corresponding S0 values. These are probably motion effects or registration errors. Values are replaced by the corresponding (mean) S0 values.}
     \item{\code{scale}:}{Numerical value corresponding to the 95\% quantile of the maximal eigenvalues of estimated tensors within the mask.
           Used for scaling in function \code{show3d.dwiQball}}
-    \item{ \code{what}: }{ Object of class \code{"character"}, either \code{"Qball"} or \code{"ADC"}. Indicates if the object contains coefficients of the orientation density function (Qball) or the apparent diffusion coefficient (ADC). Coefficients are computed with respect to spherical harmonics of the specified order.}
+    \item{ \code{what}: }{ Object of class \code{"character"}, \code{"ODF"}, \code{"wODF"}, \code{"aODF"} or \code{"ADC"}. Indicates if the object contains coefficients of the orientation density function (ODF (Descoteaux 2007), wODF (Sapiro(2009) or aODF) or the apparent diffusion coefficient (ADC). Coefficients are computed with respect to spherical harmonics of the specified order.}
 }
 }
 \section{Methods}{
