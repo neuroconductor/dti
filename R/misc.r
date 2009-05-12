@@ -215,7 +215,7 @@ sphcoord <- function(ccoord){
   c(theta,phi)
 }
 
-design.spheven <- function(order,gradients,lambda,smatrix=TRUE,plz=TRUE){
+design.spheven <- function(order,gradients,lambda){
 #
 #  compute design matrix for Q-ball
 #
@@ -224,6 +224,8 @@ design.spheven <- function(order,gradients,lambda,smatrix=TRUE,plz=TRUE){
     warning("maximum order needs to be even, increase order by one")
     order <- order+1
   } 
+
+  # calculate spherical angles theta and phi corresponding to the gradients
   n <- dim(gradients)[2]
   theta <- phi <- numeric(n)
   for( i in 1:n){
@@ -231,19 +233,29 @@ design.spheven <- function(order,gradients,lambda,smatrix=TRUE,plz=TRUE){
     theta[i] <- angles[1]
     phi[i] <-  angles[2]
   }
+
+  # values of SH on specified spherical angles
   sphharmonics <- getsphericalharmonicseven(order,theta,phi)
+  # Laplace-Beltrami-Regularization term
   lord <- rep(seq(0,order,2),2*seq(0,order,2)+1)
   L <- lambda*diag(lord^2*(lord+1)^2)
-  ttt <- if(smatrix) solve(sphharmonics%*%t(sphharmonics)+L)%*%sphharmonics  else  NULL
-  if(smatrix&plz) ttt <- plzero(order)%*%ttt
-  list(design=sphharmonics,matrix=ttt,theta=theta,phi=phi)
+  # transformation matrix for SH coefficients
+  ttt <- solve(sphharmonics%*%t(sphharmonics)+L)%*%sphharmonics
+
+  # results
+  list(design = sphharmonics,
+       matrix = ttt,
+       theta = theta,
+       phi = phi)
 }
 
-design.sphall <- function(order,gradients,lambda,smatrix=TRUE){
+design.sphall <- function(order,gradients,lambda){
 #
 #  compute design matrix for Q-ball
 #
   order <- as.integer(max(0,order))
+
+  # calculate spherical angles theta and phi corresponding to the gradients
   n <- dim(gradients)[2]
   theta <- phi <- numeric(n)
   for( i in 1:n){
@@ -251,11 +263,20 @@ design.sphall <- function(order,gradients,lambda,smatrix=TRUE){
     theta[i] <- angles[1]
     phi[i] <-  angles[2]
   }
+
+  # values of SH on specified spherical angles
   sphharmonics <- getsphericalharmonicsall(order,theta,phi)
+  # Laplace-Beltrami-Regularization term
   lord <- rep(0:order,2*(0:order)+1)
   L <- lambda*diag(lord^2*(lord+1)^2)
-  ttt <- if(smatrix) solve(sphharmonics%*%t(sphharmonics)+L)%*%sphharmonics  else  NULL
-  list(design=sphharmonics,matrix=ttt,theta=theta,phi=phi)
+  # transformation matrix for SH coefficients
+  ttt <- solve(sphharmonics%*%t(sphharmonics)+L)%*%sphharmonics
+
+  # results
+  list(design = sphharmonics,
+       matrix = ttt,
+       theta = theta,
+       phi = phi)
 }
 
 plzero <- function(order){
