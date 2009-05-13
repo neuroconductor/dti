@@ -241,7 +241,6 @@ design.spheven <- function(order,gradients,lambda){
   L <- lambda*diag(lord^2*(lord+1)^2)
   # transformation matrix for SH coefficients
   ttt <- solve(sphharmonics%*%t(sphharmonics)+L)%*%sphharmonics
-
   # results
   list(design = sphharmonics,
        matrix = ttt,

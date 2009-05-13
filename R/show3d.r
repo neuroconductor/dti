@@ -286,6 +286,7 @@ setMethod("show3d","dtiIndices",function(obj, index="FA", nx=NULL, ny=NULL, nz=N
 setMethod("show3d","dwiQball", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,scale=0.5,bgcolor="black",add=FALSE,subdivide=3,maxobjects=729,minalpha=1,power=1,normalize=TRUE,box=FALSE,title=FALSE,...){
   if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
   if(!exists("icosa0")) data("polyeders")
+  if(obj@what=="wODF") normalize <- FALSE
   if(subdivide<0||subdivide>4) subdivide <- 3
   if(is.null(nx)) nx <- obj@ddim[1]
   if(is.null(ny)) ny <- obj@ddim[2]

@@ -19,10 +19,6 @@ setMethod("dwiQball","dtiData",function(object,what="ODF",order=4,lambda=0){
   s0ind <- object@s0ind
   ns0 <- length(s0ind)
   sdcoef <- object@sdcoef
-  if(all(sdcoef==0)) {
-    cat("No parameters for model of error standard deviation found\n estimating these parameters\n You may prefer to run sdpar before calling dwiQball")
-    sdcoef <- sdpar(object,interactive=FALSE)@sdcoef
-  }
   z <- .Fortran("outlier",
                 as.integer(object@si),
                 as.integer(prod(ddim)),
@@ -51,6 +47,14 @@ setMethod("dwiQball","dtiData",function(object,what="ODF",order=4,lambda=0){
   mask <- s0 > object@level
   mask <- connect.mask(mask)
 
+  lord <- rep(seq(0,order,2),2*seq(0,order,2)+1)
+  while(length(lord)>=ngrad0){
+     order <- order-2
+     lord <- rep(seq(0,order,2),2*seq(0,order,2)+1)
+     cat("Reduced order of spherical harmonics to",order,"\n")
+  }
+  cat("Using",length(lord),"sperical harmonics\n")
+  L <- -diag(lord*(lord+1))
   # now switch for different cases
   if (what=="ODF") {
      cat("Data transformation started ",date(),"\n")
@@ -67,21 +71,9 @@ setMethod("dwiQball","dtiData",function(object,what="ODF",order=4,lambda=0){
      # ... and estimate coefficients of SH series of ODF
      # see Descoteaux et al. (2007)
      # include FRT(SH) -> P_l(0)
-     sphcoef <- plzero(order)%*%z$matrix%*% si
-     cat("Estimated coefficients for Q-ball (order=",order,") ",date(),"\n")
-
-     res <- si - t(z$design) %*% sphcoef
-     rss <- res[1,]^2
-     for(i in 2:ngrad0) rss <- rss + res[i,]^2
-     dim(rss) <- ddim
-     sigma2 <- rss/(ngrad0-6)
-     sphcoef[,!mask] <- 0
-     dim(sphcoef) <- c((order+1)*(order+2)/2,ddim)
-     dim(res) <- c(ngrad0,ddim)
-     cat("Variance estimates generated ",date(),"\n")
-     th0 <- array(s0,object@ddim)
-     th0[!mask] <- 0
-     gc()
+     sicoef <- z$matrix%*% si
+     sphcoef <- plzero(order)%*%sicoef
+     cat("Estimated coefficients for ODF (order=",order,") ",date(),"\n")
   } else if (what=="wODF") {
      cat("Data transformation started ",date(),"\n")
      dim(s0) <- dim(si) <- NULL
@@ -101,25 +93,11 @@ setMethod("dwiQball","dtiData",function(object,what="ODF",order=4,lambda=0){
      # ... and estimate coefficients of SH series of ODF
      # see Aganj et al. (2009)
      # include FRT(SH) -> P_l(0)
-     lord <- rep(seq(0,order,2),2*seq(0,order,2)+1)
-     L <- -diag(lord*(lord+1))
-     sphcoef <- plzero(order)%*%L%*%z$matrix%*% si
+     sicoef <- z$matrix%*% si
+     sphcoef <- plzero(order)%*%L%*%sicoef
      sphcoef[1,] <- 1/2/sqrt(pi)
      sphcoef[-1,] <- sphcoef[-1,]/16/pi^2
-     cat("Estimated coefficients for wQ-ball (order=",order,") ",date(),"\n")
-
-     res <- si - t(z$design) %*% sphcoef
-     rss <- res[1,]^2
-     for(i in 2:ngrad0) rss <- rss + res[i,]^2
-     dim(rss) <- ddim
-     sigma2 <- rss/(ngrad0-6)
-     sphcoef[,!mask] <- 0
-     dim(sphcoef) <- c((order+1)*(order+2)/2,ddim)
-     dim(res) <- c(ngrad0,ddim)
-     cat("Variance estimates generated ",date(),"\n")
-     th0 <- array(s0,object@ddim)
-     th0[!mask] <- 0
-     gc()
+     cat("Estimated coefficients for wODF (order=",order,") ",date(),"\n")
   } else if (what=="aODF") {
      cat("Data transformation started ",date(),"\n")
      dim(s0) <- dim(si) <- NULL
@@ -139,21 +117,9 @@ setMethod("dwiQball","dtiData",function(object,what="ODF",order=4,lambda=0){
      # ... and estimate coefficients of SH series of ODF
      # see Descoteaux et al. (2007)
      # include FRT(SH) -> P_l(0)
-     sphcoef <- plzero(order)%*%z$matrix%*% si
-     cat("Estimated coefficients for myQ-ball (order=",order,") ",date(),"\n")
-
-     res <- si - t(z$design) %*% sphcoef
-     rss <- res[1,]^2
-     for(i in 2:ngrad0) rss <- rss + res[i,]^2
-     dim(rss) <- ddim
-     sigma2 <- rss/(ngrad0-6)
-     sphcoef[,!mask] <- 0
-     dim(sphcoef) <- c((order+1)*(order+2)/2,ddim)
-     dim(res) <- c(ngrad0,ddim)
-     cat("Variance estimates generated ",date(),"\n")
-     th0 <- array(s0,object@ddim)
-     th0[!mask] <- 0
-     gc()
+     sicoef <- z$matrix%*% si
+     sphcoef <- plzero(order)%*%sicoef
+     cat("Estimated coefficients for aODF (order=",order,") ",date(),"\n")
   } else { #  what == "ADC" 
      cat("Data transformation started ",date(),"\n")
      dim(s0) <- dim(si) <- NULL
@@ -168,22 +134,29 @@ setMethod("dwiQball","dtiData",function(object,what="ODF",order=4,lambda=0){
      # get SH design matrix ...
      z <- design.spheven(order,object@gradient[,-s0ind],lambda)
      # ... and estimate coefficients of SH series of ADC
-     sphcoef <- z$matrix%*% si
+     sphcoef <- sicoef <- z$matrix%*% si
      cat("Estimated coefficients for ADC expansion in spherical harmonics (order=",order,") ",date(),"\n")
-
-     res <- si - t(z$design) %*% sphcoef
-     rss <- res[1,]^2
-     for(i in 2:ngrad0) rss <- rss + res[i,]^2
-     dim(rss) <- ddim
-     sigma2 <- rss/(ngrad0-6)
-     sphcoef[,!mask] <- 0
-     dim(sphcoef) <- c((order+1)*(order+2)/2,ddim)
-     dim(res) <- c(ngrad0,ddim)
-     cat("Variance estimates generated ",date(),"\n")
-     th0 <- array(s0,object@ddim)
-     th0[!mask] <- 0
-     gc()
   }
+  res <- si - t(z$design) %*% sicoef
+  rss <- res[1,]^2
+  for(i in 2:ngrad0) rss <- rss + res[i,]^2
+  if(what %in% c("ODF","aODF")){
+     varcoef <- outer(diag(plzero(order))^2*diag(z$matrix%*%t(z$matrix)),sigma2,"*")
+  } else if(what=="wODF"){
+     varcoef <- outer(diag(plzero(order))^2*diag(L)^2*diag(z$matrix%*%t(z$matrix)),sigma2,"*")
+     varcoef[-1,] <- varcoef[-1,]/256/pi^4
+     varcoef[1,] <- 0
+  } else {
+     varcoef <- outer(diag(z$matrix%*%t(z$matrix)),sigma2,"*")
+  }
+  dim(sigma2) <- ddim
+  sphcoef[,!mask] <- 0
+  dim(sphcoef) <- dim(varcoef) <- c((order+1)*(order+2)/2,ddim)
+  dim(res) <- c(ngrad0,ddim)
+  cat("Variance estimates generated ",date(),"\n")
+  th0 <- array(s0,object@ddim)
+  th0[!mask] <- 0
+  gc()
   lags <- c(5,5,3)
   scorr <- .Fortran("mcorr",as.double(res),
                    as.logical(mask),
@@ -215,6 +188,7 @@ setMethod("dwiQball","dtiData",function(object,what="ODF",order=4,lambda=0){
                 order = as.integer(order),
                 lambda = lambda,
                 sphcoef = sphcoef,
+                varsphcoef = varcoef,
                 th0   = th0,
                 sigma = sigma2,
                 scorr = scorr, 
