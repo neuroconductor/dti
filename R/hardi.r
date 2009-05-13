@@ -8,7 +8,7 @@ dwiQball <- function(object,  ...) cat("No DWI Q-ball calculation defined for th
 
 setGeneric("dwiQball", function(object,  ...) standardGeneric("dwiQball"))
 
-setMethod("dwiQball","dtiData",function(object,what="Qball",order=4,lambda=0){
+setMethod("dwiQball","dtiData",function(object,what="ODF",order=4,lambda=0){
   args <- sys.call(-1)
   args <- c(object@call,args)
   if (!(what %in% c("ODF","wODF","aODF","ADC"))) {
@@ -104,6 +104,8 @@ setMethod("dwiQball","dtiData",function(object,what="Qball",order=4,lambda=0){
      lord <- rep(seq(0,order,2),2*seq(0,order,2)+1)
      L <- -diag(lord*(lord+1))
      sphcoef <- plzero(order)%*%L%*%z$matrix%*% si
+     sphcoef[1,] <- 1/2/sqrt(pi)
+     sphcoef[-1,] <- sphcoef[-1,]/16/pi^2
      cat("Estimated coefficients for wQ-ball (order=",order,") ",date(),"\n")
 
      res <- si - t(z$design) %*% sphcoef
@@ -118,7 +120,7 @@ setMethod("dwiQball","dtiData",function(object,what="Qball",order=4,lambda=0){
      th0 <- array(s0,object@ddim)
      th0[!mask] <- 0
      gc()
-  } else if (what=="myQball") {
+  } else if (what=="aODF") {
      cat("Data transformation started ",date(),"\n")
      dim(s0) <- dim(si) <- NULL
      si <- si/s0
