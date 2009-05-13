@@ -140,6 +140,7 @@ setMethod("dwiQball","dtiData",function(object,what="ODF",order=4,lambda=0){
   res <- si - t(z$design) %*% sicoef
   rss <- res[1,]^2
   for(i in 2:ngrad0) rss <- rss + res[i,]^2
+  sigma2 <- rss/(ngrad0-length(lord))
   if(what %in% c("ODF","aODF")){
      varcoef <- outer(diag(plzero(order))^2*diag(z$matrix%*%t(z$matrix)),sigma2,"*")
   } else if(what=="wODF"){
