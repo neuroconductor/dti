@@ -274,8 +274,8 @@ setMethod("extract","dtiData",function(x, what="data", xind=TRUE, yind=TRUE, zin
   z <- list(NULL)
   if("gradient" %in% what) z$gradient <- x@gradient
   if("btb" %in% what) z$btb <- x@btb
-  if("s0" %in% what) z$S0 <- x@si[,,,x@s0ind]
-  if("sb" %in% what) z$Si <- x@si[,,,-x@s0ind]
+  if("s0" %in% what) z$S0 <- x@si[,,,x@s0ind,drop=FALSE]
+  if("sb" %in% what) z$Si <- x@si[,,,-x@s0ind,drop=FALSE]
   if("data" %in% what) z$data <- x@si
   invisible(z)
 })

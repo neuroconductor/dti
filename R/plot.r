@@ -169,7 +169,7 @@ setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, mi
 ##############
 
 setMethod("plot", "dtiIndices", 
-function(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=TRUE, density=FALSE, contrast.enh=1,what="FA",xind=NULL,yind=NULL,zind=NULL, mar=c(3,3,3,.3),mgp=c(2,1,0), ...) {
+function(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=TRUE, identify=FALSE, density=FALSE, contrast.enh=1,what="FA",xind=NULL,yind=NULL,zind=NULL, mar=c(3,3,3,.3),mgp=c(2,1,0), ...) {
   if(is.null(x@fa)) cat("No anisotropy index yet")
   if(!(method %in% 1:5)) {
       warning("method out of range, reset to 1")
@@ -244,24 +244,42 @@ function(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=
       andirection[is.na(andirection)] <- 0
       andirection <- make.image(andirection,gamma=TRUE)
       if(show) show.image(andirection,...)
+      if(identify){
+         identify.fa(view,slice,xind,yind,zind)
+      } else {
+        par(oldpar)
+        invisible(andirection)
+      }
     } else if(show) {
       dim(anindex) <- dim(andirection)[2:3]
       image(anindex,...)
+      if(identify){
+         identify.fa(view,slice,xind,yind,zind)
+      } else {
+        par(oldpar)
+        invisible(NULL)
+      }
     }
-    par(oldpar)
-    invisible(andirection)
   } else if (method==3) {
     if(adimpro) {
       andirection[is.na(andirection)] <- 0
       bary <- make.image(aperm(andirection,c(2,3,1)))
       if(show) show.image(bary,...)
-      par(oldpar)
-      invisible(bary)
+      if(identify){
+         identify.fa(view,slice,xind,yind,zind)
+      } else {
+         par(oldpar)
+         invisible(bary)
+      }
     } else if(show) {
       image(andirection[1,,],...)
+      if(identify){
+         identify.fa(view,slice,xind,yind,zind)
+      } else {
+         par(oldpar)
+         invisible(NULL)
+      }
     }
-    par(oldpar)
-    invisible(NULL)
   } else if (method==5) {
     if(adimpro) {
       andirection[is.na(andirection)] <- 0
@@ -272,13 +290,21 @@ function(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=
       img.hsi.data[,,3] <- anindex
       img.hsi <- make.image(img.hsi.data,gamma=TRUE,xmode="HSI")
       if(show) show.image(img.hsi,...)
-      par(oldpar)
-      invisible(img.hsi)
+      if(identify){
+         identify.fa(view,slice,xind,yind,zind)
+      } else {
+         par(oldpar)
+         invisible(img.hsi)
+      }
     } else if(show) {
       image(andirection[1,,],...)
+      if(identify){
+         identify.fa(view,slice,xind,yind,zind)
+      } else {
+         par(oldpar)
+         invisible(NULL)
+      }
     }
-    par(oldpar)
-    invisible(NULL)
   }
 })
 

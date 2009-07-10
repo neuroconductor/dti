@@ -14,7 +14,7 @@ setMethod("show3d","dtiData", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,s
   if(is.null(ny)) ny <- obj@ddim[2]
   if(is.null(nz)) nz <- obj@ddim[3]
   n <- nx*ny*nz
-  if(is.null(center)) center <- floor(obj@ddim/2)
+  if(is.null(center)) center <- floor((obj@ddim+1)/2)
   if(nx*ny*nz>maxobjects) {
   cat("size of data cube",n," exceeds maximum of",maxobjects,"\n")
   if(nz > maxobjects^(1/3)) n3 <- 1 else n3 <- nz
@@ -38,7 +38,7 @@ setMethod("show3d","dtiData", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,s
   cat(" selected cube specified by \n xind=",min(xind),":",max(xind),
       "\n yind=",min(yind),":",max(yind),
       "\n zind=",min(zind),":",max(zind),"\n")
-  obj <- obj[xind,yind,zind]
+  obj <- obj[xind,yind,zind,drop=FALSE]
   vext <- obj@voxelext
   tmean <- array(0,c(3,n1,n2,n3))
   tmean[1,,,] <- xind*vext[1]
@@ -46,7 +46,7 @@ setMethod("show3d","dtiData", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,s
   tmean[3,,,] <- outer(rep(1,n1),outer(rep(1,n2),zind))*vext[3]
   dim(tmean) <- c(3,n)
   radii <- extract(obj,"sb")$Si
-  s0 <- extract(obj,"S0")$S0
+  s0 <- extract(obj,"s0")$S0
   if(length(dim(s0))==4) s0 <- apply(s0,1:3,mean)
   radii <- sweep(radii,1:3,s0,"/")
   if(what=="ADC") radii <- -log(radii)
@@ -113,7 +113,7 @@ setMethod("show3d","dtiTensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL
   if(is.null(ny)) ny <- obj@ddim[2]
   if(is.null(nz)) nz <- obj@ddim[3]
   n <- nx*ny*nz
-  if(is.null(center)) center <- floor(obj@ddim/2)
+  if(is.null(center)) center <- floor((obj@ddim+1)/2)
   if(nx*ny*nz>maxobjects) {
   cat("size of data cube",n," exceeds maximum of",maxobjects,"\n")
   if(nz > maxobjects^(1/3)) n3 <- 1 else n3 <- nz
@@ -144,19 +144,19 @@ setMethod("show3d","dtiTensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL
   D <- D/max(D)
   dim(D) <- c(6,n)
   indpos <- (1:n)[D[1,]*D[4,]*D[6,]>0]
-  tens <- D[,indpos]
+  tens <- D[,indpos,drop=FALSE]
   tmean <- array(0,c(3,n1,n2,n3))
   tmean[1,,,] <- xind*vext[1]
   tmean[2,,,] <- outer(rep(1,n1),yind)*vext[2]
   tmean[3,,,] <- outer(rep(1,n1),outer(rep(1,n2),zind))*vext[3]
   dim(tmean) <- c(3,n)
-  tmean <- tmean[,indpos]
+  tmean <- tmean[,indpos,drop=FALSE]
   z <- extract(obj,what=c("andir","fa"))
-  maxev <- extract(obj,what="evalues")$evalues[3,,,]
+  maxev <- extract(obj,what="evalues")$evalues[3,,,,drop=FALSE]
   maxev <- maxev[indpos]
   andir <- z$andir
   dim(andir) <- c(3,n1*n2*n3)
-  andir <- andir[,indpos]
+  andir <- andir[,indpos,drop=FALSE]
   fa <- z$fa[indpos]
   mask <- obj@mask[indpos]
   n <- length(indpos)
@@ -222,7 +222,7 @@ setMethod("show3d","dtiIndices",function(obj, index="FA", nx=NULL, ny=NULL, nz=N
   if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
   index <- tolower(index) 
   if(!(index%in%c("fa","ga"))) stop("index should be either 'FA' or 'GA'\n")
-  if(is.null(center)) center <- floor(obj@ddim/2)
+  if(is.null(center)) center <- floor((obj@ddim+1)/2)
   if(is.null(nx)) nx <- obj@ddim[1]
   if(is.null(ny)) ny <- obj@ddim[2]
   if(is.null(nz)) nz <- obj@ddim[3]
@@ -259,8 +259,8 @@ setMethod("show3d","dtiIndices",function(obj, index="FA", nx=NULL, ny=NULL, nz=N
   dim(andir) <- c(3,n1,n2,n3)
   andir <- sweep(andir,2:4,ind,"*")
   lcoord <- array(0,c(3,2,n1,n2,n3))
-  lcoord[,1,,,] <-  andir/2+tmean[,,,]
-  lcoord[,2,,,] <-  -andir/2+tmean[,,,]
+  lcoord[,1,,,] <-  andir/2+tmean[,,,,drop=FALSE]
+  lcoord[,2,,,] <-  -andir/2+tmean[,,,,drop=FALSE]
   dim(lcoord) <- c(3,2*n1*n2*n3)
   lcoord <- cbind(lcoord)
   colorvalues <- c(rbind(colorvalues,colorvalues))
@@ -292,7 +292,7 @@ setMethod("show3d","dwiQball", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,
   if(is.null(ny)) ny <- obj@ddim[2]
   if(is.null(nz)) nz <- obj@ddim[3]
   n <- nx*ny*nz
-  if(is.null(center)) center <- floor(obj@ddim/2)
+  if(is.null(center)) center <- floor((obj@ddim+1)/2)
   if(nx*ny*nz>maxobjects) {
   cat("size of data cube",n," exceeds maximum of",maxobjects,"\n")
   if(nz > maxobjects^(1/3)) n3 <- 1 else n3 <- nz
@@ -352,7 +352,7 @@ setMethod("show3d","dwiQball", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,
   } else {
      if(title) title3d(switch(tolower(obj@what),"ODF"="ODF","wODF"="Weighted ODF","aODF"="alternative ODF","adc"="ADC (Sph. Harmonics)"),color="white",cex=1.5)
   }
-  cat("\n rgl-device",rgl.cur(),switch(tolower(obj@what),"qball"="Estimated orientation density function (Qball)","adc"="estimated apparent diffusion coefficients (sperical harmonics"),"\n",
+  cat("\n rgl-device",rgl.cur(),switch(tolower(obj@what),"ODF"="Estimated orientation density function (Qball)","aODF"="Estimated orientation density function (Qball, normalized)","adc"="estimated apparent diffusion coefficients (sperical harmonics","wODF"="Estimated orientation density function (Aganji et.al. 2009)"),"\n",
   if(normalize) "normalized","\n")
   invisible(rgl.cur())
 })
