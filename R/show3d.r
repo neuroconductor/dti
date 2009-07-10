@@ -329,6 +329,7 @@ setMethod("show3d","dwiQball", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,
   polyeder <- switch(subdivide+1,icosa0,icosa1,icosa2,icosa3,icosa4)
   sphdesign <- design.spheven(obj@order,polyeder$vertices,obj@lambda)$design
   radii <- t(sphdesign)%*%sphcoef
+  cat(range(radii),"\n")
   if(normalize){
      minradii <- apply(radii,2,min)
      maxradii <- apply(radii,2,max)
@@ -336,7 +337,8 @@ setMethod("show3d","dwiQball", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,
      radii <- sweep(radii,2,maxradii-minradii,"/")^power*scale
 
   } else {
-  radii <- radii/max(radii)*scale
+     radii <- sweep(radii,2,apply(radii,2,max),"/")*scale
+#     radii <- radii/max(radii)*scale
   }
   if(!add) {
      rgl.open()
