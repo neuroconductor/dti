@@ -105,7 +105,7 @@ dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=
 
 ############
 
-readDWIdata <- function(gradient, dirlist, format, nslice, order = NULL,
+readDWIdata <- function(gradient, dirlist, format, nslice = NULL, order = NULL,
                         xind=NULL, yind=NULL, zind=NULL,
                         level=0, mins0value=0, maxvalue=10000,
                         voxelext=NULL, orientation=c(1,3,5)) {
@@ -113,7 +113,9 @@ readDWIdata <- function(gradient, dirlist, format, nslice, order = NULL,
   args <- list(sys.call())
   if (!(format %in% c("DICOM","NIFTI","ANALYZE","AFNI")))
     stop("Cannot handle other formats then DICOM|NIFTI|ANALYZE|AFNI, found:",format)
-  if (any(sort((orientation)%/%2) != 0:2)) stop("invalid orientation \n")
+  if ((format == "DICOM") & is.null(nslice))
+    stop("Cannot handle DICOM folders without specifying number of slices nslice!")
+#  if (any(sort((orientation)%/%2) != 0:2)) stop("invalid orientation \n")
   if (dim(gradient)[2]==3) gradient <- t(gradient)
   if (dim(gradient)[1]!=3) stop("Not a valid gradient matrix")
   ngrad <- dim(gradient)[2]
@@ -163,10 +165,13 @@ readDWIdata <- function(gradient, dirlist, format, nslice, order = NULL,
       data <- read.DICOM(ff)
     } else if (format == "NIFTI") {
       data <- read.NIFTI(ff,setmask=FALSE)
+      nslice <- data$dim[3]
     } else if (format == "ANALYZE") {
       data <- read.ANALYZE(ff,setmask=FALSE)
+      nslice <- data$dim[3]
     } else if (format == "AFNI") {
       data <- read.AFNI(ff,setmask=FALSE)
+      nslice <- data$dim[3]
     } 
     if (is.null(ddim)) ddim <- c(data$dim[1:2],nslice,ngrad)
     if (is.null(voxelext)) {
@@ -213,30 +218,30 @@ readDWIdata <- function(gradient, dirlist, format, nslice, order = NULL,
   cat("Data successfully read",date(), "\n")
 
   # redefine orientation
-  xyz <- (orientation)%/%2+1
-  swap <- orientation-2*(orientation%/%2)
-  if(any(xyz!=1:3)) {
-      abc <- 1:3
-      abc[xyz] <- abc
-      si <- aperm(si,c(abc,4))
-      swap[xyz] <- swap
-      voxelext[xyz] <- voxelext
-      dimsi[xyz] <- dimsi[1:3]
-      ddim[xyz] <- ddim[1:3]
-      gradient[xyz,] <- gradient
-  }
-  if(swap[1]==1) {
-      si <- si[dimsi[1]:1,,,] 
-      gradient[1,] <- -gradient[1,]
-      }
-  if(swap[2]==1) {
-      si <- si[,dimsi[2]:1,,]  
-      gradient[2,] <- -gradient[2,]
-      }
-  if(swap[3]==0) {
-      si <- si[,,dimsi[3]:1,]    
-      gradient[3,] <- -gradient[3,]
-      }
+#  xyz <- (orientation)%/%2+1
+#  swap <- orientation-2*(orientation%/%2)
+#  if(any(xyz!=1:3)) {
+#      abc <- 1:3
+#      abc[xyz] <- abc
+#      si <- aperm(si,c(abc,4))
+#      swap[xyz] <- swap
+#      voxelext[xyz] <- voxelext
+#      dimsi[xyz] <- dimsi[1:3]
+#      ddim[xyz] <- ddim[1:3]
+#      gradient[xyz,] <- gradient
+#  }
+#  if(swap[1]==1) {
+#      si <- si[dimsi[1]:1,,,] 
+#      gradient[1,] <- -gradient[1,]
+#      }
+#  if(swap[2]==1) {
+#      si <- si[,dimsi[2]:1,,]  
+#      gradient[2,] <- -gradient[2,]
+#      }
+#  if(swap[3]==0) {
+#      si <- si[,,dimsi[3]:1,]    
+#      gradient[3,] <- -gradient[3,]
+#      }
   # orientation set to radiological convention
   si <- .Fortran("initdata",
                  si=as.integer(si),
