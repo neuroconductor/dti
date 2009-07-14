@@ -247,6 +247,39 @@ design.spheven <- function(order,gradients,lambda){
        theta = theta,
        phi = phi)
 }
+design.wspheven <- function(order,gradients,lambda){
+#
+#  compute design matrix for Q-ball 
+#  Regularization differs from q ball (Desceoutoux, Tuch)
+#
+  order <- as.integer(max(0,order))
+  if(order%%2==1){
+    warning("maximum order needs to be even, increase order by one")
+    order <- order+1
+  } 
+
+  # calculate spherical angles theta and phi corresponding to the gradients
+  n <- dim(gradients)[2]
+  theta <- phi <- numeric(n)
+  for( i in 1:n){
+    angles <- sphcoord(gradients[,i])
+    theta[i] <- angles[1]
+    phi[i] <-  angles[2]
+  }
+
+  # values of SH on specified spherical angles
+  sphharmonics <- getsphericalharmonicseven(order,theta,phi)
+  # Laplace-Beltrami-Regularization term
+  lord <- rep(seq(0,order,2),2*seq(0,order,2)+1)
+  L <- lambda*diag(lord^3*(lord+1)^3)
+  # transformation matrix for SH coefficients
+  ttt <- solve(sphharmonics%*%t(sphharmonics)+L)%*%sphharmonics
+  # results
+  list(design = sphharmonics,
+       matrix = ttt,
+       theta = theta,
+       phi = phi)
+}
 
 design.sphall <- function(order,gradients,lambda){
 #

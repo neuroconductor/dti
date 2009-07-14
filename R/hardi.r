@@ -94,12 +94,11 @@ setMethod("dwiQball","dtiData",function(object,what="ODF",order=4,lambda=0){
      # see Aganj et al. (2009)
      # include FRT(SH) -> P_l(0)
      sicoef <- z$matrix%*% si
-     sphcoef <- plzero(order)%*%L%*%sicoef
+     plz <- plzero(order)/2/pi
+     sphcoef <- plz%*%L%*%sicoef
      coef0 <- sphcoef[1,]
-     cat(quantile(coef0),"\n")
-     plot(density(coef0))
      sphcoef[1,] <- 1/2/sqrt(pi)
-     sphcoef[-1,] <- sphcoef[-1,]/16/pi^2
+     sphcoef[-1,] <- sphcoef[-1,]/8/pi
      cat("Estimated coefficients for wODF (order=",order,") ",date(),"\n")
   } else if (what=="aODF") {
      cat("Data transformation started ",date(),"\n")

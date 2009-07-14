@@ -49,7 +49,8 @@ setMethod("show3d","dtiData", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,s
   s0 <- extract(obj,"s0")$S0
   if(length(dim(s0))==4) s0 <- apply(s0,1:3,mean)
   radii <- sweep(radii,1:3,s0,"/")
-  if(what=="ADC") radii <- -log(radii)
+  if(what=="ADC") radii <- array(pmax(0,-log(radii)),dim(radii))
+# avoid using negative ADC's caused by random effects 
   ngrad <- dim(radii)[length(dim(radii))]
   dim(radii) <- c(length(radii)/ngrad,ngrad)
   radii <- t(radii)
@@ -105,7 +106,7 @@ setMethod("show3d","dtiData", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,s
 
 ##############
 
-setMethod("show3d","dtiTensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,method=1,level=0,scale=.5,bgcolor="black",add=FALSE,subdivide=2,maxobjects=729,what="ADC",minalpha=.25,normalize=NULL,box=FALSE,title=FALSE,...){
+setMethod("show3d","dtiTensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,method=1,level=0,scale=.5,bgcolor="black",add=FALSE,subdivide=2,maxobjects=729,what="tensor",minalpha=.25,normalize=NULL,box=FALSE,title=FALSE,...){
   if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
   if(!exists("icosa0")) data("polyeders")
   if(subdivide<0||subdivide>4) subdivide <- 3
@@ -338,8 +339,10 @@ setMethod("show3d","dwiQball", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,
 
   } else {
      radii <- sweep(radii,2,apply(radii,2,max),"/")*scale
+     radii[radii<0] <- 0
 #     radii <- radii/max(radii)*scale
   }
+  cat(range(radii),"\n")
   if(!add) {
      rgl.open()
      par3d(...)
@@ -486,20 +489,25 @@ show3d.odf <- function(radii,polyeder,centers=NULL,minalpha=1,...){
       n <- dcenters[2]
    }
    vertices <- polyeder$vertices
-   colors <- rgb(abs(vertices[1,]),abs(vertices[2,]),abs(vertices[3,]))
+#   colors <- rgb(abs(vertices[1,]),abs(vertices[2,]),abs(vertices[3,]))
    alpha <- rep(minalpha,length(radii))
    nv <- polyeder$nv
    ni <- polyeder$ni*3
-   colors <- matrix(colors,nv,n)
+#   colors <- matrix(colors,nv,n)
+   colors <- rainbow(1024,end=2/3,gamma=1.2)
+   ranger <- range(radii)
+   ind <- 1024-(radii-ranger[1])/(ranger[2]-ranger[1])*1023
    alpha <- matrix(alpha,nv,n)
    vertices <- array(polyeder$vertices,c(3,nv,n))
-   indices <- matrix(polyeder$indices,c(ni,n))
+   indices <- array(polyeder$indices,c(ni,n))
    if(length(radii)!=nv*n) stop("wrong length of radii, needs to be 
              dim(polyeder$vertices)[2]*dim(centers)[2]")
    vertices <- sweep(vertices,2:3,radii,"*")
    vertices <- sweep(vertices,c(1,3),centers,"+")
    dim(vertices) <- c(3,nv*n)
    indices <- sweep(matrix(indices,ni,n),2,((1:n)-1)*nv,"+")
+#   rgl.triangles(vertices[1,indices],vertices[2,indices],vertices[3,indices],
+#                 color=colors[indices],alpha=alpha[indices],...)
    rgl.triangles(vertices[1,indices],vertices[2,indices],vertices[3,indices],
-                 color=colors[indices],alpha=alpha[indices],...)
+                 color=colors[ind][indices],alpha=alpha[indices],...)
 }
