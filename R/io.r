@@ -120,12 +120,12 @@ readDWIdata <- function(gradient, dirlist, format, nslice = NULL, order = NULL,
   if (dim(gradient)[1]!=3) stop("Not a valid gradient matrix")
   ngrad <- dim(gradient)[2]
   s0ind <- (1:ngrad)[apply(abs(gradient),2,max)==0] 
-  if (is.null(zind)) zind <- 1:nslice
 
   # generate file list in specified order
   filelist <- NULL
   for (dd in dirlist) filelist <- c(filelist, paste(dd,list.files(dd),sep=.Platform$file.sep))
   if (format == "DICOM") {
+    if (is.null(zind)) zind <- 1:nslice
     if (length(filelist) != ngrad * nslice)
       stop("Number of found files does not match ngrad*nslice",length(filelist))
     if (is.null(order)) {
@@ -166,12 +166,15 @@ readDWIdata <- function(gradient, dirlist, format, nslice = NULL, order = NULL,
     } else if (format == "NIFTI") {
       data <- read.NIFTI(ff,setmask=FALSE)
       nslice <- data$dim[3]
+      if (is.null(zind)) zind <- 1:nslice
     } else if (format == "ANALYZE") {
       data <- read.ANALYZE(ff,setmask=FALSE)
       nslice <- data$dim[3]
+      if (is.null(zind)) zind <- 1:nslice
     } else if (format == "AFNI") {
       data <- read.AFNI(ff,setmask=FALSE)
       nslice <- data$dim[3]
+      if (is.null(zind)) zind <- 1:nslice
     } 
     if (is.null(ddim)) ddim <- c(data$dim[1:2],nslice,ngrad)
     if (is.null(voxelext)) {
