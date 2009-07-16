@@ -70,6 +70,19 @@ setMethod("sdpar","dtiData",function(object,level=NULL,sdmethod="sd",interactive
         accept <- TRUE
       }
     }
+  } else {
+    ddim <- object@ddim
+    indx1 <- trunc(0.425*ddim[1]):trunc(0.575*ddim[1])
+    indy1 <- trunc(0.425*ddim[2]):trunc(0.575*ddim[2])
+    indz1 <- trunc(0.35*ddim[3]):trunc(0.65*ddim[3])
+    A0a <- min(if(ls0ind>1) s0mean[indx1,indy1,indz1][s0mean[indx1,indy1,indz1]>1] else s0[indx1,indy1,indz1][s0[indx1,indy1,indz1]>1])
+    cat("A0a",A0a)
+    indx1 <- c(1:trunc(0.15*ddim[1]),trunc(0.85*ddim[1]):ddim[1])
+    indy1 <- c(1:trunc(0.15*ddim[2]),trunc(0.85*ddim[2]):ddim[2])
+    indz1 <- c(1:trunc(0.15*ddim[3]),trunc(0.85*ddim[3]):ddim[3])
+    A0b <- max(if(ls0ind>1) s0mean[indx1,indy1,indz1] else s0[indx1,indy1,indz1])
+    cat("A0a",A0a,"A0b",A0b)
+    A0 <- min(0.8*A0a,A0b)
   }
   # determine parameters for linear relation between standard deviation and mean
   if(ls0ind>1) {
