@@ -8,7 +8,7 @@ sdpar <- function(object,  ...) cat("No method defined for class:",class(object)
 
 setGeneric("sdpar", function(object,  ...) standardGeneric("sdpar"))
 
-setMethod("sdpar","dtiData",function(object,level=NULL,sdmethod="sd",interactive=TRUE){
+setMethod("sdpar","dtiData",function(object,level=NULL,sdmethod="sd",interactive=TRUE,threshfactor=1){
   # determine interval of linearity
   if(!(sdmethod%in%c("sd","mad"))){
     warning("sdmethod needs to be either 'sd' or 'mad'")
@@ -63,8 +63,7 @@ setMethod("sdpar","dtiData",function(object,level=NULL,sdmethod="sd",interactive
         cutpoint <-  readline("Provide value for cut off point:")
         cutpoint <- if(!is.null(cutpoint)) as.numeric(cutpoint) else A0
         if(!is.na(cutpoint)) {
-          A0 <- cutpoint
-          level <- cutpoint
+          level <-A0 <- cutpoint
         }
       } else {
         accept <- TRUE
@@ -72,17 +71,20 @@ setMethod("sdpar","dtiData",function(object,level=NULL,sdmethod="sd",interactive
     }
   } else {
     ddim <- object@ddim
-    indx1 <- trunc(0.425*ddim[1]):trunc(0.575*ddim[1])
-    indy1 <- trunc(0.425*ddim[2]):trunc(0.575*ddim[2])
-    indz1 <- trunc(0.35*ddim[3]):trunc(0.65*ddim[3])
-    A0a <- min(if(ls0ind>1) s0mean[indx1,indy1,indz1][s0mean[indx1,indy1,indz1]>1] else s0[indx1,indy1,indz1][s0[indx1,indy1,indz1]>1])
-    cat("A0a",A0a)
+    indx1 <- trunc(0.4*ddim[1]):trunc(0.6*ddim[1])
+    indy1 <- trunc(0.4*ddim[2]):trunc(0.6*ddim[2])
+    indz1 <- trunc(0.7*ddim[3]):trunc(0.7*ddim[3])
+    A0a <- quantile(if(ls0ind>1) s0mean[indx1,indy1,indz1][s0mean[indx1,indy1,indz1]>1] else s0[indx1,indy1,indz1][s0[indx1,indy1,indz1]>1],.01)/(1+1/length(object@s0ind))
+#  A0a provides a guess for a threshold based on lower quantiles of intensities
+#  in a central cube (probably contained within the head)
+#  the last factor adjusts for increased accuracy with replicated s0-values
     indx1 <- c(1:trunc(0.15*ddim[1]),trunc(0.85*ddim[1]):ddim[1])
     indy1 <- c(1:trunc(0.15*ddim[2]),trunc(0.85*ddim[2]):ddim[2])
     indz1 <- c(1:trunc(0.15*ddim[3]),trunc(0.85*ddim[3]):ddim[3])
-    A0b <- max(if(ls0ind>1) s0mean[indx1,indy1,indz1] else s0[indx1,indy1,indz1])
-    cat("A0a",A0a,"A0b",A0b)
-    A0 <- min(0.8*A0a,A0b)
+    A0b <- quantile(if(ls0ind>1) s0mean[indx1,indy1,indz1] else s0[indx1,indy1,indz1],.99)
+#  A0a provides a guess for a threshold based on upper quantiles of intensities
+#  in cubes located at the edges (probably only containing noise
+    level <- A0 <- min(A0a,A0b)*threshfactor
   }
   # determine parameters for linear relation between standard deviation and mean
   if(ls0ind>1) {
