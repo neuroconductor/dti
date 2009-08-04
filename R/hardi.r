@@ -125,7 +125,11 @@ setMethod("dwiQball","dtiData",function(object,what="ODF",order=4,lambda=0){
   } else { #  what == "ADC" 
      cat("Data transformation started ",date(),"\n")
      dim(s0) <- dim(si) <- NULL
+     si <- si/s0
+     si[is.na(si)] <- 0
+     si[si>=1] <- 1-.Machine$double.neg.eps
      si <- -log(si)
+#     si <- -log(si)
      si[is.na(si)] <- 0
      si[(si == Inf)] <- 0
      si[(si == -Inf)] <- 0
