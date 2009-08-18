@@ -190,3 +190,20 @@ setClass("dwiQball",
           }
          }
          )
+setClass("dwiFiber",
+          representation(call = "list",
+                         fibers = "matrix",
+                         roix  = "integer",
+                         roiy = "integer",
+                         roiz = "integer",
+                         method = "character",
+                         minanindex = "numeric",
+                         maxangle   = "numeric"),
+         contains=c("list","dwi"),
+         validity=function(object){
+            if(dim(object@fibers)[2]!=6) {
+            cat("invalid dimension of fibers matrix \n")
+            return(invisible(FALSE))
+            }
+         }
+        )
