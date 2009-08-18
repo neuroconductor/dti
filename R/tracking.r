@@ -8,7 +8,7 @@ tracking <- function(obj,  ...) cat("Fiber tracking not implemented for this cla
 
 setGeneric("tracking", function(obj,  ...) standardGeneric("tracking"))
 
-setMethod("tracking","dtiTensor", function(obj, xind=NULL, yind=NULL, zind=NULL, method="LINEPROP", minanindex=0.3, maxangle=30, bgcolor="black", size=1, title=FALSE, box=FALSE, ...)
+setMethod("tracking","dtiTensor", function(obj, xind=NULL, yind=NULL, zind=NULL, method="LINEPROP", minanindex=0.3, maxangle=30, bgcolor="black", lwd=1, title=FALSE, box=FALSE, display=TRUE, ...)
 {
 
   args <- sys.call(-1)
@@ -55,20 +55,20 @@ setMethod("tracking","dtiTensor", function(obj, xind=NULL, yind=NULL, zind=NULL,
               DUP=FALSE)
 
   dim(dd) <- c(length(dd)/6,6);
-  
-  require(rgl);
-  open3d();
+  if(display){
+  require(rgl)
+  open3d()
   rgl.bg(color=bgcolor)
   rgl.lines(dd[,1],dd[,2],dd[,3],
             color=rgb(abs(dd[,4]),abs(dd[,5]),abs(dd[,6])),
-            size=size)
+            size=lwd)
   if(box) bbox3d()
   if(is.character(title)) {
      title3d(title,color="white",cex=1.5)
   } else {
      if(title) title3d("Fiber tracks",color="white",cex=1.5)
   }
-  
+  }
   invisible(new("dwiFiber",
                 call  = args,
                 fibers = dd,
@@ -81,7 +81,7 @@ setMethod("tracking","dtiTensor", function(obj, xind=NULL, yind=NULL, zind=NULL,
             )
 })
 
-setMethod("tracking","dtiIndices", function(obj, xind=NULL, yind=NULL, zind=NULL, method="LINEPROP", minanindex=0.3, maxangle=30, bgcolor="black", size=1, title=FALSE, box=FALSE, ...)
+setMethod("tracking","dtiIndices", function(obj, xind=NULL, yind=NULL, zind=NULL, method="LINEPROP", minanindex=0.3, maxangle=30, bgcolor="black", lwd=1, title=FALSE, box=FALSE, display=TRUE, ...)
 {
 
   args <- sys.call(-1)
@@ -127,20 +127,20 @@ setMethod("tracking","dtiIndices", function(obj, xind=NULL, yind=NULL, zind=NULL
               DUP=FALSE)
 
   dim(dd) <- c(length(dd)/6,6);
-  
-  require(rgl);
-  open3d();
+  if(display){
+  require(rgl)
+  open3d()
   rgl.bg(color=bgcolor)
   rgl.lines(dd[,1],dd[,2],dd[,3],
             color=rgb(abs(dd[,4]),abs(dd[,5]),abs(dd[,6])),
-            size=size)
+            size=lwd)
   if(box) bbox3d()
   if(is.character(title)) {
      title3d(title,color="white",cex=1.5)
   } else {
      if(title) title3d("Fiber tracks",color="white",cex=1.5)
   }
-  
+  }
   invisible(new("dwiFiber",
                 call  = args,
                 fibers = dd,

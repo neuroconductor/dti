@@ -360,6 +360,26 @@ setMethod("show3d","dwiQball", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,
   invisible(rgl.cur())
 })
 
+setMethod("show3d","dwiFiber", function(obj,add=FALSE,bgcolor="black",box=FALSE,title=FALSE,lwd=1,...){
+  if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
+  if(!add) {
+     rgl.open()
+     par3d(...)
+     rgl.bg(color=bgcolor)
+  }
+  rgl.lines(dd[,1],dd[,2],dd[,3],
+            color=rgb(abs(dd[,4]),abs(dd[,5]),abs(dd[,6])),
+            size=lwd)
+  if(box) bbox3d()
+  if(is.character(title)) {
+     title3d(title,color="white",cex=1.5)
+  } else {
+     if(title) title3d("Fiber tracks",color="white",cex=1.5)
+  }
+
+  invisible(rgl.cur())
+})
+
 ################################################################
 #                                                              #
 # Section for show3d() functions (misc)                        #
