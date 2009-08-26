@@ -304,7 +304,6 @@ void Fibertracking::nextVoxel_forward()
 	
 	if ( x < 0 || y < 0 || z < 0 || x > (x_range-1) || y > (y_range-1) || z > (z_range-1) )
 	{
-		
 		return;
 	}
 	else
@@ -319,7 +318,11 @@ void Fibertracking::nextVoxel_forward()
 	
 	start_o = intersection;
 	
-	intersec_angle = 180 * ( acos( (voxel_d * (voxels[cur_voxel_index].getDirection())) / (Vector::norm(voxel_d)*Vector::norm(voxels[cur_voxel_index].getDirection())) ) / M_PI);
+	double zaehler = voxel_d * (voxels[cur_voxel_index].getDirection());
+	double nenner  = Vector::norm(voxel_d)*Vector::norm(voxels[cur_voxel_index].getDirection());
+	double bruch   = zaehler / nenner;
+	
+	intersec_angle = 180./M_PI * acos((float)bruch);
 }
 
 void Fibertracking::nextVoxel_backward()
@@ -396,7 +399,11 @@ void Fibertracking::nextVoxel_backward()
 	
 	start_o = intersection;
 	
-	intersec_angle = 180 * ( acos( (voxel_d * (voxels[cur_voxel_index].getDirection())) / (Vector::norm(voxel_d)*Vector::norm(voxels[cur_voxel_index].getDirection())) ) / M_PI);
+	double zaehler = voxel_d * (voxels[cur_voxel_index].getDirection());
+	double nenner  = Vector::norm(voxel_d)*Vector::norm(voxels[cur_voxel_index].getDirection());
+	double bruch   = zaehler / nenner;
+	
+	intersec_angle = 180./M_PI * acos((float)bruch);
 }
 
 void Fibertracking::trackFiber_forward()
@@ -405,7 +412,7 @@ void Fibertracking::trackFiber_forward()
 	
 	Voxel *current = &voxels[cur_voxel_index];
 	Vector *curVec;
-	current->setVisited(false);
+//	current->setVisited(false);
 	
 	start_o = *new Vector( (current->getX()+0.5)*dim_x, (current->getY()+0.5)*dim_y, (current->getZ()+0.5)*dim_z );
 
@@ -415,6 +422,7 @@ void Fibertracking::trackFiber_forward()
 	curVec = new Vector(0., (double)cur_voxel_index, 0.);
 	curVectorList.add_at_end(*curVec);
 	
+	
 	while (current->getAnisotropy() >= 0.3 && !current->isVisited() && fabs(intersec_angle) <= max_intersec_angle)
 	{
 //		current->print();
@@ -422,41 +430,48 @@ void Fibertracking::trackFiber_forward()
 		current->setStartable(false);
 		
 		nextVoxel_forward();
+
+		currentFiber.add_at_end(*current);
 		
-		if ( current == &voxels[cur_voxel_index] || voxels[cur_voxel_index].isVisited())
+		curVectorList.add_at_end(start_o);
+		
+		curVec = new Vector(0., (double)cur_voxel_index, 0.);
+		curVectorList.add_at_end(*curVec);
+
+		if ( current == &voxels[cur_voxel_index]) // || voxels[cur_voxel_index].isVisited()
 		{
-			return;
+			break;
 		}
 		else
 		{
-			currentFiber.add_at_end(*current);
+//			currentFiber.add_at_end(*current);
 			current = &voxels[cur_voxel_index];
-//			currentFiber.addVector_forw(start_o, *current);
+////			currentFiber.addVector_forw(start_o, *current);
 			
-			curVectorList.add_at_end(start_o);
+//			curVectorList.add_at_end(start_o);
 			
-			curVec = new Vector(0., (double)cur_voxel_index, 0.);
-			curVectorList.add_at_end(*curVec);
+//			curVec = new Vector(0., (double)cur_voxel_index, 0.);
+//			curVectorList.add_at_end(*curVec);
 		}
 	}
 	
 //	printf("Fiber ended because of: ");
-	
-	if (current->isVisited())
-	{
+//	
+//	if (current->isVisited())
+//	{
 //		printf("next voxel is already visited");
-	}
-	
-	if (current->getAnisotropy() < 0.3)
-	{
+//	}
+//	
+//	if (current->getAnisotropy() < 0.3)
+//	{
 //		printf(" next voxel has to low anisotrpy ");
-	}
-	
-	if (fabs(intersec_angle) > max_intersec_angle)
-	{
+//	}
+//	
+//	if (fabs(intersec_angle) > max_intersec_angle)
+//	{
 //		printf(" intersection angle is to large ");
-	}
-	
+//	}
+//	
 //	printf(".\n");
 }
 
@@ -481,7 +496,7 @@ void Fibertracking::trackFiber_backward()
 		
 		nextVoxel_backward();
 		
-		if (current == &voxels[cur_voxel_index] || voxels[cur_voxel_index].isVisited())
+		if ( current == &voxels[cur_voxel_index]) // || voxels[cur_voxel_index].isVisited()
 		{
 			return;
 		}
@@ -500,22 +515,22 @@ void Fibertracking::trackFiber_backward()
 	}
 	
 //	printf("Fiber ended because of: ");
-	
-	if (current->isVisited())
-	{
+//	
+//	if (current->isVisited())
+//	{
 //		printf("next voxel is already visited");
-	}
-	
-	if (current->getAnisotropy() < 0.3)
-	{
+//	}
+//	
+//	if (current->getAnisotropy() < 0.3)
+//	{
 //		printf(" next voxel has to low anisotrpy ");
-	}
-	
-	if (fabs(intersec_angle) > max_intersec_angle)
-	{
+//	}
+//	
+//	if (fabs(intersec_angle) > max_intersec_angle)
+//	{
 //		printf(" intersection angle is to low ");
-	}
-	
+//	}
+//	
 //	printf(".\n");
 }
 

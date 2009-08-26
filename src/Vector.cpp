@@ -208,3 +208,4 @@ Vector& Vector::cross(Vector& v2)
 		return out;
 	}
 }
+
