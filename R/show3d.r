@@ -367,6 +367,7 @@ setMethod("show3d","dwiFiber", function(obj,add=FALSE,bgcolor="black",box=FALSE,
      par3d(...)
      rgl.bg(color=bgcolor)
   }
+  dd <- obj@fibers
   rgl.lines(dd[,1],dd[,2],dd[,3],
             color=rgb(abs(dd[,4]),abs(dd[,5]),abs(dd[,6])),
             size=lwd)

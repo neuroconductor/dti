@@ -5,6 +5,7 @@
 #include <string>
 #include <R.h>
 #include <Rinternals.h>
+#include <R_ext/Utils.h>
 
 using namespace std;
 

@@ -32,7 +32,7 @@ Fibertracking::Fibertracking(Voxel& voxels, int x, int y, int z, double dim_x, d
 	
 	last_start_voxel = 0;
 	num_fibers = 0;
-	this->dim_x = dim_x, this->dim_y = dim_y, this->dim_z = dim_y;
+	this->dim_x = dim_x, this->dim_y = dim_y, this->dim_z = dim_z;
 	
 	cur_voxel_index = 0;
 	
@@ -422,21 +422,20 @@ void Fibertracking::trackFiber_forward()
 	curVec = new Vector(0., (double)cur_voxel_index, 0.);
 	curVectorList.add_at_end(*curVec);
 	
-	
 	while (current->getAnisotropy() >= 0.3 && !current->isVisited() && fabs(intersec_angle) <= max_intersec_angle)
 	{
 //		current->print();
 		current->setVisited(true);
 		current->setStartable(false);
 		
-		nextVoxel_forward();
-
 		currentFiber.add_at_end(*current);
 		
 		curVectorList.add_at_end(start_o);
 		
 		curVec = new Vector(0., (double)cur_voxel_index, 0.);
 		curVectorList.add_at_end(*curVec);
+
+		nextVoxel_forward();
 
 		if ( current == &voxels[cur_voxel_index]) // || voxels[cur_voxel_index].isVisited()
 		{
@@ -494,8 +493,14 @@ void Fibertracking::trackFiber_backward()
 		current->setVisited(true);
 		current->setStartable(false);
 		
-		nextVoxel_backward();
+		curVec = new Vector(0., (double)cur_voxel_index, 0.);
+		curVectorList.add_at_start(*curVec);
+
+		curVectorList.add_at_start(start_o);
 		
+		currentFiber.add_at_start(*current);
+		
+		nextVoxel_backward();
 		if ( current == &voxels[cur_voxel_index]) // || voxels[cur_voxel_index].isVisited()
 		{
 			return;
@@ -503,14 +508,14 @@ void Fibertracking::trackFiber_backward()
 		else
 		{
 			current = &voxels[cur_voxel_index];
-//			currentFiber.addVector_back(start_o, *current);
-
-			curVec = new Vector(0., (double)cur_voxel_index, 0.);
-			curVectorList.add_at_start(*curVec);
-
-			curVectorList.add_at_start(start_o);
-			
-			currentFiber.add_at_start(*current);
+////			currentFiber.addVector_back(start_o, *current);
+//
+//			curVec = new Vector(0., (double)cur_voxel_index, 0.);
+//			curVectorList.add_at_start(*curVec);
+//
+//			curVectorList.add_at_start(start_o);
+//			
+//			currentFiber.add_at_start(*current);
 		}
 	}
 	
@@ -613,6 +618,8 @@ void Fibertracking::findMarkedFibers(int* ranges)
 			}
 		}
 	}
+	
+	counter = 0;
 	
 	while (last_start_voxel < length)
 	{

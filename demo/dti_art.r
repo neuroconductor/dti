@@ -49,7 +49,7 @@ switch(a,source(system.file("rcode/generatedata.r",package="dti")),
          source(system.file("rcode/generatedata2.r",package="dti")))
 # Read Phantom data 
 
-dt0obj <- dtiData(bvec,tmpfile1,mins0value=mins0value,ddim)
+dt0obj <- dtiData(bvec,tmpfile1,mins0value=mins0value,ddim,voxelext=c(1,1,2.5))
 dt0obj <- sdpar(dt0obj,interactive=FALSE)
 
 # Compute phantom tensors
@@ -62,7 +62,7 @@ dt0aniso <- dtiIndices(dt0)
 
 # Read noisy data 
 
-dtobj <- dtiData(bvec,tmpfile2,mins0value=mins0value,ddim)
+dtobj <- dtiData(bvec,tmpfile2,mins0value=mins0value,ddim,voxelext=c(1,1,2.5))
 dtobj <- sdpar(dtobj,interactive=FALSE)
 
 # Estimate tensors

@@ -48,7 +48,7 @@ Fiber::Fiber(Voxel* start)
 
 int Fiber::getLength()		{return length;}
 
-void Fiber::add_at_end(Voxel &add)
+void Fiber::add_at_end(Voxel &add) // OLD!!!
 {
 	if (end == NULL)
 	{
@@ -68,7 +68,34 @@ void Fiber::add_at_end(Voxel &add)
 	length++;
 }
 
-void Fiber::add_at_start(Voxel &add)
+//void Fiber::add_at_end(Voxel &add) // NEW!!!
+//{
+//	if (&add == NULL)
+//	{
+//		return;
+//	}
+//	else
+//	{
+//		if (end == NULL)
+//		{
+//			start = &add;
+//			end   = &add;
+//			start->setNext(NULL);
+//			start->setPrev(NULL);
+//		}
+//		else
+//		{
+//			add.setNext(NULL);
+//			add.setPrev(end);
+//			end->setNext(&add);
+//			end = &add;
+//		}
+//		
+//		length++;
+//	}
+//}
+
+void Fiber::add_at_start(Voxel &add) // OLD!!!
 {
 	if (start == NULL)
 	{
@@ -88,6 +115,32 @@ void Fiber::add_at_start(Voxel &add)
 	length++;
 }
 
+//void Fiber::add_at_start(Voxel &add) //NEW!!!
+//{
+//	if (&add == NULL)
+//	{
+//		return;
+//	}
+//	else
+//	{
+//		if (start == NULL)
+//		{
+//			start = &add;
+//			end   = &add;
+//			start->setNext(NULL);
+//			start->setPrev(NULL);
+//		}
+//		else
+//		{
+//			Voxel* uebergang = start;
+//			start = &add;
+//			start->setNext(uebergang);
+//		}
+//		
+//		length++;
+//	}
+//}
+
 void Fiber::del_at_start()
 {
 	start->getNext()->setPrev(NULL);
@@ -105,17 +158,19 @@ void Fiber::unvisit()
 		return;
 	}
 	
-	Voxel *aktuell = start;
+	Voxel* aktuell = start;
 	
-	while (aktuell != NULL)
+	int i;
+	
+	for (i = 0; i < length; i++)
 	{
 		aktuell->setVisited(false);
 		aktuell = aktuell->getNext();
 		
-		if (aktuell == NULL)
-		{
-			break;
-		}	
+//		if (aktuell == NULL)
+//		{
+//			break;
+//		}	
 	}
 }
 
@@ -128,16 +183,20 @@ void Fiber::print()
 	
 	Voxel* aktuell = start;
 	
-	while (aktuell != NULL)
+	int i;
+	
+	for (i = 0; i < length; i++)
 	{
 		aktuell->print();
 		aktuell = aktuell->getNext();
 		
-		if (aktuell == NULL)
-		{
-			break;
-		}	
+//		if (aktuell == NULL)
+//		{
+//			break;
+//		}	
 	}
+	
+//	end->print();
 }
 
 void Fiber::addVector_forw(Vector &v, Voxel &vo)
