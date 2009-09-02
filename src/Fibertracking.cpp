@@ -15,7 +15,7 @@ Fibertracking::Fibertracking()
 	this->max_intersec_angle = 30.;
 }
 
-Fibertracking::Fibertracking(Voxel& voxels, int x, int y, int z, double dim_x, double dim_y, double dim_z)
+Fibertracking::Fibertracking(Voxel& voxels, int x, int y, int z, double dim_x, double dim_y, double dim_z, double min_anisotropy, double max_angle)
 {
 	this->voxels = &voxels;
 	
@@ -36,8 +36,10 @@ Fibertracking::Fibertracking(Voxel& voxels, int x, int y, int z, double dim_x, d
 	
 	cur_voxel_index = 0;
 	
+	this->min_anisotropy = min_anisotropy;
+	
 	intersec_angle = 0.;
-	this->max_intersec_angle = 30.;
+	this->max_intersec_angle = max_angle;
 	
 	allVectors = *new VectorList();
 }
@@ -422,7 +424,7 @@ void Fibertracking::trackFiber_forward()
 	curVec = new Vector(0., (double)cur_voxel_index, 0.);
 	curVectorList.add_at_end(*curVec);
 	
-	while (current->getAnisotropy() >= 0.3 && !current->isVisited() && fabs(intersec_angle) <= max_intersec_angle)
+	while (current->getAnisotropy() >= min_anisotropy && !current->isVisited() && fabs(intersec_angle) <= max_intersec_angle)
 	{
 //		current->print();
 		current->setVisited(true);
@@ -487,7 +489,7 @@ void Fibertracking::trackFiber_backward()
 	// Startpunkt einschreiben
 //	currentFiber.addVector_forw(start_o, *current);
 	
-	while (current->getAnisotropy() >= 0.3 && !current->isVisited() && fabs(intersec_angle) <= max_intersec_angle)
+	while (current->getAnisotropy() >= min_anisotropy && !current->isVisited() && fabs(intersec_angle) <= max_intersec_angle)
 	{
 //		current->print();
 		current->setVisited(true);
@@ -501,6 +503,7 @@ void Fibertracking::trackFiber_backward()
 		currentFiber.add_at_start(*current);
 		
 		nextVoxel_backward();
+		
 		if ( current == &voxels[cur_voxel_index]) // || voxels[cur_voxel_index].isVisited()
 		{
 			return;
@@ -545,7 +548,7 @@ void Fibertracking::findAllFibers()
 	
 	while (last_start_voxel < x_range*y_range*z_range)
 	{
-		if (voxels[last_start_voxel].getAnisotropy() >= 0.3 && voxels[last_start_voxel].isStartable())
+		if (voxels[last_start_voxel].getAnisotropy() >= min_anisotropy && voxels[last_start_voxel].isStartable())
 		{
 			num_fibers++;
 			
@@ -623,7 +626,7 @@ void Fibertracking::findMarkedFibers(int* ranges)
 	
 	while (last_start_voxel < length)
 	{
-		if (marked[last_start_voxel].getAnisotropy() >= 0.3 && marked[last_start_voxel].isStartable())
+		if (marked[last_start_voxel].getAnisotropy() >= min_anisotropy) //&& marked[last_start_voxel].isStartable()
 		{
 //			num_fibers++;
 			

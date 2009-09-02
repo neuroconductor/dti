@@ -8,7 +8,7 @@ tracking <- function(obj,  ...) cat("Fiber tracking not implemented for this cla
 
 setGeneric("tracking", function(obj,  ...) standardGeneric("tracking"))
 
-setMethod("tracking","dtiTensor", function(obj, xind=NULL, yind=NULL, zind=NULL, method="LINEPROP", minanindex=0.3, maxangle=30, bgcolor="black", lwd=1, title=FALSE, box=FALSE, display=TRUE, ...)
+setMethod("tracking","dtiTensor", function(obj, xind=NULL, yind=NULL, zind=NULL, method="LINEPROP", minanindex=0.3, maxangle=30)
 {
 
   args <- sys.call(-1)
@@ -49,39 +49,42 @@ setMethod("tracking","dtiTensor", function(obj, xind=NULL, yind=NULL, zind=NULL,
               as.double(obj@voxelext[1]),
               as.double(obj@voxelext[2]),
               as.double(obj@voxelext[3]),
-#             as.double(minanindex), # not yet used
-#             as.double(maxangle),   # not yet used
+              as.double(minanindex), # not yet used
+              as.double(maxangle),   # not yet used
 #             as.integer(imethod),    # not yet used (for tracking method)
               DUP=FALSE)
 
   dim(dd) <- c(length(dd)/6,6);
-  if(display){
-  require(rgl)
-  open3d()
-  rgl.bg(color=bgcolor)
-  rgl.lines(dd[,1],dd[,2],dd[,3],
-            color=rgb(abs(dd[,4]),abs(dd[,5]),abs(dd[,6])),
-            size=lwd)
-  if(box) bbox3d()
-  if(is.character(title)) {
-     title3d(title,color="white",cex=1.5)
-  } else {
-     if(title) title3d("Fiber tracks",color="white",cex=1.5)
-  }
-  }
+  dd <- reduce.fibers(dd)
+  istartfiber <- ident.fibers(dd)
   invisible(new("dwiFiber",
                 call  = args,
                 fibers = dd,
+                startind = as.integer(istartfiber),
                 roix   = as.integer(range(xind)),
                 roiy   = as.integer(range(yind)),
                 roiz   = as.integer(range(zind)),
+                gradient = obj@gradient,
+                btb   = obj@btb,
+                ngrad = obj@ngrad, # = dim(btb)[2]
+                s0ind = obj@s0ind,
+                replind = obj@replind,
+                ddim  = obj@ddim,
+                ddim0 = obj@ddim0,
+                xind  = obj@xind,
+                yind  = obj@yind,
+                zind  = obj@zind,
+                voxelext = obj@voxelext,
+                level = obj@level,
+                orientation = obj@orientation,
+                source = obj@source,
                 method = method,
                 minanindex = minanindex,
                 maxangle = maxangle)
             )
 })
 
-setMethod("tracking","dtiIndices", function(obj, xind=NULL, yind=NULL, zind=NULL, method="LINEPROP", minanindex=0.3, maxangle=30, bgcolor="black", lwd=1, title=FALSE, box=FALSE, display=TRUE, ...)
+setMethod("tracking","dtiIndices", function(obj, xind=NULL, yind=NULL, zind=NULL, method="LINEPROP", minanindex=0.3, maxangle=30)
 {
 
   args <- sys.call(-1)
@@ -121,36 +124,72 @@ setMethod("tracking","dtiIndices", function(obj, xind=NULL, yind=NULL, zind=NULL
               as.double(obj@voxelext[1]),
               as.double(obj@voxelext[2]),
               as.double(obj@voxelext[3]),
-#             as.double(minanindex), # not yet used
-#             as.double(maxangle),   # not yet used
+              as.double(minanindex), # not yet used
+              as.double(maxangle),   # not yet used
 #             as.integer(imethod),    # not yet used (for tracking method)
               DUP=FALSE)
 
   dim(dd) <- c(length(dd)/6,6);
-  if(display){
-  require(rgl)
-  open3d()
-  rgl.bg(color=bgcolor)
-  rgl.lines(dd[,1],dd[,2],dd[,3],
-            color=rgb(abs(dd[,4]),abs(dd[,5]),abs(dd[,6])),
-            size=lwd)
-  if(box) bbox3d()
-  if(is.character(title)) {
-     title3d(title,color="white",cex=1.5)
-  } else {
-     if(title) title3d("Fiber tracks",color="white",cex=1.5)
-  }
-  }
+  dd <- reduce.fibers(dd)
+  istartfiber <- ident.fibers(dd)
   invisible(new("dwiFiber",
                 call  = args,
                 fibers = dd,
+                startind = as.integer(istartfiber),
                 roix   = as.integer(range(xind)),
                 roiy   = as.integer(range(yind)),
                 roiz   = as.integer(range(zind)),
+                gradient = obj@gradient,
+                btb   = obj@btb,
+                ngrad = obj@ngrad, # = dim(btb)[2]
+                s0ind = obj@s0ind,
+                replind = obj@replind,
+                ddim  = obj@ddim,
+                ddim0 = obj@ddim0,
+                xind  = obj@xind,
+                yind  = obj@yind,
+                zind  = obj@zind,
+                voxelext = obj@voxelext,
+                level = obj@level,
+                orientation = obj@orientation,
+                source = obj@source,
                 method = method,
                 minanindex = minanindex,
                 maxangle = maxangle)
             )
 })
 
+ident.fibers <- function(mat){
+#
+#  Identify indices in mat where a new fiber starts
+#
+   dd <- dim(mat)
+   if(dd[2]!=6){
+      warning("Incorrect dimensions for fiber array")
+   }
+   dd <- dd[1]
+   mat <- mat[,1:3]
+   dim(mat) <- c(2,dd/2,3)
+   dmat <- mat[2,-(dd/2),]-mat[1,-1,]
+   fiberends <- (1:(dd/2-1))[apply(dmat^2,1,sum)>0]
+   c(0,fiberends)*2+1
+}
 
+reduce.fibers <- function(mat){
+   dd <- dim(mat)
+#
+#  clean up fiber description in dd
+#  removes instances in dd that are either redundant or would not show up on display
+#
+   if(dd[2]!=6){
+      warning("Incorrect dimensions for fiber array")
+   }
+   dd <- dd[1]
+   dim(mat) <- c(2,dd/2,6)
+   dmat <- mat[1,,1:3]-mat[2,,1:3]
+   remove <- apply(dmat^2,1,sum)==0
+   if(sum(remove)>0) warning(paste("Found ",sum(remove)," instances, where begin and end of a line segment coincide"))
+   mat <- mat[,!remove,]
+   dim(mat) <- c(2*dim(mat)[2],6)
+   mat
+}

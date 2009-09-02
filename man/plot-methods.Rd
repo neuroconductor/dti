@@ -6,6 +6,7 @@
 \alias{plot,dtiData-method}
 \alias{plot,dtiIndices-method}
 \alias{plot,dtiTensor-method}
+\alias{plot,dwiFiber-method}
 \title{ Methods for Function `plot' in Package `dti' } 
 \description{
   Visualization of objects of class \code{"dtiData"}, \code{"dtiIndices"} and class \code{"dtiTensor"}
@@ -14,6 +15,7 @@
   \S4method{plot}{dtiData}(x, y, slice=1, gradient=NULL, view= "axial", show=TRUE, density=FALSE, xind=NULL, yind=NULL, zind=NULL, mar=c(3,3,3,.3), mgp=c(2,1,0), \dots)
   \S4method{plot}{dtiTensor}(x, y, slice=1, view="axial", quant=0, minanindex=NULL, contrast.enh=1, what="FA", qrange=c(.01,.99), xind=NULL, yind=NULL, zind=NULL, mar=c(2,2,2,.2), mgp=c(2,1,0), \dots)
   \S4method{plot}{dtiIndices}(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=TRUE, identify=FALSE, density=FALSE, contrast.enh=1, what="FA", xind=NULL, yind=NULL, zind=NULL, mar=c(3,3,3,.3), mgp=c(2,1,0), \dots)
+  \S4method{plot}{dwiFiber}(x, \dots)
 }
 \arguments{
   \item{x}{ Object of class \code{"dtiIndices"}, \code{"dtiData"} or \code{"dtiTensor"}}
@@ -48,6 +50,7 @@
   \item{x = "dtiIndices"}{ Color coded anisotropy maps are produced depending on the specification in \code{method}. \code{method==1}, \code{method==2}, \code{method==4}  and \code{method==5} specify three different color schemes for directional FA-maps. \code{method==3} specifies visualization of dtiIndices using color coded shape parameters. If \code{identify==FALSE} the resulting image of class \code{"adimpro"} from package \pkg{adimpro}, otherwise a matrix with coordinates of identified voxel is returned.}
 
   \item{x = "dtiTensor"}{ The tensor itself, fractional anisotropy (FA), mean diffusivity (MD) and a color coded anisotropy map are provided. \code{NULL} is returned. }
+  \item{x = "dwiFiber"}{ Creates a density plot of fiber lengths. \code{NULL} is returned. }
   
 }}
 \author{ 

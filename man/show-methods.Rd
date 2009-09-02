@@ -6,6 +6,7 @@
 \alias{show,dtiData-method}
 \alias{show,dtiTensor-method}
 \alias{show,dtiIndices-method}
+\alias{show,dwiFiber-method}
 \title{ Methods for Function `show' in Package `dti' }
 \description{
   The function provides information on data dimensions, data source and existing slot-names for objects of class \code{"dti"}, \code{"dtiData"},

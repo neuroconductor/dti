@@ -10,7 +10,7 @@
   The function provides fiber tracking and 3D visualization of \code{"dtiTensor"} objects using the \code{"rgl"}-package. Functionality of the rgl-package allows to rotate and zoom the displayed object.
 }
 \usage{
-  \S4method{tracking}{dtiTensor}(obj, xind=NULL, yind=NULL, zind=NULL, method="LINEPROP", minanindex=0.3, maxangle=30, bgcolor="black", size=1, title=FALSE, box=FALSE, display=TRUE, \dots)
+  \S4method{tracking}{dtiTensor}(obj, xind=NULL, yind=NULL, zind=NULL, method="LINEPROP", minanindex=0.3, maxangle=30)
 }
 \arguments{
 \item{obj}{ An object of class \code{dtiTensor}}
@@ -20,19 +20,13 @@
 \item{method}{Method for fibre tracking. "LINEPROP" is simple line propagation algorithm which is the default.}
 \item{minanindex}{Minimal FA to follow the tracks. default 0.3}
 \item{maxangle}{Maximal angle between fiber in adjacent voxels. default 30 degree.}
-\item{bgcolor}{Background color for rgl-display}
-\item{size}{Line width for fibre visualization.}
-\item{title}{Add a title to the plot if \code{display=TRUE}}
-\item{box}{Add a box and axes to the plot if \code{display=TRUE}}
-\item{display}{Display detected fibers using \pkg{rgl}}
-\item{\dots}{Additional parameters passed to function \code{rgl.par} from the rgl-package.}
 }
 \section{Methods}{
 \describe{
 
-  \item{obj = "dtiTensor"}{ Fiber tracking is performed on the estimated vector field of principal diffusion direction using the method \code{method}. Currently only line propagation is implemented. The resulting tracks are visualized in 3D using the \code{"rgl"}-package if \code{display==TRUE}}. 
+  \item{obj = "dtiTensor"}{ Fiber tracking is performed on the estimated vector field of principal diffusion direction using the method \code{method}. Currently only line propagation is implemented. The resulting tracks can be visualized using function \code{\link{show3d}}}. 
  
-  \item{obj = "dtiIndices"}{ Fiber tracking is performed on the estimated vector field of principal diffusion direction using the method \code{method}. Currently only line propagation is implemented. The resulting tracks are visualized in 3D using the \code{"rgl"}-package if \code{display==TRUE}}. 
+  \item{obj = "dtiIndices"}{ Fiber tracking is performed on the estimated vector field of principal diffusion direction using the method \code{method}. Currently only line propagation is implemented. The resulting tracks can be visualized using function \code{\link{show3d}}}. 
   Displays can be closed using function \code{rgl.close}
 }
 }
@@ -40,11 +34,10 @@
   The function returns an object of class \code{\linkS4class{dwiFiber}}.
 }
 \author{ 
-  Karsten Tabelow \email{tabelow@wias-berlin.de}
+  Karsten Tabelow \email{tabelow@wias-berlin.de}, Joerg Polzehl \email{polzehl@wias-berlin.de}
 }
 \seealso{ 
-  \code{\linkS4class{dtiTensor}},\code{\linkS4class{dtiIndices}},\code{\linkS4class{dwiFiber}}
+  \code{\linkS4class{dtiTensor}},\code{\linkS4class{dtiIndices}},\code{\linkS4class{dwiFiber}},
+  \code{\link{show3d}}, \code{\link{summary}}, \code{\link{print}}
 }
 \keyword{ methods }
-\keyword{ iplot }
-\keyword{ hplot }

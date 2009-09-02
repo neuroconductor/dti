@@ -86,6 +86,8 @@ For class \code{"dwiFiber"}:
 
 \describe{
     \item{ \code{fibers}: }{ Object of class \code{"matrix"}, Matrix of fibers. The first three columns contain the coordinates of the track points, the last three columns the direction vectors for each of these points.} 
+    \item{ \code{startind}: }{Object of class \code{"integer"}, indices for the first dimension of \code{fibers} where
+                              coordinates for a new fiber start.}
     \item{ \code{roix}: }{ Object of class \code{"integer"}, coordinate range of region of interest in x-direction } 
     \item{ \code{roiy}: }{ Object of class \code{"integer"}, coordinate range of region of interest in x-direction } 
     \item{ \code{roiz}: }{ Object of class \code{"integer"}, coordinate range of region of interest in x-direction } 

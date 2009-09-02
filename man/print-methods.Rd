@@ -7,6 +7,7 @@
 \alias{print,dtiTensor-method}
 \alias{print,dtiIndices-method}
 \alias{print,dwiQball-method}
+\alias{print,dwiFiber-method}
 \title{ Methods for Function `print' in Package `dti' }
 \description{
   The function provides information on data dimensions, data source and existing slot-names for objects of class \code{"dti"}, \code{"dtiData"},
@@ -34,6 +35,7 @@
   \code{\linkS4class{dtiData}}, 
   \code{\linkS4class{dtiTensor}}
   \code{\linkS4class{dwiQball}}
+  \code{\linkS4class{dwiFiber}}
 }
 \keyword{ methods }
 \keyword{ utilities }

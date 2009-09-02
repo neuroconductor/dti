@@ -5,7 +5,6 @@
 #include <string>
 #include <R.h>
 #include <Rinternals.h>
-#include <R_ext/Utils.h>
 
 using namespace std;
 
@@ -16,7 +15,9 @@ extern "C"{
 			        SEXP roi_x_s, SEXP roi_x_e,
 			        SEXP roi_y_s, SEXP roi_y_e,
 			        SEXP roi_z_s, SEXP roi_z_e,
-			        SEXP dim_x, SEXP dim_y, SEXP dim_z
+			        SEXP dim_x, SEXP dim_y, SEXP dim_z,
+			        SEXP min_anisotropy,
+			        SEXP max_angle
 			       )
 	{
 		SEXP retVec;
@@ -27,7 +28,7 @@ extern "C"{
 		// 108, 148, 108, 148, 23, 43
 		int marked[] = {*INTEGER(roi_x_s), *INTEGER(roi_x_e), *INTEGER(roi_y_s), *INTEGER(roi_y_e), *INTEGER(roi_z_s), *INTEGER(roi_z_e)};
 		
-		Fibertracking *tester = new Fibertracking(converter.getVoxels(), *INTEGER(x_range), *INTEGER(y_range), *INTEGER(z_range), *REAL(dim_x), *REAL(dim_y), *REAL(dim_z));
+		Fibertracking *tester = new Fibertracking(converter.getVoxels(), *INTEGER(x_range), *INTEGER(y_range), *INTEGER(z_range), *REAL(dim_x), *REAL(dim_y), *REAL(dim_z), *REAL(min_anisotropy), *REAL(max_angle));
 		tester->findMarkedFibers(marked);
 		
 //		printf("computation finished\n");

@@ -36,7 +36,10 @@ class Fibertracking
 		
 		// maximum intersection angle
 		double max_intersec_angle;
-	
+
+		// minimum anisotropy
+		double min_anisotropy;
+		
 		// position vector of the start points or cutting points
 		Vector start_o;
 	
@@ -63,7 +66,7 @@ class Fibertracking
 	public:
 		/**  constructors & destructor  **/
 		Fibertracking();
-		Fibertracking(Voxel&, int , int, int, double, double, double);
+		Fibertracking(Voxel&, int , int, int, double, double, double, double, double);
 		
 //		~Fibertracking();
 		
