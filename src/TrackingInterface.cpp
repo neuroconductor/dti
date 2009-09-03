@@ -32,9 +32,9 @@ extern "C"{
 		tester->findMarkedFibers(marked);
 		
 //		printf("computation finished\n");
-		length = tester->getLength(1);
+		length = tester->getLength();
 		
-		double *vals = tester->convertToDouble(1);
+		double *vals = tester->convertToDouble();
 //		printf("converted to double\n");
 		
 //		printf("length: %d\n", length);
@@ -51,11 +51,13 @@ extern "C"{
 		
 		UNPROTECT(nProtected);
 		
-//		for(ii = 0; ii < length; ii++)
+//		for(ii = 3298980; ii < 3298980 + 20; ii++)
 //		{
 //			printf("vals[%d] = %f\n", ii, vals[ii]);
+//			printf("vals[%d*2] = %f\n", ii*2, vals[ii*2]);
+//			printf("vals[%d*3] = %f\n", ii*3, vals[ii*3]);
 //		}
-		
+//		
 		delete vals;
 		
 		return retVec;

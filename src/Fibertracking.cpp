@@ -3,6 +3,10 @@
 
 using namespace std;
 
+int n_angle = 0;
+int n_visited = 0;
+int n_aniso = 0;
+
 Fibertracking::Fibertracking()
 {
 	this->n_e1 = *(new Vector(( 0, 0, 1)));
@@ -62,8 +66,7 @@ Fibertracking::Fibertracking(Voxel& voxels, int x, int y, int z, double dim_x, d
 //	n_e6.~Vector();
 //}
 
-int Fibertracking::getLength(){return 3*(allVectors.getLength() - allVectors.getNum_Nan());}
-int Fibertracking::getLength(int a)
+int Fibertracking::getLength()
 {
 	int f = allVectors.getNum_Nan()+1;
 	int p = (allVectors.getLength() - allVectors.getNum_Nan()) /2;
@@ -71,66 +74,6 @@ int Fibertracking::getLength(int a)
 }
 
 double* Fibertracking::convertToDouble()
-{
-	int length = 3*(allVectors.getLength() - allVectors.getNum_Nan());
-	
-	double* vals = new double[length];
-	
-//	printf("vals-array mit length = %d allokiert...\n", length);
-	
-	int i = 0;
-	while (3*(allVectors.getLength() - allVectors.getNum_Nan()) > 0)
-	{
-		double temp = allVectors.getStart().getComponents()[1];
-//		printf("Schleifendurchlauf: %d mit temp: %f\n", i, temp);
-		
-		if (!isnan(temp))
-		{
-			vals[i]   = allVectors.getStart().getComponents()[0];
-//			printf("vals[%d] = %f\t(inter_x)\n", i, vals[i]);
-			vals[++i] = allVectors.getStart().getComponents()[1];
-//			printf("vals[%d] = %f\t(inter_y)\n", i, vals[i]);
-			vals[++i] = allVectors.getStart().getComponents()[2];
-//			printf("vals[%d] = %f\t(inter_z)\n", i, vals[i]);
-			
-//			allVectors.getStart().print();
-//			allVectors.getStart().getNext()->print();
-			
-			allVectors.del_at_start();
-//			printf("start deleted 1\n");
-			
-//			allVectors.getStart().print();
-			
-			temp = allVectors.getStart().getComponents()[1];
-//			printf("temp %d: %f\n", i, temp);
-		
-			vals[++i] = voxels[(int)temp].getDirection().getComponents()[0];
-//			printf("vals[%d] = %f\t(dir_x)\n", i, vals[i]);
-			vals[++i] = voxels[(int)temp].getDirection().getComponents()[1];
-//			printf("vals[%d] = %f\t(dir_y)\n", i, vals[i]);
-			vals[++i] = voxels[(int)temp].getDirection().getComponents()[2];
-//			printf("vals[%d] = %f\t(dir_z)\n", i, vals[i]);
-		}
-		else
-		{
-//			printf("entering ELSE-sequence\n");
-			vals[i] = NAN;
-//			printf("vals[%d] = %f\t(sollte NAN sein)\n", i, vals[i]);
-		}
-		
-		allVectors.del_at_start();
-		
-		i++;
-		
-//		printf("aktuelle Laenge: %d\n", allVectors.getDoubleLength());
-		
-//		printf("start deleted 2\n");
-	}
-	
-	return vals;
-}
-
-double* Fibertracking::convertToDouble(int test)
 {
 
 	int f = allVectors.getNum_Nan()+1;
@@ -325,6 +268,13 @@ void Fibertracking::nextVoxel_forward()
 	double bruch   = zaehler / nenner;
 	
 	intersec_angle = 180./M_PI * acos((float)bruch);
+	
+	if (start_o.getComponents()[0] < 0)
+		printf("x = %f\tdSkalar = %f\n", start_o.getComponents()[0], dSkalar);
+	if (start_o.getComponents()[1] < 0)
+		printf("y = %f\tdSkalar = %f\n", start_o.getComponents()[1], dSkalar);
+	if (start_o.getComponents()[2] < 0)
+		printf("z = %f\tdSkalar = %f\n", start_o.getComponents()[2], dSkalar);
 }
 
 void Fibertracking::nextVoxel_backward()
@@ -406,6 +356,13 @@ void Fibertracking::nextVoxel_backward()
 	double bruch   = zaehler / nenner;
 	
 	intersec_angle = 180./M_PI * acos((float)bruch);
+	
+	if (start_o.getComponents()[0] < 0)
+		printf("x = %f\tdSkalar = %f\n", start_o.getComponents()[0], dSkalar);
+	if (start_o.getComponents()[1] < 0)
+		printf("y = %f\tdSkalar = %f\n", start_o.getComponents()[1], dSkalar);
+	if (start_o.getComponents()[2] < 0)
+		printf("z = %f\tdSkalar = %f\n", start_o.getComponents()[2], dSkalar);
 }
 
 void Fibertracking::trackFiber_forward()
@@ -419,10 +376,11 @@ void Fibertracking::trackFiber_forward()
 	start_o = *new Vector( (current->getX()+0.5)*dim_x, (current->getY()+0.5)*dim_y, (current->getZ()+0.5)*dim_z );
 
 	// Startpunkt einschreiben
-//	currentFiber.addVector_forw(start_o, *current);
-	curVectorList = *new VectorList(start_o);
-	curVec = new Vector(0., (double)cur_voxel_index, 0.);
-	curVectorList.add_at_end(*curVec);
+//	curVectorList = *new VectorList(start_o);
+//	curVec = new Vector(0., (double)cur_voxel_index, 0.);
+//	curVectorList.add_at_end(*curVec);
+	
+	curVectorList = *new VectorList();
 	
 	while (current->getAnisotropy() >= min_anisotropy && !current->isVisited() && fabs(intersec_angle) <= max_intersec_angle)
 	{
@@ -447,7 +405,6 @@ void Fibertracking::trackFiber_forward()
 		{
 //			currentFiber.add_at_end(*current);
 			current = &voxels[cur_voxel_index];
-////			currentFiber.addVector_forw(start_o, *current);
 			
 //			curVectorList.add_at_end(start_o);
 			
@@ -457,22 +414,25 @@ void Fibertracking::trackFiber_forward()
 	}
 	
 //	printf("Fiber ended because of: ");
-//	
-//	if (current->isVisited())
-//	{
+	
+	if (current->isVisited())
+	{
 //		printf("next voxel is already visited");
-//	}
-//	
-//	if (current->getAnisotropy() < 0.3)
-//	{
+		n_visited++;
+	}
+	
+	if (current->getAnisotropy() < min_anisotropy)
+	{
 //		printf(" next voxel has to low anisotrpy ");
-//	}
-//	
-//	if (fabs(intersec_angle) > max_intersec_angle)
-//	{
+		n_aniso++;
+	}
+	
+	if (fabs(intersec_angle) > max_intersec_angle)
+	{
 //		printf(" intersection angle is to large ");
-//	}
-//	
+		n_angle++;
+	}
+	
 //	printf(".\n");
 }
 
@@ -487,7 +447,23 @@ void Fibertracking::trackFiber_backward()
 	start_o = *new Vector( (current->getX()+0.5)*dim_x, (current->getY()+0.5)*dim_y, (current->getZ()+0.5)*dim_z );
 	
 	// Startpunkt einschreiben
-//	currentFiber.addVector_forw(start_o, *current);
+//	nextVoxel_backward();
+//	
+//	if ( current == &voxels[cur_voxel_index]) // || voxels[cur_voxel_index].isVisited()
+//	{
+//		return;
+//	}
+//	else
+//	{
+//		current = &voxels[cur_voxel_index];
+////
+////			curVec = new Vector(0., (double)cur_voxel_index, 0.);
+////			curVectorList.add_at_start(*curVec);
+////
+////			curVectorList.add_at_start(start_o);
+////			
+////			currentFiber.add_at_start(*current);
+//	}
 	
 	while (current->getAnisotropy() >= min_anisotropy && !current->isVisited() && fabs(intersec_angle) <= max_intersec_angle)
 	{
@@ -511,7 +487,6 @@ void Fibertracking::trackFiber_backward()
 		else
 		{
 			current = &voxels[cur_voxel_index];
-////			currentFiber.addVector_back(start_o, *current);
 //
 //			curVec = new Vector(0., (double)cur_voxel_index, 0.);
 //			curVectorList.add_at_start(*curVec);
@@ -523,22 +498,25 @@ void Fibertracking::trackFiber_backward()
 	}
 	
 //	printf("Fiber ended because of: ");
-//	
-//	if (current->isVisited())
-//	{
+	
+	if (current->isVisited())
+	{
 //		printf("next voxel is already visited");
-//	}
-//	
-//	if (current->getAnisotropy() < 0.3)
-//	{
+		n_visited++;
+	}
+	
+	if (current->getAnisotropy() < min_anisotropy)
+	{
 //		printf(" next voxel has to low anisotrpy ");
-//	}
-//	
-//	if (fabs(intersec_angle) > max_intersec_angle)
-//	{
-//		printf(" intersection angle is to low ");
-//	}
-//	
+		n_aniso++;
+	}
+	
+	if (fabs(intersec_angle) > max_intersec_angle)
+	{
+//		printf(" intersection angle is to large ");
+		n_angle++;
+	}
+	
 //	printf(".\n");
 }
 
@@ -552,13 +530,6 @@ void Fibertracking::findAllFibers()
 		{
 			num_fibers++;
 			
-//			stringstream s;
-			
-//			s << "/Home/azubis/anker/FG6/c_markedFasern/faser" << num_fibers << ".txt";
-			
-//			string data_v = s.str();
-			
-//			currentFiber = *(new Fiber(data_v));
 			currentFiber = *new Fiber();
 			curVectorList = *new VectorList(); 
 			
@@ -572,15 +543,6 @@ void Fibertracking::findAllFibers()
 			intersec_angle = 0.;
 			cur_voxel_index = voxels[last_start_voxel].getX() + voxels[last_start_voxel].getY()*x_range + voxels[last_start_voxel].getZ()*x_range*y_range;
 			trackFiber_backward();
-			
-//			currentFiber.write();
-			
-//			Vector *nan = new Vector(0., NAN, 0.);
-//			
-//			if (num_fibers > 1)
-//			{
-//				allVectors.add_at_end(*nan);
-//			}
 			
 			allVectors.add_list(curVectorList);
 			
@@ -626,17 +588,10 @@ void Fibertracking::findMarkedFibers(int* ranges)
 	
 	while (last_start_voxel < length)
 	{
-		if (marked[last_start_voxel].getAnisotropy() >= min_anisotropy) //&& marked[last_start_voxel].isStartable()
+		if (marked[last_start_voxel].getAnisotropy() >= min_anisotropy && marked[last_start_voxel].isStartable())
 		{
 //			num_fibers++;
 			
-//			stringstream s;
-			
-//			s << "/Home/azubis/anker/FG6/c_markedFasern/faser" << num_fibers << ".txt";
-			
-//			string data_v = s.str();
-			
-//			currentFiber = *(new Fiber(data_v));
 			currentFiber = *new Fiber();
 			curVectorList = *new VectorList(); 
 			
@@ -651,15 +606,6 @@ void Fibertracking::findMarkedFibers(int* ranges)
 			cur_voxel_index = marked[last_start_voxel].getX() + marked[last_start_voxel].getY()*x_range + marked[last_start_voxel].getZ()*x_range*y_range;
 			trackFiber_backward();
 			
-//			currentFiber.write();
-			
-//			Vector *nan = new Vector(0., NAN, 0.);
-//			
-//			if (allVectors.getLength() > 0)
-//			{
-//				allVectors.add_at_end(*nan);
-//			}
-			
 			allVectors.add_list(curVectorList);
 			
 			currentFiber.unvisit();
@@ -672,6 +618,8 @@ void Fibertracking::findMarkedFibers(int* ranges)
 	}
 	
 	allVectors.del_at_start();
-
+	
 //	printf("End of searching.\n");
+	printf("Abort fibers because of:\nvisited\t=\t%d\naniso\t=\t%d\nangle\t=\t%d\n", n_visited, n_aniso, n_angle);
+
 }

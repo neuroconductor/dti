@@ -106,7 +106,7 @@ setMethod("show3d","dtiData", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,s
 
 ##############
 
-setMethod("show3d","dtiTensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,method=1,level=0,scale=.5,bgcolor="black",add=FALSE,subdivide=2,maxobjects=729,what="tensor",minalpha=.25,normalize=NULL,box=FALSE,title=FALSE,...){
+setMethod("show3d","dtiTensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,method=1,level=0.3,scale=.5,bgcolor="black",add=FALSE,subdivide=2,maxobjects=729,what="tensor",minalpha=.25,normalize=NULL,box=FALSE,title=FALSE,...){
   if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
   if(!exists("icosa0")) data("polyeders")
   if(subdivide<0||subdivide>4) subdivide <- 3
@@ -258,7 +258,7 @@ setMethod("show3d","dtiIndices",function(obj, index="FA", nx=NULL, ny=NULL, nz=N
   }
   colorvalues <- rgb(andir[1,],andir[2,],andir[3,])
   dim(andir) <- c(3,n1,n2,n3)
-  andir <- sweep(andir,2:4,ind,"*")
+  andir <- sweep(obj@andir[,xind,yind,zind],2:4,ind,"*")
   lcoord <- array(0,c(3,2,n1,n2,n3))
   lcoord[,1,,,] <-  andir/2+tmean[,,,,drop=FALSE]
   lcoord[,2,,,] <-  -andir/2+tmean[,,,,drop=FALSE]

@@ -34,12 +34,12 @@ class Fibertracking
 		// intersection angle of two vectors
 		double intersec_angle;
 		
-		// maximum intersection angle
-		double max_intersec_angle;
-
 		// minimum anisotropy
 		double min_anisotropy;
 		
+		// maximum intersection angle
+		double max_intersec_angle;
+	
 		// position vector of the start points or cutting points
 		Vector start_o;
 	
@@ -73,10 +73,7 @@ class Fibertracking
 		void findAllFibers();
 		void findMarkedFibers(int*);
 		int getLength();
-		int getLength(int);
 		double* convertToDouble();
-		double* convertToDouble(int);
-	
 };
 
 #endif /*FIBERTRACKING_H_*/
