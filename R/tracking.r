@@ -130,7 +130,7 @@ setMethod("tracking","dtiIndices", function(obj, xind=NULL, yind=NULL, zind=NULL
               DUP=FALSE)
 
   dim(dd) <- c(length(dd)/6,6);
-  dd <- reduce.fibers(dd)
+#  dd <- reduce.fibers(dd)
   istartfiber <- ident.fibers(dd)
   invisible(new("dwiFiber",
                 call  = args,

@@ -265,8 +265,7 @@ void Fibertracking::nextVoxel_forward()
 	
 	double zaehler = voxel_d * (voxels[cur_voxel_index].getDirection());
 	double nenner  = Vector::norm(voxel_d)*Vector::norm(voxels[cur_voxel_index].getDirection());
-	double bruch   = zaehler / nenner;
-	
+	double bruch   = fabs(zaehler / nenner);
 	intersec_angle = 180./M_PI * acos((float)bruch);
 	
 	if (start_o.getComponents()[0] < 0)
@@ -353,7 +352,7 @@ void Fibertracking::nextVoxel_backward()
 	
 	double zaehler = voxel_d * (voxels[cur_voxel_index].getDirection());
 	double nenner  = Vector::norm(voxel_d)*Vector::norm(voxels[cur_voxel_index].getDirection());
-	double bruch   = zaehler / nenner;
+	double bruch   = fabs(zaehler / nenner);
 	
 	intersec_angle = 180./M_PI * acos((float)bruch);
 	

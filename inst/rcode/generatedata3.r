@@ -33,75 +33,49 @@ dtiso <- array(c(1,0,0,1,0,1),dim=c(6,ddim))
 phi <- (1:1000)*6*pi/1000 
 etai <- .2
 
-rad1 <- 7
-rad2 <- 8
+
+
+phi <- (1:2000)*7.6*pi/2000 
+rad1 <- 20
+rad2 <- 21
 h <- 1
-for(rad in seq(rad1,rad2,.25)){
+for(rad in seq(rad1,rad2,.5)){
   sphi <- sin(phi)
   cphi <- cos(phi)
   x <- as.integer(rad*sphi+32.5)
   y <- as.integer(rad*cphi+32.5)
-  z <- as.integer(h*phi+3)
-    for(i in 1:1000) dtiso[,x[i],y[i],z[i]] <-
+  z <- as.integer(pmax(1,pmin(26,h*phi+1)))
+    for(i in 1:2000) dtiso[,x[i],y[i],z[i]] <-
         (1-etai)*c(cphi[i]^2,-sphi[i]*cphi[i],2.5*h/rad*cphi[i],
           sphi[i]^2,-2.5*h/rad*sphi[i],(2.5*h/rad)^2)+etai*c(1,0,0,1,0,1)
-    for(i in 1:1000) dtiso[,x[i],y[i],z[i]+1] <-
+    for(i in 1:2000) dtiso[,x[i],y[i],z[i]+1] <-
         (1-etai)*c(cphi[i]^2,-sphi[i]*cphi[i],2.5*h/rad*cphi[i],
           sphi[i]^2,-2.5*h/rad*sphi[i],(2.5*h/rad)^2)+etai*c(1,0,0,1,0,1)
-  }
-
-
-phi <- (1:1000)*4*pi/1000 
-rad1 <- 13
-rad2 <- 14
-h <- 1.5
-for(rad in seq(rad1,rad2,.25)){
+   }
+for(rad in seq(rad1,rad2,.5)){
   sphi <- sin(phi)
   cphi <- cos(phi)
   x <- as.integer(rad*sphi+32.5)
   y <- as.integer(rad*cphi+32.5)
-  z <- as.integer(h*phi+3)
-    for(i in 1:1000) dtiso[,x[i],y[i],z[i]] <-
+  z <- as.integer(pmax(1,pmin(26,h*phi+1.5)))
+    for(i in 1:2000) dtiso[,x[i],y[i],z[i]] <-
         (1-etai)*c(cphi[i]^2,-sphi[i]*cphi[i],2.5*h/rad*cphi[i],
           sphi[i]^2,-2.5*h/rad*sphi[i],(2.5*h/rad)^2)+etai*c(1,0,0,1,0,1)
-    for(i in 1:1000) dtiso[,x[i],y[i],z[i]+1] <-
+    for(i in 1:2000) dtiso[,x[i],y[i],z[i]+1] <-
         (1-etai)*c(cphi[i]^2,-sphi[i]*cphi[i],2.5*h/rad*cphi[i],
           sphi[i]^2,-2.5*h/rad*sphi[i],(2.5*h/rad)^2)+etai*c(1,0,0,1,0,1)
-  }
+   }
 
-phi <- (1:1000)*8*pi/1000 
-rad1 <- 18
-rad2 <- 19
-h <- .75
-for(rad in seq(rad1,rad2,.25)){
+for(rad in seq(rad1,rad2,.5)){
   sphi <- sin(phi)
   cphi <- cos(phi)
   x <- as.integer(rad*sphi+32.5)
   y <- as.integer(rad*cphi+32.5)
-  z <- as.integer(h*phi+3)
-    for(i in 1:1000) dtiso[,x[i],y[i],z[i]] <-
+  z <- as.integer(pmax(1,pmin(26,h*phi+2)))
+    for(i in 1:2000) dtiso[,x[i],y[i],z[i]] <-
         (1-etai)*c(cphi[i]^2,-sphi[i]*cphi[i],2.5*h/rad*cphi[i],
           sphi[i]^2,-2.5*h/rad*sphi[i],(2.5*h/rad)^2)+etai*c(1,0,0,1,0,1)
-    for(i in 1:1000) dtiso[,x[i],y[i],z[i]+1] <-
-        (1-etai)*c(cphi[i]^2,-sphi[i]*cphi[i],2.5*h/rad*cphi[i],
-          sphi[i]^2,-2.5*h/rad*sphi[i],(2.5*h/rad)^2)+etai*c(1,0,0,1,0,1)
-  }
-
-
-phi <- (1:2000)*12*pi/2000 
-rad1 <- 22
-rad2 <- 23
-h <- 0.5
-for(rad in seq(rad1,rad2,.25)){
-  sphi <- sin(phi)
-  cphi <- cos(phi)
-  x <- as.integer(rad*sphi+32.5)
-  y <- as.integer(rad*cphi+32.5)
-  z <- as.integer(h*phi+3)
-    for(i in 1:1000) dtiso[,x[i],y[i],z[i]] <-
-        (1-etai)*c(cphi[i]^2,-sphi[i]*cphi[i],2.5*h/rad*cphi[i],
-          sphi[i]^2,-2.5*h/rad*sphi[i],(2.5*h/rad)^2)+etai*c(1,0,0,1,0,1)
-    for(i in 1:1000) dtiso[,x[i],y[i],z[i]+1] <-
+    for(i in 1:2000) dtiso[,x[i],y[i],z[i]+1] <-
         (1-etai)*c(cphi[i]^2,-sphi[i]*cphi[i],2.5*h/rad*cphi[i],
           sphi[i]^2,-2.5*h/rad*sphi[i],(2.5*h/rad)^2)+etai*c(1,0,0,1,0,1)
    }
