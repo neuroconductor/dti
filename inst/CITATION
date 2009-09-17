@@ -14,7 +14,7 @@ citEntry(entry = "Article",
   textVersion  =
   paste("Joerg Polzehl, Karsten Tabelow (2009).",
         "Structural Adaptive Smoothing in Diffusion Tensor Imaging: The {R} Package {dti}.",
-        "Journal of Statistical Software, 31(9), 1-24.",
+        "Journal of Statistical Software, 31(9), 1-23.",
         "URL http://www.jstatsoft.org/v31/i09/.")
 )
 
