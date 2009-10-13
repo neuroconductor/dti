@@ -51,6 +51,9 @@ class Fibertracking
 		Vector n_e5;
 		Vector n_e6;
 		
+		// true := changing direction of next voxel 
+		bool change_dir;
+		
 		// tracks the next voxel in forward direction
 		void nextVoxel_forward();
 		
