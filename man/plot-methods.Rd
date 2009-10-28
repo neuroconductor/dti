@@ -15,7 +15,7 @@
   \S4method{plot}{dtiData}(x, y, slice=1, gradient=NULL, view= "axial", show=TRUE, density=FALSE, xind=NULL, yind=NULL, zind=NULL, mar=c(3,3,3,.3), mgp=c(2,1,0), \dots)
   \S4method{plot}{dtiTensor}(x, y, slice=1, view="axial", quant=0, minanindex=NULL, contrast.enh=1, what="FA", qrange=c(.01,.99), xind=NULL, yind=NULL, zind=NULL, mar=c(2,2,2,.2), mgp=c(2,1,0), \dots)
   \S4method{plot}{dtiIndices}(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=TRUE, identify=FALSE, density=FALSE, contrast.enh=1, what="FA", xind=NULL, yind=NULL, zind=NULL, mar=c(3,3,3,.3), mgp=c(2,1,0), \dots)
-  \S4method{plot}{dwiFiber}(x, \dots)
+  \S4method{plot}{dwiFiber}(x, y, \dots)
 }
 \arguments{
   \item{x}{ Object of class \code{"dtiIndices"}, \code{"dtiData"} or \code{"dtiTensor"}}

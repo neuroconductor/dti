@@ -164,15 +164,15 @@ readDWIdata <- function(gradient, dirlist, format, nslice = NULL, order = NULL,
     if (format == "DICOM") {
       data <- read.DICOM(ff)
     } else if (format == "NIFTI") {
-      data <- read.NIFTI(ff,setmask=FALSE)
+      data <- fmri::read.NIFTI(ff,setmask=FALSE)
       nslice <- data$dim[3]
       if (is.null(zind)) zind <- 1:nslice
     } else if (format == "ANALYZE") {
-      data <- read.ANALYZE(ff,setmask=FALSE)
+      data <- fmri::read.ANALYZE(ff,setmask=FALSE)
       nslice <- data$dim[3]
       if (is.null(zind)) zind <- 1:nslice
     } else if (format == "AFNI") {
-      data <- read.AFNI(ff,setmask=FALSE)
+      data <- fmri::read.AFNI(ff,setmask=FALSE)
       nslice <- data$dim[3]
       if (is.null(zind)) zind <- 1:nslice
     } 
