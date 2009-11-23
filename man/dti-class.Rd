@@ -3,6 +3,7 @@
 \alias{dwi-class}
 \alias{dtiData-class}
 \alias{dtiTensor-class}
+\alias{dtiMixensor-class}
 \alias{dtiIndices-class}
 \alias{dwiQball-class}
 \alias{dwiFiber-class}
@@ -94,6 +95,23 @@ For class \code{"dwiFiber"}:
     \item{ \code{method}: }{ Object of class \code{"character"}, fiber tracking method.} 
     \item{ \code{minanindex}: }{ Object of class \code{"numeric"}, minimal fractional anisotropy index} 
     \item{ \code{maxangle}: }{ Object of class \code{"numeric"}, maximal angle between fibres.} 
+}
+For class \code{"dtiMixtensor"}:
+
+\describe{
+    \item{ \code{ev}: }{ Object of class \code{"array"}, estimated eigenvalues, dimension \code{c(2,ddim)}} 
+    \item{ \code{mix}: }{ Object of class \code{"array"}, estimated mixture coefficients, dimension \code{c(nmix,ddim)}. \code{nmix} is the number of mixture components specified.} 
+    \item{ \code{orient}: }{ Object of class \code{"array"}, estimated tensor orientations, dimension \code{c(2,nmix,ddim)}} 
+    \item{ \code{th0}: }{ Object of class \code{"array"}, estimated intensities in S0 images, dimension \code{ddim}} 
+    \item{ \code{sigma}: }{ Object of class \code{"array"}, estimated error variances if \code{method=="linear"}, zero otherwise.} 
+    \item{ \code{scorr}: }{ Object of class \code{"numeric"}, estimated spatial correlations in coordinate directions} 
+    \item{ \code{bw}: }{ Object of class \code{"numeric"}, bandwidth for a Gaussian kernel that approximately creates the estimated spatial correlations. Needed for adjustments of critical values in the adaptive smoothing algorithm used in function \code{dti.smooth}} 
+    \item{ \code{mask}: }{ Object of class \code{"array"}, logical indicating the voxel where the tensor was estimated.} 
+    \item{ \code{hmax}: }{ Object of class \code{"numeric"}, maximal bandwidth in case of adaptive smoothing, 1 otherwise.} 
+    \item{ \code{outlier}: }{ Object of class \code{"numeric"}, index of voxel where physical constraints are not met, i.e. where the observed values in gradient images Si were larger than the corresponding S0 values. These are probably motion effects or registration errors. Values are replaced by the corresponding (mean) S0 values.}
+    \item{\code{scale}:}{Numerical value corresponding to the 95\% quantile of the maximal eigenvalues of estimated tensors within the mask.
+          Used for scaling in function \code{show3d.dtiTensor}}
+    \item{ \code{method}: }{ Object of class \code{"character"}, either \code{"mixtensor"} or \code{"Jian"}. Indicates the regression model used for estimating the tensors.}
 }
 
 }
