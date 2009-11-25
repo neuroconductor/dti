@@ -75,12 +75,65 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       END DO
       RETURN
       END
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+C
+C  calculate size of vertices for ellipses in show3d.tensor
+C
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+      subroutine mixtradi(vert,nv,ev,ori,mix,ord,mo,nobj,radii)
+      implicit logical (a-z)
+C
+C     vert   vertices
+C     nv     number of vertices
+C     ev     ev[1]+ev[2], ev[2], ev[2] are the eigenvalues of components 
+C     ori    ori[,m]   contain theta and phi of main direction for component m
+C     mix    mix[m] mixture coefficient for component m
+C     ord    contains number od components 
+C     mo     maximum number of components
+C     nobj   number of objects
+C     scale  scaling factor
+C     radii  resulting radii of ODF
+C
+      integer nv,nobj,mo,ord(nobj)
+      real*8 vert(3,nv),ev(2,nobj),ori(2,mo,nobj),mix(mo,nobj),
+     1       radii(nv,nobj)
+      integer i,j,k
+      real*8 dotprod3,c12,sth,dir(3,5),fourpi,c12fp,z, utd, zk
+C     assumes maximum of 5 micxture components
+      if(mo.gt.5) THEN
+         call intpr("mo restricted to 5, is",18,mo,1)
+         return
+      END IF
+      fourpi = 12.566371d0
+      DO j = 1,nobj
+         c12 = (ev(1,j)+ev(2,j))/ev(1,j)
+         c12fp = sqrt(ev(2,j)*c12/fourpi)/ev(1,j)
+         DO k = 1,ord(j)
+            sth = sin(ori(1,k,j))
+            dir(1,k) = sth*cos(ori(2,k,j))
+            dir(2,k) = sth*sin(ori(2,k,j))
+            dir(3,k) = cos(ori(1,k,j))
+         END DO
+         DO i = 1,nv
+            z = 0.d0
+            DO k = 1,ord(j)
+               utd = dotprod3(dir(1,k),vert(1,i))
+               zk = c12-utd*utd
+               z  = z + mix(k,j)*c12fp/sqrt(zk*zk*zk)
+            END DO
+            radii(i,j) = z
+         END DO
+      END DO
+      RETURN
+      END
+ 
       real*8 function dotprod3(a,b)
       implicit logical (a-z)
       real*8 a(3),b(3)
       dotprod3=a(1)*b(1)+a(2)*b(2)+a(3)*b(3)
       RETURN
       END
+
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 C
 C   Compute distances of vertices

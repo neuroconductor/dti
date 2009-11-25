@@ -213,6 +213,8 @@ setClass("dwiMixtensor",
                         ev     = "array",#length 2 (eigenvalues)
                         mix    = "array",
                         orient = "array",
+                        order  = "array",
+                        p      = "numeric", # p in "method"=="Jian"
                         th0    = "array",
                         sigma  = "array",
                         scorr  = "array",
@@ -240,7 +242,11 @@ setClass("dwiMixtensor",
                  number of mixtures \n")
             return(invisible(FALSE))
           }
-          if (any(object@mix)<0) {
+          if (any(dim(object@order)!=object@ddim)) {
+            cat("  \n")
+            return(invisible(FALSE))
+          }
+          if (any(object@mix<0)) {
             cat("negative mixture coefficients \n")
             return(invisible(FALSE))
           }

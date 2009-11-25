@@ -160,7 +160,61 @@ setMethod("[","dtiTensor",function(x, i, j, k, drop=FALSE){
                 call  = args, 
                 D     = x@D[,i,j,k,drop=FALSE],
                 th0   = x@th0[i,j,k,drop=FALSE],
-                sigma = if(x@method=="linear") x@sigma[i,j,k,drop=FALSE] else array(0,c(1,1,1)),
+                sigma = if(x@method=="linear") x@sigma[i,j,k,drop=FALSE] else array(1,c(1,1,1)),
+                scorr = x@scorr, 
+                bw = x@bw,
+                mask = x@mask[i,j,k,drop=FALSE],
+                hmax = x@hmax,
+                gradient = x@gradient,
+                btb   = x@btb,
+                ngrad = x@ngrad,
+                s0ind = x@s0ind,
+                replind = x@replind,
+                ddim  = c(ddimi,ddimj,ddimk),
+                ddim0 = x@ddim0,
+                xind  = x@xind[i],
+                yind  = x@yind[j],
+                zind  = x@zind[k],
+                voxelext = x@voxelext,
+                level = x@level,
+                orientation = x@orientation,
+                outlier = outlier,
+                scale = x@scale,
+                source = x@source,
+                method = x@method)
+            )
+})
+#############
+setMethod("[","dwiMixtensor",function(x, i, j, k, drop=FALSE){
+  args <- sys.call(-1)
+  args <- c(x@call,args)
+  if (missing(i)) i <- TRUE
+  if (missing(j)) j <- TRUE
+  if (missing(k)) k <- TRUE
+  if (is.logical(i)) ddimi <- x@ddim[1] else ddimi <- length(i)
+  if (is.logical(j)) ddimj <- x@ddim[2] else ddimj <- length(j)
+  if (is.logical(k)) ddimk <- x@ddim[3] else ddimk <- length(k)
+
+  ind <- 1:prod(x@ddim)
+  if(length(x@outlier)>0){
+    ind <- rep(FALSE,prod(x@ddim))
+    ind[x@outlier] <- TRUE
+    dim(ind) <- x@ddim
+    ind <- ind[i,j,k]
+    outlier <- (1:length(ind))[ind]
+  } else {
+    outlier <- numeric(0)
+  }
+
+  invisible(new("dwiMixtensor",
+                call  = args, 
+                ev     = x@ev[,i,j,k,drop=FALSE],
+                mix    = x@mix[,i,j,k,drop=FALSE],
+                orient = x@orient[,,i,j,k,drop=FALSE],
+                order  = x@order[i,j,k,drop=FALSE],
+                p      = x@p,
+                th0   = x@th0[i,j,k,drop=FALSE],
+                sigma = if(x@method=="linear") x@sigma[i,j,k,drop=FALSE] else array(1,c(1,1,1)),
                 scorr = x@scorr, 
                 bw = x@bw,
                 mask = x@mask[i,j,k,drop=FALSE],
