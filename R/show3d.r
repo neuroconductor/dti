@@ -106,7 +106,7 @@ setMethod("show3d","dtiData", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,s
 
 ##############
 
-setMethod("show3d","dtiTensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,method=1,level=0.3,scale=.5,bgcolor="black",add=FALSE,subdivide=2,maxobjects=729,what="tensor",minalpha=.25,normalize=NULL,box=FALSE,title=FALSE,...){
+setMethod("show3d","dtiTensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,method=1,falevel=0.3,level=0,scale=.5,bgcolor="black",add=FALSE,subdivide=2,maxobjects=729,what="tensor",minalpha=.25,normalize=NULL,box=FALSE,title=FALSE,...){
   if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
   if(!exists("icosa0")) data("polyeders")
   if(subdivide<0||subdivide>4) subdivide <- 3
@@ -171,8 +171,8 @@ setMethod("show3d","dtiTensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL
   }
   colorvalues <- rgb(andir[1,],andir[2,],andir[3,])
   dim(tens) <- c(6,n)
-  if(level>0){
-    indpos <- (1:n)[(fa>level)&mask]
+  if(falevel>0){
+    indpos <- (1:n)[(fa>falevel)&mask]
     tens <- tens[,indpos]
     tmean <- tmean[,indpos]
     colorvalues <- colorvalues[indpos]
@@ -182,30 +182,34 @@ setMethod("show3d","dtiTensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL
   }
   if(is.null(normalize)) normalize <- switch(tolower(what),"tensor"=FALSE,"adc"=TRUE)
   polyeder <- switch(subdivide+1,icosa0,icosa1,icosa2,icosa3,icosa4)
-  radii <- .Fortran(switch(tolower(what),"tensor"="ellradii","adcradii"),
+  radii <- .Fortran(switch(tolower(what),tensor="ellradii",adc="adcradii",odf="odfradii"),
                     as.double(polyeder$vertices),
                     as.integer(polyeder$nv),
                     as.double(tens),
                     as.integer(n),
-                    as.double(scale/2),
                     radii=double(n*polyeder$nv),
                     DUPL=FALSE,
                     PACKAGE="dti")$radii
   dim(radii) <- c(polyeder$nv,n)
+  if(tolower(what)=="odf") normalize <- FALSE
   if(normalize){
      minradii <- apply(radii,2,min)
      maxradii <- apply(radii,2,max)
      radii <- sweep(radii,2,minradii,"-")
      radii <- sweep(radii,2,maxradii-minradii,"/")*scale
   } else {
-  radii <- radii/max(radii)*scale
+     radii <- (radii+level)/(max(radii)+level)*scale
   }
   if(!add) {
      rgl.open()
      par3d(...)
      rgl.bg(color=bgcolor)
      }
+  if(tolower(what)=="odf"){
+  show3d.odf(radii,polyeder,centers=tmean,minalpha=minalpha,...)
+     } else {
   show3d.tens(radii,polyeder,centers=tmean,colors=colorvalues,alpha=minalpha+(1-minalpha)*fa)
+    }
   if(box) bbox3d()
   if(is.character(title)) {
      title3d(title,color="white",cex=1.5)
@@ -217,7 +221,7 @@ setMethod("show3d","dtiTensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL
   invisible(rgl.cur())
 })
 
-setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,method=1,level=0.3,scale=.5,bgcolor="black",add=FALSE,subdivide=2,maxobjects=729,what="ODF",minalpha=1,normalize=NULL,box=FALSE,title=FALSE,...){
+setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,method=1,level=0,scale=.45,bgcolor="black",add=FALSE,subdivide=3,maxobjects=729,what="ODF",minalpha=1,lwd=3,box=FALSE,title=FALSE,...){
   if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
   if(!exists("icosa0")) data("polyeders")
   if(subdivide<0||subdivide>4) subdivide <- 3
@@ -260,10 +264,10 @@ setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=N
   tmean[1,,,] <- xind*vext[1]
   tmean[2,,,] <- outer(rep(1,n1),yind)*vext[2]
   tmean[3,,,] <- outer(rep(1,n1),outer(rep(1,n2),zind))*vext[3]
-  dim(tmean) <- c(3,n)
   mask <- obj@mask
   polyeder <- switch(subdivide+1,icosa0,icosa1,icosa2,icosa3,icosa4)
-  radii <- .Fortran(switch(toupper(what),ODF="mixtradi","mixtradi"),
+  if(toupper(what) %in% c("ODF","BOTH")){
+  radii <- .Fortran("mixtradi",
                     as.double(polyeder$vertices),
                     as.integer(polyeder$nv),
                     as.double(ev),
@@ -276,13 +280,33 @@ setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=N
                     DUPL=FALSE,
                     PACKAGE="dti")$radii
   dim(radii) <- c(polyeder$nv,n)
-  radii <- radii*scale
+  radii <- (radii+level)/(max(radii)+level)*scale
+  }
+  if(toupper(what) %in% c("AXIS","BOTH")){
+  andir <- array(.Fortran("mixandir",
+                    as.double(orient),
+                    as.double(mix),
+                    as.integer(order),
+                    as.integer(dim(mix)[1]),
+                    as.integer(n),
+                    andir=double(3*n*dim(mix)[1]),
+                    DUPL=FALSE,
+                    PACKAGE="dti")$andir,c(3,dim(mix)[1],n1,n2,n3))
+  lcoord <- array(0,c(3,2*dim(mix)[1],n1,n2,n3))
+  for(i in 1:dim(mix)[1]){
+       lcoord[,2*i-1,,,] <-  andir[,i,,,]*scale+tmean[,,,,drop=FALSE]
+       lcoord[,2*i,,,] <-  -andir[,i,,,]*scale+tmean[,,,,drop=FALSE]
+     }          
+     dim(lcoord) <- c(3,2*dim(mix)[1]*n1*n2*n3)
+  }
+  dim(tmean) <- c(3,n)
   if(!add) {
      rgl.open()
      par3d(...)
      rgl.bg(color=bgcolor)
      }
-  show3d.odf(radii,polyeder,centers=tmean,minalpha=minalpha,...)
+  if(toupper(what) %in% c("ODF","BOTH")) show3d.odf(radii,polyeder,centers=tmean,minalpha=minalpha,...)
+  if(toupper(what) %in% c("AXIS","BOTH"))  rgl.lines(lcoord[1,],lcoord[2,],lcoord[3,],color="red",size=lwd)
   if(box) bbox3d()
   if(is.character(title)) {
      title3d(title,color="white",cex=1.5)
@@ -293,82 +317,6 @@ setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=N
   if(obj@hmax>1) paste("smoothed with hmax=",obj@hmax,"\n")
   invisible(rgl.cur())
 })
-S3ddwiMixtensor <-  function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,method=1,level=0.3,scale=.5,bgcolor="black",add=FALSE,subdivide=2,maxobjects=729,what="ODF",minalpha=1,normalize=NULL,box=FALSE,title=FALSE,...){
-  if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
-  if(!exists("icosa0")) data("polyeders")
-  if(subdivide<0||subdivide>4) subdivide <- 3
-  if(is.null(nx)) nx <- obj@ddim[1]
-  if(is.null(ny)) ny <- obj@ddim[2]
-  if(is.null(nz)) nz <- obj@ddim[3]
-  n <- nx*ny*nz
-  if(is.null(center)) center <- floor((obj@ddim+1)/2)
-  if(nx*ny*nz>maxobjects) {
-  cat("size of data cube",n," exceeds maximum of",maxobjects,"\n")
-  if(nz > maxobjects^(1/3)) n3 <- 1 else n3 <- nz
-    n1 <- n2 <- floor(sqrt(maxobjects/n3))
-  } else {
-    n1 <- nx
-    n2 <- ny
-    n3 <- nz
-  }
-  xind <- (center[1]-(n1%/%2)):(center[1]+(n1%/%2))
-  yind <- (center[2]-(n2%/%2)):(center[2]+(n2%/%2))
-  zind <- (center[3]-(n3%/%2)):(center[3]+(n3%/%2))
-  xind <- xind[xind>0&xind<=obj@ddim[1]]
-  yind <- yind[yind>0&yind<=obj@ddim[2]]
-  zind <- zind[zind>0&zind<=obj@ddim[3]]
-  n1 <- length(xind)
-  n2 <- length(yind)
-  n3 <- length(zind)
-  n <- n1*n2*n3
-  if(n==0) stop("Empty cube specified")
-  cat(" selected cube specified by \n xind=",min(xind),":",max(xind),
-      "\n yind=",min(yind),":",max(yind),
-      "\n zind=",min(zind),":",max(zind),"\n")
-  obj <- obj[xind,yind,zind]
-  vext <- obj@voxelext
-  center <- center*vext
-  order <- obj@order
-  ev <- obj@ev
-  mix <- obj@mix
-  orient <- obj@orient
-  tmean <- array(0,c(3,n1,n2,n3))
-  tmean[1,,,] <- xind*vext[1]
-  tmean[2,,,] <- outer(rep(1,n1),yind)*vext[2]
-  tmean[3,,,] <- outer(rep(1,n1),outer(rep(1,n2),zind))*vext[3]
-  dim(tmean) <- c(3,n)
-  mask <- obj@mask
-  polyeder <- switch(subdivide+1,icosa0,icosa1,icosa2,icosa3,icosa4)
-  radii <- .Fortran(switch(tolower(what),"ODF"="mixtradi","mixtradi"),
-                    as.double(polyeder$vertices),
-                    as.integer(polyeder$nv),
-                    as.double(ev),
-                    as.double(orient),
-                    as.double(mix),
-                    as.integer(order),
-                    as.integer(dim(mix)[1]),
-                    as.integer(n),
-                    radii=double(n*polyeder$nv),
-                    DUPL=FALSE,
-                    PACKAGE="dti")$radii
-  dim(radii) <- c(polyeder$nv,n)
-  radii <- radii*scale
-  if(!add) {
-     rgl.open()
-     par3d(...)
-     rgl.bg(color=bgcolor)
-     }
-  show3d.odf(radii,polyeder,centers=tmean,minalpha=minalpha,...)
-  if(box) bbox3d()
-  if(is.character(title)) {
-     title3d(title,color="white",cex=1.5)
-  } else {
-     if(title) title3d(switch(tolower(what),"ODF"="estimated ODF"),color="white",cex=1.5)
-  }
-  cat("\n rgl-device",rgl.cur(),switch(tolower(what),"ODF"="estimated ODF"),"\n")
-  if(obj@hmax>1) paste("smoothed with hmax=",obj@hmax,"\n")
-  invisible(rgl.cur())
-}
 ##############
 
 setMethod("show3d","dtiIndices",function(obj, index="FA", nx=NULL, ny=NULL, nz=NULL, center=NULL, method=1, level=0, bgcolor="black", add=FALSE, lwd=1,box=FALSE,title=FALSE,...){
@@ -436,7 +384,7 @@ setMethod("show3d","dtiIndices",function(obj, index="FA", nx=NULL, ny=NULL, nz=N
 
 ##############
 
-setMethod("show3d","dwiQball", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,scale=0.5,bgcolor="black",add=FALSE,subdivide=3,maxobjects=729,minalpha=1,power=1,normalize=TRUE,box=FALSE,title=FALSE,...){
+setMethod("show3d","dwiQball", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,level=0,scale=0.5,bgcolor="black",add=FALSE,subdivide=3,maxobjects=729,minalpha=1,power=1,normalize=TRUE,box=FALSE,title=FALSE,...){
   if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
   if(!exists("icosa0")) data("polyeders")
   if(obj@what=="wODF") normalize <- FALSE
@@ -490,11 +438,9 @@ setMethod("show3d","dwiQball", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,
      radii <- sweep(radii,2,maxradii-minradii,"/")^power*scale
 
   } else {
-     radii <- sweep(radii,2,apply(radii,2,max),"/")*scale
+     radii <- (radii+level)/(max(radii)+level)*scale
      radii[radii<0] <- 0
-#     radii <- radii/max(radii)*scale
   }
-  cat(range(radii),"\n")
   if(!add) {
      rgl.open()
      par3d(...)

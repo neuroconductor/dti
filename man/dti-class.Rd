@@ -3,7 +3,7 @@
 \alias{dwi-class}
 \alias{dtiData-class}
 \alias{dtiTensor-class}
-\alias{dtiMixensor-class}
+\alias{dwiMixtensor-class}
 \alias{dtiIndices-class}
 \alias{dwiQball-class}
 \alias{dwiFiber-class}
@@ -96,7 +96,7 @@ For class \code{"dwiFiber"}:
     \item{ \code{minanindex}: }{ Object of class \code{"numeric"}, minimal fractional anisotropy index} 
     \item{ \code{maxangle}: }{ Object of class \code{"numeric"}, maximal angle between fibres.} 
 }
-For class \code{"dtiMixtensor"}:
+For class \code{"dwiMixtensor"}:
 
 \describe{
     \item{ \code{ev}: }{ Object of class \code{"array"}, estimated eigenvalues, dimension \code{c(2,ddim)}} 
@@ -138,6 +138,7 @@ For class \code{"dtiMixtensor"}:
   \code{\link{readDWIdata}},
   \code{\link{sdpar-methods}},
   \code{\link{dtiTensor-methods}}, 
+  \code{\link{dwiMixtensor-methods}}, 
   \code{\link{dti.smooth-methods}},
   \code{\link{dtiIndices-methods}},
   \code{\link{dwiQball-methods}}, 

@@ -21,6 +21,8 @@ dwi <- function(object,  ...) cat("This object has class",class(object),"\n")
 setGeneric("dwi", function(object,  ...) 
 standardGeneric("dwi"))
 
+setClassUnion("narray",c("array","numeric"))
+
 setClass("dtiData",
          representation(si   = "array",
                         sdcoef = "numeric"),
@@ -214,7 +216,7 @@ setClass("dwiMixtensor",
                         mix    = "array",
                         orient = "array",
                         order  = "array",
-                        p      = "numeric", # p in "method"=="Jian"
+                        p      = "narray", # p in "method"=="Jian"
                         th0    = "array",
                         sigma  = "array",
                         scorr  = "array",
@@ -272,8 +274,8 @@ setClass("dwiMixtensor",
             cat("invalid length of bw\n")
             return(invisible(FALSE))
           }
-          if (!(object@method %in% c("mixtensor","Jian"))) {
-            cat("method should specify either mixtensor or Jian \n")
+          if (!(object@method %in% c("mixtensor","Jian","Jian2"))) {
+            cat("method should specify either mixtensor, Jian or Jian2\n")
             return(invisible(FALSE))
           }
          }
