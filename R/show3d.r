@@ -221,7 +221,7 @@ setMethod("show3d","dtiTensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL
   invisible(rgl.cur())
 })
 
-setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,method=1,level=0,scale=.45,bgcolor="black",add=FALSE,subdivide=3,maxobjects=729,what="ODF",minalpha=1,lwd=3,box=FALSE,title=FALSE,...){
+setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,level=0,scale=.45,bgcolor="black",add=FALSE,subdivide=3,maxobjects=729,what="ODF",minalpha=1,lwd=3,box=FALSE,title=FALSE,...){
   if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
   if(!exists("icosa0")) data("polyeders")
   if(subdivide<0||subdivide>4) subdivide <- 3
@@ -319,7 +319,7 @@ setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=N
 })
 ##############
 
-setMethod("show3d","dtiIndices",function(obj, index="FA", nx=NULL, ny=NULL, nz=NULL, center=NULL, method=1, level=0, bgcolor="black", add=FALSE, lwd=1,box=FALSE,title=FALSE,...){
+setMethod("show3d","dtiIndices",function(obj, index="FA", nx=NULL, ny=NULL, nz=NULL, center=NULL, method=1, falevel=0, bgcolor="black", add=FALSE, lwd=1,box=FALSE,title=FALSE,...){
   if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
   index <- tolower(index) 
   if(!(index%in%c("fa","ga"))) stop("index should be either 'FA' or 'GA'\n")
@@ -339,7 +339,7 @@ setMethod("show3d","dtiIndices",function(obj, index="FA", nx=NULL, ny=NULL, nz=N
   n <- n1*n2*n3
   vext <- obj@voxelext
   ind <- switch(index,"fa"=obj@fa[xind,yind,zind], "ga"=obj@ga[xind,yind,zind])
-  ind[ind<level] <- 0
+  ind[ind<falevel] <- 0
   ind <- ind*min(vext)
   tmean <- array(0,c(3,n1,n2,n3))
   tmean[1,,,] <- xind*vext[1]

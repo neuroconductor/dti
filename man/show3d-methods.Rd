@@ -6,6 +6,7 @@
 \alias{show3d,dtiData-method}
 \alias{show3d,dtiIndices-method}
 \alias{show3d,dtiTensor-method}
+\alias{show3d,dwiMixtensor-method}
 \alias{show3d,dwiQball-method}
 \alias{show3d,dwiFiber-method}
 \title{ Methods for Function `show3d' in Package `dti' }
@@ -13,11 +14,12 @@
   The function provides 3D visualization of \code{"dtiData"}, \code{"dtiTensor"}, \code{"dwiQball"} and \code{"dtiIndices"} objects using the \code{"rgl"}-package. Functionality of the rgl-package allows to rotate and zoom the displayed object.
 }
 \usage{
-  \S4method{show3d}{dtiData}(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,scale=.5,bgcolor="black",add=FALSE,maxobjects=729,what="ADC",minalpha=1,power=1,nn=1,normalize=FALSE,box=FALSE,title=FALSE,\dots)
-  \S4method{show3d}{dtiTensor}(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,method=1,level=0.3,scale=.5,bgcolor="black",add=FALSE,subdivide=2,maxobjects=729,what="tensor",minalpha=.25,normalize=NULL,box=FALSE,title=FALSE,\dots)
-  \S4method{show3d}{dtiIndices}(obj, index="FA", nx=NULL, ny=NULL, nz=NULL, center=NULL, method=1, level=0, bgcolor="black", add=FALSE, lwd=1,box=FALSE,title=FALSE, \dots)
-  \S4method{show3d}{dwiQball}(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,scale=0.5,bgcolor="black",add=FALSE,subdivide=3,maxobjects=729,minalpha=1,power=1,normalize=TRUE,box=FALSE,title=FALSE, \dots)
-  \S4method{show3d}{dwiFiber}(obj,add=FALSE,bgcolor="black",box=FALSE,title=FALSE,lwd=1, \dots)
+  \S4method{show3d}{dtiData}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, scale=.5, bgcolor="black", add=FALSE, maxobjects=729, what="ADC", minalpha=1, power=1, nn=1, normalize=FALSE, box=FALSE, title=FALSE, \dots)
+  \S4method{show3d}{dtiTensor}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, method=1, falevel=0.3, level=0, scale=.5, bgcolor="black", add=FALSE, subdivide=2, maxobjects=729, what="tensor", minalpha=.25, normalize=NULL, box=FALSE, title=FALSE,\dots)
+  \S4method{show3d}{dtiIndices}(obj, index="FA", nx=NULL, ny=NULL, nz=NULL, center=NULL, method=1, level=0, bgcolor="black", add=FALSE, lwd=1, box=FALSE, title=FALSE, \dots)
+  \S4method{show3d}{dwiMixtensor}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, level=0, scale=.45, bgcolor="black", add=FALSE, subdivide=3, maxobjects=729, what="ODF", minalpha=1, lwd=3, box=FALSE, title=FALSE, \dots) 
+ \S4method{show3d}{dwiQball}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, level=0, scale=0.5, bgcolor="black", add=FALSE, subdivide=3, maxobjects=729, minalpha=1, power=1, normalize=TRUE, box=FALSE, title=FALSE, \dots)
+  \S4method{show3d}{dwiFiber}(obj, add=FALSE, bgcolor="black", box=FALSE, title=FALSE, lwd=1, \dots)
 }
 \arguments{
 \item{obj}{ An object of class \code{dtiTensor} or \code{dtiIndices} }
@@ -36,10 +38,15 @@
 \item{box}{Logical, add a bounding box.}
 \item{title}{Either a character string specifying a title or a logical. If \code{title==TRUE} a default title characterizing the type of plot is generated. }
 \item{method}{\code{method==1} and \code{method==2} specify two different color schemes for directional FA-maps.}
-\item{level}{Minimal FA value of tensors.}
+\item{falevel}{Minimal FA value of tensors.}
+\item{level}{Radius of sphere used as support for ODF visualisation}
 \item{subdivide}{Level of subdivisions for meshing, level \code{0:4} correspond to use of
 \code{c(12,42,162,642,2562)} vertices per tensor, respectively.}
-\item{what}{For dtiTensor-objects either \code{"tensor"} for visualization using ellipsoids or \code{"ADC"} for Apparent Diffusion Coefficients. For dtiData-objects choices are either \code{"data"}  or \code{"ADC"}.}
+\item{what}{For dtiTensor-objects either \code{"tensor"} for visualization using ellipsoids, \code{"ADC"} for Apparent Diffusion Coefficients or \code{"ODF"} for the Orientation Density Function. 
+For dwiMixtensor-objects possible specifications are \code{"ODF"}, \code{"Axis"}
+and \code{"Both"}, with the latter superposing the estimated main directions on the estimated ODF. For \code{"Axis"}(and \code{"Both"}) the length of the axis corresponds to the mixture weights.
+For dtiData-objects choices are either \code{"data"}  or \code{"ADC"}.
+For }
 \item{lwd}{Linewidth for visualization of dtiIndices objects.}
 \item{index}{Eiter \code{"FA"} for fractional anisotropy index or 
 \code{"GA"} for geodesic anisotropy index.}

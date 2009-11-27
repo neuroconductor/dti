@@ -353,6 +353,28 @@ setMethod("extract","dtiData",function(x, what="data", xind=TRUE, yind=TRUE, zin
 
 setMethod("extract","dtiTensor",function(x, what="tensor", xind=TRUE, yind=TRUE, zind=TRUE){
   what <- tolower(what) 
+  x <- x[xind,yind,zind]
+  n1 <- x@ddim[1]
+  n2 <- x@ddim[2]
+  n3 <- x@ddim[3]
+  z <- list(NULL)
+  if("order" %in% what) z$order <- x@order
+  if("ev" %in% what) { 
+     ev <- array(0,c(3,dim(x@ev)[-1]))
+     ev[1,,,,] <- x@ev[1,,,] + x@ev[2,,,]
+     ev[2,,,,] <- x@ev[2,,,]
+     ev[3,,,,] <- x@ev[3,,,]
+     z$ev <- ev
+     }
+  if("mix" %in% what) z$mix <- x@mix
+  if("andir" %in% what) z$andir <- x@andir
+  if("s0" %in% what) z$S0 <- x@S0
+  if("mask" %in% what) z$mask <- x@mask
+  invisible(z)
+})
+
+setMethod("extract","dwiMixtensor",function(x, what="andir", xind=TRUE, yind=TRUE, zind=TRUE){
+  what <- tolower(what) 
 
   x <- x[xind,yind,zind]
   n1 <- x@ddim[1]
