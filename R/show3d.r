@@ -255,6 +255,7 @@ setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=N
       "\n zind=",min(zind),":",max(zind),"\n")
   obj <- obj[xind,yind,zind]
   vext <- obj@voxelext
+  scale <- scale*min(vext)
   center <- center*vext
   order <- obj@order
   ev <- obj@ev
@@ -280,9 +281,15 @@ setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=N
                     DUPL=FALSE,
                     PACKAGE="dti")$radii
   dim(radii) <- c(polyeder$nv,n)
-  radii <- (radii+level)/(max(radii)+level)*scale
+#  radii <- (radii+level)/(max(radii)+level)*scale
+  radii <- sweep(radii+level,2,apply(radii,2,max)+level,"/")*scale
   }
   if(toupper(what) %in% c("AXIS","BOTH")){
+   gfa <- extract(obj,"gfa")$gfa
+   colors <- rainbow(1024,end=2/3,gamma=1.2)
+   ranger <- range(gfa)
+   ind <- 1024-(gfa-ranger[1])/(ranger[2]-ranger[1])*1023
+   colorvalues <- rep(colors[ind],rep(2*dim(mix)[1],length(ind)))
   andir <- array(.Fortran("mixandir",
                     as.double(orient),
                     as.double(mix),
@@ -294,8 +301,8 @@ setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=N
                     PACKAGE="dti")$andir,c(3,dim(mix)[1],n1,n2,n3))
   lcoord <- array(0,c(3,2*dim(mix)[1],n1,n2,n3))
   for(i in 1:dim(mix)[1]){
-       lcoord[,2*i-1,,,] <-  andir[,i,,,]*scale+tmean[,,,,drop=FALSE]
-       lcoord[,2*i,,,] <-  -andir[,i,,,]*scale+tmean[,,,,drop=FALSE]
+       lcoord[,2*i-1,,,] <-  andir[,i,,,]*scale+tmean[,,,]
+       lcoord[,2*i,,,] <-  -andir[,i,,,]*scale+tmean[,,,]
      }          
      dim(lcoord) <- c(3,2*dim(mix)[1]*n1*n2*n3)
   }
@@ -306,7 +313,7 @@ setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=N
      rgl.bg(color=bgcolor)
      }
   if(toupper(what) %in% c("ODF","BOTH")) show3d.odf(radii,polyeder,centers=tmean,minalpha=minalpha,...)
-  if(toupper(what) %in% c("AXIS","BOTH"))  rgl.lines(lcoord[1,],lcoord[2,],lcoord[3,],color="red",size=lwd)
+  if(toupper(what) %in% c("AXIS","BOTH"))  rgl.lines(lcoord[1,],lcoord[2,],lcoord[3,],color=colorvalues,size=lwd)
   if(box) bbox3d()
   if(is.character(title)) {
      title3d(title,color="white",cex=1.5)

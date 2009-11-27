@@ -6,15 +6,17 @@
 \alias{plot,dtiData-method}
 \alias{plot,dtiIndices-method}
 \alias{plot,dtiTensor-method}
+\alias{plot,dwiMixtensor-method}
 \alias{plot,dwiFiber-method}
 \title{ Methods for Function `plot' in Package `dti' } 
 \description{
-  Visualization of objects of class \code{"dtiData"}, \code{"dtiIndices"} and class \code{"dtiTensor"}
+  Visualization of objects of class \code{"dtiData"}, \code{"dtiIndices"}, \code{"dtiTensor"}and class \code{"dwiMixtensor"}
 }
 \usage{
   \S4method{plot}{dtiData}(x, y, slice=1, gradient=NULL, view= "axial", show=TRUE, density=FALSE, xind=NULL, yind=NULL, zind=NULL, mar=c(3,3,3,.3), mgp=c(2,1,0), \dots)
   \S4method{plot}{dtiTensor}(x, y, slice=1, view="axial", quant=0, minanindex=NULL, contrast.enh=1, what="FA", qrange=c(.01,.99), xind=NULL, yind=NULL, zind=NULL, mar=c(2,2,2,.2), mgp=c(2,1,0), \dots)
-  \S4method{plot}{dtiIndices}(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=TRUE, identify=FALSE, density=FALSE, contrast.enh=1, what="FA", xind=NULL, yind=NULL, zind=NULL, mar=c(3,3,3,.3), mgp=c(2,1,0), \dots)
+  \S4method{plot}{dwiMixtensor}(x, y, slice=1, view="axial", what="gfa",  xind=NULL, yind=NULL, zind=NULL, mar=c(2,2,2,.2),mgp=c(2,1,0), \dots)
+\S4method{plot}{dtiIndices}(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=TRUE, identify=FALSE, density=FALSE, contrast.enh=1, what="FA", xind=NULL, yind=NULL, zind=NULL, mar=c(3,3,3,.3), mgp=c(2,1,0), \dots)
   \S4method{plot}{dwiFiber}(x, y, \dots)
 }
 \arguments{
@@ -30,7 +32,8 @@
   \item{identify}{ Enable identification of coordinates by mouse actions, logical with default FALSE. Uses function \code{identify}. (for class \code{"dtiIndices"} only)}
   \item{density}{Show density of S0(Sb)-values (for class \code{"dtiData"}) or densities of fractal anisotropy (FA) or geodesic anisotropy (GA) ( for class \code{"dtiIndices"}).  }
   \item{contrast.enh}{ Enhance image contrast using \code{min(1,x$anindex/contrast.enh} instead of the anisotropy index itself. Effective values are within the interval (0,1).}
-  \item{what}{ If \code{what="GA"} use geodesic anisotropy (GA) instead of fractional anisotropy (FA).  }
+  \item{what}{ In case of class \code{"dtiIndices"} \code{what="GA"} uses geodesic anisotropy (GA) in contrast to \code{what="FA"} for fractional anisotropy (FA). For class \code{"dwiMixtensor"}
+  \code{what="gfa"} for generalized FA and \code{what="order"} for the number of mixture components may be chosen. }
   \item{mar}{ Graphical parameter for \code{par}. }
   \item{mgp}{ Graphical parameter for \code{par}. }
   \item{qrange}{ Cut image intensity to these quantiles to avoid that outliers determine the dynamic range of the image. }
@@ -50,6 +53,9 @@
   \item{x = "dtiIndices"}{ Color coded anisotropy maps are produced depending on the specification in \code{method}. \code{method==1}, \code{method==2}, \code{method==4}  and \code{method==5} specify three different color schemes for directional FA-maps. \code{method==3} specifies visualization of dtiIndices using color coded shape parameters. If \code{identify==FALSE} the resulting image of class \code{"adimpro"} from package \pkg{adimpro}, otherwise a matrix with coordinates of identified voxel is returned.}
 
   \item{x = "dtiTensor"}{ The tensor itself, fractional anisotropy (FA), mean diffusivity (MD) and a color coded anisotropy map are provided. \code{NULL} is returned. }
+
+  \item{x = "dwiMixtensor"}{ Depending of \code{what} images of a generalized FA and/or the number of mixture components are provided. \code{NULL} is returned. }
+
   \item{x = "dwiFiber"}{ Creates a density plot of fiber lengths. \code{NULL} is returned. }
   
 }}
@@ -61,6 +67,7 @@
   \code{\linkS4class{dtiIndices}}, 
   \code{\linkS4class{dtiData}}, 
   \code{\linkS4class{dtiTensor}}
+  \code{\linkS4class{dwiMixtensor}}
 }
 \examples{
   \dontrun{demo(dti_art)}

@@ -214,7 +214,7 @@ setMethod("[","dwiMixtensor",function(x, i, j, k, drop=FALSE){
                 order  = x@order[i,j,k,drop=FALSE],
                 p      = x@p,
                 th0   = x@th0[i,j,k,drop=FALSE],
-                sigma = if(x@method=="linear") x@sigma[i,j,k,drop=FALSE] else array(1,c(1,1,1)),
+                sigma = x@sigma[i,j,k,drop=FALSE],
                 scorr = x@scorr, 
                 bw = x@bw,
                 mask = x@mask[i,j,k,drop=FALSE],
@@ -351,7 +351,7 @@ setMethod("extract","dtiData",function(x, what="data", xind=TRUE, yind=TRUE, zin
 
 #############
 
-setMethod("extract","dtiTensor",function(x, what="tensor", xind=TRUE, yind=TRUE, zind=TRUE){
+setMethod("extract","dwiMixtensor",function(x, what="andir", xind=TRUE, yind=TRUE, zind=TRUE){
   what <- tolower(what) 
   x <- x[xind,yind,zind]
   n1 <- x@ddim[1]
@@ -361,19 +361,20 @@ setMethod("extract","dtiTensor",function(x, what="tensor", xind=TRUE, yind=TRUE,
   if("order" %in% what) z$order <- x@order
   if("ev" %in% what) { 
      ev <- array(0,c(3,dim(x@ev)[-1]))
-     ev[1,,,,] <- x@ev[1,,,] + x@ev[2,,,]
-     ev[2,,,,] <- x@ev[2,,,]
-     ev[3,,,,] <- x@ev[3,,,]
+     ev[1,,,] <- x@ev[1,,,] + x@ev[2,,,]
+     ev[2,,,] <- x@ev[2,,,]
+     ev[3,,,] <- x@ev[2,,,]
      z$ev <- ev
      }
   if("mix" %in% what) z$mix <- x@mix
   if("andir" %in% what) z$andir <- x@andir
   if("s0" %in% what) z$S0 <- x@S0
   if("mask" %in% what) z$mask <- x@mask
+  if("gfa" %in% what) z$gfa <- x@ev[1,,,]/sqrt((x@ev[1,,,]+x@ev[2,,,])^2+2*x@ev[2,,,]^2)
   invisible(z)
 })
 
-setMethod("extract","dwiMixtensor",function(x, what="andir", xind=TRUE, yind=TRUE, zind=TRUE){
+setMethod("extract","dtiTensor",function(x, what="tensor", xind=TRUE, yind=TRUE, zind=TRUE){
   what <- tolower(what) 
 
   x <- x[xind,yind,zind]

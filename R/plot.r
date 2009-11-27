@@ -168,6 +168,37 @@ setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, mi
 
 ##############
 
+setMethod("plot", "dwiMixtensor", function(x, y, slice=1, view="axial", what="gfa",  xind=NULL,yind=NULL,zind=NULL, mar=c(2,2,2,.2),mgp=c(2,1,0),...) {
+  adimpro <- require(adimpro)
+  if(is.null(xind)) xind<-(1:x@ddim[1])
+  if(is.null(yind)) yind<-(1:x@ddim[2])
+  if(is.null(zind)) zind<-(1:x@ddim[3])
+  if (view == "sagittal") {
+    x <- x[slice,yind,zind]
+  } else if (view == "coronal") {
+    x <- x[xind,slice,zind]
+  } else {
+    x <- x[xind,yind,slice]
+  }
+  what <- tolower(what)
+  stats <- extract(x,what)
+  oldpar <- par(mfrow=c(1,length(what)),mar=mar,mgp=mgp,...)
+  on.exit(par(oldpar))
+  if("gfa" %in% what){
+     gfa <- drop(stats$gfa)
+     show.image(make.image(65535*gfa))
+     title(paste("Slice",slice,"Generalized FA"))
+  }
+  if("order" %in% what){
+     order <- drop(stats$order)
+     show.image(make.image(65535*order/max(order)))
+     title(paste("Slice",slice,"Order of mixture (Maximum=",max(order),")"))
+   }
+   invisible(NULL)
+})
+
+##############
+
 setMethod("plot", "dtiIndices", 
 function(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=TRUE, identify=FALSE, density=FALSE, contrast.enh=1,what="FA",xind=NULL,yind=NULL,zind=NULL, mar=c(3,3,3,.3),mgp=c(2,1,0), ...) {
   if(is.null(x@fa)) cat("No anisotropy index yet")

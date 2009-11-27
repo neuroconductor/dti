@@ -57,7 +57,6 @@
          dir(3) = cos(par(i*3))
          DO j = 1,ngrad
             z1 = dotprod3(dir,grad(1,j))
-C            z(j) = z(j) + w*exp(-p*log((1- c12*z1*z1 )/c2/p))
             z(j) = z(j) + w*exp(-p*log(1 + ( c2 + c1*z1*z1 )/p))
          END DO
       END DO

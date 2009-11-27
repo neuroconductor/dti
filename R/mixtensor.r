@@ -19,7 +19,7 @@ z <- si[sneighbors]
 dim(z) <- dim(sneighbors)
 ind <- (1:ngrad)[apply(t(z)>=si,1,all)]
 ind <- ind[order(si[ind])]
-list(ind = ind, si = si[ind], grad = grad[ind,])
+list(ind = ind, si = si[ind], grad = grad[ind,,drop=FALSE])
 }
 
 
@@ -135,6 +135,13 @@ setMethod("dwiMixtensor","dtiData",function(object,maxcomp=2,p=40,maxneighb=7,me
   mask <- s0>0
   si <- si[,,,-s0ind]
   siq <- sweep(si,1:3,s0,"/")
+  siqmed <- apply(siq,1:3,median)
+  siqmed[siqmed<.9] <- .9
+  siqmed[siqmed>.99] <- .99
+  siq <- sweep(siq,1:3,siqmed,pmin)
+#
+#  avoid situations where si's are larger than s0
+#
   grad <- t(object@gradient[,-s0ind])
   sneighbors <- neighbors(grad,maxneighb)
   order <- array(maxcomp,ddim)
@@ -152,6 +159,7 @@ setMethod("dwiMixtensor","dtiData",function(object,maxcomp=2,p=40,maxneighb=7,me
    cat("voxel",i1,i2,i3,"\n")
      z <- locmin(si[i1,i2,i3,],sneighbors,grad)
      mc0 <- min(maxcomp,dim(z$grad)[1])
+     cat("mc0",mc0,"\n")
      for(j in 1:mc0) orient[,j,i1,i2,i3] <- paroforient(z$grad[j,])
      par <- numeric(3*mc0+1)
      lev[,i1,i2,i3] <- par[1:2] <- log(-log(siq[i1,i2,i3,z$ind[1]])*c(.8,.2))
@@ -182,12 +190,12 @@ setMethod("dwiMixtensor","dtiData",function(object,maxcomp=2,p=40,maxneighb=7,me
        }
      }
    sigma2[i1,i2,i3] <- rss/(ngrad-3*mc0-1)
-   cat("order",order[i1,i2,i3],"\n")
-   cat("error variance",sigma2[i1,i2,i3]*s0[i1,i2,i3]^2,"\n")
-   cat("ev",c(exp(lev[1,i1,i2,i3]),0,0)+exp(lev[2,i1,i2,i3]),"\n")
-   cat("mix",mix[,i1,i2,i3],"\n")
-   cat("orient",orient[,,i1,i2,i3],"\n")
-   if(method=="Jian2") cat("p",p[i1,i2,i3],"\n") 
+#   cat("order",order[i1,i2,i3],"\n")
+#   cat("error variance",sigma2[i1,i2,i3]*s0[i1,i2,i3]^2,"\n")
+#   cat("ev",c(exp(lev[1,i1,i2,i3]),0,0)+exp(lev[2,i1,i2,i3]),"\n")
+#   cat("mix",mix[,i1,i2,i3],"\n")
+#   cat("orient",orient[,,i1,i2,i3],"\n")
+#   if(method=="Jian2") cat("p",p[i1,i2,i3],"\n") 
   }
   }
   invisible(new("dwiMixtensor",
