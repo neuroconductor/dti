@@ -168,7 +168,7 @@ setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, mi
 
 ##############
 
-setMethod("plot", "dwiMixtensor", function(x, y, slice=1, view="axial", what="gfa",  xind=NULL,yind=NULL,zind=NULL, mar=c(2,2,2,.2),mgp=c(2,1,0),...) {
+setMethod("plot", "dwiMixtensor", function(x, y, slice=1, view="axial", what="gfa", minanindex=NULL,  xind=NULL,yind=NULL,zind=NULL, mar=c(2,2,2,.2),mgp=c(2,1,0),...) {
   adimpro <- require(adimpro)
   if(is.null(xind)) xind<-(1:x@ddim[1])
   if(is.null(yind)) yind<-(1:x@ddim[2])
@@ -186,6 +186,7 @@ setMethod("plot", "dwiMixtensor", function(x, y, slice=1, view="axial", what="gf
   on.exit(par(oldpar))
   if("gfa" %in% what){
      gfa <- drop(stats$gfa)
+     if(!is.null(minanindex)) gfa[gfa<minanindex] <- 0
      show.image(make.image(65535*gfa))
      title(paste("Slice",slice,"Generalized FA"))
   }

@@ -15,7 +15,7 @@
 \usage{
   \S4method{plot}{dtiData}(x, y, slice=1, gradient=NULL, view= "axial", show=TRUE, density=FALSE, xind=NULL, yind=NULL, zind=NULL, mar=c(3,3,3,.3), mgp=c(2,1,0), \dots)
   \S4method{plot}{dtiTensor}(x, y, slice=1, view="axial", quant=0, minanindex=NULL, contrast.enh=1, what="FA", qrange=c(.01,.99), xind=NULL, yind=NULL, zind=NULL, mar=c(2,2,2,.2), mgp=c(2,1,0), \dots)
-  \S4method{plot}{dwiMixtensor}(x, y, slice=1, view="axial", what="gfa",  xind=NULL, yind=NULL, zind=NULL, mar=c(2,2,2,.2),mgp=c(2,1,0), \dots)
+  \S4method{plot}{dwiMixtensor}(x, y, slice=1, view="axial", what="gfa", minanindex=NULL,  xind=NULL, yind=NULL, zind=NULL, mar=c(2,2,2,.2),mgp=c(2,1,0), \dots)
 \S4method{plot}{dtiIndices}(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=TRUE, identify=FALSE, density=FALSE, contrast.enh=1, what="FA", xind=NULL, yind=NULL, zind=NULL, mar=c(3,3,3,.3), mgp=c(2,1,0), \dots)
   \S4method{plot}{dwiFiber}(x, y, \dots)
 }
@@ -27,7 +27,7 @@
   \item{gradient}{ Index of data cube to plot. Defaults to the first S0 image. }
   \item{method}{ Method for color coding tensor indices. }
   \item{quant}{ If \code{is.null(minanindex)} specify \code{minanindex} as corresponding quantile of the fractal anisotropy (FA) index.}
-  \item{minanindex}{ Display only information for voxel with \code{FA>minanindex}}
+  \item{minanindex}{ Display only information for voxel with \code{(G)FA>minanindex}}
   \item{show}{Visualize information in a graphics device (for classes \code{"dtiData"} and \code{"dtiIndices"} only).  }
   \item{identify}{ Enable identification of coordinates by mouse actions, logical with default FALSE. Uses function \code{identify}. (for class \code{"dtiIndices"} only)}
   \item{density}{Show density of S0(Sb)-values (for class \code{"dtiData"}) or densities of fractal anisotropy (FA) or geodesic anisotropy (GA) ( for class \code{"dtiIndices"}).  }

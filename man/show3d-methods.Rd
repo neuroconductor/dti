@@ -14,11 +14,11 @@
   The function provides 3D visualization of \code{"dtiData"}, \code{"dtiTensor"}, \code{"dwiQball"} and \code{"dtiIndices"} objects using the \code{"rgl"}-package. Functionality of the rgl-package allows to rotate and zoom the displayed object.
 }
 \usage{
-  \S4method{show3d}{dtiData}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, scale=.5, bgcolor="black", add=FALSE, maxobjects=729, what="ADC", minalpha=1, power=1, nn=1, normalize=FALSE, box=FALSE, title=FALSE, \dots)
+  \S4method{show3d}{dtiData}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, scale=.5, bgcolor="black", add=FALSE, maxobjects=729, what="ADC", minalpha=1, nn=1, normalize=FALSE, box=FALSE, title=FALSE, \dots)
   \S4method{show3d}{dtiTensor}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, method=1, falevel=0.3, level=0, scale=.5, bgcolor="black", add=FALSE, subdivide=2, maxobjects=729, what="tensor", minalpha=.25, normalize=NULL, box=FALSE, title=FALSE,\dots)
   \S4method{show3d}{dtiIndices}(obj, index="FA", nx=NULL, ny=NULL, nz=NULL, center=NULL, method=1, level=0, bgcolor="black", add=FALSE, lwd=1, box=FALSE, title=FALSE, \dots)
   \S4method{show3d}{dwiMixtensor}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, level=0, scale=.45, bgcolor="black", add=FALSE, subdivide=3, maxobjects=729, what="ODF", minalpha=1, lwd=3, box=FALSE, title=FALSE, \dots) 
- \S4method{show3d}{dwiQball}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, level=0, scale=0.5, bgcolor="black", add=FALSE, subdivide=3, maxobjects=729, minalpha=1, power=1, normalize=TRUE, box=FALSE, title=FALSE, \dots)
+ \S4method{show3d}{dwiQball}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, level=0, scale=0.5, bgcolor="black", add=FALSE, subdivide=3, maxobjects=729, minalpha=1, box=FALSE, title=FALSE, \dots)
   \S4method{show3d}{dwiFiber}(obj, add=FALSE, bgcolor="black", box=FALSE, title=FALSE, lwd=1, \dots)
 }
 \arguments{
@@ -32,7 +32,6 @@
 \item{add}{If true information is added to the current device, otherwise a new device is opened.}
 \item{maxobjects}{Maximal size of data cube (in voxel) to display}
 \item{minalpha}{Minimum value for transparency.}
-\item{power}{Exponent in visualization, defaults to 1. heighter values may be used for increased contrast.}
 \item{nn}{Number of nearest neighbors used for interpolation onto a regular polyeder.}
 \item{normalize}{If \code{TRUE} normalize values (project to interval (0,1) within each voxel). For tensor objects \code{normalize=NULL} specifies a default depending on the content of argument what (\code{normalize <- switch(tolower(what),"tensor"=FALSE,"adc"=TRUE)}).}
 \item{box}{Logical, add a bounding box.}

@@ -159,7 +159,7 @@ setMethod("dwiMixtensor","dtiData",function(object,maxcomp=2,p=40,maxneighb=7,me
    cat("voxel",i1,i2,i3,"\n")
      z <- locmin(si[i1,i2,i3,],sneighbors,grad)
      mc0 <- min(maxcomp,dim(z$grad)[1])
-     cat("mc0",mc0,"\n")
+#     cat("mc0",mc0,"\n")
      for(j in 1:mc0) orient[,j,i1,i2,i3] <- paroforient(z$grad[j,])
      par <- numeric(3*mc0+1)
      lev[,i1,i2,i3] <- par[1:2] <- log(-log(siq[i1,i2,i3,z$ind[1]])*c(.8,.2))
@@ -174,7 +174,7 @@ setMethod("dwiMixtensor","dtiData",function(object,maxcomp=2,p=40,maxneighb=7,me
                  "Jian2"=optim(c(par[1:(3*k+1)],25),mfun2,siq=siq[i1,i2,i3,],grad=grad,ep=p,control=list(maxit=5000,fnscale=1e5)))
         rss <- min(z$value,rss)
         ttt <- z$value+2*(3*k+1)/(ngrad-3*maxcomp-1)*rss
-        cat("risk",z$value,ttt,"\n")
+#        cat("risk",z$value,ttt,"\n")
         if(ttt < krit) {
            krit <- ttt
            order[i1,i2,i3] <- as.integer(k)
@@ -196,6 +196,7 @@ setMethod("dwiMixtensor","dtiData",function(object,maxcomp=2,p=40,maxneighb=7,me
 #   cat("mix",mix[,i1,i2,i3],"\n")
 #   cat("orient",orient[,,i1,i2,i3],"\n")
 #   if(method=="Jian2") cat("p",p[i1,i2,i3],"\n") 
+    gc()
   }
   }
   invisible(new("dwiMixtensor",

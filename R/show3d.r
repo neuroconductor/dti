@@ -8,7 +8,7 @@ show3d <- function(obj,  ...) cat("3D Visualization not implemented for this cla
 
 setGeneric("show3d", function(obj,  ...) standardGeneric("show3d"))
 
-setMethod("show3d","dtiData", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,scale=.5,bgcolor="black",add=FALSE,maxobjects=729,what="ADC",minalpha=1,power=1,nn=1,normalize=FALSE,box=FALSE,title=FALSE,...){
+setMethod("show3d","dtiData", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,scale=.5,bgcolor="black",add=FALSE,maxobjects=729,what="ADC",minalpha=1,nn=1,normalize=FALSE,box=FALSE,title=FALSE,...){
   if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
   if(is.null(nx)) nx <- obj@ddim[1]
   if(is.null(ny)) ny <- obj@ddim[2]
@@ -60,7 +60,7 @@ setMethod("show3d","dtiData", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,s
      minradii <- apply(radii,2,min)
      maxradii <- apply(radii,2,max)
      radii <- sweep(radii,2,minradii,"-")
-     radii <- sweep(radii,2,maxradii-minradii,"/")^power*sscale
+     radii <- sweep(radii,2,maxradii-minradii,"/")*sscale
   } else {
      radii <- radii/max(radii)*sscale
   }
@@ -180,7 +180,7 @@ setMethod("show3d","dtiTensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL
     maxev <- maxev[indpos]
     n <- length(indpos)
   }
-  if(is.null(normalize)) normalize <- switch(tolower(what),"tensor"=FALSE,"adc"=TRUE)
+  if(is.null(normalize)) normalize <- switch(tolower(what),"tensor"=FALSE,"adc"=TRUE,"odf"=FALSE)
   polyeder <- switch(subdivide+1,icosa0,icosa1,icosa2,icosa3,icosa4)
   radii <- .Fortran(switch(tolower(what),tensor="ellradii",adc="adcradii",odf="odfradii"),
                     as.double(polyeder$vertices),
@@ -198,7 +198,13 @@ setMethod("show3d","dtiTensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL
      radii <- sweep(radii,2,minradii,"-")
      radii <- sweep(radii,2,maxradii-minradii,"/")*scale
   } else {
+    if (tolower(what)=="odf"){
+     mradii <- apply(radii,2,mean)
+     radii <- sweep(radii,2,mradii,"/")+level
+     radii <- radii/max(radii)*scale
+     } else {
      radii <- (radii+level)/(max(radii)+level)*scale
+     }
   }
   if(!add) {
      rgl.open()
@@ -282,7 +288,13 @@ setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=N
                     PACKAGE="dti")$radii
   dim(radii) <- c(polyeder$nv,n)
 #  radii <- (radii+level)/(max(radii)+level)*scale
-  radii <- sweep(radii+level,2,apply(radii,2,max)+level,"/")*scale
+#
+#   display in a form that the volumes are comparable,
+#   i.e. that the mean radii are constant
+#
+  mradii <- apply(radii,2,mean)
+  radii <- sweep(radii,2,mradii,"/")+level
+  radii <- radii/max(radii)*scale
   }
   if(toupper(what) %in% c("AXIS","BOTH")){
    gfa <- extract(obj,"gfa")$gfa
@@ -391,7 +403,7 @@ setMethod("show3d","dtiIndices",function(obj, index="FA", nx=NULL, ny=NULL, nz=N
 
 ##############
 
-setMethod("show3d","dwiQball", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,level=0,scale=0.5,bgcolor="black",add=FALSE,subdivide=3,maxobjects=729,minalpha=1,power=1,normalize=TRUE,box=FALSE,title=FALSE,...){
+setMethod("show3d","dwiQball", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,level=0,scale=0.5,bgcolor="black",add=FALSE,subdivide=3,maxobjects=729,minalpha=1,box=FALSE,title=FALSE,...){
   if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
   if(!exists("icosa0")) data("polyeders")
   if(obj@what=="wODF") normalize <- FALSE
@@ -437,17 +449,9 @@ setMethod("show3d","dwiQball", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,
   polyeder <- switch(subdivide+1,icosa0,icosa1,icosa2,icosa3,icosa4)
   sphdesign <- design.spheven(obj@order,polyeder$vertices,obj@lambda)$design
   radii <- t(sphdesign)%*%sphcoef
-  cat(range(radii),"\n")
-  if(normalize){
-     minradii <- apply(radii,2,min)
-     maxradii <- apply(radii,2,max)
-     radii <- sweep(radii,2,minradii,"-")
-     radii <- sweep(radii,2,maxradii-minradii,"/")^power*scale
-
-  } else {
-     radii <- (radii+level)/(max(radii)+level)*scale
-     radii[radii<0] <- 0
-  }
+  mradii <- apply(radii,2,mean)
+  radii <- sweep(radii,2,mradii,"/")+level
+  radii <- radii/max(radii)*scale
   if(!add) {
      rgl.open()
      par3d(...)
