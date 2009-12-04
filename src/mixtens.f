@@ -69,3 +69,22 @@
       erg = z2
       RETURN
       END 
+      subroutine smsi(si,n,snind,nsn,w,sms)
+      implicit logical (a-z)
+      integer n,nsn,snind(nsn,n)
+      real*8 si(n),sms(n),w(nsn)
+      integer i,j
+      real*8 z,sw
+      sw=0.d0
+      DO j=1,nsn
+         sw=sw+w(j)
+      END DO
+      DO i=1,n
+         z=0.d0
+         DO j=1,nsn
+            z=z+w(j)*si(snind(j,i))
+         END DO
+         sms(i)=z/sw
+      END DO
+      RETURN
+      END

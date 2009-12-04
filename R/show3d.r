@@ -406,7 +406,6 @@ setMethod("show3d","dtiIndices",function(obj, index="FA", nx=NULL, ny=NULL, nz=N
 setMethod("show3d","dwiQball", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,level=0,scale=0.5,bgcolor="black",add=FALSE,subdivide=3,maxobjects=729,minalpha=1,box=FALSE,title=FALSE,...){
   if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
   if(!exists("icosa0")) data("polyeders")
-  if(obj@what=="wODF") normalize <- FALSE
   if(subdivide<0||subdivide>4) subdivide <- 3
   if(is.null(nx)) nx <- obj@ddim[1]
   if(is.null(ny)) ny <- obj@ddim[2]
@@ -449,6 +448,11 @@ setMethod("show3d","dwiQball", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,
   polyeder <- switch(subdivide+1,icosa0,icosa1,icosa2,icosa3,icosa4)
   sphdesign <- design.spheven(obj@order,polyeder$vertices,obj@lambda)$design
   radii <- t(sphdesign)%*%sphcoef
+#  radii[radii<0] <- 0
+  minradii <- pmin(0,apply(radii,2,min))
+  radii <- sweep(radii,2,minradii,"-")
+#  avoid negative ODF's, otherwise scaling by volume produces
+#  strange results
   mradii <- apply(radii,2,mean)
   radii <- sweep(radii,2,mradii,"/")+level
   radii <- radii/max(radii)*scale
@@ -464,8 +468,7 @@ setMethod("show3d","dwiQball", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,
   } else {
      if(title) title3d(switch(tolower(obj@what),"ODF"="ODF","wODF"="Weighted ODF","aODF"="alternative ODF","adc"="ADC (Sph. Harmonics)"),color="white",cex=1.5)
   }
-  cat("\n rgl-device",rgl.cur(),switch(tolower(obj@what),"ODF"="Estimated orientation density function (Qball)","aODF"="Estimated orientation density function (Qball, normalized)","adc"="estimated apparent diffusion coefficients (sperical harmonics","wODF"="Estimated orientation density function (Aganji et.al. 2009)"),"\n",
-  if(normalize) "normalized","\n")
+  cat("\n rgl-device",rgl.cur(),switch(tolower(obj@what),"ODF"="Estimated orientation density function (Qball)","aODF"="Estimated orientation density function (Qball)","adc"="estimated apparent diffusion coefficients (sperical harmonics","wODF"="Estimated orientation density function (Aganji et.al. 2009)"),"\n")
   invisible(rgl.cur())
 })
 

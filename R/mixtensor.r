@@ -99,6 +99,7 @@ ep <- max(1,min(par[lpar],50))
                 PACKAGE="dti")$erg
 }
 
+
 dwiMixtensor <- function(object, ...) cat("No dwiMixtensor calculation defined for this class:",class(object),"\n")
 
 setGeneric("dwiMixtensor", function(object,  ...) standardGeneric("dwiMixtensor"))
@@ -154,10 +155,23 @@ setMethod("dwiMixtensor","dtiData",function(object,maxcomp=2,p=40,maxneighb=7,me
   n2 <- ddim[2]
   n3 <- ddim[3]
   if(method=="Jian2")  p <- array(50,ddim) 
+  swghts <- 1/(1:maxneighb)
   for(i1 in 1:n1) for(i2 in 1:n2) for(i3 in 1:n3){
      if(mask[i1,i2,i3]){
    cat("voxel",i1,i2,i3,"\n")
-     z <- locmin(si[i1,i2,i3,],sneighbors,grad)
+# smooth the si's by weighted nearest neighbors 
+# to gain more stable locations of minima
+     smsi <- .Fortran("smsi",
+                      as.double(si[i1,i2,i3,]),
+                      as.integer(ngrad0),
+                      as.integer(sneighbors),
+                      as.integer(maxneighb),
+                      as.double(swghts),
+                      smsi=double(ngrad0),
+                      DUPL=FALSE,
+                      PACKAGE="dti")$smsi
+#     z <- locmin(si[i1,i2,i3,],sneighbors,grad)
+     z <- locmin(smsi,sneighbors,grad)
      mc0 <- min(maxcomp,dim(z$grad)[1])
 #     cat("mc0",mc0,"\n")
      for(j in 1:mc0) orient[,j,i1,i2,i3] <- paroforient(z$grad[j,])
