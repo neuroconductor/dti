@@ -27,12 +27,12 @@ class Fibertracking
 		VectorList allVectors;
 	
 		// dimension of the voxel cube
-		int x_range, y_range, z_range;
+		int dim_x, dim_y, dim_z;
 		
 		// array of the voxels
 		Voxel *voxels;
-		// size of the voxels
-		double dim_x, dim_y, dim_z;
+		// voxelextentions
+		double voxelext_x, voxelext_y, voxelext_z;
 	
 		// intersection angle of two vectors
 		double intersec_angle;
