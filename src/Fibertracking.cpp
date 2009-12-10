@@ -6,6 +6,8 @@ using namespace std;
 int n_angle = 0;
 int n_visited = 0;
 int n_aniso = 0;
+bool print = false;
+int int_fibers = 0;
 
 Fibertracking::Fibertracking()
 {
@@ -16,6 +18,7 @@ Fibertracking::Fibertracking()
 	this->n_e5 = *(new Vector(( 0, 0,-1)));
 	this->n_e6 = *(new Vector((-1, 0, 0)));
 	
+	this->last_plane_dir = 0;
 	this->max_intersec_angle = 30.;
 	this->change_dir = false;
 }
@@ -36,6 +39,8 @@ Fibertracking::Fibertracking(Voxel& voxels, int x, int y, int z, double dim_x, d
 	z_range = z;
 	
 	last_start_voxel = 0;
+	last_plane_dir = 0;
+	
 	num_fibers = 0;
 	this->dim_x = dim_x, this->dim_y = dim_y, this->dim_z = dim_z;
 	
@@ -87,15 +92,6 @@ double* Fibertracking::convertToDouble()
 	
 	double* vals = new double[6*l];
 	
-//	double* x = new double[l];
-//	double* y = new double[l];
-//	double* z = new double[l];
-//	double* r = new double[l];
-//	double* g = new double[l];
-//	double* b = new double[l];
-	
-//	Vector *last_coords = new Vector(allVectors.getStart().getComponents()[0], allVectors.getStart().getComponents()[1], allVectors.getStart().getComponents()[2]);
-	
 //	printf("vals-array mit length = %d allokiert...\n", 6*l);
 	
 	int i = 0;
@@ -113,80 +109,54 @@ double* Fibertracking::convertToDouble()
 	while ( (allVectors.getLength()) > 1)
 	{
 		temp = allVectors.getStart().getComponents()[1];
-//		printf("Schleifendurchlauf: %d mit temp: %f\n", i, temp);
 		
 		if (isnan(temp))
 		{
-//			printf("\nentering IF-sequence,\ti = %d\n\n", i);
 			
 			i-=1;
 			allVectors.del_at_start();
 			
-//			printf("i zurueckgesetzt auf %d\n", i);
 			fibreStart = true;
 		}
 		else
 		{
-//			printf("\nentering ELSE-sequence,\ti = %d\n\n", i);
-//		        printf("Punkt einmal auf %d\n", i);
-			
 			interx = allVectors.getStart().getComponents()[0];
 			intery = allVectors.getStart().getComponents()[1];
 			interz = allVectors.getStart().getComponents()[2];
 
 			vals[    i] = interx;
-//			printf("vals[%d] = %f\t(inter_x)\n", i, vals[i]);
 			vals[  l+i] = intery;
-//			printf("vals[%d] = %f\t(inter_y)\n", i, vals[  l+i]);
 			vals[2*l+i] = interz;
-//			printf("vals[%d] = %f\t(inter_z)\n", i, vals[2*l+i]);
 						
 			allVectors.del_at_start();
-//			printf("start deleted 1\n");
-			
-//			allVectors.getStart().print();
 			
 			temp = allVectors.getStart().getComponents()[1];
-//			printf("temp %d: %f\n", i, temp);
 
 			dirx = voxels[(int)temp].getDirection().getComponents()[0];
 			diry = voxels[(int)temp].getDirection().getComponents()[1];
 			dirz = voxels[(int)temp].getDirection().getComponents()[2];
 		
 			vals[3*l+i] = dirx;
-//			printf("vals[%d] = %f\t(dir_x)\n", i, vals[3*l+i]);
 			vals[4*l+i] = diry;
-//			printf("vals[%d] = %f\t(dir_y)\n", i, vals[4*l+i]);
 			vals[5*l+i] = dirz;
-//			printf("vals[%d] = %f\t(dir_z)\n", i, vals[5*l+i]);
 			
 			allVectors.del_at_start();
 
 			if (!fibreStart && allVectors.getLength() > 0) // if not fibrestart re-write point and colour
 			{
 				i++;						
-//			        printf("Punkt nochmal auf %d\n", i);
 
 				vals[    i] = interx;
-//				printf("vals[%d] = %f\t(inter_x)\n", i, vals[i]);
 				vals[  l+i] = intery;
-//				printf("vals[%d] = %f\t(inter_y)\n", i, vals[  l+i]);
 				vals[2*l+i] = interz;
-//				printf("vals[%d] = %f\t(inter_z)\n", i, vals[2*l+i]);
 				vals[3*l+i] = dirx;
-//				printf("vals[%d] = %f\t(dir_x)\n", i, vals[3*l+i]);
 				vals[4*l+i] = diry;
-//				printf("vals[%d] = %f\t(dir_y)\n", i, vals[4*l+i]);
 				vals[5*l+i] = dirz;
-//				printf("vals[%d] = %f\t(dir_z)\n", i, vals[5*l+i]);
 			}
 
 			i++;
 			fibreStart = false;
 		}
-		
-//		printf("i fuer naechsten Punkt auf %d\n", i);
-		
 	}
 	
 	return vals;
@@ -211,10 +181,8 @@ void Fibertracking::nextVoxel_forward()
 	
 	Vector intersection(3);
 	
-//	printf("\tcur_x = %d, cur_y = %d, cur_z = %d\n", cur_x, cur_y, cur_z);
-	
 	/**
-	 *  position vectors of the plane equation
+	 *  position vectors of the plane equations
 	 **/
 	// vertex of the voxel which points to the point of origin
 	Vector voxel_bottom(  cur_x   *dim_x,  cur_y   *dim_y,  cur_z   *dim_z );
@@ -222,14 +190,7 @@ void Fibertracking::nextVoxel_forward()
 	Vector voxel_top   ( (cur_x+1)*dim_x, (cur_y+1)*dim_y, (cur_z+1)*dim_z );
 	
 	double *distances = new double[7];
-	
-//	printf("\tchange = %d\n", change);
-	
-	if (change_dir)
-	{
-		voxel_d = voxel_d * -1.;
-	}
-	
+		
 	distances[0] = HUGE_VAL;
 	distances[1] = ( ( voxel_bottom - start_o ) * n_e1 ) / ( voxel_d * n_e1 );
 	distances[2] = ( ( voxel_bottom - start_o ) * n_e2 ) / ( voxel_d * n_e2 );
@@ -240,14 +201,61 @@ void Fibertracking::nextVoxel_forward()
 	
 	double dSkalar = 0.;
 	
+//	if (print)
+//	{
+//		printf("forw\nchange_dir = %d\n",change_dir);
+//	}
+	
 	for (int i = 1; i < 7; i++)
 	{
-		if (fabs(distances[i]) < fabs(distances[plane_dir]) && (distances[i] > 0.) )
+//		printf("\ndistances[%d] = %f\n", i, distances[i]);
+//		(start_o + ( voxel_d * distances[i] )).print();
+
+//		if (print)
+//		{
+//			printf("distances[%d] = %f\n", i, distances[i]);
+//		}
+		
+		if (change_dir)
 		{
-			dSkalar = distances[i];
-			plane_dir = i;
+			if (fabs(distances[i]) < fabs(distances[plane_dir]) && (distances[i] < 0.) )
+			{
+				dSkalar = distances[i];
+				plane_dir = i;
+			}
+		}
+		else
+		{
+			if (fabs(distances[i]) < fabs(distances[plane_dir]) && (distances[i] > 0.) )
+			{
+				dSkalar = distances[i];
+				plane_dir = i;
+			}
 		}
 	}
+	
+	if (fabs(dSkalar) > 5.)
+	{
+		print = true;
+		int_fibers++;
+	}
+	
+//	if (print)
+//	{
+//		printf("%d, %d, %d, %d, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n", change_dir, cur_x, cur_y, cur_z,
+//												voxel_d.getComponents()[0],
+//											    voxel_d.getComponents()[1],
+//											    voxel_d.getComponents()[2],
+//											    dSkalar,
+//											    start_o.getComponents()[0],
+//											    start_o.getComponents()[1],
+//											    start_o.getComponents()[2],
+//											    distances[4],
+//											    distances[5],
+//											    distances[6]);
+//	}
+	
+//	printf("dSkalar = %f plane_dir = %d\n\n", dSkalar, plane_dir);
 	
 	switch (plane_dir)
 	{
@@ -259,34 +267,89 @@ void Fibertracking::nextVoxel_forward()
 		case 6:	{ x++; break; }
 	}
 	
+	switch (last_plane_dir)
+	{
+		case 1:	{
+					if (voxel_d.getComponents()[2]*dSkalar > 0.)
+					{
+						z = -2;
+						z++;
+					}
+					break;
+				}
+				
+		case 2:	{ 
+					if (voxel_d.getComponents()[1]*dSkalar > 0.)
+					{
+						y = -2;
+						y++;
+					}
+					break;
+				}
+				
+		case 3:	{
+					if (voxel_d.getComponents()[0]*dSkalar > 0.)
+					{
+						x = -2;
+						x++;
+					}
+					break;
+				}
+				
+		case 4:	{
+					if (voxel_d.getComponents()[1]*dSkalar < 0.)
+					{
+						y = -2;
+						y--;
+					}
+					break;
+				}
+		
+		case 5:	{
+					if (voxel_d.getComponents()[2]*dSkalar < 0.)
+					{
+						z = -2;
+						z--;
+					}
+					break;
+				}
+		
+		case 6:	{
+					if (voxel_d.getComponents()[0]*dSkalar < 0.)
+					{
+						x = -2;
+						x--;
+					}
+					break;
+				}
+	}
+	
 	if ( x < 0 || y < 0 || z < 0 || x > (x_range-1) || y > (y_range-1) || z > (z_range-1) )
 	{
 		return;
 	}
-	else
-	{	
-		cur_x = x; cur_y = y; cur_z = z;
-		dSkalar = distances[plane_dir];
-	}
+
+	dSkalar = distances[plane_dir];
 	
-	cur_voxel_index = cur_x + cur_y * x_range + cur_z * x_range * y_range;
-	
-	float zaehler = (float) (voxel_d * (voxels[x + y * x_range + z * x_range * y_range].getDirection()));
-	
-	intersec_angle = 180./M_PI * acos(zaehler);
-	
-	intersection = start_o + ( voxel_d *  dSkalar );
-	
+	// intersection berechnen	
+	intersection = start_o + ( voxel_d * dSkalar );
 	start_o = intersection;
+
+	cur_x = x; cur_y = y; cur_z = z;
+		
+	cur_voxel_index = cur_x + cur_y * x_range + cur_z * x_range * y_range;
+
+	// Schnittwinkel berechnen
+	float vec_product = (float) (voxel_d * (voxels[cur_voxel_index].getDirection()));
+	intersec_angle = 180./M_PI * acos(vec_product);
+
+	last_plane_dir = plane_dir;
+
+	change_dir = change_dir ^ (bool)(vec_product < .0f);
 	
-	if (zaehler < .0f)
+	if (vec_product < .0f)
 	{
-		change_dir = true;
 		intersec_angle = 180-intersec_angle;
-	}
-	else
-	{
-		change_dir = false;
 	}
 }
 
@@ -319,11 +382,6 @@ void Fibertracking::nextVoxel_backward()
 	
 	double *distances = new double[7];
 		
-	if (change_dir)
-	{
-		voxel_d = voxel_d * -1.;
-	}
-		
 	distances[0] = HUGE_VAL;
 	distances[1] = ( ( voxel_bottom - start_o ) * n_e1 ) / ( voxel_d * n_e1 );
 	distances[2] = ( ( voxel_bottom - start_o ) * n_e2 ) / ( voxel_d * n_e2 );
@@ -333,14 +391,30 @@ void Fibertracking::nextVoxel_backward()
 	distances[6] = ( (    voxel_top - start_o ) * n_e6 ) / ( voxel_d * n_e6 );
 	
 	double dSkalar = 0.;
-	
+		
 	for (int i = 1; i < 7; i++)
 	{
-		if (fabs(distances[i]) < fabs(distances[plane_dir]) && (distances[i] < 0.) )
+		if (change_dir)
 		{
-			dSkalar = distances[i];
-			plane_dir = i;
+			if (fabs(distances[i]) < fabs(distances[plane_dir]) && (distances[i] > 0.) )
+			{
+				dSkalar = distances[i];
+				plane_dir = i;
+			}
 		}
+		else
+		{
+			if (fabs(distances[i]) < fabs(distances[plane_dir]) && (distances[i] < 0.) )
+			{
+				dSkalar = distances[i];
+				plane_dir = i;
+			}
+		}
+	}
+	
+	if (fabs(dSkalar) > 5.)
+	{
+		print = true;
 	}
 	
 	switch (plane_dir)
@@ -353,60 +427,102 @@ void Fibertracking::nextVoxel_backward()
 		case 6:	{ x++; break; }
 	}
 	
+	switch (last_plane_dir)
+	{
+		case 1:	{
+					if (voxel_d.getComponents()[2]*dSkalar > 0.)
+					{
+						z = -2;
+						z++;
+					}
+					break;
+				}
+				
+		case 2:	{ 
+					if (voxel_d.getComponents()[1]*dSkalar > 0.)
+					{
+						y = -2;
+						y++;
+					}
+					break;
+				}
+				
+		case 3:	{
+					if (voxel_d.getComponents()[0]*dSkalar > 0.)
+					{
+						x = -2;
+						x++;
+					}
+					break;
+				}
+				
+		case 4:	{
+					if (voxel_d.getComponents()[1]*dSkalar < 0.)
+					{
+						y = -2;
+						y--;
+					}
+					break;
+				}
+		
+		case 5:	{
+					if (voxel_d.getComponents()[2]*dSkalar < 0.)
+					{
+						z = -2;
+						z--;
+					}
+					break;
+				}
+		
+		case 6:	{
+					if (voxel_d.getComponents()[0]*dSkalar < 0.)
+					{
+						x = -2;
+						x--;
+					}
+					break;
+				}
+	}
+	
 	if ( x < 0 || y < 0 || z < 0 || x > (x_range-1) || y > (y_range-1) || z > (z_range-1) )
 	{
 		return;
 	}
-	else
-	{	
-		cur_x = x; cur_y = y; cur_z = z;
-		dSkalar = distances[plane_dir];
-	}
+
+	dSkalar = distances[plane_dir];
 	
-	cur_voxel_index = cur_x + cur_y * x_range + cur_z * x_range * y_range;
+	// Klassenvariable old_plane_dir speichern und abfragen nach dem in-/dekrementieren 
 	
-	float zaehler = (float) (voxel_d * (voxels[x + y * x_range + z * x_range * y_range].getDirection()));
-	
-	intersec_angle = 180./M_PI * acos(zaehler);
-	
-	intersection = start_o + ( voxel_d *  dSkalar );
-	
-	if (intersection.getComponents()[0] < 0. ||
-		intersection.getComponents()[1] < 0. ||
-		intersection.getComponents()[2] < 0.)
-	{
-		printf("NEGATIVER SCHNITTPUNKT!!!!!\n");
-		intersection.print();
-	}
+	// intersection berechnen	
+	intersection = start_o + ( voxel_d * dSkalar );
 	
 	start_o = intersection;
+
+	cur_x = x; cur_y = y; cur_z = z;
+		
+	cur_voxel_index = cur_x + cur_y * x_range + cur_z * x_range * y_range;
+
+	// Schnittwinkel berechnen
+	float vec_product = (float) (voxel_d * (voxels[cur_voxel_index].getDirection()));
+	intersec_angle = 180./M_PI * acos(vec_product);
+
+	last_plane_dir = plane_dir;
+
+	change_dir = change_dir ^ (bool)(vec_product < .0f);
 	
-	if (zaehler < .0f)
+	if (vec_product < .0f)
 	{
-		change_dir = true;
 		intersec_angle = 180-intersec_angle;
-	}
-	else
-	{
-		change_dir = false;
 	}
 }
 
 void Fibertracking::trackFiber_forward()
 {
-//	printf("Searching forward...\n");
-	
 	Voxel *current = &voxels[cur_voxel_index];
 	Vector *curVec;
-//	current->setVisited(false);
 	
 	start_o = *new Vector( (current->getX()+0.5)*dim_x, (current->getY()+0.5)*dim_y, (current->getZ()+0.5)*dim_z );
 
-	// Startpunkt einschreiben
-//	curVectorList = *new VectorList(start_o);
-//	curVec = new Vector(0., (double)cur_voxel_index, 0.);
-//	curVectorList.add_at_end(*curVec);
-	
 	curVectorList = *new VectorList();
 	
 	while (current->getAnisotropy() >= min_anisotropy && !current->isVisited() && (fabs(intersec_angle) <= max_intersec_angle) )
@@ -430,43 +546,31 @@ void Fibertracking::trackFiber_forward()
 		}
 		else
 		{
-//			currentFiber.add_at_end(*current);
 			current = &voxels[cur_voxel_index];
-			
-//			curVectorList.add_at_end(start_o);
-			
-//			curVec = new Vector(0., (double)cur_voxel_index, 0.);
-//			curVectorList.add_at_end(*curVec);
 		}
 	}
 	
-//	printf("Fiber ended because of: ");
-	
 	if (current->isVisited())
 	{
-//		printf("next voxel is already visited");
 		n_visited++;
 	}
 	
 	if (current->getAnisotropy() < min_anisotropy)
 	{
-//		printf(" next voxel has to low anisotrpy ");
 		n_aniso++;
 	}
 	
 	if (fabs(intersec_angle) > max_intersec_angle)
 	{
-//		printf(" intersection angle is to large ");
 		n_angle++;
 	}
 	
-//	printf(".\n");
+	last_plane_dir = 0;
+	change_dir = false;
 }
 
 void Fibertracking::trackFiber_backward()
 {
-//	printf("Searching backward...\n");
-	
 	Voxel *current = &voxels[cur_voxel_index];
 	Vector *curVec;
 	current->setVisited(false);
@@ -476,25 +580,17 @@ void Fibertracking::trackFiber_backward()
 	// Startpunkt einschreiben
 	nextVoxel_backward();
 	
-	if ( current == &voxels[cur_voxel_index]) // || voxels[cur_voxel_index].isVisited()
+	if ( current == &voxels[cur_voxel_index])
 	{
 		return;
 	}
 	else
 	{
 		current = &voxels[cur_voxel_index];
-//
-//			curVec = new Vector(0., (double)cur_voxel_index, 0.);
-//			curVectorList.add_at_start(*curVec);
-//
-//			curVectorList.add_at_start(start_o);
-//			
-//			currentFiber.add_at_start(*current);
 	}
 	
 	while (current->getAnisotropy() >= min_anisotropy && !current->isVisited() && (fabs(intersec_angle) <= max_intersec_angle) )
 	{
-//		current->print();
 		current->setVisited(true);
 		current->setStartable(false);
 		
@@ -507,61 +603,54 @@ void Fibertracking::trackFiber_backward()
 		
 		nextVoxel_backward();
 		
-		if ( current == &voxels[cur_voxel_index]) // || voxels[cur_voxel_index].isVisited()
+		if ( current == &voxels[cur_voxel_index])
 		{
 			return;
 		}
 		else
 		{
 			current = &voxels[cur_voxel_index];
-//
-//			curVec = new Vector(0., (double)cur_voxel_index, 0.);
-//			curVectorList.add_at_start(*curVec);
-//
-//			curVectorList.add_at_start(start_o);
-//			
-//			currentFiber.add_at_start(*current);
 		}
 	}
 	
-//	printf("Fiber ended because of: ");
-	
 	if (current->isVisited())
 	{
-//		printf("next voxel is already visited");
 		n_visited++;
 	}
 	
 	if (current->getAnisotropy() < min_anisotropy)
 	{
-//		printf(" next voxel has to low anisotrpy ");
 		n_aniso++;
 	}
 	
 	if (fabs(intersec_angle) > max_intersec_angle)
 	{
-//		printf(" intersection angle is to large ");
 		n_angle++;
 	}
 	
-//	printf(".\n");
+	last_plane_dir = 0;
+	change_dir = false;
+	print = false;
 }
 
 void Fibertracking::findAllFibers()
 {
-//	printf("Searching for fibers...\n");
+	printf("Searching for fibers...\n");
 	
 	while (last_start_voxel < x_range*y_range*z_range)
 	{
 		if (voxels[last_start_voxel].getAnisotropy() >= min_anisotropy && voxels[last_start_voxel].isStartable())
 		{
-			num_fibers++;
-			
+//			num_fibers++;
+			printf("currentFiber = *new Fiber();\n");
 			currentFiber = *new Fiber();
-			curVectorList = *new VectorList(); 
+			printf("currentFiber angelegt\n");
+			printf("curVectorList = *new VectorList();\n");
+			curVectorList = *new VectorList();
+			printf("curVecotrList angelegt\n");
 			
-//			printf("Fiber found!\n");
-//			printf("============\n");
+			printf("Fiber found!\n");
+			printf("============\n");
 			
 			cur_voxel_index = voxels[last_start_voxel].getX() + voxels[last_start_voxel].getY()*x_range + voxels[last_start_voxel].getZ()*x_range*y_range;
 			trackFiber_forward();
@@ -617,8 +706,8 @@ void Fibertracking::findMarkedFibers(int* ranges)
 	{
 		if (marked[last_start_voxel].getAnisotropy() >= min_anisotropy && marked[last_start_voxel].isStartable())
 		{
-//			num_fibers++;
-			
+			num_fibers++;
+						
 			currentFiber = *new Fiber();
 			curVectorList = *new VectorList(); 
 			

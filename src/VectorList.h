@@ -37,6 +37,7 @@ class VectorList{
 		
 		//  print-method
 		void print();
+		void print(int until);
 };
 
 #endif /*VECTORLIST_H_*/

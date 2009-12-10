@@ -153,6 +153,26 @@ void VectorList::del_at_start()
 
 void VectorList::print()
 {
+	if (length == 0)
+	{
+		return;
+	}
+
+	printf("========== Fiber start ==========\n");
+	
+	Vector* aktuell = start;
+	
+	while (aktuell != NULL)
+	{
+		aktuell->print();
+		aktuell = aktuell->getNext();
+	}
+
+	printf("=========== Fiber  end ===========\n");	
+}
+
+void VectorList::print(int until)
+{
 	int counter = 0;
 	
 	if (length == 0)
@@ -162,7 +182,7 @@ void VectorList::print()
 	
 	Vector* aktuell = start;
 	
-	while (aktuell != NULL && counter < 40)
+	while (aktuell != NULL && counter < until)
 	{
 		aktuell->print();
 		aktuell = aktuell->getNext();

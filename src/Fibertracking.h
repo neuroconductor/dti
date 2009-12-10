@@ -6,8 +6,6 @@
 
 using namespace std;
 
-
-
 class Fibertracking
 {
 	private:
@@ -17,6 +15,11 @@ class Fibertracking
 		
 		// index of the voxel where the last fiber started
 		int last_start_voxel;
+		
+		// index of the last plane direction
+		int last_plane_dir;
+		
+		// number of fibers
 		int num_fibers;
 		
 		Fiber currentFiber;
