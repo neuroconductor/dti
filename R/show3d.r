@@ -66,7 +66,7 @@ setMethod("show3d","dtiData", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,s
   }
   gradient <- obj@gradient[,-obj@s0ind]
   if(!add) {
-     rgl.open()
+     open3d()
      par3d(...)
      rgl.bg(color=bgcolor)
      }
@@ -207,7 +207,7 @@ setMethod("show3d","dtiTensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL
      }
   }
   if(!add) {
-     rgl.open()
+     open3d()
      par3d(...)
      rgl.bg(color=bgcolor)
      }
@@ -320,7 +320,7 @@ setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=N
   }
   dim(tmean) <- c(3,n)
   if(!add) {
-     rgl.open()
+     open3d()
      par3d(...)
      rgl.bg(color=bgcolor)
      }
@@ -382,7 +382,6 @@ setMethod("show3d","dtiIndices",function(obj, index="FA", nx=NULL, ny=NULL, nz=N
   lcoord[,1,,,] <-  andir/2+tmean[,,,,drop=FALSE]
   lcoord[,2,,,] <-  -andir/2+tmean[,,,,drop=FALSE]
   dim(lcoord) <- c(3,2*n1*n2*n3)
-  lcoord <- cbind(lcoord)
   colorvalues <- c(rbind(colorvalues,colorvalues))
   if(!add) {
     open3d()
@@ -457,7 +456,7 @@ setMethod("show3d","dwiQball", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,
   radii <- sweep(radii,2,mradii,"/")+level
   radii <- radii/max(radii)*scale
   if(!add) {
-     rgl.open()
+     open3d()
      par3d(...)
      rgl.bg(color=bgcolor)
   }
@@ -475,7 +474,7 @@ setMethod("show3d","dwiQball", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,
 setMethod("show3d","dwiFiber", function(obj,add=FALSE,bgcolor="black",box=FALSE,title=FALSE,lwd=1,...){
   if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
   if(!add) {
-     rgl.open()
+     open3d()
      par3d(...)
      rgl.bg(color=bgcolor)
   }

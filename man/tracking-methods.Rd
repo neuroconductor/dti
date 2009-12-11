@@ -10,16 +10,18 @@
   The function provides fiber tracking and 3D visualization of \code{"dtiTensor"} objects using the \code{"rgl"}-package. Functionality of the rgl-package allows to rotate and zoom the displayed object.
 }
 \usage{
-  \S4method{tracking}{dtiTensor}(obj, xind=NULL, yind=NULL, zind=NULL, method="LINEPROP", minanindex=0.3, maxangle=30)
+  \S4method{tracking}{dtiTensor}(obj, roix=NULL, roiy=NULL, roiz=NULL, method="LINEPROP", minanindex=0.3, maxangle=30, subsample = 1)
+  \S4method{tracking}{dtiIndices}(obj, roix=NULL, roiy=NULL, roiz=NULL, method="LINEPROP", minanindex=0.3, maxangle=30, subsample = 1)
 }
 \arguments{
 \item{obj}{ An object of class \code{dtiTensor}}
-\item{xind}{Indices defining the ROI in x direction. Currently min/max is used to define ROIx}
-\item{yind}{Indices defining the ROI in y direction. Currently min/max is used to define ROIy}
-\item{zind}{Indices defining the ROI in z direction. Currently min/max is used to define ROIz}
+\item{roix}{Indices defining the ROI in x direction. Currently min/max is used to define ROIx}
+\item{roiy}{Indices defining the ROI in y direction. Currently min/max is used to define ROIy}
+\item{roiz}{Indices defining the ROI in z direction. Currently min/max is used to define ROIz}
 \item{method}{Method for fibre tracking. "LINEPROP" is simple line propagation algorithm which is the default.}
 \item{minanindex}{Minimal FA to follow the tracks. default 0.3}
 \item{maxangle}{Maximal angle between fiber in adjacent voxels. default 30 degree.}
+\item{subsample}{Maximal angle between fiber in adjacent voxels. default 30 degree.}
 }
 \section{Methods}{
 \describe{

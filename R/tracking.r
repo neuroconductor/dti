@@ -8,7 +8,7 @@ tracking <- function(obj,  ...) cat("Fiber tracking not implemented for this cla
 
 setGeneric("tracking", function(obj,  ...) standardGeneric("tracking"))
 
-setMethod("tracking","dtiTensor", function(obj, xind=NULL, yind=NULL, zind=NULL, method="LINEPROP", minanindex=0.3, maxangle=30)
+setMethod("tracking","dtiTensor", function(obj, roix=NULL, roiy=NULL, roiz=NULL, method="LINEPROP", minanindex=0.3, maxangle=30, subsample=1)
 {
 
   args <- sys.call(-1)
@@ -18,25 +18,47 @@ setMethod("tracking","dtiTensor", function(obj, xind=NULL, yind=NULL, zind=NULL,
   dimx <- obj@ddim[1]
   dimy <- obj@ddim[2]
   dimz <- obj@ddim[3]
-  if (is.null(xind)) xind <- 1:dimx
-  if (is.null(yind)) yind <- 1:dimy
-  if (is.null(zind)) zind <- 1:dimz
-  roixa <- min(xind); # this is probably not sufficient
-  roixe <- max(xind); # this is probably not sufficient
-  roiya <- min(yind); # this is probably not sufficient
-  roiye <- max(yind); # this is probably not sufficient
-  roiza <- min(zind); # this is probably not sufficient
-  roize <- max(zind); # this is probably not sufficient
+  if (is.null(roix)) roix <- 1:dimx
+  if (is.null(roiy)) roiy <- 1:dimy
+  if (is.null(roiz)) roiz <- 1:dimz
+  roixa <- min(roix); # this is probably not sufficient
+  roixe <- max(roix); # this is probably not sufficient
+  roiya <- min(roiy); # this is probably not sufficient
+  roiye <- max(roiy); # this is probably not sufficient
+  roiza <- min(roiz); # this is probably not sufficient
+  roize <- max(roiz); # this is probably not sufficient
 
   dtind <- dtiIndices(obj);
-  if(sum(dtind@fa[xind,yind,zind]>minanindex)==0){
+  if(sum(dtind@fa[roix,roiy,roiz]>minanindex)==0){
      cat("No fiber with sufficint FA in region of interest\n")
      return(invisible(FALSE))
   }
 
+  andir <- dtind@andir
+  fa <- dtind@fa
+
+  if ((subsample != as.integer(subsample)) | (subsample < 1)) subsample <- 1
+  if (subsample > 1) {
+    indx <- rep(1:dimx, rep(subsample,dimx))
+    indy <- rep(1:dimy, rep(subsample,dimy))
+    indz <- rep(1:dimz, rep(subsample,dimz))
+    fa <- fa[indx, indy, indz]
+    andir <- andir[,indx, indy, indz]
+    dimx <- subsample*dimx
+    dimy <- subsample*dimy
+    dimz <- subsample*dimz
+    roixa <- (roixa-1)*subsample+1
+    roixe <- roixe*subsample
+    roiya <- (roiya-1)*subsample+1
+    roiye <- roiye*subsample
+    roiza <- (roiza-1)*subsample+1
+    roize <- roize*subsample
+  }
+  
+  
   dd <- .Call("interface_tracking",
-              as.double(dtind@andir),
-              as.double(dtind@fa),
+              as.double(andir),
+              as.double(fa),
               as.integer(dimx),
               as.integer(dimy),
               as.integer(dimz),
@@ -46,9 +68,9 @@ setMethod("tracking","dtiTensor", function(obj, xind=NULL, yind=NULL, zind=NULL,
               as.integer(roiye),
               as.integer(roiza),
               as.integer(roize),
-              as.double(obj@voxelext[1]),
-              as.double(obj@voxelext[2]),
-              as.double(obj@voxelext[3]),
+              as.double(obj@voxelext[1]/subsample),
+              as.double(obj@voxelext[2]/subsample),
+              as.double(obj@voxelext[3]/subsample),
               as.double(minanindex), # not yet used
               as.double(maxangle),   # not yet used
 #             as.integer(imethod),    # not yet used (for tracking method)
@@ -61,9 +83,9 @@ setMethod("tracking","dtiTensor", function(obj, xind=NULL, yind=NULL, zind=NULL,
                 call  = args,
                 fibers = dd,
                 startind = as.integer(istartfiber),
-                roix   = as.integer(range(xind)),
-                roiy   = as.integer(range(yind)),
-                roiz   = as.integer(range(zind)),
+                roix   = as.integer(range(roix)),
+                roiy   = as.integer(range(roiy)),
+                roiz   = as.integer(range(roiz)),
                 gradient = obj@gradient,
                 btb   = obj@btb,
                 ngrad = obj@ngrad, # = dim(btb)[2]
@@ -84,34 +106,57 @@ setMethod("tracking","dtiTensor", function(obj, xind=NULL, yind=NULL, zind=NULL,
             )
 })
 
-setMethod("tracking","dtiIndices", function(obj, xind=NULL, yind=NULL, zind=NULL, method="LINEPROP", minanindex=0.3, maxangle=30)
+setMethod("tracking","dtiIndices", function(obj, roix=NULL, roiy=NULL, roiz=NULL, method="LINEPROP", minanindex=0.3, maxangle=30, subsample = 1)
 {
 
   args <- sys.call(-1)
   args <- c(obj@call,args)
   imethod <- switch(method, "LINEPROP" = 1,
                            1)
+
   dimx <- obj@ddim[1]
   dimy <- obj@ddim[2]
   dimz <- obj@ddim[3]
-  if (is.null(xind)) xind <- 1:dimx
-  if (is.null(yind)) yind <- 1:dimy
-  if (is.null(zind)) zind <- 1:dimz
-  roixa <- min(xind); # this is probably not sufficient
-  roixe <- max(xind); # this is probably not sufficient
-  roiya <- min(yind); # this is probably not sufficient
-  roiye <- max(yind); # this is probably not sufficient
-  roiza <- min(zind); # this is probably not sufficient
-  roize <- max(zind); # this is probably not sufficient
-  
-  if(sum(obj@fa[xind,yind,zind]>minanindex)==0){
+  if (is.null(roix)) roix <- 1:dimx
+  if (is.null(roiy)) roiy <- 1:dimy
+  if (is.null(roiz)) roiz <- 1:dimz
+  roixa <- min(roix); # this is probably not sufficient
+  roixe <- max(roix); # this is probably not sufficient
+  roiya <- min(roiy); # this is probably not sufficient
+  roiye <- max(roiy); # this is probably not sufficient
+  roiza <- min(roiz); # this is probably not sufficient
+  roize <- max(roiz); # this is probably not sufficient
+
+  if(sum(obj@fa[roix,roiy,roiz]>minanindex)==0){
      cat("No fiber with sufficint FA in region of interest\n")
      return(invisible(FALSE))
   }
 
+  andir <- obj@andir
+  fa <- obj@fa
+
+  if ((subsample != as.integer(subsample)) | (subsample < 1)) subsample <- 1
+  if (subsample > 1) {
+    indx <- rep(1:dimx, rep(subsample,dimx))
+    indy <- rep(1:dimy, rep(subsample,dimy))
+    indz <- rep(1:dimz, rep(subsample,dimz))
+    fa <- fa[indx, indy, indz]
+    andir <- andir[,indx, indy, indz]
+    dimx <- subsample*dimx
+    dimy <- subsample*dimy
+    dimz <- subsample*dimz
+    roixa <- (roixa-1)*subsample+1
+    roixe <- roixe*subsample
+    roiya <- (roiya-1)*subsample+1
+    roiye <- roiye*subsample
+    roiza <- (roiza-1)*subsample+1
+    roize <- roize*subsample
+  }
+  
+  
   dd <- .Call("interface_tracking",
-              as.double(obj@andir),
-              as.double(obj@fa),
+              as.double(andir),
+              as.double(fa),
               as.integer(dimx),
               as.integer(dimy),
               as.integer(dimz),
@@ -121,9 +166,9 @@ setMethod("tracking","dtiIndices", function(obj, xind=NULL, yind=NULL, zind=NULL
               as.integer(roiye),
               as.integer(roiza),
               as.integer(roize),
-              as.double(obj@voxelext[1]),
-              as.double(obj@voxelext[2]),
-              as.double(obj@voxelext[3]),
+              as.double(obj@voxelext[1]/subsample),
+              as.double(obj@voxelext[2]/subsample),
+              as.double(obj@voxelext[3]/subsample),
               as.double(minanindex), # not yet used
               as.double(maxangle),   # not yet used
 #             as.integer(imethod),    # not yet used (for tracking method)
@@ -136,9 +181,9 @@ setMethod("tracking","dtiIndices", function(obj, xind=NULL, yind=NULL, zind=NULL
                 call  = args,
                 fibers = dd,
                 startind = as.integer(istartfiber),
-                roix   = as.integer(range(xind)),
-                roiy   = as.integer(range(yind)),
-                roiz   = as.integer(range(zind)),
+                roix   = as.integer(range(roix)),
+                roiy   = as.integer(range(roiy)),
+                roiz   = as.integer(range(roiz)),
                 gradient = obj@gradient,
                 btb   = obj@btb,
                 ngrad = obj@ngrad, # = dim(btb)[2]
