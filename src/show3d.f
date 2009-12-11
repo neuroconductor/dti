@@ -94,7 +94,7 @@ C
 C  calculate size of vertices for ellipses in show3d.tensor
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-      subroutine mixtradi(vert,nv,ev,ori,mix,ord,mo,nobj,radii)
+      subroutine mixtradi(vert,nv,ev,mex,ori,mix,ord,mo,nobj,radii)
       implicit logical (a-z)
 C
 C     vert   vertices
@@ -110,9 +110,9 @@ C     radii  resulting radii of ODF
 C
       integer nv,nobj,mo,ord(nobj)
       real*8 vert(3,nv),ev(2,nobj),ori(2,mo,nobj),mix(mo,nobj),
-     1       radii(nv,nobj)
+     1       radii(nv,nobj),mex
       integer i,j,k
-      real*8 dotprod3,c12,sth,dir(3,5),fourpi,c12fp,z, utd, zk
+      real*8 dotprod3,c12,sth,dir(3,5),fourpi,c12fp,z,utd,zk,e1,e2
 C     assumes maximum of 5 micxture components
       if(mo.gt.5) THEN
          call intpr("mo restricted to 5, is",18,mo,1)
@@ -120,6 +120,9 @@ C     assumes maximum of 5 micxture components
       END IF
       fourpi = 12.566371d0
       DO j = 1,nobj
+         e1 = ev(1,j)
+         e2 = max(e1/mex,ev(2,j))
+C   limit maximal excentricity to mex+1 for visualisation purposes
          c12 = (ev(1,j)+ev(2,j))/ev(1,j)
          c12fp = sqrt(ev(2,j)*c12/fourpi)/ev(1,j)
          DO k = 1,ord(j)
