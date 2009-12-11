@@ -123,8 +123,8 @@ C     assumes maximum of 5 micxture components
          e1 = ev(1,j)
          e2 = max(e1/mex,ev(2,j))
 C   limit maximal excentricity to mex+1 for visualisation purposes
-         c12 = (ev(1,j)+ev(2,j))/ev(1,j)
-         c12fp = sqrt(ev(2,j)*c12/fourpi)/ev(1,j)
+         c12 = (e1+e2)/e1
+         c12fp = sqrt(e2*c12/fourpi)/e1
          DO k = 1,ord(j)
             sth = sin(ori(1,k,j))
             dir(1,k) = sth*cos(ori(2,k,j))
