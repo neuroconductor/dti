@@ -89,9 +89,9 @@ setMethod("show3d","dtiData", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,s
                         DUPL=FALSE,
                         PACKAGE="dti")$polyradii,polyeder$nv,n)
      cat("newradii",dim(radii))
-     show3d.cdata(radii,polyeder,centers=tmean,minalpha=minalpha,scale=scale,...)
+     show3dCdata(radii,polyeder,centers=tmean,minalpha=minalpha,scale=scale,...)
   } else {
-     show3d.data(radii,gradient,centers=tmean,minalpha=minalpha,...)
+     show3dData(radii,gradient,centers=tmean,minalpha=minalpha,...)
   }
   if(box) bbox3d()
   if(is.character(title)) {
@@ -212,9 +212,9 @@ setMethod("show3d","dtiTensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL
      rgl.bg(color=bgcolor)
      }
   if(tolower(what)=="odf"){
-  show3d.odf(radii,polyeder,centers=tmean,minalpha=minalpha,...)
+  show3dODF(radii,polyeder,centers=tmean,minalpha=minalpha,...)
      } else {
-  show3d.tens(radii,polyeder,centers=tmean,colors=colorvalues,alpha=minalpha+(1-minalpha)*fa)
+  show3dTens(radii,polyeder,centers=tmean,colors=colorvalues,alpha=minalpha+(1-minalpha)*fa)
     }
   if(box) bbox3d()
   if(is.character(title)) {
@@ -324,7 +324,7 @@ setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=N
      par3d(...)
      rgl.bg(color=bgcolor)
      }
-  if(toupper(what) %in% c("ODF","BOTH")) show3d.odf(radii,polyeder,centers=tmean,minalpha=minalpha,...)
+  if(toupper(what) %in% c("ODF","BOTH")) show3dODF(radii,polyeder,centers=tmean,minalpha=minalpha,...)
   if(toupper(what) %in% c("AXIS","BOTH"))  rgl.lines(lcoord[1,],lcoord[2,],lcoord[3,],color=colorvalues,size=lwd)
   if(box) bbox3d()
   if(is.character(title)) {
@@ -460,7 +460,7 @@ setMethod("show3d","dwiQball", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,
      par3d(...)
      rgl.bg(color=bgcolor)
   }
-  show3d.odf(radii,polyeder,centers=tmean,minalpha=minalpha,...)
+  show3dODF(radii,polyeder,centers=tmean,minalpha=minalpha,...)
   if(box) bbox3d()
   if(is.character(title)) {
      title3d(title,color="white",cex=1.5)
@@ -498,7 +498,7 @@ setMethod("show3d","dwiFiber", function(obj,add=FALSE,bgcolor="black",box=FALSE,
 #                                                              #
 ################################################################
 
-show3d.tens <- function(radii,polyeder,centers=NULL,colors=NULL,alpha=1,...){
+show3dTens <- function(radii,polyeder,centers=NULL,colors=NULL,alpha=1,...){
    if(is.null(centers)){
       centers <- matrix(0,3,1)
       n <- 1
@@ -542,7 +542,7 @@ show3d.tens <- function(radii,polyeder,centers=NULL,colors=NULL,alpha=1,...){
 
 #############
 
-show3d.data <- function(radii,vertices,centers=NULL,minalpha=1,...){
+show3dData <- function(radii,vertices,centers=NULL,minalpha=1,...){
    if(is.null(centers)){
       centers <- matrix(0,3,1)
       n <- 1
@@ -578,7 +578,7 @@ show3d.data <- function(radii,vertices,centers=NULL,minalpha=1,...){
 
 #############
 
-show3d.cdata <- function(radii,polyeder,centers=NULL,minalpha=1,scale=.5,...){
+show3dCdata <- function(radii,polyeder,centers=NULL,minalpha=1,scale=.5,...){
    if(is.null(centers)){
       centers <- matrix(0,3,1)
       n <- 1
@@ -608,7 +608,7 @@ show3d.cdata <- function(radii,polyeder,centers=NULL,minalpha=1,scale=.5,...){
 
 #############
 
-show3d.odf <- function(radii,polyeder,centers=NULL,minalpha=1,...){
+show3dODF <- function(radii,polyeder,centers=NULL,minalpha=1,...){
    if(is.null(centers)){
       centers <- matrix(0,3,1)
       n <- 1
@@ -623,8 +623,9 @@ show3d.odf <- function(radii,polyeder,centers=NULL,minalpha=1,...){
    nv <- polyeder$nv
    ni <- polyeder$ni*3
    colors <- rainbow(1024,end=2/3,gamma=1.2)
-   ranger <- range(radii)
-   ind <- 1024-(radii-ranger[1])/(ranger[2]-ranger[1])*1023
+   rradii <- apply(radii,2,range)
+   sradii <- sweep(sweep(radii,2,rradii[1,],"-"),2,rradii[2,]-rradii[1,],"/")
+   ind <- 1024-sradii*1023
    alpha <- matrix(alpha,nv,n)
    vertices <- array(polyeder$vertices,c(3,nv,n))
    indices <- array(polyeder$indices,c(ni,n))
