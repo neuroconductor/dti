@@ -255,7 +255,7 @@ function(obj, roix=NULL, roiy=NULL, roiz=NULL, method="LINEPROP", minanindex=0.3
   
   dd <- .Call("interface_tracking_mixtensor",
               as.double(ex$andir), # dim = c(3, maxorder, dimx, dimy, dimz)
-              as.double(ex$order), # NEW! dim = c(dimx, dimy, dimz)
+              as.integer(ex$order), # NEW! dim = c(dimx, dimy, dimz)
               as.double(ex$gfa),    # dim = c(dimx, dimy, dimz)
               as.double(ex$mix),    # NEW! dim = c(maxorder, dimx, dimy, dimz)
               as.integer(maxorder), # NEW!
