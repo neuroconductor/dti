@@ -172,7 +172,7 @@ setMethod("tracking","dtiIndices", function(obj, roix=NULL, roiy=NULL, roiz=NULL
               as.double(minanindex), # not yet used
               as.double(maxangle),   # not yet used
 #             as.integer(imethod),    # not yet used (for tracking method)
-              DUP=FALSE)
+              DUP=FALSE, package="dti")
 
   dim(dd) <- c(length(dd)/6,6);
 #  dd <- reduce.fibers(dd)
@@ -275,7 +275,7 @@ function(obj, roix=NULL, roiy=NULL, roiz=NULL, method="LINEPROP", minanindex=0.3
               as.double(maxangle),
               as.double(minweight), # NEW! 
 #             as.integer(imethod),    # not yet used (for tracking method)
-              DUP=FALSE)
+              DUP=FALSE, package="dti")
 
   dim(dd) <- c(length(dd)/6,6);
 #  dd <- reduce.fibers(dd)
