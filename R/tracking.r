@@ -226,23 +226,21 @@ function(obj, roix=NULL, roiy=NULL, roiz=NULL, method="LINEPROP", minanindex=0.3
   roiza <- min(roiz); # this is probably not sufficient
   roize <- max(roiz); # this is probably not sufficient
 
-  if(sum(obj@fa[roix,roiy,roiz]>minanindex)==0){
+  ex <- extract(obj, c("andir", "order", "gfa", "mix")
+
+  if(sum(ex@gfa[roix,roiy,roiz] > minanindex)==0){
      cat("No fiber with sufficint FA in region of interest\n")
      return(invisible(FALSE))
   }
-
-  andir <- extract(obj, "andir")
-  order <- extract(obj, "order")
-  fa <- extract(obj, "gfa")
 
   if ((subsample != as.integer(subsample)) | (subsample < 1)) subsample <- 1
   if (subsample > 1) {
     indx <- rep(1:dimx, rep(subsample,dimx))
     indy <- rep(1:dimy, rep(subsample,dimy))
     indz <- rep(1:dimz, rep(subsample,dimz))
-    fa <- fa[indx, indy, indz]
-    order <- order[indx, indy, indz]
-    andir <- andir[,,indx, indy, indz, drop=FALSE]
+    ex$fa <- ex$fa[indx, indy, indz]
+    ex$order <- ex$order[indx, indy, indz]
+    ex$andir <- ex$andir[,,indx, indy, indz, drop=FALSE]
     dimx <- subsample*dimx
     dimy <- subsample*dimy
     dimz <- subsample*dimz
@@ -253,12 +251,13 @@ function(obj, roix=NULL, roiy=NULL, roiz=NULL, method="LINEPROP", minanindex=0.3
     roiza <- (roiza-1)*subsample+1
     roize <- roize*subsample
   }
-  maxorder <- dim(andir)[2]
+  maxorder <- dim(ex$andir)[2]
   
   dd <- .Call("interface_tracking_mixtensor",
-              as.double(andir), # dim = c(3, maxorder, dimx, dimy, dimz)
-              as.double(order), # NEW! dim = c(dimx, dimy, dimz)
-              as.double(fa),    # dim = c(dimx, dimy, dimz)
+              as.double(ex$andir), # dim = c(3, maxorder, dimx, dimy, dimz)
+              as.double(ex$order), # NEW! dim = c(dimx, dimy, dimz)
+              as.double(ex$gfa),    # dim = c(dimx, dimy, dimz)
+              as.double(ex$mix),    # NEW! dim = c(maxorder, dimx, dimy, dimz)
               as.integer(maxorder), # NEW!
               as.integer(dimx),
               as.integer(dimy),

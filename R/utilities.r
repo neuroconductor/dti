@@ -375,7 +375,7 @@ setMethod("extract","dwiMixtensor",function(x, what="andir", xind=TRUE, yind=TRU
      andir[1,] <- sth*cos(orient[2,])
      andir[2,] <- sth*sin(orient[2,])
      andir[3,] <- cos(orient[1,])
-     z$andir <- array(andir,c(3,dim(x$orient)[-1]))
+     z$andir <- array(andir,c(3,dim(x@orient)[-1]))
      }
   if("s0" %in% what) z$S0 <- x@S0
   if("mask" %in% what) z$mask <- x@mask
