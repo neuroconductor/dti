@@ -204,6 +204,109 @@ setMethod("tracking","dtiIndices", function(obj, roix=NULL, roiy=NULL, roiz=NULL
             )
 })
 
+setMethod("tracking", "dwiMixtensor",
+function(obj, roix=NULL, roiy=NULL, roiz=NULL, method="LINEPROP", minanindex=0.3, maxangle=30, subsample = 1)
+{
+
+  args <- sys.call(-1)
+  args <- c(obj@call,args)
+  imethod <- switch(method, "LINEPROP" = 1,
+                           1)
+
+  dimx <- obj@ddim[1]
+  dimy <- obj@ddim[2]
+  dimz <- obj@ddim[3]
+  if (is.null(roix)) roix <- 1:dimx
+  if (is.null(roiy)) roiy <- 1:dimy
+  if (is.null(roiz)) roiz <- 1:dimz
+  roixa <- min(roix); # this is probably not sufficient
+  roixe <- max(roix); # this is probably not sufficient
+  roiya <- min(roiy); # this is probably not sufficient
+  roiye <- max(roiy); # this is probably not sufficient
+  roiza <- min(roiz); # this is probably not sufficient
+  roize <- max(roiz); # this is probably not sufficient
+
+  if(sum(obj@fa[roix,roiy,roiz]>minanindex)==0){
+     cat("No fiber with sufficint FA in region of interest\n")
+     return(invisible(FALSE))
+  }
+
+  andir <- extract(obj, "andir")
+  order <- extract(obj, "order")
+  fa <- extract(obj, "gfa")
+
+  if ((subsample != as.integer(subsample)) | (subsample < 1)) subsample <- 1
+  if (subsample > 1) {
+    indx <- rep(1:dimx, rep(subsample,dimx))
+    indy <- rep(1:dimy, rep(subsample,dimy))
+    indz <- rep(1:dimz, rep(subsample,dimz))
+    fa <- fa[indx, indy, indz]
+    order <- order[indx, indy, indz]
+    andir <- andir[,,indx, indy, indz, drop=FALSE]
+    dimx <- subsample*dimx
+    dimy <- subsample*dimy
+    dimz <- subsample*dimz
+    roixa <- (roixa-1)*subsample+1
+    roixe <- roixe*subsample
+    roiya <- (roiya-1)*subsample+1
+    roiye <- roiye*subsample
+    roiza <- (roiza-1)*subsample+1
+    roize <- roize*subsample
+  }
+  maxorder <- dim(andir)[2]
+  
+  dd <- .Call("interface_tracking_mixtensor",
+              as.double(andir), # dim = c(3, maxorder, dimx, dimy, dimz)
+              as.double(order), # NEW! dim = c(dimx, dimy, dimz)
+              as.double(fa),    # dim = c(dimx, dimy, dimz)
+              as.integer(maxorder), # NEW!
+              as.integer(dimx),
+              as.integer(dimy),
+              as.integer(dimz),
+              as.integer(roixa),
+              as.integer(roixe),
+              as.integer(roiya),
+              as.integer(roiye),
+              as.integer(roiza),
+              as.integer(roize),
+              as.double(obj@voxelext[1]/subsample),
+              as.double(obj@voxelext[2]/subsample),
+              as.double(obj@voxelext[3]/subsample),
+              as.double(minanindex),
+              as.double(maxangle),
+#             as.integer(imethod),    # not yet used (for tracking method)
+              DUP=FALSE)
+
+  dim(dd) <- c(length(dd)/6,6);
+#  dd <- reduce.fibers(dd)
+  istartfiber <- ident.fibers(dd)
+  invisible(new("dwiFiber",
+                call  = args,
+                fibers = dd,
+                startind = as.integer(istartfiber),
+                roix   = as.integer(range(roix)),
+                roiy   = as.integer(range(roiy)),
+                roiz   = as.integer(range(roiz)),
+                gradient = obj@gradient,
+                btb   = obj@btb,
+                ngrad = obj@ngrad, # = dim(btb)[2]
+                s0ind = obj@s0ind,
+                replind = obj@replind,
+                ddim  = obj@ddim,
+                ddim0 = obj@ddim0,
+                xind  = obj@xind,
+                yind  = obj@yind,
+                zind  = obj@zind,
+                voxelext = obj@voxelext,
+                level = obj@level,
+                orientation = obj@orientation,
+                source = obj@source,
+                method = method,
+                minanindex = minanindex,
+                maxangle = maxangle)
+            )
+})
+
 ident.fibers <- function(mat){
 #
 #  Identify indices in mat where a new fiber starts

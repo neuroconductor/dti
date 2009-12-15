@@ -185,7 +185,7 @@ setMethod("dwiMixtensor","dtiData",function(object,maxcomp=2,p=40,maxneighb=7,me
         z <-switch(method,
             "mixtensor"=optim(par[1:(3*k+1)],mfun,siq=siq[i1,i2,i3,],grad=grad,control=list(maxit=5000,fnscale=1e5)),
                  "Jian"=optim(par[1:(3*k+1)],mfun2,siq=siq[i1,i2,i3,],grad=grad,ep=p,control=list(maxit=5000,fnscale=1e5)),
-                 "Jian2"=optim(c(par[1:(3*k+1)],25),mfun2,siq=siq[i1,i2,i3,],grad=grad,ep=p,control=list(maxit=5000,fnscale=1e5)))
+                 "Jian2"=optim(c(par[1:(3*k+1)],25),mfun3,siq=siq[i1,i2,i3,],grad=grad,ep=p,control=list(maxit=5000,fnscale=1e5)))
         rss <- min(z$value,rss)
         ttt <- z$value+2*(3*k+1)/(ngrad-3*maxcomp-1)*rss
 #        cat("risk",z$value,ttt,"\n")
