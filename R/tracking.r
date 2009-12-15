@@ -226,7 +226,7 @@ function(obj, roix=NULL, roiy=NULL, roiz=NULL, method="LINEPROP", minanindex=0.3
   roiza <- min(roiz); # this is probably not sufficient
   roize <- max(roiz); # this is probably not sufficient
 
-  ex <- extract(obj, c("andir", "order", "gfa", "mix")
+  ex <- extract(obj, c("andir", "order", "gfa", "mix"))
 
   if(sum(ex@gfa[roix,roiy,roiz] > minanindex)==0){
      cat("No fiber with sufficint FA in region of interest\n")
