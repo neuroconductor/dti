@@ -203,7 +203,7 @@ setMethod("plot", "dwiMixtensor", function(x, y, slice=1, view="axial", what="gf
 setMethod("plot", "dtiIndices", 
 function(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=TRUE, identify=FALSE, density=FALSE, contrast.enh=1,what="FA",xind=NULL,yind=NULL,zind=NULL, mar=c(3,3,3,.3),mgp=c(2,1,0), ...) {
   if(is.null(x@fa)) cat("No anisotropy index yet")
-  if(!(method %in% 1:5)) {
+  if(!(method %in% 1:6)) {
       warning("method out of range, reset to 1")
       method <- 1
   }
@@ -274,7 +274,7 @@ function(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=
     andirection <- andirection*as.vector(anindex)*as.numeric(anindex>minanindex)
     if(adimpro) {
       andirection[is.na(andirection)] <- 0
-      andirection <- make.image(andirection,gamma=TRUE)
+      andirection <- make.image(andirection,gammatype="ITU")
       if(show) show.image(andirection,...)
       if(identify){
          identify.fa(view,slice,xind,yind,zind)
@@ -320,7 +320,7 @@ function(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=
       img.hsi.data[,,1] <- img.hsi.data[,,1] + pi*(img.hsi.data[,,1]<0)
       img.hsi.data[,,2] <- abs(acos(andirection[3,,]))
       img.hsi.data[,,3] <- anindex
-      img.hsi <- make.image(img.hsi.data,gamma=TRUE,xmode="HSI")
+      img.hsi <- make.image(img.hsi.data,gammatype="ITU",xmode="HSI")
       if(show) show.image(img.hsi,...)
       if(identify){
          identify.fa(view,slice,xind,yind,zind)
@@ -330,6 +330,33 @@ function(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=
       }
     } else if(show) {
       image(andirection[1,,],...)
+      if(identify){
+         identify.fa(view,slice,xind,yind,zind)
+      } else {
+         par(oldpar)
+         invisible(NULL)
+      }
+    }
+  } else if (method==6) {
+    data("colqFA")
+    if (adimpro) {
+      colqFA <- col2rgb(colqFA)/255
+      img.data <- array(0, dim=c(dim(anindex), 3))
+      for (i in 1:dim(anindex)[1]) { # i dont like for loops in R!
+        for (j in 1:dim(anindex)[2]) {
+          img.data[i,j,] <- colqFA[, 255 * anindex[i, j] + 1] 
+        }
+      }
+      img <- make.image(img.data, gammatype="ITU")
+      if(show) show.image(img, ...)
+      if(identify){
+         identify.fa(view,slice,xind,yind,zind)
+      } else {
+         par(oldpar)
+         invisible(img)
+      }
+    } else if (show) {
+      image(anindex, col=colqFA)
       if(identify){
          identify.fa(view,slice,xind,yind,zind)
       } else {
