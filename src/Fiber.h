@@ -10,24 +10,14 @@
 class Fiber
 {
 	private:
-		// output file
-		FILE *voxels;
-		
 		Voxel* start;
 		Voxel* end;
 	
 		int length;
 		
-		// minimum length of the fibers to be logged in the output file
-		int minLength;
-		
-		string path_v;
-		string input_v;
-		
 	public:
 		/**  constructors & destructors  **/
 		Fiber();
-		Fiber(string&);
 		Fiber(Voxel*);
 		
 //		~Fiber();
@@ -45,11 +35,6 @@ class Fiber
 		
 		//  print-method
 		void print();
-		
-		/**  methods for file output  **/
-		void addVector_forw(Vector&, Voxel&);
-		void addVector_back(Vector&, Voxel&);
-		void write();
 };
 
 #endif /*FIBER_H_*/

@@ -20,27 +20,26 @@ class Voxel
  		 * direction:	direction-vector
 		 * anisotropy:	anisotropy 		*/
 	
-		int x, y, z;
+		int x, y, z, order, dir_index;
 		
 		Vector position;
-		Vector direction;
+		Vector *directions;
 		double anisotropy;
 	
 		bool startable;
 		
-		// Color values to generate a EPS-File via GNUPLOT
-		int red, green, blue;
-	
 		// LinkedList-Variables
 		Voxel* next;
 		Voxel* prev;
 		
 		bool visited;
+		
+//		Voxel *subvoxels;
 	
 	public:
 		/**  constructors & destructor  **/
 		Voxel();
-		Voxel(int, int, int, Vector&, double);
+		Voxel(int, int, int, int, Vector&, double);
 		
 //		~Voxel();
 		
@@ -48,18 +47,19 @@ class Voxel
 		bool isVisited();
 		bool isStartable();
 		double getAnisotropy();
-		Vector& getDirection();
+		Vector* getDirections();
 		Vector& getPosition();
 		int getX();
 		int getY();
 		int getZ();
-		int getRed();
-		int getGreen();
-		int getBlue();
+		int getOrder();
+		int getDir_Index();
 		Voxel* getNext();
 		Voxel* getPrev();
+//		Voxel* getSubvoxels();
 		
 		/**  setters  **/
+		void setDir_Index(int);
 		void setVisited(bool);
 		void setStartable(bool);
 		void setNext(Voxel*);

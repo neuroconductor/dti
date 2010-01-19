@@ -4,8 +4,10 @@ using namespace std;
 
 Voxel::Voxel()
 {
+	this->order = 0;
+	this->dir_index = 0;
 	this->position = Vector(-1, -1, -1);
-	this->direction = Vector(0, 0, 0);
+	this->directions = new Vector[order];
 	this->x = -1;
 	this->y = -1;
 	this->z = -1;
@@ -15,17 +17,15 @@ Voxel::Voxel()
 	this->visited = false;
 	this->startable = true;
 	
-	this->red = 0;
-	this->green = 0;
-	this->blue = 0;
-	
 	this->next = NULL;
 	this->prev = NULL;
 }
 
-Voxel::Voxel(int x, int y, int z, Vector& direction, double anisotropy)
+Voxel::Voxel(int x, int y, int z, int order, Vector& directions, double anisotropy)
 {
-	this->direction = direction;
+	this->order = order;
+	this->dir_index = 0;
+	this->directions = &directions;
 	this->anisotropy = anisotropy;
 	this->x = x;
 	this->y = y;
@@ -36,13 +36,27 @@ Voxel::Voxel(int x, int y, int z, Vector& direction, double anisotropy)
 	visited = false;
 	startable = true;
 	
-	red = 	(int)(255 * fabs((this->direction.getComponents()[0]) * fabs(this->anisotropy)));
-	green = (int)(255 * fabs((this->direction.getComponents()[1]) * fabs(this->anisotropy)));
-	blue =  (int)(255 * fabs((this->direction.getComponents()[2]) * fabs(this->anisotropy)));
-	
 	next = NULL;
 	prev = NULL;
 }
+
+//Voxel::Voxel(int x, int y, int z, int order, Vector* directions, double anisotropy)
+//{
+//	this->order = order;
+//	this->directions = directions;
+//	this->anisotropy = anisotropy;
+//	this->x = x;
+//	this->y = y;
+//	this->z = z;
+//
+//	this->position = Vector((double)this->x,(double)this->y,(double)this->z);
+//	
+//	visited = false;
+//	startable = true;
+//	
+//	next = NULL;
+//	prev = NULL;
+//}
 
 //Voxel::~Voxel()
 //{
@@ -58,19 +72,19 @@ Voxel::Voxel(int x, int y, int z, Vector& direction, double anisotropy)
 bool Voxel::isVisited()			{return visited;}
 bool Voxel::isStartable()		{return startable;}
 double Voxel::getAnisotropy()	{return anisotropy;}
-Vector& Voxel::getDirection()	{return direction;}
+Vector* Voxel::getDirections()	{return directions;}
 Vector& Voxel::getPosition()	{return position;}
 int Voxel::getX()				{return x;}
 int Voxel::getY()				{return y;}
 int Voxel::getZ()				{return z;}
-int Voxel::getRed()				{return red;}
-int Voxel::getGreen()			{return green;}
-int Voxel::getBlue()			{return blue;}
+int Voxel::getOrder()			{return order;}
+int Voxel::getDir_Index()		{return dir_index;}
 Voxel* Voxel::getNext()			{return next;}
 Voxel* Voxel::getPrev()			{return prev;}
 
 /**  setters  **/
-void Voxel::setVisited(bool isVisited)	{this->visited = isVisited;}
+void Voxel::setDir_Index(int dir_index)	{this->dir_index = dir_index;}
+void Voxel::setVisited(bool visited)	{this->visited = visited;}
 void Voxel::setStartable(bool startable){this->startable = startable;}
 void Voxel::setNext(Voxel *next)		{this->next = next;}
 void Voxel::setPrev(Voxel *prev)		{this->prev = prev;}

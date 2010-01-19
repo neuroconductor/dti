@@ -12,6 +12,7 @@ class Converter
 		
 	public:
 		Converter(double*, double*, int, int, int);
+		Converter(double*, double*, int*,int, int, int, int);
 		Voxel& getVoxels();
 };
 
