@@ -205,7 +205,7 @@ setMethod("tracking","dtiIndices", function(obj, roix=NULL, roiy=NULL, roiz=NULL
 })
 
 setMethod("tracking", "dwiMixtensor",
-function(obj, roix=NULL, roiy=NULL, roiz=NULL, method="LINEPROP", minanindex=0.3, maxangle=30, minweight=0.1, subsample = 1)
+function(obj, roix=NULL, roiy=NULL, roiz=NULL, method="LINEPROP", minanindex=0.3, maxangle=30, subsample = 1)
 {
 
   args <- sys.call(-1)
@@ -272,8 +272,7 @@ function(obj, roix=NULL, roiy=NULL, roiz=NULL, method="LINEPROP", minanindex=0.3
               as.double(obj@voxelext[2]/subsample),
               as.double(obj@voxelext[3]/subsample),
               as.double(minanindex),
-              as.double(maxangle),
-              as.double(minweight), # NEW! 
+              as.double(maxangle), 
 #             as.integer(imethod),    # not yet used (for tracking method)
               DUP=FALSE, package="dti")
 

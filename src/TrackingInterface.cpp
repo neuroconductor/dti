@@ -57,18 +57,17 @@ extern "C"{
 extern "C"{
 
 	SEXP interface_tracking_mixtensor(
-					SEXP data_dir_coords, SEXP data_order, //
+					SEXP data_dir_coords, SEXP data_order, 
 					SEXP data_FA_values,
-					SEXP data_mix, //
-					SEXP maxorder, //
+					SEXP data_mix, 
+					SEXP maxorder, 
 			        SEXP dim_x, SEXP dim_y, SEXP dim_z,
 			        SEXP roi_x_s, SEXP roi_x_e,
 			        SEXP roi_y_s, SEXP roi_y_e,
 			        SEXP roi_z_s, SEXP roi_z_e,
 			        SEXP voxelext_x, SEXP voxelext_y, SEXP voxelext_z,
 			        SEXP min_anisotropy,
-			        SEXP max_angle,
-			        SEXP min_weight // 
+			        SEXP max_angle
 			       )
 	{
 		SEXP retVec;
