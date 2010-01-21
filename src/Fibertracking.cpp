@@ -133,7 +133,7 @@ double* Fibertracking::convertToDouble()
 			dirx = voxels[(int)temp].getDirections()[cur_dir_index].getComponents()[0];
 			diry = voxels[(int)temp].getDirections()[cur_dir_index].getComponents()[1];
 			dirz = voxels[(int)temp].getDirections()[cur_dir_index].getComponents()[2];
-		
+			
 			vals[3*l+i] = dirx;
 			vals[4*l+i] = diry;
 			vals[5*l+i] = dirz;
@@ -742,7 +742,6 @@ void Fibertracking::findMarkedFibers(int* ranges)
 				cur_voxel_index = marked[last_start_voxel].getX() + marked[last_start_voxel].getY()*dim_x + marked[last_start_voxel].getZ()*dim_x*dim_y;			
 				
 				voxels[cur_voxel_index].setDir_Index(i);
-				printf("\nset dir_index to %d\n", i);
 				
 				trackFiber_forward();
 				
@@ -758,7 +757,7 @@ void Fibertracking::findMarkedFibers(int* ranges)
 				currentFiber.unvisit();
 			}
 			
-			printf("============\n");
+//			printf("============\n");
 //			printf("Searching continued...\n");
 		}
 		
