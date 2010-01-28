@@ -362,9 +362,6 @@ function(x){
     cat("  Dimension            :", paste(x@ddim, collapse="x"), "\n")
     cat("  Number of Gradients  :", paste(x@ngrad, collapse="x"), "\n")
     cat("  Source-Filename      :", x@source, "\n")
-    cat("  Region of interest   :", paste("x:",x@roix[1],":",x@roix[2],"  ",
-                                          "y:",x@roiy[1],":",x@roiy[2],"  ",
-                                          "z:",x@roiz[1],":",x@roiz[2],"  ",sep=""), "\n")
     cat("  Minimum FA  :", x@minanindex, "\n")
     cat("  Maximum angle :", x@maxangle , "\n")
     cat("  Slots                :\n")
@@ -429,9 +426,6 @@ function(object){
     cat("  Dimension            :", paste(object@ddim, collapse="x"), "\n")
     cat("  Number of Gradients  :", paste(object@ngrad, collapse="x"), "\n")
     cat("  Source-Filename      :", object@source, "\n")
-    cat("  Region of interest   :", paste("x:",object@roix[1],":",object@roix[2],"  ",
-                                          "y:",object@roiy[1],":",object@roiy[2],"  ",
-                                          "z:",object@roiz[1],":",object@roiz[2],"  ",sep=""), "\n")
     cat("  Minimum FA  :", object@minanindex, "\n")
     cat("  Maximum angle :", object@maxangle , "\n")
     cat("  Slots                :\n")
@@ -547,9 +541,6 @@ function(object){
     cat("  Dimension             :", paste(object@ddim, collapse="x"), "\n")
     cat("  Number of Gradients   :", paste(object@ngrad, collapse="x"), "\n")
     cat("  Voxel extensions      :", paste(object@voxelext, collapse="x"), "\n")
-    cat("  Region of interest   :", paste("x:",object@roix[1],":",object@roix[2],"  ",
-                                          "y:",object@roiy[1],":",object@roiy[2],"  ",
-                                          "z:",object@roiz[1],":",object@roiz[2],"  ",sep=""), "\n")
     cat("  Minimum FA  :", object@minanindex, "\n")
     cat("  Maximum angle :", object@maxangle , "\n")
     cat("  Number of fibers :", length(object@startind), "\n")
