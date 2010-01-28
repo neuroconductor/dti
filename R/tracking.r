@@ -77,15 +77,14 @@ setMethod("tracking","dtiTensor", function(obj, roix=NULL, roiy=NULL, roiz=NULL,
               DUP=FALSE)
 
   dim(dd) <- c(length(dd)/6,6);
-  dd <- reduce.fibers(dd)
   istartfiber <- ident.fibers(dd)
+  roimask <- array(0,obj@ddim)
+  roimask[roix,roiy,roiz] <- 1
   invisible(new("dwiFiber",
                 call  = args,
                 fibers = dd,
                 startind = as.integer(istartfiber),
-                roix   = as.integer(range(roix)),
-                roiy   = as.integer(range(roiy)),
-                roiz   = as.integer(range(roiz)),
+                roimask = as.raw(roimask),
                 gradient = obj@gradient,
                 btb   = obj@btb,
                 ngrad = obj@ngrad, # = dim(btb)[2]
@@ -175,15 +174,14 @@ setMethod("tracking","dtiIndices", function(obj, roix=NULL, roiy=NULL, roiz=NULL
               DUP=FALSE, package="dti")
 
   dim(dd) <- c(length(dd)/6,6);
-#  dd <- reduce.fibers(dd)
   istartfiber <- ident.fibers(dd)
+  roimask <- array(0,obj@ddim)
+  roimask[roix,roiy,roiz] <- 1
   invisible(new("dwiFiber",
                 call  = args,
                 fibers = dd,
                 startind = as.integer(istartfiber),
-                roix   = as.integer(range(roix)),
-                roiy   = as.integer(range(roiy)),
-                roiz   = as.integer(range(roiz)),
+                roimask = as.raw(roimask),
                 gradient = obj@gradient,
                 btb   = obj@btb,
                 ngrad = obj@ngrad, # = dim(btb)[2]
@@ -277,15 +275,14 @@ function(obj, roix=NULL, roiy=NULL, roiz=NULL, method="LINEPROP", minanindex=0.3
               DUP=FALSE, package="dti")
 
   dim(dd) <- c(length(dd)/6,6);
-#  dd <- reduce.fibers(dd)
   istartfiber <- ident.fibers(dd)
+  roimask <- array(0,obj@ddim)
+  roimask[roix,roiy,roiz] <- 1
   invisible(new("dwiFiber",
                 call  = args,
                 fibers = dd,
                 startind = as.integer(istartfiber),
-                roix   = as.integer(range(roix)),
-                roiy   = as.integer(range(roiy)),
-                roiz   = as.integer(range(roiz)),
+                roimask = as.raw(roimask),
                 gradient = obj@gradient,
                 btb   = obj@btb,
                 ngrad = obj@ngrad, # = dim(btb)[2]
@@ -306,37 +303,3 @@ function(obj, roix=NULL, roiy=NULL, roiz=NULL, method="LINEPROP", minanindex=0.3
             )
 })
 
-ident.fibers <- function(mat){
-#
-#  Identify indices in mat where a new fiber starts
-#
-   dd <- dim(mat)
-   if(dd[2]!=6){
-      warning("Incorrect dimensions for fiber array")
-   }
-   dd <- dd[1]
-   mat <- mat[,1:3]
-   dim(mat) <- c(2,dd/2,3)
-   dmat <- mat[2,-(dd/2),]-mat[1,-1,]
-   fiberends <- (1:(dd/2-1))[apply(dmat^2,1,sum)>0]
-   c(0,fiberends)*2+1
-}
-
-reduce.fibers <- function(mat){
-   dd <- dim(mat)
-#
-#  clean up fiber description in dd
-#  removes instances in dd that are either redundant or would not show up on display
-#
-   if(dd[2]!=6){
-      warning("Incorrect dimensions for fiber array")
-   }
-   dd <- dd[1]
-   dim(mat) <- c(2,dd/2,6)
-   dmat <- mat[1,,1:3]-mat[2,,1:3]
-   remove <- apply(dmat^2,1,sum)==0
-   if(sum(remove)>0) warning(paste("Found ",sum(remove)," instances, where begin and end of a line segment coincide"))
-   mat <- mat[,!remove,]
-   dim(mat) <- c(2*dim(mat)[2],6)
-   mat
-}
