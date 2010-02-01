@@ -11,12 +11,12 @@ int n_turn = 0;
 
 Fibertracking::Fibertracking()
 {
-	this->n_e1 = *(new Vector(( 0, 0, 1)));
-	this->n_e2 = *(new Vector(( 0, 1, 0)));
-	this->n_e3 = *(new Vector(( 1, 0, 0)));
-	this->n_e4 = *(new Vector(( 0,-1, 0)));
-	this->n_e5 = *(new Vector(( 0, 0,-1)));
-	this->n_e6 = *(new Vector((-1, 0, 0)));
+	this->n_e1 = *(new Vector( 0, 0, 1));
+	this->n_e2 = *(new Vector( 0, 1, 0));
+	this->n_e3 = *(new Vector( 1, 0, 0));
+	this->n_e4 = *(new Vector( 0,-1, 0));
+	this->n_e5 = *(new Vector( 0, 0,-1));
+	this->n_e6 = *(new Vector(-1, 0, 0));
 	
 	this->last_plane_dir = 0;
 	this->max_intersec_angle = 30.;
@@ -76,6 +76,11 @@ Fibertracking::Fibertracking(Voxel& voxels, int x, int y, int z, double voxelext
 
 int Fibertracking::getLength()
 {
+	if (allVectors.getLength() == 0)
+	{
+		return 0;
+	}
+	
 	int f = allVectors.getNum_Nan()+1;
 	int p = (allVectors.getLength() - allVectors.getNum_Nan()) /2;
 	return 12*(p - f);
@@ -84,6 +89,13 @@ int Fibertracking::getLength()
 double* Fibertracking::convertToDouble()
 {
 
+	if (allVectors.getLength() == 0)
+	{
+		printf("\nAll found fibers are too short to be recognized.\nChoose another region of interest\n\n");
+		
+		return NULL;
+	}
+	
 	int f = allVectors.getNum_Nan()+1;
 	int p = (allVectors.getLength() - allVectors.getNum_Nan()) /2;
 	int l = 2*(p - f);
@@ -94,7 +106,6 @@ double* Fibertracking::convertToDouble()
 	double temp = 0.;
 	
 	bool fibreStart = true;
-	bool fibreEnd = false;
 	double interx = 0;
 	double intery = 0;
 	double interz = 0;
@@ -106,7 +117,7 @@ double* Fibertracking::convertToDouble()
 	{
 		temp = allVectors.getStart().getComponents()[1];
 		
-		if (isnan(temp))
+		if (isnan(temp)) 
 		{
 			
 			i-=1;
@@ -128,7 +139,7 @@ double* Fibertracking::convertToDouble()
 			
 			temp = allVectors.getStart().getComponents()[1];
 
-			int cur_dir_index = voxels[(int)temp].getDir_Index();
+			int cur_dir_index = (int)(allVectors.getStart().getComponents()[0]);
 
 			dirx = voxels[(int)temp].getDirections()[cur_dir_index].getComponents()[0];
 			diry = voxels[(int)temp].getDirections()[cur_dir_index].getComponents()[1];
@@ -165,7 +176,7 @@ void Fibertracking::nextVoxel_forward()
 	int cur_x 	  	  = voxels[cur_voxel_index].getX();
 	int cur_y 	  	  = voxels[cur_voxel_index].getY();
 	int cur_z 	  	  = voxels[cur_voxel_index].getZ();
-	int cur_order 	  = voxels[cur_voxel_index].getOrder();
+//	int cur_order 	  = voxels[cur_voxel_index].getOrder();
 	int cur_dir_index = voxels[cur_voxel_index].getDir_Index();
 	
 //	printf("forw, %d, %d, %d, %d, %d\n", cur_x, cur_y, cur_z, cur_order, cur_dir_index);
@@ -350,7 +361,7 @@ void Fibertracking::nextVoxel_backward()
 	int cur_x 	  	  = voxels[cur_voxel_index].getX();
 	int cur_y 	  	  = voxels[cur_voxel_index].getY();
 	int cur_z 	  	  = voxels[cur_voxel_index].getZ();
-	int cur_order 	  = voxels[cur_voxel_index].getOrder();
+//	int cur_order 	  = voxels[cur_voxel_index].getOrder();
 	int cur_dir_index = voxels[cur_voxel_index].getDir_Index();
 	
 //	printf("back, %d, %d, %d, %d, %d\n", cur_x, cur_y, cur_z, cur_order, cur_dir_index);
@@ -548,7 +559,7 @@ void Fibertracking::trackFiber_forward()
 		
 		curVectorList.add_at_end(start_o);
 		
-		curVec = new Vector(0., (double)cur_voxel_index, 0.);
+		curVec = new Vector((double)(voxels[cur_voxel_index].getDir_Index()), (double)cur_voxel_index, 0.);
 		curVectorList.add_at_end(*curVec);
 
 		nextVoxel_forward();
@@ -612,7 +623,7 @@ void Fibertracking::trackFiber_backward()
 	{
 //		current->setVisited(true);
 		
-		curVec = new Vector(0., (double)cur_voxel_index, 0.);
+		curVec = new Vector((double)(voxels[cur_voxel_index].getDir_Index()), (double)cur_voxel_index, 0.);
 		curVectorList.add_at_start(*curVec);
 
 		curVectorList.add_at_start(start_o);
@@ -764,13 +775,16 @@ void Fibertracking::findMarkedFibers(int* ranges)
 		last_start_voxel++;
 	}
 	
-	allVectors.del_at_start();
+	if (allVectors.getLength() != 0)
+	{
+		allVectors.del_at_start();
+	}
 	
 //	printf("End of searching.\n");
 	
 	double all_abort = n_visited+n_angle+n_aniso+n_border+n_turn;
 
-	printf("Abort fibers because of:\nvisited\t=\t%d (%f%)\naniso\t=\t%d (%f%)\nangle\t=\t%d (%f%)\nborder\t=\t%d (%f%)\nturn\t=\t%d (%f%)\n", n_visited, n_aniso, n_angle, n_border, n_turn, (double)n_visited*100./all_abort, (double)n_aniso*100./all_abort, (double)n_angle*100./all_abort, (double)n_border*100./all_abort, (double)n_turn*100./all_abort);
+	printf("Abort fibers because of:\nvisited\t=\t%d (%f\%)\naniso\t=\t%d (%f\%)\nangle\t=\t%d (%f\%)\nborder\t=\t%d (%f\%)\nturn\t=\t%d (%f\%)\n", n_visited, n_aniso, n_angle, n_border, n_turn, (double)n_visited*100./all_abort, (double)n_aniso*100./all_abort, (double)n_angle*100./all_abort, (double)n_border*100./all_abort, (double)n_turn*100./all_abort);
 	
 	printf("num_fibers = %d\n", num_fibers);
 	
