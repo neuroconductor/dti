@@ -21,7 +21,6 @@
    the ADC. These are then used to determine initial parameters for the 
    mixture model} 
   \item{method}{ Specifies the mixture model used. \code{method="mixtensor"}   specifies a mixture of tensor models, \code{method="Jian"} refers to the model defined in Jian (2007) with fixed \code{p} while with \code{method="Jian2"} also \code{p} is estimated. In all models tensors are restricted to be rotational sysmmetric with destinct largest eigenvalue.} 
-   }
 }
 \details{
   ~~ If necessary, more details than the description above ~~
