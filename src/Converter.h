@@ -1,9 +1,9 @@
 #ifndef CONVERTER_H_
 #define CONVERTER_H_
 
+#include "Voxel.h"
 #include <R.h>
 #include <Rinternals.h>
-#include "Voxel.h"
 
 class Converter
 {
