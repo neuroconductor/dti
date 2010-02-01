@@ -53,8 +53,8 @@
 
   \item{x = "dtiTensor"}{ Returns a list with component names corresponding to \code{what} containing the specified statistics, i.e. fractional anisotropy (fa), geodesic anisotropy (ga), mean diffusivity (md), eigenvalues (evalues), main direction of anisotropy (andir), the tensor (tensor) the estimated S0 image (s0) and/or the mask used to restrict computations (mask), as specified in argument \code{what}. Information is extracted for voxel within the  cube defined by arguments \code{xind}, \code{yind} and \code{zind}. }
 
-  \item{x = "dwiMixtensor"}{ Returns a list with component names corresponding to \code{what} containing the specified statistics. Possible values for \code{what} are \code{"order"} (number of mixture components), \code{"ev"} (eigenvalues), \code{"mix"} (mixture weights}, \code{"andir"} (main directions of diffusion),
-  \code{"gfa") (generalized FA index), \code{"S0"} (the estimated S0 image) and \code{mask} (the mask used to restrict computations).  Information is extracted for voxel within the  cube defined by arguments \code{xind}, \code{yind} and \code{zind}. }
+  \item{x = "dwiMixtensor"}{ Returns a list with component names corresponding to \code{what} containing the specified statistics. Possible values for \code{what} are \code{"order"} (number of mixture components), \code{"ev"} (eigenvalues), \code{"mix"} (mixture weights), \code{"andir"} (main directions of diffusion),
+  \code{"gfa"} (generalized FA index), \code{"S0"} (the estimated S0 image) and \code{mask} (the mask used to restrict computations).  Information is extracted for voxel within the  cube defined by arguments \code{xind}, \code{yind} and \code{zind}. }
 
   \item{x = "dwiQball"}{ Returns an array containing the specified statistics,  the estimated coefficients with respect to the selected spherical harmonics basis, the estimated S0 image (s0) and/or the mask used to restrict computations (mask), as specified in argument \code{what}. Information is extracted for voxel within the  cube defined by arguments \code{xind}, \code{yind} and \code{zind}. }
 }
