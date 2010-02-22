@@ -782,9 +782,9 @@ void Fibertracking::findMarkedFibers(int* ranges)
 	
 //	printf("End of searching.\n");
 	
-	double all_abort = n_visited+n_angle+n_aniso+n_border+n_turn;
+//	double all_abort = n_visited+n_angle+n_aniso+n_border+n_turn;
 
-	printf("Abort fibers because of:\nvisited\t=\t%d ( %f% )\naniso\t=\t%d ( %f% )\nangle\t=\t%d ( %f% )\nborder\t=\t%d ( %f% )\nturn\t=\t%d ( %f% )\n", n_visited, (double)n_visited*100./all_abort, n_aniso, (double)n_aniso*100./all_abort, n_angle, (double)n_angle*100./all_abort, n_border, (double)n_border*100./all_abort, n_turn, (double)n_turn*100./all_abort);
+//	printf("Abort fibers because of:\nvisited\t=\t%d ( %f% )\naniso\t=\t%d ( %f% )\nangle\t=\t%d ( %f% )\nborder\t=\t%d ( %f% )\nturn\t=\t%d ( %f% )\n", n_visited, (double)n_visited*100./all_abort, n_aniso, (double)n_aniso*100./all_abort, n_angle, (double)n_angle*100./all_abort, n_border, (double)n_border*100./all_abort, n_turn, (double)n_turn*100./all_abort);
 	
 	printf("num_fibers = %d\n", num_fibers);
 	
