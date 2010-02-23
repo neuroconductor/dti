@@ -8,11 +8,11 @@ Voxel& Converter::getVoxels()
 
 Converter::Converter(double* data_dir_coords, double* data_FA_values, int dim_x, int dim_y, int dim_z)
 {
-	printf("%d, %d, %d\n", dim_x, dim_y, dim_z);
+//	printf("%d, %d, %d\n", dim_x, dim_y, dim_z);
 	
 	voxels = new Voxel[dim_x*dim_y*dim_z];
 	
-	printf("converting doubles to Voxels...\n");
+//	printf("converting doubles to Voxels...\n");
 
 	Vector *dir;
     
@@ -41,17 +41,17 @@ Converter::Converter(double* data_dir_coords, double* data_FA_values, int dim_x,
 	    }
     }
 
-    printf("Converted %d Voxels.\n", counter);
+//    printf("Converted %d Voxels.\n", counter);
 }
 
 
 Converter::Converter(double* data_dir_coords, double* data_FA_values, int* data_order, int maxorder, int dim_x, int dim_y, int dim_z)
 {
-	printf("%d, %d, %d\n", dim_x, dim_y, dim_z);
+//	printf("%d, %d, %d\n", dim_x, dim_y, dim_z);
 	
 	voxels = new Voxel[dim_x*dim_y*dim_z];
 	
-	printf("converting doubles to Voxels...\n");
+//	printf("converting doubles to Voxels...\n");
 
 	double dir_x, dir_y, dir_z, FA;
 	int i = 0, j = 0, k = 0, l = 0, num_vector = 0, counter = 0, order = 0;
@@ -87,5 +87,5 @@ Converter::Converter(double* data_dir_coords, double* data_FA_values, int* data_
 	    }
     }
 
-    printf("Converted %d Voxels.\n", counter);
+//    printf("Converted %d Voxels.\n", counter);
 }

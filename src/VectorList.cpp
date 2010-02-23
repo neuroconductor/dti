@@ -158,7 +158,7 @@ void VectorList::print()
 		return;
 	}
 
-	printf("========== Fiber start ==========\n");
+//	printf("========== Fiber start ==========\n");
 	
 	Vector* aktuell = start;
 	
@@ -168,7 +168,7 @@ void VectorList::print()
 		aktuell = aktuell->getNext();
 	}
 
-	printf("=========== Fiber  end ===========\n");	
+//	printf("=========== Fiber  end ===========\n");	
 }
 
 void VectorList::print(int until)

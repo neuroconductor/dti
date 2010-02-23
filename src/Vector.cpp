@@ -45,21 +45,21 @@ void Vector::print()
 {
 	if (this == NULL)
 	{
-		printf("Vector is NULL\n");
+//		printf("Vector is NULL\n");
 		return;
 	}
 	
-	printf(" _   _ \n");	
+//	printf(" _   _ \n");	
 		
 	for (int i = 0; i < this->n; i++)
 	{
 		if (i == n-1)
 		{
-			printf("|_%f_|\n", this->components[i]);
+//			printf("|_%f_|\n", this->components[i]);
 		}
 		else
 		{
-			printf("| %f |\n", this->components[i]);
+//			printf("| %f |\n", this->components[i]);
 		}
 	}
 }

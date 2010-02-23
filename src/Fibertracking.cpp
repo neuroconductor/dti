@@ -91,7 +91,7 @@ double* Fibertracking::convertToDouble()
 
 	if (allVectors.getLength() == 0)
 	{
-		printf("\nAll found fibers are too short to be recognized.\nChoose another region of interest\n\n");
+//		printf("\nAll found fibers are too short to be recognized.\nChoose another region of interest\n\n");
 		
 		return NULL;
 	}
@@ -668,22 +668,22 @@ void Fibertracking::trackFiber_backward()
 
 void Fibertracking::findAllFibers()
 {
-	printf("Searching for fibers...\n");
+//	printf("Searching for fibers...\n");
 	
 	while (last_start_voxel < dim_x*dim_y*dim_z)
 	{
 		if (voxels[last_start_voxel].getAnisotropy() >= min_anisotropy && voxels[last_start_voxel].isStartable())
 		{
 //			num_fibers++;
-			printf("currentFiber = *new Fiber();\n");
+//			printf("currentFiber = *new Fiber();\n");
 			currentFiber = *new Fiber();
-			printf("currentFiber angelegt\n");
-			printf("curVectorList = *new VectorList();\n");
+//			printf("currentFiber angelegt\n");
+//			printf("curVectorList = *new VectorList();\n");
 			curVectorList = *new VectorList();
-			printf("curVecotrList angelegt\n");
+//			printf("curVecotrList angelegt\n");
 			
-			printf("Fiber found!\n");
-			printf("============\n");
+//			printf("Fiber found!\n");
+//			printf("============\n");
 			
 			cur_voxel_index = voxels[last_start_voxel].getX() + voxels[last_start_voxel].getY()*dim_x + voxels[last_start_voxel].getZ()*dim_x*dim_y;
 			trackFiber_forward();
@@ -786,7 +786,7 @@ void Fibertracking::findMarkedFibers(int* ranges)
 
 //	printf("Abort fibers because of:\nvisited\t=\t%d ( %f% )\naniso\t=\t%d ( %f% )\nangle\t=\t%d ( %f% )\nborder\t=\t%d ( %f% )\nturn\t=\t%d ( %f% )\n", n_visited, (double)n_visited*100./all_abort, n_aniso, (double)n_aniso*100./all_abort, n_angle, (double)n_angle*100./all_abort, n_border, (double)n_border*100./all_abort, n_turn, (double)n_turn*100./all_abort);
 	
-	printf("num_fibers = %d\n", num_fibers);
+//	printf("num_fibers = %d\n", num_fibers);
 	
 	n_angle = 0;
 	n_visited = 0;
