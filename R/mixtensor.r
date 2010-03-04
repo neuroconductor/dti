@@ -104,7 +104,7 @@ dwiMixtensor <- function(object, ...) cat("No dwiMixtensor calculation defined f
 
 setGeneric("dwiMixtensor", function(object,  ...) standardGeneric("dwiMixtensor"))
 
-setMethod("dwiMixtensor","dtiData",function(object,maxcomp=2,p=40,maxneighb=7,method="mixtensor"){
+setMethod("dwiMixtensor","dtiData",function(object, maxcomp=2, p=40, maxneighb=7, method="mixtensor", reltol=1e-8, maxit=5000){
   args <- sys.call(-1)
   args <- c(object@call,args)
   ngrad <- object@ngrad
@@ -182,10 +182,20 @@ setMethod("dwiMixtensor","dtiData",function(object,maxcomp=2,p=40,maxneighb=7,me
      krit <- Inf
      for(k in mc0:1){
         if(k>1) par[3*(2:k)-1] <- -log((k-1):1)
+        lpar <- length(par);
         z <-switch(method,
-            "mixtensor"=optim(par[1:(3*k+1)],mfun,siq=siq[i1,i2,i3,],grad=grad,control=list(maxit=5000,fnscale=1e5)),
-                 "Jian"=optim(par[1:(3*k+1)],mfun2,siq=siq[i1,i2,i3,],grad=grad,ep=p,control=list(maxit=5000,fnscale=1e5)),
-                 "Jian2"=optim(c(par[1:(3*k+1)],25),mfun3,siq=siq[i1,i2,i3,],grad=grad,ep=p,control=list(maxit=5000,fnscale=1e5)))
+                  "mixtensor" = .C("mixtensor",
+                                   as.integer(lpar),
+                                   as.double(par),
+                                   par = double(lpar),
+                                   as.integer(ngrad0),
+                                   as.double(siq[i1,i2,i3,]),
+                                   as.double(as.matrix(grad)),
+                                   as.integer(maxit),
+                                   as.double(reltol),
+                                   value = as.double(1))[c("par", "value")],
+                 "Jian"       = optim(par[1:(3*k+1)],mfun2,siq=siq[i1,i2,i3,],grad=grad,ep=p,control=list(maxit=maxit,reltol=reltol)),
+                 "Jian2"      = optim(c(par[1:(3*k+1)],25),mfun3,siq=siq[i1,i2,i3,],grad=grad,ep=p,control=list(maxit=maxit,reltol=reltol)))
         rss <- min(z$value,rss)
         ttt <- z$value+2*(3*k+1)/(ngrad-3*maxcomp-1)*rss
 #        cat("risk",z$value,ttt,"\n")
