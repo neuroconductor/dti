@@ -2,6 +2,7 @@
 #include <Rinternals.h>
 #include <Rmath.h>
 #include <R_ext/Applic.h>
+#include <sys/time.h>
 
 typedef struct
 {
@@ -89,16 +90,16 @@ void smoothsi(int *r1, int *r2, int *r3, double *si, int *n, int *sneighbors, in
 void getweights(int m, double *cw, double *z)
 {
   double ew;
-  double sw = 0;
+  double sw = 0.0;
 
   for (int i = 0; i < m; i++)
   {
     // use log and exp to have free optim problem
     ew = exp(cw[i]);
-    z[i] = (1 - sw) * ew/(1+ew);
+    z[i] = (1. - sw) * ew/(1.+ew);
     sw += z[i];
   }
-  z[m] = 1 - sw;
+  z[m] = 1. - sw;
   return;
 }
 
@@ -214,7 +215,6 @@ void mixture(int *method, int *r1, int *r2, int *r3, int *mask, double *siq, int
              double *order, double *lev, double *mix, double *orient, double *p, double *sigma2){
 
   int n1 = *r1, n2 = *r2, n3 = *r3, ngrad = *n, mc = *maxcomp;
-  Rprintf("entering %i %i %i %i\n", n1, n2, n3, ngrad);
   int i1, i2, i3, mc0, lpar;
   double rss, krit, ttt;
   double siiq[ngrad];
@@ -225,7 +225,12 @@ void mixture(int *method, int *r1, int *r2, int *r3, int *mask, double *siq, int
   int gradind;
   double angles[2];
   double dir[3];
-
+  double par[11];
+  double cpar[11];
+  double x[11];
+//  struct timeval tp1, tp2;
+//  struct timezone tzp;
+//  double timm = 0;
 
   for (i1 = 0; i1 < n1; i1++)
   {
@@ -233,7 +238,7 @@ void mixture(int *method, int *r1, int *r2, int *r3, int *mask, double *siq, int
     {
       for (i3 = 0; i3 < n3; i3++)
       {
-        Rprintf("iterating %i %i %i\n", i1, i2, i3);
+//        Rprintf("iterating %i %i %i\n", i1, i2, i3);
         if (mask[get_ind3d(i1, i2, i3, n1, n2)] != 1)
         {
           order[get_ind3d(i1, i2, i3, n1, n2)] = 0;
@@ -251,15 +256,12 @@ void mixture(int *method, int *r1, int *r2, int *r3, int *mask, double *siq, int
         else
         {
           // prepare signal
-          for (i = 0; i < ngrad; i++)
+          for (i=0; i < ngrad; i++)
           {
             siiq[i] = siq[get_ind4d(i1, i2, i3, i, n1, n2, n3)];
           }
           // determine useful prime estimates
           mc0 = siind[get_ind4d(0, i1, i2, i3, mc+1, n1, n2)]; // order of modell 
-          lpar = (*method == 3) ? 3*mc0+2 : 3*mc0+1;
-          double par[lpar];
-          double x[lpar];
           gradind = siind[get_ind4d(1, i1, i2, i3, mc+1, n1, n2)];
           par[0] = log(-log(siq[get_ind4d(i1, i2, i3, gradind-1, n1, n2, n3)])*.8);
           par[1] = log(-log(siq[get_ind4d(i1, i2, i3, gradind-1, n1, n2, n3)])*.2);
@@ -270,6 +272,7 @@ void mixture(int *method, int *r1, int *r2, int *r3, int *mask, double *siq, int
             dir[1] = grad[get_ind2d(gradind-1, 1, ngrad)];
             dir[2] = grad[get_ind2d(gradind-1, 2, ngrad)];
             paroforient(dir, angles);    // INDEX????
+
             par[3*i + 2] = angles[0];
             par[3*i + 3] = angles[1]; 
 //            Rprintf("par[] %i, %f %f\n", 3*i+2, par[3*i+2], par[3*i+3]); 
@@ -281,28 +284,33 @@ void mixture(int *method, int *r1, int *r2, int *r3, int *mask, double *siq, int
           krit = R_PosInf;
           for (k = mc0; k > 0; k--)
           {
+            for (i = 0; i < 3*k+1; i++) cpar[i] = par[i];
+            //if (*method == 3) cpar[3*k+1] = ??;
+            lpar = (*method == 3) ? 3*k+2 : 3*k+1;
             // use log and exp to have free optim problem
-            if (k>1) for (i = 0; i < k-1; i++) par[3*i+4] = -log(k-i-1.); // par[3*(2:k)-1] <- -log((k-1):1)
-
+            if (k>1) for (i = 0; i < k-1; i++) cpar[3*i+4] = -log(k-i-1.); // par[3*(2:k)-1] <- -log((k-1):1)
             optimex myoptimpar;
             myoptimpar.ngrad = ngrad;
-            myoptimpar.siq = siq;
+            myoptimpar.siq = siiq;
             myoptimpar.grad = grad;
+
 
             switch (*method)
             { // R code guarantees method is 1, 2, 3
               case 1:
                 myoptimpar.p = 0; // unused here
-                nmmin(lpar, par, x, &Fmin, fn1,
+                nmmin(lpar, cpar, x, &Fmin, fn1,
                       &fail, R_NegInf, *reltol, &myoptimpar,
                       1.0, 0.5, 2.0, 0,
                       &fncount, *maxit);
+                break;
               case 2:
                 myoptimpar.p = *ep; // exp for Jian model
-                nmmin(lpar, par, x, &Fmin, fn1,
+                nmmin(lpar, cpar, x, &Fmin, fn1,
                       &fail, R_NegInf, *reltol, &myoptimpar,
                       1.0, 0.5, 2.0, 0,
                       &fncount, *maxit);
+                break;
 //              case 3:
 //                myoptimpar.p = 0; // unused here
 //                nmmin(lpar, par, x, Fmin, fn3,
@@ -328,7 +336,7 @@ void mixture(int *method, int *r1, int *r2, int *r3, int *mask, double *siq, int
               {
                 double zmm[k];  // declare maximum?
                 double zm[k-1]; // declare maximum?
-                for (i = 0; i < k-1; i++) zm[i] = x[3*i-2];
+                for (i = 0; i < k-1; i++) zm[i] = x[3*i+4];
                 getweights(k-1, zm, zmm);
                 for (i = 0; i < k; i++) mix[get_ind4d(i, i1, i2, i3, mc, n1, n2)] = zmm[i];
               }
@@ -336,11 +344,16 @@ void mixture(int *method, int *r1, int *r2, int *r3, int *mask, double *siq, int
               for (i = 0; i < k; i++)
               {
                 double theta = x[3*i+2];
-                if (theta < 0) theta += M_PI; // define pi!
-                if (theta > M_PI) theta -= M_PI; // define pi!
-                double phi = x[3*i+2];
-                if (phi < 0) phi += M_2PI; // define pi!
-                if (phi > M_2PI) phi -= M_2PI; // define pi!
+                while (theta < 0) 
+                {
+                //  Rprintf("theta %f %f", theta, M_PI); 
+                  theta += M_PI;
+                //  Rprintf("theta %f\n", theta); 
+                }
+                while (theta > M_PI) theta -= M_PI;
+                double phi = x[3*i+3];
+                while (phi < 0) phi += M_2PI;
+                while (phi > M_2PI) phi -= M_2PI;
                 orient[get_ind5d(0, i, i1, i2, i3, 2, mc, n1, n2)] = theta;
                 orient[get_ind5d(1, i, i1, i2, i3, 2, mc, n1, n2)] = phi;
               }
@@ -352,5 +365,10 @@ void mixture(int *method, int *r1, int *r2, int *r3, int *mask, double *siq, int
       }
     }
   }
+//  gettimeofday(&tp1, &tzp);
+//  gettimeofday(&tp2, &tzp);
+//  if (tp1.tv_usec > tp2.tv_usec) tp2.tv_usec += 1000000;
+//  timm += tp2.tv_usec - tp1.tv_usec;
+//  Rprintf("zeit %f\n", timm/1000000.);
   return;
 }

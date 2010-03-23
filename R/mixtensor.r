@@ -135,11 +135,11 @@ setMethod("dwiMixtensor.old","dtiData",function(object, maxcomp=2, p=40, maxneig
   ddim <- object@ddim
   s0ind <- object@s0ind
   ns0 <- length(s0ind)
-  sdcoef <- object@sdcoef
-  if(all(sdcoef==0)) {
-    cat("No parameters for model of error standard deviation found\n estimating these parameters\n You may prefer to run sdpar before calling dtiTensor")
-    sdcoef <- sdpar(object,interactive=FALSE)@sdcoef
-  }
+#  sdcoef <- object@sdcoef
+#  if(all(sdcoef==0)) {
+#    cat("No parameters for model of error standard deviation found\n estimating these parameters\n You may prefer to run sdpar before calling dtiTensor")
+#    sdcoef <- sdpar(object,interactive=FALSE)@sdcoef
+#  }
   z <- .Fortran("outlier",
                 as.integer(object@si),
                 as.integer(prod(ddim)),
@@ -182,7 +182,7 @@ setMethod("dwiMixtensor.old","dtiData",function(object, maxcomp=2, p=40, maxneig
   swghts <- 1/(1:maxneighb)
   for(i1 in 1:n1) for(i2 in 1:n2) for(i3 in 1:n3){
      if(mask[i1,i2,i3]){
-   cat("voxel",i1,i2,i3,"\n")
+ #  cat("voxel",i1,i2,i3,"\n")
 # smooth the si's by weighted nearest neighbors 
 # to gain more stable locations of minima
      smsi <- .Fortran("smsi",
@@ -206,11 +206,11 @@ setMethod("dwiMixtensor.old","dtiData",function(object, maxcomp=2, p=40, maxneig
      krit <- Inf
      for(k in mc0:1){
         if(k>1) par[3*(2:k)-1] <- -log((k-1):1)
-        lpar <- length(par);
+        lpar <- 3*k+1;
         z <-switch(method,
                   "mixtensor" = .C("mixtensor",
                                    as.integer(lpar),
-                                   as.double(par),
+                                   as.double(par[1:(3*k+1)]),
                                    par = double(lpar),
                                    as.integer(ngrad0),
                                    as.double(siq[i1,i2,i3,]),
@@ -237,7 +237,7 @@ setMethod("dwiMixtensor.old","dtiData",function(object, maxcomp=2, p=40, maxneig
            if(method=="Jian2") p[i1,i2,i3] <- z$par[length(z$par)]
        }
      }
-   sigma2[i1,i2,i3] <- rss/(ngrad-3*mc0-1)
+   sigma2[i1,i2,i3] <- rss/(ngrad0-3*mc0-1)
 #   cat("order",order[i1,i2,i3],"\n")
 #   cat("error variance",sigma2[i1,i2,i3]*s0[i1,i2,i3]^2,"\n")
 #   cat("ev",c(exp(lev[1,i1,i2,i3]),0,0)+exp(lev[2,i1,i2,i3]),"\n")
@@ -288,6 +288,10 @@ setGeneric("dwiMixtensor", function(object,  ...) standardGeneric("dwiMixtensor"
 setMethod("dwiMixtensor", "dtiData", function(object, maxcomp=2, p=2, maxneighb=7, method="mixtensor", reltol=1e-8, maxit=5000) {
 
   cat("entering method dwiMixtensor\n")
+
+  if (maxcomp > 3) {
+    stop("maximum number of tensor components is 3\n");
+  }
   args <- sys.call(-1)
   args <- c(object@call, args)
   ngrad <- object@ngrad
