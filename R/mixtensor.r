@@ -149,7 +149,7 @@ setMethod("dwiMixtensor.old","dtiData",function(object, maxcomp=2, p=40, maxneig
                 si=integer(prod(ddim)*ngrad),
                 index=integer(prod(ddim)),
                 lindex=integer(1),
-                DUPL=FALSE,
+                DUP=FALSE,
                 PACKAGE="dti")[c("si","index","lindex")]
   si <- array(z$si,c(ddim,ngrad))
   index <- if(z$lindex>0) z$index[1:z$lindex] else numeric(0)
@@ -192,7 +192,7 @@ setMethod("dwiMixtensor.old","dtiData",function(object, maxcomp=2, p=40, maxneig
                       as.integer(maxneighb),
                       as.double(swghts),
                       smsi=double(ngrad0),
-                      DUPL=FALSE,
+                      DUP=FALSE,
                       PACKAGE="dti")$smsi
 #     z <- locmin(si[i1,i2,i3,],sneighbors,grad)
      z <- locmin(smsi,sneighbors,grad)
@@ -310,7 +310,7 @@ setMethod("dwiMixtensor", "dtiData", function(object, maxcomp=2, p=2, maxneighb=
                 si      = integer(prod(ddim)*ngrad),
                 index   = integer(prod(ddim)),
                 lindex  = integer(1),
-                DUPL    = FALSE,
+                DUP   = FALSE,
                 PACKAGE = "dti")[c("si","index","lindex")]
   si <- array(z$si, c(ddim, ngrad))
   index <- if (z$lindex>0) z$index[1:z$lindex] else numeric(0)
