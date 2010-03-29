@@ -91,6 +91,7 @@ ngrad <- dim(grad)[1]
                 erg = double(1),
                 PACKAGE="dti")$erg
 }
+
 mfun2 <- function(par,siq,grad,ep=50){
 lpar <- length(par)
 m <- (lpar-1)/3
@@ -208,16 +209,17 @@ setMethod("dwiMixtensor.old","dtiData",function(object, maxcomp=2, p=40, maxneig
         if(k>1) par[3*(2:k)-1] <- -log((k-1):1)
         lpar <- 3*k+1;
         z <-switch(method,
-                  "mixtensor" = .C("mixtensor",
-                                   as.integer(lpar),
-                                   as.double(par[1:(3*k+1)]),
-                                   par = double(lpar),
-                                   as.integer(ngrad0),
-                                   as.double(siq[i1,i2,i3,]),
-                                   as.double(as.matrix(grad)),
-                                   as.integer(maxit),
-                                   as.double(reltol),
-                                   value = as.double(1))[c("par", "value")],
+                  "mixtensor" =  optim(par[1:(3*k+1)],mfun,siq=siq[i1,i2,i3,],grad=grad,control=list(maxit=maxit,reltol=reltol)),
+#                  "mixtensor" = .C("mixtensor",
+#                                   as.integer(lpar),
+#                                   as.double(par[1:(3*k+1)]),
+#                                   par = double(lpar),
+#                                   as.integer(ngrad0),
+#                                   as.double(siq[i1,i2,i3,]),
+#                                   as.double(as.matrix(grad)),
+#                                   as.integer(maxit),
+#                                   as.double(reltol),
+#                                   value = as.double(1))[c("par", "value")],
                  "Jian"       = optim(par[1:(3*k+1)],mfun2,siq=siq[i1,i2,i3,],grad=grad,ep=p,control=list(maxit=maxit,reltol=reltol)),
                  "Jian2"      = optim(c(par[1:(3*k+1)],25),mfun3,siq=siq[i1,i2,i3,],grad=grad,control=list(maxit=maxit,reltol=reltol)))
         rss <- min(z$value,rss)
