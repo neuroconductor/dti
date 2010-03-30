@@ -1,4 +1,4 @@
-tracking <- function(obj,  ...) cat("Selection of fibers is not implemented for this class:",class(obj),"\n")
+selectFibers <- function(obj,  ...) cat("Selection of fibers is not implemented for this class:",class(obj),"\n")
 
 setGeneric("selectFibers", function(obj,  ...) standardGeneric("selectFibers"))
 
