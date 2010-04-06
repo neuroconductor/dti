@@ -3,9 +3,8 @@
       integer m,lpar,ngrad
       real*8 par(lpar),siq(ngrad),grad(3,ngrad),z(ngrad,m),erg
       integer i,j,i3,ind(10),mode
-      real*8 c1,w(m),sw,sth,z1,p0,p1,d1,d2,d3,dnrm2,
+      real*8 c1,w(m),sw,sth,z1,p0,p1,d1,d2,d3,
      1       work1(ngrad),work2(10)
-      external dnrm2
       c1 = exp(par(1))
       sw = 0
       DO i = 1,m
