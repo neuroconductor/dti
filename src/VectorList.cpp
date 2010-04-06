@@ -44,7 +44,7 @@ void VectorList::add_list(VectorList &addL)
 {
 	if (addL.getLength() >= 2*minLength)
 	{
-		Vector *nan = new Vector(0., NAN, 0.);
+		Vector *nan = new Vector(0., NaN, 0.);
 		addL.add_at_start(*nan);
 		
 		int i;
