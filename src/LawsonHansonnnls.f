@@ -68,6 +68,11 @@ C     ------------------------------------------------------------------
       endif
       ITER=0
       ITMAX=3*N 
+      IZMAX=1
+      JJ=1
+C
+C  last two lines to avoid compiler warnings only (may be used uniinitialized)
+C
 C   
 C                    INITIALIZE THE ARRAYS INDEX() AND X(). 
 C   

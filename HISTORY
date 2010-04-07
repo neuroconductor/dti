@@ -1,5 +1,6 @@
 2010-04-07 version 0.9-1
   - alternative dwiMixtensor implementation using partial nonlinear models
+  - bugfix in c++ code 
   - bug-fix in Makevars (missing newline)
 
 2010-03-04 version 0.9-1
