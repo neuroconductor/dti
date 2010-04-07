@@ -10,7 +10,7 @@
  The method estimates, in each voxel, a mixture of radial symmetric tensors from the DWI data contained in an object of class \code{"dtiData"}.
 }
 \usage{
-  \S4method{dwiMixtensor}{dtiData}(object, maxcomp=2, p=40, maxneighb=7, method="mixtensor", reltol=1e-8, maxit=5000)
+  \S4method{dwiMixtensor}{dtiData}(object, maxcomp=2, p=2, maxneighb=7, method="mixtensor", reltol=1e-8, maxit=5000)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

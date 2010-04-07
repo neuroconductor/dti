@@ -1,3 +1,7 @@
+2010-04-07 version 0.9-1
+  - alternative dwiMixtensor implementation using partial nonlinear models
+  - bug-fix in Makevars (missing newline)
+
 2010-03-04 version 0.9-1
   - dwiMixtensor re-implemented in C to run faster
 
