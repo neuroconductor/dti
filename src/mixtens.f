@@ -235,7 +235,7 @@ C  now search for minima of sms (or weighted sms
                   IF(k.lt.m) THEN
                      DO i=1,ngrad
                         w=dgrad(i,imin)
-                        if(w.lt.maxc) THEN
+                        if(w.gt.maxc) THEN
                            sms(i)=1d40
                         ELSE
                            sms(i)=sms(i)/(1.d0-w*w)
