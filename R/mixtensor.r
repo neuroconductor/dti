@@ -44,7 +44,33 @@ locmin2 <- function(si, sneighbors){
     si2[ind] <- x[ind]
     si2
   }
-  s <- apply(si, 1:3, minsi, sneighbors)
+  apply(si, 1:3, minsi, sneighbors)
+}
+
+getsiind <- function(si,sneighbors,grad,maxcomp=3,maxc=.866){
+# assumes dim(grad) == c(ngrad,3)
+# assumes dim(si) == c(n1,n2,n3,ngrad)
+# SO removed
+ngrad <- dim(grad)[1]
+dgrad <- matrix(abs(grad%*%t(grad)),ngrad,ngrad)
+dgrad <- dgrad/max(dgrad)
+# this provides a matrix of 1-cos(alpha) where alpha
+# is the angle between gradient directions
+array(.Fortran("getsiind",
+         as.double(aperm(si,c(4,1:3))),
+         as.integer(ngrad),
+         as.integer(dim(si)[1]),
+         as.integer(dim(si)[2]),
+         as.integer(dim(si)[3]),
+         as.integer(sneighbors),
+         as.integer(dim(sneighbors)[1]),
+         as.integer(maxcomp),
+         as.double(maxc),
+         as.double(dgrad),
+         double(ngrad),
+         siind=integer((maxorder+1)*prod(dim(si)[-1])),
+         as.integer(maxorder+1),
+         PACKAGE="dti")$siind,c(maxorder+1,dim(si)[-1]))
 }
 
 paroforient <- function(dir){
@@ -335,13 +361,18 @@ setMethod("dwiMixtensor", "dtiData", function(object, maxcomp=2, p=2, maxneighb=
   mask <- s0 > 0
   grad <- t(object@gradient[,-s0ind])
   sneighbors <- neighbors(grad, maxneighb)
-  s1 <- locmin2(siq, sneighbors) # NOTE! dim(s1) == c(ngrad-length(s0ind), ddim)
-  ordersi <- function(x, ncomp) order(x)[1:ncomp]
-  siind <- numeric( (maxcomp + 1) * prod(ddim))
-  dim(siind) <- c( maxcomp + 1, ddim)
-  siind[-1,,,] <- apply(s1, 2:4, ordersi, maxcomp)
-  countmin <- function(x, ncomp) min(sum(x < 1), ncomp)
-  siind[1,,,] <- apply(s1, 2:4, countmin, maxcomp)
+#  s1 <- locmin2(siq, sneighbors) # NOTE! dim(s1) == c(ngrad-length(s0ind), ddim)
+#  ordersi <- function(x, ncomp) order(x)[1:ncomp]
+#  siind <- numeric( (maxcomp + 1) * prod(ddim))
+#  dim(siind) <- c( maxcomp + 1, ddim)
+#  siind[-1,,,] <- apply(s1, 2:4, ordersi, maxcomp)
+#  countmin <- function(x, ncomp) min(sum(x < 1), ncomp)
+#  siind[1,,,] <- apply(s1, 2:4, countmin, maxcomp)
+   siind <- getsiind(siq,sneighbors,grad,maxcomp,maxc=.866)
+#
+#  siind[1,,,] contains number of potential directions 
+#  siind[-1,,,] contains indices of grad corresponding to these directions
+#
   cat("done\n")
 
   cat("optimizing ... ")

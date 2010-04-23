@@ -29,6 +29,9 @@ C
       END IF
       RETURN
       END 
+C
+C __________________________________________________________________
+C
       subroutine mfun(par,siq,grad,m,lpar,ngrad,z,erg)
       implicit logical (a-z)
       integer m,lpar,ngrad
@@ -67,6 +70,9 @@ C compute  ||z||^2
       erg = dnrm2(ngrad,z,1)
       RETURN
       END 
+C
+C __________________________________________________________________
+C
       subroutine mfun0(par,siq,grad,m,lpar,ngrad,z,erg)
       implicit logical (a-z)
       integer m,lpar,ngrad
@@ -103,6 +109,9 @@ C compute  ||sig-z||^2
       erg = z2
       RETURN
       END 
+C
+C __________________________________________________________________
+C
       subroutine mfun2(par,siq,grad,m,p,lpar,ngrad,z,erg)
       implicit logical (a-z)
       integer m,lpar,ngrad
@@ -139,6 +148,9 @@ C compute  ||sig-z||^2
       erg = z2
       RETURN
       END 
+C
+C __________________________________________________________________
+C
       subroutine smsi(si,n,snind,nsn,w,sms)
       implicit logical (a-z)
       integer n,nsn,snind(nsn,n)
@@ -155,6 +167,84 @@ C compute  ||sig-z||^2
             z=z+w(j)*si(snind(j,i))
          END DO
          sms(i)=z/sw
+      END DO
+      RETURN
+      END
+C
+C __________________________________________________________________
+C
+      subroutine smsiw(si,n,snind,nsn,dgrad,sms)
+      implicit logical (a-z)
+      integer n,nsn,snind(nsn,n)
+      real*8 si(n),sms(n),dgrad(n,n)
+      integer i,j,ji
+      real*8 z,sw,w
+      DO i=1,n
+         z=0.d0
+         sw=0.d0
+         DO j=1,nsn
+            ji=snind(j,i)
+            w=dgrad(ji,i)
+            z=z+w*si(ji)
+            sw=sw+w
+         END DO
+         sms(i)=z/sw
+      END DO
+      RETURN
+      END
+C
+C __________________________________________________________________
+C
+      subroutine getsiind(si,ngrad,n1,n2,n3,snind,nsn,m,maxc,dgrad,
+     1                    sms,siind,ns)
+C
+C  compute diagnostics for initial estimates in siind
+C  siind(1,i1,i2,i3) will contain the model order 
+C  
+C  si     - array of si-values
+C  snind  - array of indices of nearest neighbors directions
+C  m      - model order
+C  maxc   - maximum of cos(angle between directions)
+C  dgrad  - matrix of pairwise cos of gradient directions
+C  sms    - vector for smoothed si
+C  siind  - array of indices (output)
+C
+      implicit logical (a-z)
+      integer n1,n2,n3,ngrad,nsn,ns,snind(nsn,ngrad),
+     1        siind(ns,n1,n2,n3),m
+      real*8 si(ngrad,n1,n2,n3),sms(ngrad),dgrad(ngrad,ngrad),maxc
+      integer i,i1,i2,i3,imin,k
+      real*8 zmin,w
+      DO i1=1,n1
+         DO i2=1,n2
+            DO i3=1,n3
+C  first smooth the si's
+               call smsiw(si(1,i1,i2,i3),ngrad,snind,nsn,dgrad,sms)
+C  now search for minima of sms (or weighted sms
+               siind(1,i1,i2,i3)=m
+               DO k=1,m
+                  imin=1
+                  zmin=sms(1)
+                  DO i=2,ngrad
+                     if(sms(i).lt.zmin) THEN
+                        zmin=sms(i)
+                        imin=i
+                     END IF
+                  END DO
+                  siind(k+1,i1,i2,i3)=imin
+                  IF(k.lt.m) THEN
+                     DO i=1,ngrad
+                        w=dgrad(i,imin)
+                        if(w.lt.maxc) THEN
+                           sms(i)=1d40
+                        ELSE
+                           sms(i)=sms(i)/(1.d0-w*w)
+                        END IF
+                     END DO
+                  END IF
+               END DO
+            END DO
+         END DO
       END DO
       RETURN
       END
