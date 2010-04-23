@@ -68,9 +68,9 @@ array(.Fortran("getsiind",
          as.double(maxc),
          as.double(dgrad),
          double(ngrad),
-         siind=integer((maxorder+1)*prod(dim(si)[-1])),
-         as.integer(maxorder+1),
-         PACKAGE="dti")$siind,c(maxorder+1,dim(si)[-1]))
+         siind=integer((maxcomp+1)*prod(dim(si)[-1])),
+         as.integer(maxcomp+1),
+         PACKAGE="dti")$siind,c(maxcomp+1,dim(si)[-4]))
 }
 
 paroforient <- function(dir){
