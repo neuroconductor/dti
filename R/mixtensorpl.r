@@ -90,6 +90,7 @@ setMethod("dwiMixtensorpl","dtiData",function(object, maxcomp=2, p=40, maxneighb
 #
   grad <- t(object@gradient[,-s0ind])
   sneighbors <- neighbors(grad,maxneighb)
+  siind <- getsiind(siq,sneighbors,grad,maxcomp,maxc=.866)
   order <- array(maxcomp,ddim)
   lev <- array(as.integer(0),c(2,ddim))
 #  logarithmic eigen values
@@ -99,30 +100,20 @@ setMethod("dwiMixtensorpl","dtiData",function(object, maxcomp=2, p=40, maxneighb
   n1 <- ddim[1]
   n2 <- ddim[2]
   n3 <- ddim[3]
-  swghts <- 1/(1:maxneighb)
   igc <- 0
   for(i1 in 1:n1) for(i2 in 1:n2) for(i3 in 1:n3){
      if(mask[i1,i2,i3]){
- #  cat("voxel",i1,i2,i3,"\n")
-# smooth the si's by weighted nearest neighbors 
-# to gain more stable locations of minima
-     smsi <- .Fortran("smsi",
-                      as.double(si[i1,i2,i3,]),
-                      as.integer(ngrad0),
-                      as.integer(sneighbors),
-                      as.integer(maxneighb),
-                      as.double(swghts),
-                      smsi=double(ngrad0),
-                      DUP=FALSE,
-                      PACKAGE="dti")$smsi
-#     z <- locmin(si[i1,i2,i3,],sneighbors,grad)
-     z <- locmin(smsi,sneighbors,grad)
-     mc0 <- min(maxcomp,dim(z$grad)[1])
-#     cat("mc0",mc0,"\n")
+     mc0 <- maxcomp
      ord <- mc0+1
-     for(j in 1:mc0) orient[,j,i1,i2,i3] <- paroforient(z$grad[j,])
+     for(j in 1:mc0) orient[,j,i1,i2,i3] <- paroforient(grad[siind[j+1,i1,i2,i3],])
+#
+#   these are the gradient vectors corresponding to minima in sherical coordinates
+#
      par <- numeric(2*mc0+1)
-     lev[,i1,i2,i3] <- par[1] <- log(-log(siq[i1,i2,i3,z$ind[1]])*c(.8))
+     lev[,i1,i2,i3] <- par[1] <- log(-log(siq[i1,i2,i3,siind[2,i1,i2,i3]])*c(.8))
+#
+#  these is an initial estimate for the eigen-value parameter
+#
      par[rep(2*(1:mc0),rep(2,mc0))+c(0,1)] <- orient[,1:mc0,i1,i2,i3] 
      rss <- Inf
      krit <- Inf
