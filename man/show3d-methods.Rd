@@ -14,17 +14,17 @@
   The function provides 3D visualization of \code{"dtiData"}, \code{"dtiTensor"}, \code{"dwiQball"} and \code{"dtiIndices"} objects using the \code{"rgl"}-package. Functionality of the rgl-package allows to rotate and zoom the displayed object.
 }
 \usage{
-  \S4method{show3d}{dtiData}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, scale=.5, bgcolor="black", 
+  \S4method{show3d}{dtiData}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, scale=.75, bgcolor="black", 
 add=FALSE, maxobjects=729, what="ADC", minalpha=1, nn=1, normalize=FALSE, box=FALSE, title=FALSE, \dots)
   \S4method{show3d}{dtiTensor}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, method=1, falevel=0.3, 
-level=0, scale=.5, bgcolor="black", add=FALSE, subdivide=2, maxobjects=729, what="tensor", 
+level=0, scale=.75, bgcolor="black", add=FALSE, subdivide=2, maxobjects=729, what="tensor", 
 odfscale = 3, minalpha=.25, normalize=NULL, box=FALSE, title=FALSE,\dots)
   \S4method{show3d}{dtiIndices}(obj, index="FA", nx=NULL, ny=NULL, nz=NULL, center=NULL, method=1, 
 falevel=0, bgcolor="black", add=FALSE, lwd=1, box=FALSE, title=FALSE, \dots)
-  \S4method{show3d}{dwiMixtensor}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, level=0, scale=.45, 
+  \S4method{show3d}{dwiMixtensor}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, level=0, scale=.75, 
 bgcolor="black", add=FALSE, subdivide=3, maxobjects=729, what="ODF", odfscale=3, minalpha=1, 
 lwd=3, box=FALSE, title=FALSE, \dots) 
- \S4method{show3d}{dwiQball}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, level=0, scale=0.5, 
+ \S4method{show3d}{dwiQball}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, level=0, scale=0.75, 
  odfscale=3, bgcolor="black", add=FALSE, subdivide=3, maxobjects=729, minalpha=1, box=FALSE, title=FALSE, \dots)
   \S4method{show3d}{dwiFiber}(obj, add=FALSE, bgcolor="black", box=FALSE, title=FALSE, lwd=1, \dots)
 }

@@ -8,7 +8,7 @@ dwiQball <- function(object,  ...) cat("No DWI Q-ball calculation defined for th
 
 setGeneric("dwiQball", function(object,  ...) standardGeneric("dwiQball"))
 
-setMethod("dwiQball","dtiData",function(object,what="ODF",order=4,lambda=0){
+setMethod("dwiQball","dtiData",function(object,what="wODF",order=4,lambda=0){
   args <- sys.call(-1)
   args <- c(object@call,args)
   if (!(what %in% c("ODF","wODF","aODF","ADC"))) {
