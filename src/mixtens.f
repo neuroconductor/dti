@@ -32,6 +32,41 @@ C
 C
 C __________________________________________________________________
 C
+      subroutine mfunpl2(par,siq,grad,m,p,lpar,ngrad,z,w,work1,erg)
+      implicit logical (a-z)
+      integer m,lpar,ngrad
+      real*8 par(lpar),siq(ngrad),grad(3,ngrad),z(ngrad,m),erg,p
+      integer i,j,i3,ind(10),mode
+      real*8 c1,c2,w(m),sw,sth,z1,p0,p1,d1,d2,d3,
+     1       work1(ngrad),work2(10)
+      c1 = par(1)
+      c2 = par(2)
+      sw = 0
+      DO i = 1,m
+         i3=2*i+1
+         p0=par(i3)
+         p1=par(i3+1)
+         sth = sin(p0)
+         d1 = sth*cos(p1)
+         d2 = sth*sin(p1)
+         d3 = cos(p0)
+         DO j = 1,ngrad
+            z1 = d1*grad(1,j)+d2*grad(2,j)+d3*grad(3,j)
+            z(j,i) = exp(-p*log(c1+c2*z1*z1))
+         END DO
+      END DO
+C  
+C    siq will be replaced, need to copy it if C-version of optim is used
+C
+      call nnls(z,ngrad,ngrad,m,siq,w,erg,work2,work1,ind,mode)
+      IF(mode.gt.1) THEN
+         call intpr("mode",4,mode,1)
+      END IF
+      RETURN
+      END 
+C
+C __________________________________________________________________
+C
       subroutine mfun(par,siq,grad,m,lpar,ngrad,z,erg)
       implicit logical (a-z)
       integer m,lpar,ngrad

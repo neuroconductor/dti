@@ -1,4 +1,7 @@
 mfunpl <- function(par,siq,grad){
+#
+#   evaluate rss for Mixtensor-model
+#
 lpar <- length(par)
 m <- (lpar-1)/2
 ngrad <- dim(grad)[1]
@@ -15,6 +18,9 @@ ngrad <- dim(grad)[1]
                 PACKAGE="dti")$erg
 }
 mfunplwghts <- function(par,siq,grad){
+#
+#   get weights for Mixtensor-model and extract parameters
+#
 lpar <- length(par)
 m <- (lpar-1)/2
 ngrad <- dim(grad)[1]
@@ -45,6 +51,62 @@ w<-.Fortran("mfunpl",as.double(par),
            par <- c(par[1],or[,1:ord])
 list(ord=ord,lev=lev,mix=mix,orient=or,par=par)
 }
+mfunpl <- function(par,siq,grad,p){
+#
+#   evaluate rss for Jian-model
+#
+lpar <- length(par)
+m <- (lpar-2)/2
+ngrad <- dim(grad)[1]
+.Fortran("mfunpl2",as.double(par),
+                as.double(siq),
+                as.double(t(grad)),
+                as.integer(m),
+                as.double(p),
+                as.integer(lpar),
+                as.integer(ngrad),
+                double(ngrad*m),
+                double(m),
+                double(ngrad),
+                erg = double(1),
+                PACKAGE="dti")$erg
+}
+mfunpl2wghts <- function(par,siq,grad,p){
+#
+#   get weights for Jian-model and extract parameters
+#
+lpar <- length(par)
+m <- (lpar-2)/2
+ngrad <- dim(grad)[1]
+w<-.Fortran("mfunpl2",as.double(par),
+                as.double(siq),
+                as.double(t(grad)),
+                as.integer(m),
+                as.double(p),
+                as.integer(lpar),
+                as.integer(ngrad),
+                double(ngrad*m),
+                w=double(m),
+                double(ngrad),
+                erg = double(1),
+                PACKAGE="dti")$w
+           o <- order(w,decreasing=TRUE)
+           ord <- sum(w>0)
+           if(ord<m){
+              o <- o[1:ord]
+           }
+           sw <- sum(w)
+           swp <- exp(p*log(sw))
+           lev <- c(p*swp*par[2],p*(swp*par[1]-1))
+           mix <- w[o]/sw 
+           or <- matrix(par[3:lpar],2,m)[,o,drop=FALSE]
+           or[1,or[1,]<0] <- or[1,or[1,]<0]+pi
+           or[1,or[1,]>pi] <- or[1,or[1,]>pi]-pi
+           or[2,or[2,]<0] <- or[2,or[2,]<0]+2*pi
+           or[2,or[2,]>2*pi] <- or[2,or[2,]>2*pi]-2*pi
+           par <- c(par[1],par[2],or[,1:ord])
+list(ord=ord,lev=lev,mix=mix,orient=or,par=par)
+}
 dwiMixtensorpl <- function(object, ...) cat("No dwiMixtensorpl calculation defined for this class:",class(object),"\n")
 
 setGeneric("dwiMixtensorpl", function(object,  ...) standardGeneric("dwiMixtensorpl"))
@@ -56,11 +118,6 @@ setMethod("dwiMixtensorpl","dtiData",function(object, maxcomp=2, p=40, maxneighb
   ddim <- object@ddim
   s0ind <- object@s0ind
   ns0 <- length(s0ind)
-#  sdcoef <- object@sdcoef
-#  if(all(sdcoef==0)) {
-#    cat("No parameters for model of error standard deviation found\n estimating these parameters\n You may prefer to run sdpar before calling dtiTensor")
-#    sdcoef <- sdpar(object,interactive=FALSE)@sdcoef
-#  }
   z <- .Fortran("outlier",
                 as.integer(object@si),
                 as.integer(prod(ddim)),
@@ -90,6 +147,9 @@ setMethod("dwiMixtensorpl","dtiData",function(object, maxcomp=2, p=40, maxneighb
 #
   grad <- t(object@gradient[,-s0ind])
   sneighbors <- neighbors(grad,maxneighb)
+#
+#   determine initial estimates for orientations 
+#
   siind <- getsiind(siq,sneighbors,grad,maxcomp,maxc=.866)
   order <- array(maxcomp,ddim)
   lev <- array(as.integer(0),c(2,ddim))
@@ -109,12 +169,23 @@ setMethod("dwiMixtensorpl","dtiData",function(object, maxcomp=2, p=40, maxneighb
 #
 #   these are the gradient vectors corresponding to minima in sherical coordinates
 #
+     if(method=="mixtensor"){
      par <- numeric(2*mc0+1)
-     lev[,i1,i2,i3] <- par[1] <- log(-log(siq[i1,i2,i3,siind[2,i1,i2,i3]])*c(.8))
+     lev[,i1,i2,i3] <-  log(-log(siq[i1,i2,i3,siind[2,i1,i2,i3]])*c(.8,.2))
+     par[1] <- lev[1,i1,i2,i3]
 #
 #  these is an initial estimate for the eigen-value parameter
 #
      par[rep(2*(1:mc0),rep(2,mc0))+c(0,1)] <- orient[,1:mc0,i1,i2,i3] 
+     } else {
+     par <- numeric(2*mc0+2)
+     lev[,i1,i2,i3] <- log(-log(siq[i1,i2,i3,siind[2,i1,i2,i3]])*c(.8,.2))
+     par[1:2] <- c((1+lev[2,i1,i2,i3]/p),lev[1,i1,i2,i3]/p)
+#
+#  these is an initial estimate for the eigen-value parameter
+#
+     par[rep(2*(1:mc0),rep(2,mc0))+c(0,1)] <- orient[,1:mc0,i1,i2,i3] 
+     }
      rss <- Inf
      krit <- Inf
      for(k in mc0:1){
@@ -122,14 +193,24 @@ setMethod("dwiMixtensorpl","dtiData",function(object, maxcomp=2, p=40, maxneighb
 #
 #  otherwise we would reanalyze a model
 #
-        lpar <- 2*k+1;
+        if(method=="mixtensor"){
+           lpar <- 2*k+1
+        } else {
+           lpar <- 2*k+2
+        }
         z <-switch(method,
                   "mixtensor" = optim(par[1:(2*k+1)],mfunpl,siq=siq[i1,i2,i3,],grad=grad,
+                   method=optmethod,control=list(maxit=maxit,reltol=reltol)),
+                  "Jian" = optim(par[1:(2*k+2)],mfunpl2,siq=siq[i1,i2,i3,],grad=grad,p=p,
                    method=optmethod,control=list(maxit=maxit,reltol=reltol))
 )
         value <- z$value 
         rss <- min(z$value,rss)
-        zz <- mfunplwghts(z$par[1:lpar],siq[i1,i2,i3,],grad)
+        if(method=="mixtensor"){
+           zz <- mfunplwghts(z$par[1:lpar],siq[i1,i2,i3,],grad)
+        } else {
+           zz <- mfunplwghts2(z$par[1:lpar],siq[i1,i2,i3,],grad,p=p)
+        }
         ord <- zz$ord
         ttt <- value+2*(3*ord+1)/(ngrad-3*maxcomp-1)*rss
         par <- zz$par
@@ -142,7 +223,6 @@ setMethod("dwiMixtensorpl","dtiData",function(object, maxcomp=2, p=40, maxneighb
            lev[,i1,i2,i3] <- zz$lev
            mix[,i1,i2,i3] <- if(ord==maxcomp) zz$mix else c(zz$mix,rep(0,maxcomp-ord))
            orient[,1:ord,i1,i2,i3] <- zz$orient
-           if(method=="Jian2") p[i1,i2,i3] <- z$par[length(z$par)]
        }
      }
    }
@@ -152,7 +232,6 @@ setMethod("dwiMixtensorpl","dtiData",function(object, maxcomp=2, p=40, maxneighb
 #   cat("ev",c(exp(lev[1,i1,i2,i3]),0,0)+exp(lev[2,i1,i2,i3]),"\n")
 #   cat("mix",mix[,i1,i2,i3],"\n")
 #   cat("orient",orient[,,i1,i2,i3],"\n")
-#   if(method=="Jian2") cat("p",p[i1,i2,i3],"\n") 
     if(igc<ngc){
        igc <- igc+1
     } else {

@@ -106,7 +106,7 @@ setMethod("show3d","dtiData", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,s
 
 ##############
 
-setMethod("show3d","dtiTensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,method=1,falevel=0.3,level=0,scale=.5,bgcolor="black",add=FALSE,subdivide=2,maxobjects=729,what="tensor",minalpha=.25,normalize=NULL,box=FALSE,title=FALSE,...){
+setMethod("show3d","dtiTensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,method=1,falevel=0.3,level=0,scale=.5,bgcolor="black",add=FALSE,subdivide=2,maxobjects=729,what="tensor",odfscale=3,minalpha=.25,normalize=NULL,box=FALSE,title=FALSE,...){
   if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
   if(!exists("icosa0")) data("polyeders")
   if(subdivide<0||subdivide>4) subdivide <- 3
@@ -199,9 +199,18 @@ setMethod("show3d","dtiTensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL
      radii <- sweep(radii,2,maxradii-minradii,"/")*scale
   } else {
     if (tolower(what)=="odf"){
-     mradii <- apply(radii,2,mean)
-     radii <- sweep(radii,2,mradii,"/")+level
-     radii <- radii/max(radii)*scale
+#
+#   use a sphere of radius level as baseline for the ODF
+#
+        radii <- radii+level
+#
+#   to display results in a form that the volumes are comparable,
+#   need volume elements around vertices that have volume proportional to radii,
+#   i.e. a radial extension of radii^(1/3)
+#   odfscale = 1 corresponds to using radii directly for ODF-values
+#   values inbetween are possible
+#
+        radii <- radii^(1/odfscale)*scale
      } else {
      radii <- (radii+level)/(max(radii)+level)*scale
      }
@@ -227,7 +236,7 @@ setMethod("show3d","dtiTensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL
   invisible(rgl.cur())
 })
 
-setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,level=0,scale=.45,bgcolor="black",add=FALSE,subdivide=3,maxobjects=729,what="ODF",maxexcent=10,minalpha=1,lwd=3,box=FALSE,title=FALSE,...){
+setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,level=0,scale=.45,bgcolor="black",add=FALSE,subdivide=3,maxobjects=729,what="ODF",odfscale=3,minalpha=1,lwd=3,box=FALSE,title=FALSE,...){
   if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
   if(!exists("icosa0")) data("polyeders")
   if(subdivide<0||subdivide>4) subdivide <- 3
@@ -278,7 +287,6 @@ setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=N
                     as.double(polyeder$vertices),
                     as.integer(polyeder$nv),
                     as.double(ev),
-                    as.double(maxexcent-1),
                     as.double(orient),
                     as.double(mix),
                     as.integer(order),
@@ -288,14 +296,18 @@ setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=N
                     DUP=FALSE,
                     PACKAGE="dti")$radii
   dim(radii) <- c(polyeder$nv,n)
-#  radii <- (radii+level)/(max(radii)+level)*scale
 #
-#   display in a form that the volumes are comparable,
-#   i.e. that the mean radii are constant
+#   use a sphere of radius level as baseline for the ODF
 #
-  mradii <- apply(radii,2,mean)
-  radii <- sweep(radii,2,mradii,"/")+level
-  radii <- radii/max(radii)*scale
+  radii <- radii+level
+#
+#   to display results in a form that the volumes are comparable,
+#   need volume elements around vertices that have volume proportional to radii,
+#   i.e. a radial extension of radii^(1/3)
+#   odfscale = 1 corresponds to using radii directly for ODF-values
+#   values inbetween are possible
+#
+  radii <- radii^(1/odfscale)*scale
   }
   if(toupper(what) %in% c("AXIS","BOTH")){
    gfa <- extract(obj,"gfa")$gfa
@@ -403,7 +415,7 @@ setMethod("show3d","dtiIndices",function(obj, index="FA", nx=NULL, ny=NULL, nz=N
 
 ##############
 
-setMethod("show3d","dwiQball", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,level=0,scale=0.5,bgcolor="black",add=FALSE,subdivide=3,maxobjects=729,minalpha=1,box=FALSE,title=FALSE,...){
+setMethod("show3d","dwiQball", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,level=0,scale=0.5,odfscale=3,bgcolor="black",add=FALSE,subdivide=3,maxobjects=729,minalpha=1,box=FALSE,title=FALSE,...){
   if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
   if(!exists("icosa0")) data("polyeders")
   if(subdivide<0||subdivide>4) subdivide <- 3
@@ -448,14 +460,23 @@ setMethod("show3d","dwiQball", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,
   polyeder <- switch(subdivide+1,icosa0,icosa1,icosa2,icosa3,icosa4)
   sphdesign <- design.spheven(obj@order,polyeder$vertices,obj@lambda)$design
   radii <- t(sphdesign)%*%sphcoef
-#  radii[radii<0] <- 0
   minradii <- pmin(0,apply(radii,2,min))
   radii <- sweep(radii,2,minradii,"-")
 #  avoid negative ODF's, otherwise scaling by volume produces
 #  strange results
   mradii <- apply(radii,2,mean)
+#
+#   rescale and use a sphere of radius level as baseline for the ODF
+#
   radii <- sweep(radii,2,mradii,"/")+level
-  radii <- radii/max(radii)*scale
+#
+#   to display results in a form that the volumes are comparable,
+#   need volume elements around vertices that have volume proportional to radii,
+#   i.e. a radial extension of radii^(1/3)
+#   odfscale = 1 corresponds to using radii directly for ODF-values
+#   values inbetween are possible
+#
+  radii <- radii^(1/odfscale)*scale
   if(!add) {
      open3d()
      par3d(...)

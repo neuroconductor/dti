@@ -14,11 +14,18 @@
   The function provides 3D visualization of \code{"dtiData"}, \code{"dtiTensor"}, \code{"dwiQball"} and \code{"dtiIndices"} objects using the \code{"rgl"}-package. Functionality of the rgl-package allows to rotate and zoom the displayed object.
 }
 \usage{
-  \S4method{show3d}{dtiData}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, scale=.5, bgcolor="black", add=FALSE, maxobjects=729, what="ADC", minalpha=1, nn=1, normalize=FALSE, box=FALSE, title=FALSE, \dots)
-  \S4method{show3d}{dtiTensor}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, method=1, falevel=0.3, level=0, scale=.5, bgcolor="black", add=FALSE, subdivide=2, maxobjects=729, what="tensor", minalpha=.25, normalize=NULL, box=FALSE, title=FALSE,\dots)
-  \S4method{show3d}{dtiIndices}(obj, index="FA", nx=NULL, ny=NULL, nz=NULL, center=NULL, method=1, falevel=0, bgcolor="black", add=FALSE, lwd=1, box=FALSE, title=FALSE, \dots)
-  \S4method{show3d}{dwiMixtensor}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, level=0, scale=.45, bgcolor="black", add=FALSE, subdivide=3, maxobjects=729, what="ODF", maxexcent=10, minalpha=1, lwd=3, box=FALSE, title=FALSE, \dots) 
- \S4method{show3d}{dwiQball}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, level=0, scale=0.5, bgcolor="black", add=FALSE, subdivide=3, maxobjects=729, minalpha=1, box=FALSE, title=FALSE, \dots)
+  \S4method{show3d}{dtiData}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, scale=.5, bgcolor="black", 
+add=FALSE, maxobjects=729, what="ADC", minalpha=1, nn=1, normalize=FALSE, box=FALSE, title=FALSE, \dots)
+  \S4method{show3d}{dtiTensor}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, method=1, falevel=0.3, 
+level=0, scale=.5, bgcolor="black", add=FALSE, subdivide=2, maxobjects=729, what="tensor", 
+odfscale = 3, minalpha=.25, normalize=NULL, box=FALSE, title=FALSE,\dots)
+  \S4method{show3d}{dtiIndices}(obj, index="FA", nx=NULL, ny=NULL, nz=NULL, center=NULL, method=1, 
+falevel=0, bgcolor="black", add=FALSE, lwd=1, box=FALSE, title=FALSE, \dots)
+  \S4method{show3d}{dwiMixtensor}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, level=0, scale=.45, 
+bgcolor="black", add=FALSE, subdivide=3, maxobjects=729, what="ODF", odfscale=3, minalpha=1, 
+lwd=3, box=FALSE, title=FALSE, \dots) 
+ \S4method{show3d}{dwiQball}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, level=0, scale=0.5, 
+ odfscale=3, bgcolor="black", add=FALSE, subdivide=3, maxobjects=729, minalpha=1, box=FALSE, title=FALSE, \dots)
   \S4method{show3d}{dwiFiber}(obj, add=FALSE, bgcolor="black", box=FALSE, title=FALSE, lwd=1, \dots)
 }
 \arguments{
@@ -45,8 +52,12 @@
 For dwiMixtensor-objects possible specifications are \code{"ODF"}, \code{"Axis"}
 and \code{"Both"}, with the latter superposing the estimated main directions on the estimated ODF. For \code{"Axis"}(and \code{"Both"}) the length of the axis corresponds to the mixture weights.
 For dtiData-objects choices are either \code{"data"}  or \code{"ADC"}.}
-\item{maxexcent}{Maximum of excentricity used in visualisation. The standard value (10) corresponds to a
- generalized FA of 0.9.}
+\item{odfscale}{Determines visualisation of the Orientation density function (ODF). For \code{odfscale=3} the
+  ODF values are rescaled such that the volume of the displayes objects is constant. \code{odfscale=1} uses
+  the values of the ODF as radii in the corrsponding vertice direction of the specified polyhedron. This
+  can lead to extremely large volumes in case of one mixture component with high excentricity. 
+  values of \code{odfscale} inbetween 1 and 3 are possible and allow to balance between volume based
+  visualization and emphazising highly structured ODF's.  }
 \item{lwd}{Linewidth for visualization of dtiIndices objects.}
 \item{index}{Eiter \code{"FA"} for fractional anisotropy index or 
 \code{"GA"} for geodesic anisotropy index.}

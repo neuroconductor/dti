@@ -361,24 +361,15 @@ setMethod("dwiMixtensor", "dtiData", function(object, maxcomp=2, p=2, maxneighb=
   mask <- s0 > 0
   grad <- t(object@gradient[,-s0ind])
   sneighbors <- neighbors(grad, maxneighb)
-#  s1 <- locmin2(siq, sneighbors) # NOTE! dim(s1) == c(ngrad-length(s0ind), ddim)
-#  ordersi <- function(x, ncomp) order(x)[1:ncomp]
-#  siind <- numeric( (maxcomp + 1) * prod(ddim))
-#  dim(siind) <- c( maxcomp + 1, ddim)
-#  siind[-1,,,] <- apply(s1, 2:4, ordersi, maxcomp)
-#  countmin <- function(x, ncomp) min(sum(x < 1), ncomp)
-#  siind[1,,,] <- apply(s1, 2:4, countmin, maxcomp)
-   siind <- getsiind(siq,sneighbors,grad,maxcomp,maxc=.866)
 #
-#  siind[1,,,] contains number of potential directions 
-#  siind[-1,,,] contains indices of grad corresponding to these directions
+#   determine initial estimates for orientations 
 #
+  siind <- getsiind(siq,sneighbors,grad,maxcomp,maxc=.866)
   cat("done\n")
 
   cat("optimizing ... ")
   mm <- switch(method, "mixtensor" = 1,
                        "Jian"      = 2,
-#                       "Jian2"     = 3,
                        1)
   pl <- if (method == "Jian2") prod(ddim) else 1;
 
