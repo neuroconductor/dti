@@ -5,7 +5,8 @@
       integer i,j,i3,ind(10),mode
       real*8 c1,w(m),sw,sth,z1,p0,p1,d1,d2,d3,
      1       work1(ngrad),work2(10)
-      c1 = exp(par(1))
+C      c1 = exp(par(1))
+      c1 = par(1)
       sw = 0
       DO i = 1,m
          i3=2*i
@@ -32,6 +33,75 @@ C
 C
 C __________________________________________________________________
 C
+      subroutine mfunplgr(par,siq,grad,m,lpar,ngrad,z,w,work1,erg,
+     1                    fv,dfv,qv,dqv,dh)
+      implicit logical (a-z)
+      integer m,lpar,ngrad
+      real*8 par(lpar),siq(ngrad),grad(3,ngrad),z(ngrad,m),erg,
+     1   fv(ngrad),dfv(lpar,ngrad),qv(m,ngrad),dqv(2,m,ngrad),dh(lpar)
+      integer i,j,i3,ind(10),mode
+      real*8 c1,w(m),sw,sth,cth,spsi,cpsi,z1,p0,p1,d1,d2,d3,
+     1       work1(ngrad),work2(10)
+      c1 = par(1)
+      sw = 0
+      DO i = 1,m
+         i3=2*i
+         p0=par(i3)
+         p1=par(i3+1)
+         sth = sin(p0)
+         cth = cos(p0)
+         spsi = sin(p1)
+         cpsi = cos(p1)
+         d1 = sth*cpsi
+         d2 = sth*spsi
+         d3 = cth
+         DO j = 1,ngrad
+            z1 = d1*grad(1,j)+d2*grad(2,j)+d3*grad(3,j)
+            z(j,i) = exp(-c1*z1*z1)
+            qv(i,j) = z1*z1
+            dqv(1,i,j) = 2.d0*(cth*(cpsi*grad(1,j)+spsi*grad(2,j))-
+     1                         sth*grad(3,j))*qv(i,j)
+            dqv(2,i,j) = 2.d0*sth*(cpsi*grad(2,j)-spsi*grad(1,j))*
+     1                         qv(i,j)
+         END DO
+      END DO
+C  
+C    siq will be replaced, need to copy it if C-version of optim is used
+C
+      call nnls(z,ngrad,ngrad,m,siq,w,erg,work2,work1,ind,mode)
+      IF(mode.gt.1) THEN
+         call intpr("mode",4,mode,1)
+      END IF
+C
+C   now compute what's needed for the gradient
+C
+      DO j = 1,ngrad
+C        call intpr("j1",2,j,1)
+         fv(j) = 0.d0
+         dfv(1,j) = 0.d0 
+         DO i = 1,m
+            z1 = exp(-c1*qv(i,j))
+            fv(j) = fv(j)+w(i)*z1
+            dfv(1,j) = dfv(1,j)-w(i)*qv(i,j)*z1
+            dfv(2*i,j) = -w(i)*c1*dqv(1,i,j)*z1
+            dfv(2*i+1,j) = -w(i)*c1*dqv(2,i,j)*z1
+         END DO
+      END DO
+C
+C   now compute the gradient in dh
+C
+      DO i=1,lpar
+         dh(i) = 0.d0
+         DO j = 1,ngrad
+           dh(i) = dh(i)-dfv(i,j)*(siq(j)-fv(j))
+         END DO
+         dh(i) = 2.d0*dh(i)
+      END DO
+      RETURN
+      END 
+C
+C __________________________________________________________________
+C
       subroutine mfunpl2(par,siq,grad,m,p,lpar,ngrad,z,w,work1,erg)
       implicit logical (a-z)
       integer m,lpar,ngrad
@@ -39,9 +109,9 @@ C
       integer i,j,i3,ind(10),mode
       real*8 c1,c2,w(m),sw,sth,z1,p0,p1,d1,d2,d3,
      1       work1(ngrad),work2(10)
-      c1 = par(1)
-      c2 = par(2)
-      sw = 0
+
+      c1 = exp(par(1))
+      c2 = exp(par(2))
       DO i = 1,m
          i3=2*i+1
          p0=par(i3)
@@ -52,7 +122,7 @@ C
          d3 = cos(p0)
          DO j = 1,ngrad
             z1 = d1*grad(1,j)+d2*grad(2,j)+d3*grad(3,j)
-            z(j,i) = exp(-p*log(c1+c2*z1*z1))
+            z(j,i) = exp(-p*log(1.d0+(c2+c1*z1*z1)/p))
          END DO
       END DO
 C  
@@ -62,6 +132,12 @@ C
       IF(mode.gt.1) THEN
          call intpr("mode",4,mode,1)
       END IF
+      sw = -1.d0
+      DO i=1,m
+         sw=sw+w(i)
+      END DO
+C add penalty for sum of weight .neq. 1
+      erg=erg+1.d2*sw*sw
       RETURN
       END 
 C

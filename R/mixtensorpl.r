@@ -17,6 +17,30 @@ ngrad <- dim(grad)[1]
                 erg = double(1),
                 PACKAGE="dti")$erg
 }
+gmfunpl <- function(par,siq,grad){
+#
+#   evaluate rss for Mixtensor-model
+#
+lpar <- length(par)
+m <- (lpar-1)/2
+ngrad <- dim(grad)[1]
+.Fortran("mfunplgr",as.double(par),#par
+                as.double(siq),#siq
+                as.double(t(grad)),#grad
+                as.integer(m),#m
+                as.integer(lpar),#lpar
+                as.integer(ngrad),#ngrad
+                double(ngrad*m),#z
+                double(m),#w
+                double(ngrad),#work
+                double(1),#erg
+                double(ngrad),#fv
+                double(lpar*ngrad),#dfv
+                double(m*ngrad),#qv
+                double(2*m*ngrad),#dqv
+                gradient=double(lpar),#dh
+                PACKAGE="dti")$gradient
+}
 mfunplwghts <- function(par,siq,grad){
 #
 #   get weights for Mixtensor-model and extract parameters
@@ -41,7 +65,7 @@ w<-.Fortran("mfunpl",as.double(par),
               o <- o[1:ord]
            }
            sw <- sum(w)
-           lev <- c(exp(par[1]),-log(sw))
+           lev <- c(par[1],-log(sw))
            mix <- w[o]/sw 
            or <- matrix(par[2:lpar],2,m)[,o,drop=FALSE]
            or[1,or[1,]<0] <- or[1,or[1,]<0]+pi
@@ -51,7 +75,7 @@ w<-.Fortran("mfunpl",as.double(par),
            par <- c(par[1],or[,1:ord])
 list(ord=ord,lev=lev,mix=mix,orient=or,par=par)
 }
-mfunpl <- function(par,siq,grad,p){
+mfunpl2 <- function(par,siq,grad,pex){
 #
 #   evaluate rss for Jian-model
 #
@@ -62,7 +86,7 @@ ngrad <- dim(grad)[1]
                 as.double(siq),
                 as.double(t(grad)),
                 as.integer(m),
-                as.double(p),
+                as.double(pex),
                 as.integer(lpar),
                 as.integer(ngrad),
                 double(ngrad*m),
@@ -71,7 +95,7 @@ ngrad <- dim(grad)[1]
                 erg = double(1),
                 PACKAGE="dti")$erg
 }
-mfunpl2wghts <- function(par,siq,grad,p){
+mfunpl2wghts <- function(par,siq,grad,pex){
 #
 #   get weights for Jian-model and extract parameters
 #
@@ -82,7 +106,7 @@ w<-.Fortran("mfunpl2",as.double(par),
                 as.double(siq),
                 as.double(t(grad)),
                 as.integer(m),
-                as.double(p),
+                as.double(pex),
                 as.integer(lpar),
                 as.integer(ngrad),
                 double(ngrad*m),
@@ -95,10 +119,8 @@ w<-.Fortran("mfunpl2",as.double(par),
            if(ord<m){
               o <- o[1:ord]
            }
-           sw <- sum(w)
-           swp <- exp(p*log(sw))
-           lev <- c(p*swp*par[2],p*(swp*par[1]-1))
-           mix <- w[o]/sw 
+           lev <- exp(c(par[1],par[2]))
+           mix <- w[o]
            or <- matrix(par[3:lpar],2,m)[,o,drop=FALSE]
            or[1,or[1,]<0] <- or[1,or[1,]<0]+pi
            or[1,or[1,]>pi] <- or[1,or[1,]>pi]-pi
@@ -161,6 +183,7 @@ setMethod("dwiMixtensorpl","dtiData",function(object, maxcomp=2, p=40, maxneighb
   n2 <- ddim[2]
   n3 <- ddim[3]
   igc <- 0
+  ingc <- 0
   for(i1 in 1:n1) for(i2 in 1:n2) for(i3 in 1:n3){
      if(mask[i1,i2,i3]){
      mc0 <- maxcomp
@@ -171,20 +194,21 @@ setMethod("dwiMixtensorpl","dtiData",function(object, maxcomp=2, p=40, maxneighb
 #
      if(method=="mixtensor"){
      par <- numeric(2*mc0+1)
-     lev[,i1,i2,i3] <-  log(-log(siq[i1,i2,i3,siind[2,i1,i2,i3]])*c(.8,.2))
+#     lev[,i1,i2,i3] <-  log(-log(siq[i1,i2,i3,siind[2,i1,i2,i3]])*c(.8,.2))
+     lev[,i1,i2,i3] <-  -log(siq[i1,i2,i3,siind[2,i1,i2,i3]])*c(.8,.2)
      par[1] <- lev[1,i1,i2,i3]
 #
 #  these is an initial estimate for the eigen-value parameter
 #
-     par[rep(2*(1:mc0),rep(2,mc0))+c(0,1)] <- orient[,1:mc0,i1,i2,i3] 
+     par[rep(2*(1:mc0),rep(2,mc0))+c(0,1)] <- orient[,1:mc0,i1,i2,i3]
      } else {
      par <- numeric(2*mc0+2)
-     lev[,i1,i2,i3] <- log(-log(siq[i1,i2,i3,siind[2,i1,i2,i3]])*c(.8,.2))
+     lev[,i1,i2,i3] <- -log(siq[i1,i2,i3,siind[2,i1,i2,i3]])*c(.8,.2)
      par[1:2] <- c((1+lev[2,i1,i2,i3]/p),lev[1,i1,i2,i3]/p)
 #
 #  these is an initial estimate for the eigen-value parameter
 #
-     par[rep(2*(1:mc0),rep(2,mc0))+c(0,1)] <- orient[,1:mc0,i1,i2,i3] 
+     par[rep(2*(1:mc0),rep(2,mc0))+c(1,2)] <- orient[,1:mc0,i1,i2,i3] 
      }
      rss <- Inf
      krit <- Inf
@@ -195,21 +219,24 @@ setMethod("dwiMixtensorpl","dtiData",function(object, maxcomp=2, p=40, maxneighb
 #
         if(method=="mixtensor"){
            lpar <- 2*k+1
+           if(optmethod=="BFGS"){
+           z <- optim(par[1:(2*k+1)],mfunpl,gmfunpl,siq=siq[i1,i2,i3,],grad=grad,
+                   method="BFGS",control=list(maxit=maxit,reltol=reltol))
+           } else {
+           z <- optim(par[1:(2*k+1)],mfunpl,siq=siq[i1,i2,i3,],grad=grad,
+                   method=optmethod,control=list(maxit=maxit,reltol=reltol))
+           }
         } else {
            lpar <- 2*k+2
-        }
-        z <-switch(method,
-                  "mixtensor" = optim(par[1:(2*k+1)],mfunpl,siq=siq[i1,i2,i3,],grad=grad,
-                   method=optmethod,control=list(maxit=maxit,reltol=reltol)),
-                  "Jian" = optim(par[1:(2*k+2)],mfunpl2,siq=siq[i1,i2,i3,],grad=grad,p=p,
+           z <- optim(par[1:(2*k+2)],mfunpl2,siq=siq[i1,i2,i3,],grad=grad,pex=p,
                    method=optmethod,control=list(maxit=maxit,reltol=reltol))
-)
+        }
         value <- z$value 
         rss <- min(z$value,rss)
         if(method=="mixtensor"){
            zz <- mfunplwghts(z$par[1:lpar],siq[i1,i2,i3,],grad)
         } else {
-           zz <- mfunplwghts2(z$par[1:lpar],siq[i1,i2,i3,],grad,p=p)
+           zz <- mfunpl2wghts(z$par[1:lpar],siq[i1,i2,i3,],grad,pex=p)
         }
         ord <- zz$ord
         ttt <- value+2*(3*ord+1)/(ngrad-3*maxcomp-1)*rss
@@ -236,7 +263,9 @@ setMethod("dwiMixtensorpl","dtiData",function(object, maxcomp=2, p=40, maxneighb
        igc <- igc+1
     } else {
        igc <- 0
-      cat("gc",gc(),"\n")
+       ingc <- ingc+1
+       gc()
+       cat("Nr. of voxel",ingc*ngc,"Proc time",proc.time()[1],"\n")
     }
   }
   }
