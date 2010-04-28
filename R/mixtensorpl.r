@@ -133,7 +133,7 @@ dwiMixtensorpl <- function(object, ...) cat("No dwiMixtensorpl calculation defin
 
 setGeneric("dwiMixtensorpl", function(object,  ...) standardGeneric("dwiMixtensorpl"))
 
-setMethod("dwiMixtensorpl","dtiData",function(object, maxcomp=2, p=40, maxneighb=7, method="mixtensor", reltol=1e-8, maxit=5000,ngc=100, optmethod="Nelder-Mead"){
+setMethod("dwiMixtensorpl","dtiData",function(object, maxcomp=3, p=40, maxneighb=7, method="mixtensor", reltol=1e-8, maxit=5000,ngc=100, optmethod="Nelder-Mead"){
   args <- sys.call(-1)
   args <- c(object@call,args)
   ngrad <- object@ngrad
@@ -239,7 +239,7 @@ setMethod("dwiMixtensorpl","dtiData",function(object, maxcomp=2, p=40, maxneighb
            zz <- mfunpl2wghts(z$par[1:lpar],siq[i1,i2,i3,],grad,pex=p)
         }
         ord <- zz$ord
-        ttt <- value+2*(3*ord+1)/(ngrad-3*maxcomp-1)*rss
+        ttt <- value+2*(3*ord+1)/(ngrad0-3*maxcomp-1)*rss
         par <- zz$par
 #
 #     use directions corresponding to largest weights as initial directions
@@ -263,9 +263,8 @@ setMethod("dwiMixtensorpl","dtiData",function(object, maxcomp=2, p=40, maxneighb
        igc <- igc+1
     } else {
        igc <- 0
-       ingc <- ingc+1
        gc()
-       cat("Nr. of voxel",ingc*ngc,"Proc time",proc.time()[1],"\n")
+#      cat("gc",gc(),"\n")
     }
   }
   }
@@ -303,3 +302,134 @@ setMethod("dwiMixtensorpl","dtiData",function(object, maxcomp=2, p=40, maxneighb
 }
 )
 
+dwiMixtensorpl.new <- function(object, ...) cat("No dwiMixtensorpl.new calculation defined for this class:",class(object),"\n")
+
+setGeneric("dwiMixtensorpl.new", function(object,  ...) standardGeneric("dwiMixtensorpl.new"))
+
+setMethod("dwiMixtensorpl.new",
+          "dtiData",
+          function(object,
+                   maxcomp = 3,
+                   maxneighb = 7,
+                   reltol = 1e-8,
+                   maxit = 5000)
+           {
+             cat("entering method dwiMixtensor\n")
+
+             if (maxcomp > 4) stop("maximum number of tensor components is 4\n") # otherwise change number of parameters in C code!
+
+             args <- sys.call(-1)
+             args <- c(object@call, args)
+             ngrad <- object@ngrad
+             ddim <- object@ddim
+             s0ind <- object@s0ind
+             ns0 <- length(s0ind)
+
+             cat("determine outliers ... ")
+             z <- .Fortran("outlier",
+                           as.integer(object@si),
+                           as.integer(prod(ddim)),
+                           as.integer(ngrad),
+                           as.logical((1:ngrad)%in%s0ind),
+                           as.integer(ns0),
+                           si      = integer(prod(ddim)*ngrad),
+                           index   = integer(prod(ddim)),
+                           lindex  = integer(1),
+                           DUP     = FALSE,
+                           PACKAGE = "dti")[c("si","index","lindex")]
+             si <- array(z$si, c(ddim, ngrad))
+             index <- if (z$lindex>0) z$index[1:z$lindex] else numeric(0)
+             rm(z)
+             cat("done\n")
+
+             cat("prepare data and initial estimates ... ")
+             # prepare data for optim
+             s0 <- si[,,,s0ind]
+             si <- si[,,,-s0ind]
+             if (length(s0ind)>1) s0 <- apply(s0, 1:3, mean)
+             # normalized DW data
+             siq <- sweep(si,1:3,s0,"/")
+             # heuristics to avoid DWI that are larger than s0.
+             siqmed <- apply(siq, 1:3, median)
+             siqmed[siqmed < .9] <- .9
+             siqmed[siqmed > .99] <- .99
+             siq <- sweep(siq,1:3,siqmed,pmin)
+             # mask for calculation
+             mask <- s0 > 0
+             grad <- t(object@gradient[,-s0ind])
+             sneighbors <- neighbors(grad, maxneighb)
+             siind <- getsiind(siq, sneighbors, grad, maxcomp, maxc=.866)
+             # siind[1,,,] contains number of potential directions 
+             # siind[-1,,,] contains indices of grad corresponding to these directions
+             cat("done\n")
+
+             cat("optimizing ... ")
+#             mm <- switch(method, "mixtensor" = 1,
+#                                  "Jian"      = 2,
+#                                  1)
+             mm <- 1
+             pl <- 1
+
+             # perform voxelwise optimization and order selection of tensor mixture model
+             a <- .C("mixturepl",
+                     as.integer(mm),                         # select mixture method
+                     as.integer(prod(ddim)),                 # number of voxels
+                     as.integer(mask),                       # calculation mask
+                     as.double(siq),                         # DWI without s0
+                     as.integer(siind),                      # DWI indices of local minima
+                     as.integer(ngrad - length(s0ind)),      # number of DWI
+                     as.double(grad),                        # gradient directions
+                     as.integer(sneighbors),                 # (maxneighb x ngrad) matrix of nearest gradient neighbors
+                     as.integer(maxcomp),                    # max number of gradient neighbors
+                     as.integer(pl),                         # exp for Jian model
+                     as.integer(maxit),                      # max number of iterations for optim
+                     as.double(reltol),                      # reltol crit for optim
+                     order   = double(prod(ddim)),           # selected order of mixture
+                     lev     = double(2*prod(ddim)),         # logarithmic eigenvalues
+                     mix     = double(maxcomp*prod(ddim)),   # mixture weights
+                     orient  = double(2*maxcomp*prod(ddim)), # phi/theta for all mixture tensors
+                     sigma2  = double(prod(ddim)),           # parameter variance ???
+                     DUP     = FALSE,
+                     PACKAGE = "dti")[c("order", "lev", "mix", "orient", "p", "sigma2")]
+
+                     # set dimension attr
+                     dim(a$order) <- ddim;
+                     dim(a$lev) <- c(2, ddim);
+                     dim(a$mix) <- c(maxcomp, ddim);
+                     dim(a$orient) <- c(2, maxcomp, ddim);
+                     dim(a$sigma2) <- ddim;
+             cat("done\n")
+
+             # create and return new object
+             invisible(new("dwiMixtensor",
+                           call        = args,
+                           ev          = a$lev,
+                           mix         = a$mix,
+                           orient      = a$orient,
+                           order       = a$order,
+                           p           = 1,
+                           th0         = s0,
+                           sigma       = a$sigma2,
+                           scorr       = array(1, c(1,1,1)), # ???
+                           bw          = c(0,0,0),           # ???
+                           mask        = mask,
+                           hmax        = 1,                  # ???
+                           gradient    = object@gradient,
+                           btb         = object@btb,
+                           ngrad       = object@ngrad,
+                           s0ind       = object@s0ind,
+                           replind     = object@replind,
+                           ddim        = object@ddim,
+                           ddim0       = object@ddim0,
+                           xind        = object@xind,
+                           yind        = object@yind,
+                           zind        = object@zind,
+                           voxelext    = object@voxelext,
+                           level       = object@level,
+                           orientation = object@orientation,
+                           source      = object@source,
+                           outlier     = index,
+                           scale       = 1,
+                           method      = "mixtensor")
+                       )
+           })

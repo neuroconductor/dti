@@ -249,8 +249,7 @@ setMethod("dwiMixtensor.old","dtiData",function(object, maxcomp=2, p=40, maxneig
                  "Jian"       = optim(par[1:(3*k+1)],mfun2,siq=siq[i1,i2,i3,],grad=grad,ep=p,control=list(maxit=maxit,reltol=reltol)),
                  "Jian2"      = optim(c(par[1:(3*k+1)],25),mfun3,siq=siq[i1,i2,i3,],grad=grad,control=list(maxit=maxit,reltol=reltol)))
         rss <- min(z$value,rss)
-        ttt <- z$value+2*(3*k+1)/(ngrad-3*maxcomp-1)*rss
-#        cat("risk",z$value,ttt,"\n")
+        ttt <- z$value+2*(3*k+1)/(ngrad0-3*maxcomp-1)*rss
         if(ttt < krit) {
            krit <- ttt
            order[i1,i2,i3] <- as.integer(k)
@@ -290,7 +289,7 @@ setMethod("dwiMixtensor.old","dtiData",function(object, maxcomp=2, p=40, maxneig
                 hmax   = 1,
                 gradient = object@gradient,
                 btb    = object@btb,
-                ngrad  = object@ngrad, # = dim(btb)[2]
+                ngrad  = object@ngrad,
                 s0ind  = object@s0ind,
                 replind = object@replind,
                 ddim   = object@ddim,
@@ -338,7 +337,7 @@ setMethod("dwiMixtensor", "dtiData", function(object, maxcomp=2, p=2, maxneighb=
                 si      = integer(prod(ddim)*ngrad),
                 index   = integer(prod(ddim)),
                 lindex  = integer(1),
-                DUP   = FALSE,
+                DUP     = FALSE,
                 PACKAGE = "dti")[c("si","index","lindex")]
   si <- array(z$si, c(ddim, ngrad))
   index <- if (z$lindex>0) z$index[1:z$lindex] else numeric(0)
@@ -376,9 +375,10 @@ setMethod("dwiMixtensor", "dtiData", function(object, maxcomp=2, p=2, maxneighb=
   # perform voxelwise optimization and order selection of tensor mixture model
   a <- .C("mixture",
           as.integer(mm),                         # select mixture method
-          as.integer(ddim[1]),                    # voxel dim x
-          as.integer(ddim[2]),                    # voxel dim y
-          as.integer(ddim[3]),                    # voxel dim z
+#          as.integer(ddim[1]),                    # voxel dim x
+#          as.integer(ddim[2]),                    # voxel dim y
+#          as.integer(ddim[3]),                    # voxel dim z
+          as.integer(prod(ddim)),                 # number of voxels
           as.integer(mask),                       # calculation mask
           as.double(siq),                         # DWI without s0
           as.integer(siind),                      # DWI indices of local minima
@@ -395,6 +395,7 @@ setMethod("dwiMixtensor", "dtiData", function(object, maxcomp=2, p=2, maxneighb=
           orient  = double(2*maxcomp*prod(ddim)), # phi/theta for all mixture tensors
           p       = double(pl),                   # decay const in Jian
           sigma2  = double(prod(ddim)),           # parameter variance ???
+          DUP     = FALSE,
           PACKAGE = "dti")[c("order", "lev", "mix", "orient", "p", "sigma2")]
 
   # set dimension attr
