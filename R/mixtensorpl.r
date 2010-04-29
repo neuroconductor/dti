@@ -239,8 +239,13 @@ setMethod("dwiMixtensorpl","dtiData",function(object, maxcomp=3, p=40, maxneighb
            zz <- mfunpl2wghts(z$par[1:lpar],siq[i1,i2,i3,],grad,pex=p)
         }
         ord <- zz$ord
+        if(any(zz$lev<0)){
+           ttt <- Inf
+#   parameters not interpretable reduce order
+        } else {
         ttt <- value+2*(3*ord+1)/(ngrad0-3*maxcomp-1)*rss
         par <- zz$par
+        }
 #
 #     use directions corresponding to largest weights as initial directions
 #
