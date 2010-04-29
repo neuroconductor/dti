@@ -326,7 +326,8 @@ setMethod("dwiMixtensorpl.new",
                    maxcomp = 3,
                    maxneighb = 7,
                    reltol = 1e-8,
-                   maxit = 5000)
+                   maxit = 5000,
+                   optmethod = "Nelder-Mead")
            {
              cat("entering method dwiMixtensor\n")
 
@@ -378,10 +379,9 @@ setMethod("dwiMixtensorpl.new",
              cat("done\n")
 
              cat("optimizing ... ")
-#             mm <- switch(method, "mixtensor" = 1,
-#                                  "Jian"      = 2,
-#                                  1)
-             mm <- 1
+             mm <- switch(optmethod, "Nelder-Mead" = 1,
+                                     "BFGS"        = 3,
+                                     1)
              pl <- 1
 
              # perform voxelwise optimization and order selection of tensor mixture model
@@ -406,12 +406,12 @@ setMethod("dwiMixtensorpl.new",
                      DUP     = FALSE,
                      PACKAGE = "dti")[c("order", "lev", "mix", "orient", "p", "sigma2")]
 
-                     # set dimension attr
-                     dim(a$order) <- ddim;
-                     dim(a$lev) <- c(2, ddim);
-                     dim(a$mix) <- c(maxcomp, ddim);
-                     dim(a$orient) <- c(2, maxcomp, ddim);
-                     dim(a$sigma2) <- ddim;
+             # set dimension attr
+             dim(a$order) <- ddim;
+             dim(a$lev) <- c(2, ddim);
+             dim(a$mix) <- c(maxcomp, ddim);
+             dim(a$orient) <- c(2, maxcomp, ddim);
+             dim(a$sigma2) <- ddim;
              cat("done\n")
 
              # create and return new object
