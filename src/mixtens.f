@@ -68,7 +68,8 @@ C
 C  
 C    siq will be replaced, need to copy it if C-version of optim is used
 C
-      call nnls(z,ngrad,ngrad,m,siq,w,erg,work2,work1,ind,mode)
+      call dcopy(ngrad,siq,1,fv,1)
+      call nnls(z,ngrad,ngrad,m,fv,w,erg,work2,work1,ind,mode)
       IF(mode.gt.1) THEN
          call intpr("mode",4,mode,1)
       END IF

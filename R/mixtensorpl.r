@@ -133,9 +133,10 @@ dwiMixtensorpl <- function(object, ...) cat("No dwiMixtensorpl calculation defin
 
 setGeneric("dwiMixtensorpl", function(object,  ...) standardGeneric("dwiMixtensorpl"))
 
-setMethod("dwiMixtensorpl","dtiData",function(object, maxcomp=3, p=40, maxneighb=7, method="mixtensor", reltol=1e-8, maxit=5000,ngc=100, optmethod="Nelder-Mead"){
+setMethod("dwiMixtensorpl","dtiData",function(object, maxcomp=3, ex=.2,  p=40, maxneighb=7, method="mixtensor", reltol=1e-8, maxit=5000,ngc=100, optmethod="Nelder-Mead"){
   args <- sys.call(-1)
   args <- c(object@call,args)
+  prta <- proc.time()[1]
   ngrad <- object@ngrad
   ddim <- object@ddim
   s0ind <- object@s0ind
@@ -173,7 +174,7 @@ setMethod("dwiMixtensorpl","dtiData",function(object, maxcomp=3, p=40, maxneighb
 #   determine initial estimates for orientations 
 #
   siind <- getsiind(siq,sneighbors,grad,maxcomp,maxc=.866)
-  order <- array(maxcomp,ddim)
+  order <- array(0,ddim)
   lev <- array(as.integer(0),c(2,ddim))
 #  logarithmic eigen values
   mix <- array(0,c(maxcomp,ddim))
@@ -184,6 +185,8 @@ setMethod("dwiMixtensorpl","dtiData",function(object, maxcomp=3, p=40, maxneighb
   n3 <- ddim[3]
   igc <- 0
   ingc <- 0
+  prt0 <- proc.time()[1]
+  prta <- prt0-prta
   for(i1 in 1:n1) for(i2 in 1:n2) for(i3 in 1:n3){
      if(mask[i1,i2,i3]){
      mc0 <- maxcomp
@@ -195,7 +198,7 @@ setMethod("dwiMixtensorpl","dtiData",function(object, maxcomp=3, p=40, maxneighb
      if(method=="mixtensor"){
      par <- numeric(2*mc0+1)
 #     lev[,i1,i2,i3] <-  log(-log(siq[i1,i2,i3,siind[2,i1,i2,i3]])*c(.8,.2))
-     lev[,i1,i2,i3] <-  -log(siq[i1,i2,i3,siind[2,i1,i2,i3]])*c(.8,.2)
+     lev[,i1,i2,i3] <-  -log(siq[i1,i2,i3,siind[2,i1,i2,i3]])*c(ex,1-ex)
      par[1] <- lev[1,i1,i2,i3]
 #
 #  these is an initial estimate for the eigen-value parameter
@@ -212,6 +215,7 @@ setMethod("dwiMixtensorpl","dtiData",function(object, maxcomp=3, p=40, maxneighb
      }
      rss <- Inf
      krit <- Inf
+     maxcomp0 <- maxcomp
      for(k in mc0:1){
         if(k<ord) {
 #
@@ -241,9 +245,11 @@ setMethod("dwiMixtensorpl","dtiData",function(object, maxcomp=3, p=40, maxneighb
         ord <- zz$ord
         if(any(zz$lev<0)){
            ttt <- Inf
+           rss <- Inf
+           maxcomp0 <- k-1
 #   parameters not interpretable reduce order
         } else {
-        ttt <- value+2*(3*ord+1)/(ngrad0-3*maxcomp-1)*rss
+        ttt <- value+2*(3*ord+1)/(ngrad0-3*maxcomp0-1)*rss
         par <- zz$par
         }
 #
@@ -268,8 +274,11 @@ setMethod("dwiMixtensorpl","dtiData",function(object, maxcomp=3, p=40, maxneighb
        igc <- igc+1
     } else {
        igc <- 0
+       ingc <- ingc+1
+       prt1 <- proc.time()[1]
        gc()
-#      cat("gc",gc(),"\n")
+       cat("Nr. of voxel",ingc*ngc,"time elapsed:",prta+prt1-prt0,"remaining time:",
+            (prt1-prt0)/(ingc*ngc)*(sum(mask)-ingc*ngc),"\n")
     }
   }
   }
