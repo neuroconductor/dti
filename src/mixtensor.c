@@ -28,38 +28,6 @@ typedef struct
 // double z1 = F77_CALL(dotprod3)(dir, test);
 //void F77_NAME(nnls)(double *, int, int, int, double *, double *, double *, double *, double *, int * , int *);
 void F77_NAME(nnls)(double *a, int *mda, int *m, int *n, double *b, double *X, double *rnorm, double *w, double *zz, int *index, int *mode);
-// quicksort
-
-void swapi(int *a, int *b)
-{
-  int t=*a; *a=*b; *b=t;
-}
-void swapd(double *a, double *b)
-{
-  double t=*a; *a=*b; *b=t;
-}
-void sort(double arr[], int ind[], int beg, int end)
-{
-  if (end > beg + 1)
-  {
-    double piv = arr[beg];
-    int l = beg + 1, r = end;
-    while (l < r)
-    {
-      if (arr[l] <= piv)
-        l++;
-      else
-        swapd(&arr[l], &arr[--r]);
-        swapi(&ind[l], &ind[--r]);
-    }
-    swapd(&arr[--l], &arr[beg]);
-    swapi(&ind[--l], &ind[beg]);
-    sort(arr, ind, beg, l);
-    sort(arr, ind, r, end);
-  }
-}
-
-// end quicksort
 
 void paroforient(double *dir, double *angles)
 {
@@ -212,7 +180,8 @@ double fnpl(int n, double *par, void *ex)
     siq[k] = ext.siq[k];
   }
   double dir[3];       // used for direction vector calculated from angles in par
-  double c1 = exp(par[0]), sth, z1;
+//  double c1 = exp(par[0]), sth, z1;
+  double c1 = par[0], sth, z1;
   int i, i2, j;
   int ind[10], mode = 0;
   double work2[10];
@@ -238,6 +207,88 @@ double fnpl(int n, double *par, void *ex)
 
   // finished
   return erg;
+}
+
+void grpl(int n, double *par, double *gr, void *ex)
+{
+  optimexpl ext = *((optimexpl*)ex);
+
+  int m = (n-1)/2;     // order of mix tensor model
+//  double *z, *siq;
+//  z = (double *) R_alloc(ext.ngrad*m, sizeof(double)); // value of signal fct. for each grad according to current model
+//  siq = (double *) R_alloc(ext.ngrad, sizeof(double));
+  double z[ext.ngrad*m];
+  double siq[ext.ngrad];
+  for (int k = 0; k < ext.ngrad; k++)
+  {
+    for (int kk = 0; kk < m; kk++)
+      z[kk*ext.ngrad + k] = 0;
+    siq[k] = ext.siq[k];
+  }
+//  double *qv, *dqv, *fv, *dfv, *dh;
+//  qv = (double *) R_alloc(m*ext.ngrad, sizeof(double));
+//  dqv = (double *) R_alloc(2*m*ext.ngrad, sizeof(double));
+//  fv = (double *) R_alloc(ext.ngrad, sizeof(double));
+//  dfv = (double *) R_alloc(m*ext.ngrad, sizeof(double));
+//  dh = (double *) R_alloc(m, sizeof(double));
+  double qv[m*ext.ngrad];
+  double dqv[2*m*ext.ngrad];
+  double fv[ext.ngrad];
+  double dfv[n*ext.ngrad];
+  int i, i2, j;
+  int ind[10], mode = 0;
+  double dir[3];       // used for direction vector calculated from angles in par
+  double c1 = par[0], sth, cpsi, spsi, z1;
+  double work2[10];
+//  double *work1;
+//  work1 = (double *) R_alloc(ext.ngrad, sizeof(double));
+  double work1[ext.ngrad];
+  double erg = 0; // result
+
+  for (i = 0; i < m; i++)
+  {
+    i2 = 2*i;
+    sth = sin(par[i2+1]);
+    cpsi = cos(par[i2+2]);
+    spsi = sin(par[i2+2]);
+    dir[0] = sth*cos(par[i2+2]);
+    dir[1] = sth*sin(par[i2+2]);
+    dir[2] = cos(par[i2+1]);
+    for (j = 0; j < ext.ngrad; j++)
+    {
+      z1 = dir[0]*ext.grad[get_ind2d(j, 0, ext.ngrad)] + dir[1]*ext.grad[get_ind2d(j, 1, ext.ngrad)] + dir[2]*ext.grad[get_ind2d(j, 2, ext.ngrad)]; 
+      qv[get_ind2d(i, j, m)] = z1*z1;
+      z[get_ind2d(j, i, ext.ngrad)] += exp(-c1*qv[get_ind2d(i, j, m)]);
+      dqv[get_ind3d(0, i, j, 2, m)] = 2.0*(dir[2]*(cpsi*ext.grad[j] + spsi*ext.grad[ext.ngrad+j])-sth*ext.grad[2*ext.ngrad+j])*qv[get_ind2d(i, j, m)];
+      dqv[get_ind3d(1, i, j, 2, m)] = 2.0*sth*(cpsi*ext.grad[ext.ngrad+j]-spsi*ext.grad[j])*qv[get_ind2d(i, j, m)];
+    }
+  }
+
+  F77_CALL(nnls)(z, &ext.ngrad, &ext.ngrad, &m, siq, ext.w, &erg, work2, work1, ind, &mode);
+
+  for (j = 0; j < ext.ngrad; j++)
+  {
+    fv[j] = 0.0;
+    dfv[get_ind2d(0,j,n)] = 0.0;
+    for (i = 0; i < m; i++)
+    {
+      z1 = exp(-c1*qv[get_ind2d(i, j, m)]);
+      fv[j] += ext.w[i]*z1;
+      dfv[get_ind2d(0, j, n)] -= ext.w[i]*qv[get_ind2d(i, j, m)]*z1;
+      dfv[get_ind2d(2*i+1, j, n)] = -ext.w[i]*c1*dqv[get_ind3d(0, i, j, 2, m)]*z1;
+      dfv[get_ind2d(2*i+2, j, n)] = -ext.w[i]*c1*dqv[get_ind3d(1, i, j, 2, m)]*z1;
+    }
+  }
+
+  for (i = 0; i < n; i++)
+  {
+    gr[i] = 0.0;
+    for (j = 0; j < ext.ngrad; j++)
+    {
+       gr[i] = gr[i] - dfv[get_ind2d(i, j, n)]*(ext.siq[j]-fv[j]);
+    }
+    gr[i] = 2.0*gr[i];
+  }
 }
 
 /*
@@ -463,7 +514,7 @@ void mixturepl(int *method, int *r, int *mask, double *siq, int *siind, int *n, 
   double rss, krit, ttt, sw = 0;
   double siiq[ngrad];
   int fail;                  // failure code for optim: zero is OK
-  int fncount;               // number of calls to obj fct in optim
+  int fncount, grcount=0;               // number of calls to obj fct in optim
   double Fmin = 0.;          // minimal value of obj fct in optim
   int i, k;
   int gradind;
@@ -473,6 +524,7 @@ void mixturepl(int *method, int *r, int *mask, double *siq, int *siind, int *n, 
   double cpar[9];
   double x[9];
   double tmp;
+  int *mmask;
 
   for (iv = 0; iv < nv; iv++)
   {
@@ -499,7 +551,7 @@ void mixturepl(int *method, int *r, int *mask, double *siq, int *siind, int *n, 
       ord = mc0 + 1;
       gradind = siind[get_ind2d(1, iv, mc+1)];
       tmp = -log(siq[get_ind2d(iv, gradind-1, nv)]);
-      par[0] = log(tmp*.8);
+      par[0] = tmp*.8;
       for (i = 0; i < mc0; i++)
       {
         if (i>0) gradind = siind[get_ind2d(i+1, iv, mc+1)];
@@ -543,18 +595,27 @@ void mixturepl(int *method, int *r, int *mask, double *siq, int *siind, int *n, 
 //                    1.0, 0.5, 2.0, 0,
 //                    &fncount, *maxit);
 //              break;
+            case 3:
+              mmask = (int *) R_alloc(lpar, sizeof(int));
+              vmmin(lpar, cpar, &Fmin,
+                     fnpl, grpl, *maxit, 0,
+                     mmask, R_NegInf, *reltol, 100,
+                     &myoptimpar, &fncount, &grcount, &fail);
+              for (i = 0; i < lpar; i++) x[i] = cpar[i];
+              break;
           }
 
           if (Fmin < rss) rss = Fmin;
           Fmin = fnpl(lpar, x, &myoptimpar); // should return the same value
           int ind[k];
           ord = 0;
+          sw = 0;
           for (i = 0; i < k; i++)
           {
             ind[i] = i;
             if (myoptimpar.w[i] > 0)
             {
-              sw = sw + myoptimpar.w[i];
+              sw += myoptimpar.w[i];
               ord++;
             }
           }
@@ -571,7 +632,7 @@ void mixturepl(int *method, int *r, int *mask, double *siq, int *siind, int *n, 
           {
             krit = ttt;
             order[iv] = ord;
-            lev[get_ind2d(0, iv, 2)] = exp(x[0]);
+            lev[get_ind2d(0, iv, 2)] = x[0];
             lev[get_ind2d(1, iv, 2)] = -log(sw);
             if (ord == 1)
             {
@@ -579,7 +640,8 @@ void mixturepl(int *method, int *r, int *mask, double *siq, int *siind, int *n, 
             }
             else
             {
-              for (i = 0; i < k; i++) mix[get_ind2d(i, iv, mc)] = myoptimpar.w[i]/sw; // order?
+              for (i = 0; i < k; i++) mix[get_ind2d(i, iv, mc)] = myoptimpar.w[i]/sw;
+              if (k < mc0) for (i = k; i < mc0; i++) mix[get_ind2d(i, iv, mc)] = 0;  // not quite correct!! ord vs. mc0 vs. k
             }
 
             for (i = 0; i < k; i++)
