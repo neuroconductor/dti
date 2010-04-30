@@ -206,7 +206,7 @@ setMethod("dwiMixtensorpl","dtiData",function(object, maxcomp=3, ex=.2,  p=40, m
      par[rep(2*(1:mc0),rep(2,mc0))+c(0,1)] <- orient[,1:mc0,i1,i2,i3]
      } else {
      par <- numeric(2*mc0+2)
-     lev[,i1,i2,i3] <- -log(siq[i1,i2,i3,siind[2,i1,i2,i3]])*c(.8,.2)
+     lev[,i1,i2,i3] <- -log(siq[i1,i2,i3,siind[2,i1,i2,i3]])*c(ex,1-ex)
      par[1:2] <- c((1+lev[2,i1,i2,i3]/p),lev[1,i1,i2,i3]/p)
 #
 #  these is an initial estimate for the eigen-value parameter
@@ -224,6 +224,15 @@ setMethod("dwiMixtensorpl","dtiData",function(object, maxcomp=3, ex=.2,  p=40, m
         if(method=="mixtensor"){
            lpar <- 2*k+1
            if(optmethod=="BFGS"){
+           zz <- mfunplwghts(par[1:(2*k+1)],siq=siq[i1,i2,i3,],grad=grad)
+           count <- 0
+#           while(any(zz$lev<0)&count<10) {
+           while(any(zz$mix==0)&count<10) {
+              par[1] <- -log(siq[i1,i2,i3,siind[2,i1,i2,i3]])*runif(1)
+              zz <- mfunplwghts(par[1:(2*k+1)],siq=siq[i1,i2,i3,],grad=grad)
+              count <- count+1
+              if(count>10) cat("problem with initial values in voxel(",c(i1,i2,i3),"\n")
+           }
            z <- optim(par[1:(2*k+1)],mfunpl,gmfunpl,siq=siq[i1,i2,i3,],grad=grad,
                    method="BFGS",control=list(maxit=maxit,reltol=reltol))
            } else {
@@ -264,7 +273,7 @@ setMethod("dwiMixtensorpl","dtiData",function(object, maxcomp=3, ex=.2,  p=40, m
        }
      }
    }
-   sigma2[i1,i2,i3] <- rss/(ngrad0-3*mc0-1)
+   sigma2[i1,i2,i3] <- rss/(ngrad0-3*maxcomp0-1)
 #   cat("order",order[i1,i2,i3],"\n")
 #   cat("error variance",sigma2[i1,i2,i3]*s0[i1,i2,i3]^2,"\n")
 #   cat("ev",c(exp(lev[1,i1,i2,i3]),0,0)+exp(lev[2,i1,i2,i3]),"\n")

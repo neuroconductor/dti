@@ -567,6 +567,54 @@ show3dTens <- function(radii,polyeder,centers=NULL,colors=NULL,alpha=1,...){
 #############
 
 show3dData <- function(radii,vertices,centers=NULL,minalpha=1,...){
+#
+#   use gradients directly
+#
+   if(is.null(centers)){
+      centers <- matrix(0,3,1)
+      n <- 1
+   } else {
+      dcenters <- dim(centers)
+      if(length(dcenters)!=2 || dcenters[1]!=3) stop("centers needs to be NULL or a matrix 
+      with dimension (3,n)")
+      n <- dcenters[2]
+   }
+   maxradii <- apply(radii,2,max)
+   alpha <- minalpha+(1-minalpha)*sweep(radii,2,maxradii,"/")
+   colors <- rgb(abs(vertices[1,]),abs(vertices[2,]),abs(vertices[3,]))
+   if(length(alpha)!=n){
+      nc <- length(alpha)
+      nnc <- n%/%nc+1
+      alpha <- rep(alpha,nnc)[1:n]
+   }
+   nv <- dim(vertices)[2]
+   lines <- array(0,c(2,3,n,nv))
+   vertices <- array(vertices,c(3,nv,n))
+   colors <- matrix(colors,nv,n)
+   ind1 <- rep(1:(n*nv),rep(2,n*nv))
+   if(length(radii)!=nv*n) stop("wrong length of radii, needs to be 
+             dim(vertices)[2]*dim(centers)[2]")
+   vertices0 <- sweep(vertices,2:3,radii,"*")
+   vertices <- sweep(.9*vertices0,c(1,3),centers,"+")
+   lines[1,,,] <- aperm(vertices,c(1,3,2))
+   vertices <- sweep(vertices0,c(1,3),centers,"+")
+   lines[2,,,] <- aperm(vertices,c(1,3,2))
+   colors <- array(colors,c(nv,n))
+#   rgl.lines(lines[,1,,],lines[,2,,],lines[,3,,],color=t(colors)[ind1],lwd=1)
+   rgl.lines(lines[,1,,],lines[,2,,],lines[,3,,],lwd=1)
+   rgl.points(vertices[1,,],vertices[2,,],vertices[3,,],color=colors,size=4)
+   vertices <- sweep(-.9*vertices0,c(1,3),centers,"+")
+   lines[1,,,] <- aperm(vertices,c(1,3,2))
+   vertices <- sweep(-vertices0,c(1,3),centers,"+")
+   lines[2,,,] <- aperm(vertices,c(1,3,2))
+#   rgl.lines(lines[,1,,],lines[,2,,],lines[,3,,],color=t(colors)[ind1],lwd=1)
+   rgl.lines(lines[,1,,],lines[,2,,],lines[,3,,],lwd=1)
+   rgl.points(vertices[1,,],vertices[2,,],vertices[3,,],color=colors,size=4)
+}
+
+#############
+
+show3dData0 <- function(radii,vertices,centers=NULL,minalpha=1,...){
    if(is.null(centers)){
       centers <- matrix(0,3,1)
       n <- 1
@@ -599,7 +647,6 @@ show3dData <- function(radii,vertices,centers=NULL,minalpha=1,...){
    rgl.triangles(vertices[1,indices],vertices[2,indices],vertices[3,indices],
                  color=colors[indices],alpha=alpha[indices],...)
 }
-
 #############
 
 show3dCdata <- function(radii,polyeder,centers=NULL,minalpha=1,scale=.5,...){
