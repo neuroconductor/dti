@@ -378,21 +378,21 @@ void mixture(int *method, int *r, int *mask, double *siq, int *siind, int *n, do
     if (mask[iv] != 1)
     {
       order[iv] = 0;
-      lev[get_ind2d(0, iv, 2)] = 0;
-      lev[get_ind2d(1, iv, 2)] = 0;
+      lev[get_ind2d(0, iv, 2)] = 0.;
+      lev[get_ind2d(1, iv, 2)] = 0.;
       for (i = 0; i < mc; i++)
       {
         mix[get_ind2d(i, iv, mc)] = 0;
-        orient[get_ind3d(0, i, iv, 2, mc)] = 0;
-        orient[get_ind3d(1, i, iv, 2, mc)] = 0;
+        orient[get_ind3d(0, i, iv, 2, mc)] = 0.;
+        orient[get_ind3d(1, i, iv, 2, mc)] = 0.;
       }
 //          if (*method == 3) p[get_ind3d(i1, i2, i3, n1, n2)] = 0;
-      sigma2[iv] = 0;
+      sigma2[iv] = 0.;
     }
     else
     {
       // prepare signal
-      for (i=0; i < ngrad; i++)
+      for (i = 0; i < ngrad; i++)
       {
         siiq[i] = siq[get_ind2d(iv, i, nv)];
       }
@@ -464,7 +464,7 @@ void mixture(int *method, int *r, int *mask, double *siq, int *siind, int *n, do
           lev[get_ind2d(1, iv, 2)] = x[1];
           if (k == 1)
           {
-            mix[get_ind2d(0, iv, mc)] = 1;
+            mix[get_ind2d(0, iv, mc)] = 1.;
           }
           else
           {
@@ -478,7 +478,7 @@ void mixture(int *method, int *r, int *mask, double *siq, int *siind, int *n, do
           for (i = 0; i < k; i++)
           {
             double theta = x[3*i+2];
-            while (theta < 0) 
+            while (theta < 0.) 
             {
             //  Rprintf("theta %f %f", theta, M_PI); 
               theta += M_PI;
@@ -486,7 +486,7 @@ void mixture(int *method, int *r, int *mask, double *siq, int *siind, int *n, do
             }
             while (theta > M_PI) theta -= M_PI;
             double phi = x[3*i+3];
-            while (phi < 0) phi += M_2PI;
+            while (phi < 0.) phi += M_2PI;
             while (phi > M_2PI) phi -= M_2PI;
             orient[get_ind3d(0, i, iv, 2, mc)] = theta;
             orient[get_ind3d(1, i, iv, 2, mc)] = phi;
@@ -510,8 +510,8 @@ void mixturepl(int *method, int *r, int *mask, double *siq, int *siind, int *n, 
                double *order, double *lev, double *mix, double *orient, double *sigma2){
 
   int nv = *r, ngrad = *n, mc = *maxcomp;
-  int iv, mc0, lpar, ord;
-  double rss, krit, ttt, sw = 0;
+  int iv, mc0, lpar, ord, maxc = mc;
+  double rss, krit, ttt, sw = 0.;
   double siiq[ngrad];
   int fail;                  // failure code for optim: zero is OK
   int fncount, grcount=0;               // number of calls to obj fct in optim
@@ -531,15 +531,15 @@ void mixturepl(int *method, int *r, int *mask, double *siq, int *siind, int *n, 
     if (mask[iv] != 1)
     {
       order[iv] = 0;
-      lev[get_ind2d(0, iv, 2)] = 0;
-      lev[get_ind2d(1, iv, 2)] = 0;
+      lev[get_ind2d(0, iv, 2)] = 0.;
+      lev[get_ind2d(1, iv, 2)] = 0.;
       for (i = 0; i < mc; i++)
       {
-        mix[get_ind2d(i, iv, mc)] = 0;
-        orient[get_ind3d(0, i, iv, 2, mc)] = 0;
-        orient[get_ind3d(1, i, iv, 2, mc)] = 0;
+        mix[get_ind2d(i, iv, mc)] = 0.;
+        orient[get_ind3d(0, i, iv, 2, mc)] = 0.;
+        orient[get_ind3d(1, i, iv, 2, mc)] = 0.;
       }
-      sigma2[iv] = 0;
+      sigma2[iv] = 0.;
     }
     else
     {
@@ -550,8 +550,7 @@ void mixturepl(int *method, int *r, int *mask, double *siq, int *siind, int *n, 
       mc0 = siind[get_ind2d(0, iv, mc+1)]; // order of model: possibly constant == mc since intial estimates guarantee mc0 == mc!!
       ord = mc0 + 1;
       gradind = siind[get_ind2d(1, iv, mc+1)];
-      tmp = -log(siq[get_ind2d(iv, gradind-1, nv)]);
-      par[0] = tmp*.8;
+      par[0] = -log(siq[get_ind2d(iv, gradind-1, nv)])*.8;
       for (i = 0; i < mc0; i++)
       {
         if (i>0) gradind = siind[get_ind2d(i+1, iv, mc+1)];
@@ -578,7 +577,7 @@ void mixturepl(int *method, int *r, int *mask, double *siq, int *siind, int *n, 
           myoptimpar.siq = siiq;
           myoptimpar.grad = grad;
           double w[k];
-          for (i = 0; i < k; i++) w[i] = 0;
+          for (i = 0; i < k; i++) w[i] = 0.;
           myoptimpar.w = w;
           switch (*method)
           { // R code guarantees method is 1, 2
@@ -609,23 +608,34 @@ void mixturepl(int *method, int *r, int *mask, double *siq, int *siind, int *n, 
           Fmin = fnpl(lpar, x, &myoptimpar); // should return the same value
           int ind[k];
           ord = 0;
-          sw = 0;
+          sw = 0.;
           for (i = 0; i < k; i++)
           {
             ind[i] = i;
-            if (myoptimpar.w[i] > 0)
+            if (myoptimpar.w[i] > 0.)
             {
               sw += myoptimpar.w[i];
               ord++;
             }
           }
-          ttt = Fmin + (6.*ord+2.)/(ngrad - 3.*mc - 1.) * rss;
-          revsort(myoptimpar.w, ind, k);
-          par[0] = x[0];
-          for (i = 0; i < ord; i++)
+          tmp = -log(sw);
+          if ((x[0] < 0.) | (tmp < 0.))
           {
-            par[2*i+1] = x[2*ind[i]+1];
-            par[2*i+2] = x[2*ind[i]+2];
+            //   parameters not interpretable reduce order
+            ttt = R_PosInf;
+            rss = R_PosInf;
+            maxc = k-1;
+          }
+          else
+          {
+            ttt = Fmin + (6.*ord+2.)/(ngrad - 3.*maxc - 1.) * rss;
+            revsort(myoptimpar.w, ind, k);
+            par[0] = x[0];
+            for (i = 0; i < ord; i++)
+            {
+              par[2*i+1] = x[2*ind[i]+1];
+              par[2*i+2] = x[2*ind[i]+2];
+            }
           }
 
           if (ttt < krit)
@@ -633,27 +643,28 @@ void mixturepl(int *method, int *r, int *mask, double *siq, int *siind, int *n, 
             krit = ttt;
             order[iv] = ord;
             lev[get_ind2d(0, iv, 2)] = x[0];
-            lev[get_ind2d(1, iv, 2)] = -log(sw);
+            lev[get_ind2d(1, iv, 2)] = tmp;
             if (ord == 1)
             {
-              mix[get_ind2d(0, iv, mc)] = 1;
+              mix[get_ind2d(0, iv, mc)] = 1.;
+              for (i = 1; i < mc; i++) mix[get_ind2d(i, iv, mc)] = 0.;
             }
             else
             {
-              for (i = 0; i < k; i++) mix[get_ind2d(i, iv, mc)] = myoptimpar.w[i]/sw;
-              if (k < mc0) for (i = k; i < mc0; i++) mix[get_ind2d(i, iv, mc)] = 0;  // not quite correct!! ord vs. mc0 vs. k
+              for (i = 0; i < ord; i++) mix[get_ind2d(i, iv, mc)] = myoptimpar.w[i]/sw;
+              for (i = ord; i < mc; i++) mix[get_ind2d(i, iv, mc)] = 0.;
             }
 
             for (i = 0; i < k; i++)
             {
               double theta = x[2*ind[i]+1];
-              while (theta < 0) 
+              while (theta < 0.) 
               {
                 theta += M_PI;
               }
               while (theta > M_PI) theta -= M_PI;
               double phi = x[2*ind[i]+2];
-              while (phi < 0) phi += M_2PI;
+              while (phi < 0.) phi += M_2PI;
               while (phi > M_2PI) phi -= M_2PI;
               orient[get_ind3d(0, i, iv, 2, mc)] = theta;
               orient[get_ind3d(1, i, iv, 2, mc)] = phi;
