@@ -288,7 +288,9 @@ void grpl(int n, double *par, double *gr, void *ex)
        gr[i] = gr[i] - dfv[get_ind2d(i, j, n)]*(ext.siq[j]-fv[j]);
     }
     gr[i] = 2.0*gr[i];
+//    Rprintf("%f ", gr[i]);
   }
+//  Rprintf("\n");
 }
 
 /*
@@ -510,7 +512,7 @@ void mixturepl(int *method, int *r, int *mask, double *siq, int *siind, int *n, 
                double *order, double *lev, double *mix, double *orient, double *sigma2){
 
   int nv = *r, ngrad = *n, mc = *maxcomp;
-  int iv, mc0, lpar, ord, maxc = mc;
+  int iv, mc0, lpar, ord, maxc;
   double rss, krit, ttt, sw = 0.;
   double siiq[ngrad];
   int fail;                  // failure code for optim: zero is OK
@@ -550,7 +552,7 @@ void mixturepl(int *method, int *r, int *mask, double *siq, int *siind, int *n, 
       mc0 = siind[get_ind2d(0, iv, mc+1)]; // order of model: possibly constant == mc since intial estimates guarantee mc0 == mc!!
       ord = mc0 + 1;
       gradind = siind[get_ind2d(1, iv, mc+1)];
-      par[0] = -log(siq[get_ind2d(iv, gradind-1, nv)])*.8;
+      par[0] = -log(siq[get_ind2d(iv, gradind-1, nv)])*.2;
       for (i = 0; i < mc0; i++)
       {
         if (i>0) gradind = siind[get_ind2d(i+1, iv, mc+1)];
@@ -566,12 +568,15 @@ void mixturepl(int *method, int *r, int *mask, double *siq, int *siind, int *n, 
       // estimate models and select
       rss = R_PosInf;
       krit = R_PosInf;
+      maxc = mc;
       for (k = mc0; k > 0; k--)
       {
         if (k < ord)
         {
           lpar = 2*k+1;
-          for (i = 0; i < lpar; i++) cpar[i] = par[i];
+//          Rprintf("par in ");
+          for (i = 0; i < lpar; i++) {cpar[i] = par[i]; /*Rprintf("%f ", cpar[i]);*/}
+//          Rprintf("\n");
           optimexpl myoptimpar;
           myoptimpar.ngrad = ngrad;
           myoptimpar.siq = siiq;
@@ -603,6 +608,9 @@ void mixturepl(int *method, int *r, int *mask, double *siq, int *siind, int *n, 
               for (i = 0; i < lpar; i++) x[i] = cpar[i];
               break;
           }
+//          Rprintf("par out ");
+//          for (i = 0; i < lpar; i++) {Rprintf("%f ", x[i]);}
+//          Rprintf("\n");
 
           if (Fmin < rss) rss = Fmin;
           Fmin = fnpl(lpar, x, &myoptimpar); // should return the same value
@@ -630,6 +638,9 @@ void mixturepl(int *method, int *r, int *mask, double *siq, int *siind, int *n, 
           {
             ttt = Fmin + (6.*ord+2.)/(ngrad - 3.*maxc - 1.) * rss;
             revsort(myoptimpar.w, ind, k);
+//            Rprintf("weights ");
+//            for (i = 0; i < ord; i++) Rprintf("%f ", myoptimpar.w[i]/sw);
+//            Rprintf("\n");
             par[0] = x[0];
             for (i = 0; i < ord; i++)
             {
@@ -672,7 +683,7 @@ void mixturepl(int *method, int *r, int *mask, double *siq, int *siind, int *n, 
           }
         }
       }
-      sigma2[iv] = rss/(ngrad-3.*mc0-1.);
+      sigma2[iv] = rss/(ngrad-3.*maxc-1.);
     }
     R_CheckUserInterrupt();
   }
