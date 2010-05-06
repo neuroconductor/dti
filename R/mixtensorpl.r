@@ -175,7 +175,7 @@ setMethod("dwiMixtensorpl","dtiData",function(object, maxcomp=3, ex=.2,  p=40, m
 #
   siind <- getsiind(siq,sneighbors,grad,maxcomp,maxc=.866)
   order <- array(0,ddim)
-  lev <- array(as.integer(0),c(2,ddim))
+  lev <- array(0,c(2,ddim))
 #  logarithmic eigen values
   mix <- array(0,c(maxcomp,ddim))
   orient <- array(0,c(2,maxcomp,ddim))

@@ -22,6 +22,12 @@ typedef struct
   double *siq;
   double *grad;
   double *w;
+  double *z;
+  double *qv;
+  double *dqv;
+  double *fv;
+  double *dfv;
+  double *work1;
 } optimexpl;
 
 // double F77_NAME(dotprod3)(double *, double *);
@@ -71,7 +77,7 @@ inline int get_ind5d(int i, int j, int k, int l, int m, int n1, int n2, int n3, 
 void smoothsi(int *r1, int *r2, int *r3, double *si, int *n, int *sneighbors, int *nneighbors, double *smoothedsi)
 {
   int n1 = *r1, n2 = *r2, n3 = *r3, ngrad = *n, nn = *nneighbors;
-  double w[nn];
+  double *w = (double *) R_alloc(nn, sizeof(double));
   int i1, i2, i3, i, j;
   double sw = 0.;
   double z;
@@ -122,7 +128,7 @@ double fn1(int n, double *par, void *ex)
   optimex ext = *((optimex*)ex);
 
   int m = (n-1)/3;     // order of mix tensor model
-  double z[ext.ngrad]; // value of signal fct. for each grad according to current model
+  double *z = (double *) R_alloc(ext.ngrad, sizeof(double));
   for (int k = 0; k < ext.ngrad; k++)
     z[k] = 0;
   double dir[3];       // used for direction vector calculated from angles in par
@@ -171,13 +177,11 @@ double fnpl(int n, double *par, void *ex)
   optimexpl ext = *((optimexpl*)ex);
 
   int m = (n-1)/2;     // order of mix tensor model
-  double z[ext.ngrad*m]; // value of signal fct. for each grad according to current model
-  double siq[ext.ngrad];
   for (int k = 0; k < ext.ngrad; k++)
   {
     for (int kk = 0; kk < m; kk++)
-      z[kk*ext.ngrad + k] = 0;
-    siq[k] = ext.siq[k];
+      ext.z[kk*ext.ngrad + k] = 0;
+    ext.fv[k] = ext.siq[k];
   }
   double dir[3];       // used for direction vector calculated from angles in par
 //  double c1 = exp(par[0]), sth, z1;
@@ -185,7 +189,6 @@ double fnpl(int n, double *par, void *ex)
   int i, i2, j;
   int ind[10], mode = 0;
   double work2[10];
-  double work1[ext.ngrad];
 
   double erg = 0; // result
 
@@ -199,11 +202,11 @@ double fnpl(int n, double *par, void *ex)
     for (j = 0; j < ext.ngrad; j++)
     {
       z1 = dir[0]*ext.grad[j] + dir[1]*ext.grad[ext.ngrad+j] + dir[2]*ext.grad[2*ext.ngrad+j]; 
-      z[j + i*ext.ngrad] += exp(-c1*z1*z1);
+      ext.z[j + i*ext.ngrad] += exp(-c1*z1*z1);
     }
   }
  // siq will be replaced, need to copy it if C-version of optim is used
-  F77_CALL(nnls)(z, &ext.ngrad, &ext.ngrad, &m, siq, ext.w, &erg, work2, work1, ind, &mode);
+  F77_CALL(nnls)(ext.z, &ext.ngrad, &ext.ngrad, &m, ext.fv, ext.w, &erg, work2, ext.work1, ind, &mode);
 
   // finished
   return erg;
@@ -214,35 +217,17 @@ void grpl(int n, double *par, double *gr, void *ex)
   optimexpl ext = *((optimexpl*)ex);
 
   int m = (n-1)/2;     // order of mix tensor model
-//  double *z, *siq;
-//  z = (double *) R_alloc(ext.ngrad*m, sizeof(double)); // value of signal fct. for each grad according to current model
-//  siq = (double *) R_alloc(ext.ngrad, sizeof(double));
-  double z[ext.ngrad*m];
-  double siq[ext.ngrad];
   for (int k = 0; k < ext.ngrad; k++)
   {
     for (int kk = 0; kk < m; kk++)
-      z[kk*ext.ngrad + k] = 0;
-    siq[k] = ext.siq[k];
+      ext.z[kk*ext.ngrad + k] = 0;
+    ext.fv[k] = ext.siq[k]; // zwischenspeicher fuer siq in nnls, spaeter neu initialisiert
   }
-//  double *qv, *dqv, *fv, *dfv, *dh;
-//  qv = (double *) R_alloc(m*ext.ngrad, sizeof(double));
-//  dqv = (double *) R_alloc(2*m*ext.ngrad, sizeof(double));
-//  fv = (double *) R_alloc(ext.ngrad, sizeof(double));
-//  dfv = (double *) R_alloc(m*ext.ngrad, sizeof(double));
-//  dh = (double *) R_alloc(m, sizeof(double));
-  double qv[m*ext.ngrad];
-  double dqv[2*m*ext.ngrad];
-  double fv[ext.ngrad];
-  double dfv[n*ext.ngrad];
   int i, i2, j;
   int ind[10], mode = 0;
   double dir[3];       // used for direction vector calculated from angles in par
   double c1 = par[0], sth, cpsi, spsi, z1;
   double work2[10];
-//  double *work1;
-//  work1 = (double *) R_alloc(ext.ngrad, sizeof(double));
-  double work1[ext.ngrad];
   double erg = 0; // result
 
   for (i = 0; i < m; i++)
@@ -257,26 +242,27 @@ void grpl(int n, double *par, double *gr, void *ex)
     for (j = 0; j < ext.ngrad; j++)
     {
       z1 = dir[0]*ext.grad[get_ind2d(j, 0, ext.ngrad)] + dir[1]*ext.grad[get_ind2d(j, 1, ext.ngrad)] + dir[2]*ext.grad[get_ind2d(j, 2, ext.ngrad)]; 
-      qv[get_ind2d(i, j, m)] = z1*z1;
-      z[get_ind2d(j, i, ext.ngrad)] += exp(-c1*qv[get_ind2d(i, j, m)]);
-      dqv[get_ind3d(0, i, j, 2, m)] = 2.0*(dir[2]*(cpsi*ext.grad[j] + spsi*ext.grad[ext.ngrad+j])-sth*ext.grad[2*ext.ngrad+j])*qv[get_ind2d(i, j, m)];
-      dqv[get_ind3d(1, i, j, 2, m)] = 2.0*sth*(cpsi*ext.grad[ext.ngrad+j]-spsi*ext.grad[j])*qv[get_ind2d(i, j, m)];
+      ext.qv[get_ind2d(i, j, m)] = z1*z1;
+      ext.z[get_ind2d(j, i, ext.ngrad)] += exp(-c1*ext.qv[get_ind2d(i, j, m)]);
+      ext.dqv[get_ind3d(0, i, j, 2, m)] = 2.0*(dir[2]*(cpsi*ext.grad[get_ind2d(j, 0, ext.ngrad)] + 
+                                      spsi*ext.grad[get_ind2d(j, 1, ext.ngrad)])-sth*ext.grad[get_ind2d(j, 2, ext.ngrad)])*ext.qv[get_ind2d(i, j, m)];
+      ext.dqv[get_ind3d(1, i, j, 2, m)] = 2.0*sth*(cpsi*ext.grad[get_ind2d(j, 1, ext.ngrad)]-spsi*ext.grad[get_ind2d(j, 0, ext.ngrad)])*ext.qv[get_ind2d(i, j, m)];
     }
   }
 
-  F77_CALL(nnls)(z, &ext.ngrad, &ext.ngrad, &m, siq, ext.w, &erg, work2, work1, ind, &mode);
+  F77_CALL(nnls)(ext.z, &ext.ngrad, &ext.ngrad, &m, ext.fv, ext.w, &erg, work2, ext.work1, ind, &mode);
 
   for (j = 0; j < ext.ngrad; j++)
   {
-    fv[j] = 0.0;
-    dfv[get_ind2d(0,j,n)] = 0.0;
+    ext.fv[j] = 0.0;
+    ext.dfv[get_ind2d(0,j,n)] = 0.0;
     for (i = 0; i < m; i++)
     {
-      z1 = exp(-c1*qv[get_ind2d(i, j, m)]);
-      fv[j] += ext.w[i]*z1;
-      dfv[get_ind2d(0, j, n)] -= ext.w[i]*qv[get_ind2d(i, j, m)]*z1;
-      dfv[get_ind2d(2*i+1, j, n)] = -ext.w[i]*c1*dqv[get_ind3d(0, i, j, 2, m)]*z1;
-      dfv[get_ind2d(2*i+2, j, n)] = -ext.w[i]*c1*dqv[get_ind3d(1, i, j, 2, m)]*z1;
+      z1 = exp(-c1*ext.qv[get_ind2d(i, j, m)]);
+      ext.fv[j] += ext.w[i]*z1;
+      ext.dfv[get_ind2d(0, j, n)] -= ext.w[i]*ext.qv[get_ind2d(i, j, m)]*z1;
+      ext.dfv[get_ind2d(2*i+1, j, n)] = -ext.w[i]*c1*ext.dqv[get_ind3d(0, i, j, 2, m)]*z1;
+      ext.dfv[get_ind2d(2*i+2, j, n)] = -ext.w[i]*c1*ext.dqv[get_ind3d(1, i, j, 2, m)]*z1;
     }
   }
 
@@ -285,7 +271,7 @@ void grpl(int n, double *par, double *gr, void *ex)
     gr[i] = 0.0;
     for (j = 0; j < ext.ngrad; j++)
     {
-       gr[i] = gr[i] - dfv[get_ind2d(i, j, n)]*(ext.siq[j]-fv[j]);
+       gr[i] = gr[i] - ext.dfv[get_ind2d(i, j, n)]*(ext.siq[j]-ext.fv[j]);
     }
     gr[i] = 2.0*gr[i];
 //    Rprintf("%f ", gr[i]);
@@ -358,7 +344,7 @@ void mixture(int *method, int *r, int *mask, double *siq, int *siind, int *n, do
   int nv = *r, ngrad = *n, mc = *maxcomp;
   int iv, mc0, lpar;
   double rss, krit, ttt;
-  double siiq[ngrad];
+  double *siiq = (double *) R_alloc(ngrad, sizeof(double));
   int fail;              // failure code for optim: zero is OK
   int fncount;           // number of calls to obj fct in optim
   double Fmin = 0.;          // minimal value of obj fct in optim
@@ -370,6 +356,7 @@ void mixture(int *method, int *r, int *mask, double *siq, int *siind, int *n, do
   double cpar[11];
   double x[11];
   double tmp;
+  double theta, phi;
 //  struct timeval tp1, tp2;
 //  struct timezone tzp;
 //  double timm = 0;
@@ -470,8 +457,8 @@ void mixture(int *method, int *r, int *mask, double *siq, int *siind, int *n, do
           }
           else
           {
-            double zmm[k];  // declare maximum?
-            double zm[k-1]; // declare maximum?
+            double *zmm = (double *) R_alloc(k, sizeof(double));
+            double *zm = (double *) R_alloc(k-1, sizeof(double));
             for (i = 0; i < k-1; i++) zm[i] = x[3*i+4];
             getweights(k-1, zm, zmm);
             for (i = 0; i < k; i++) mix[get_ind2d(i, iv, mc)] = zmm[i];
@@ -479,7 +466,7 @@ void mixture(int *method, int *r, int *mask, double *siq, int *siind, int *n, do
 
           for (i = 0; i < k; i++)
           {
-            double theta = x[3*i+2];
+            theta = x[3*i+2];
             while (theta < 0.) 
             {
             //  Rprintf("theta %f %f", theta, M_PI); 
@@ -487,7 +474,7 @@ void mixture(int *method, int *r, int *mask, double *siq, int *siind, int *n, do
             //  Rprintf("theta %f\n", theta); 
             }
             while (theta > M_PI) theta -= M_PI;
-            double phi = x[3*i+3];
+            phi = x[3*i+3];
             while (phi < 0.) phi += M_2PI;
             while (phi > M_2PI) phi -= M_2PI;
             orient[get_ind3d(0, i, iv, 2, mc)] = theta;
@@ -514,7 +501,7 @@ void mixturepl(int *method, int *r, int *mask, double *siq, int *siind, int *n, 
   int nv = *r, ngrad = *n, mc = *maxcomp;
   int iv, mc0, lpar, ord, maxc;
   double rss, krit, ttt, sw = 0.;
-  double siiq[ngrad];
+  double *siiq = (double *) R_alloc(ngrad, sizeof(double));
   int fail;                  // failure code for optim: zero is OK
   int fncount, grcount=0;               // number of calls to obj fct in optim
   double Fmin = 0.;          // minimal value of obj fct in optim
@@ -526,7 +513,27 @@ void mixturepl(int *method, int *r, int *mask, double *siq, int *siind, int *n, 
   double cpar[9];
   double x[9];
   double tmp;
-  int *mmask;
+  int *mmask = (int *) R_alloc(9, sizeof(int));
+  for (i = 0; i < 9; i++) mmask[i] = 1;
+  double *w = (double *) R_alloc(9, sizeof(double));
+  double theta, phi;
+  int *ind = (int *) R_alloc(4, sizeof(int));
+  double *z = (double *) R_alloc(ngrad*4, sizeof(double));
+  double *qv = (double *) R_alloc(4*ngrad, sizeof(double));
+  double *dqv = (double *) R_alloc(2*4*ngrad, sizeof(double));
+  double *fv = (double *) R_alloc(ngrad, sizeof(double));
+  double *dfv = (double *) R_alloc(9*ngrad, sizeof(double));
+  double *work1 = (double *) R_alloc(ngrad, sizeof(double));
+  optimexpl myoptimpar;
+  myoptimpar.ngrad = ngrad;
+  myoptimpar.grad = grad;
+  myoptimpar.w = w;
+  myoptimpar.z = z;
+  myoptimpar.qv = qv;
+  myoptimpar.dqv = dqv;
+  myoptimpar.fv = fv;
+  myoptimpar.dfv = dfv;
+  myoptimpar.work1 = work1;
 
   for (iv = 0; iv < nv; iv++)
   {
@@ -577,13 +584,7 @@ void mixturepl(int *method, int *r, int *mask, double *siq, int *siind, int *n, 
 //          Rprintf("par in ");
           for (i = 0; i < lpar; i++) {cpar[i] = par[i]; /*Rprintf("%f ", cpar[i]);*/}
 //          Rprintf("\n");
-          optimexpl myoptimpar;
-          myoptimpar.ngrad = ngrad;
           myoptimpar.siq = siiq;
-          myoptimpar.grad = grad;
-          double w[k];
-          for (i = 0; i < k; i++) w[i] = 0.;
-          myoptimpar.w = w;
           switch (*method)
           { // R code guarantees method is 1, 2
             case 1:
@@ -600,7 +601,6 @@ void mixturepl(int *method, int *r, int *mask, double *siq, int *siind, int *n, 
 //                    &fncount, *maxit);
 //              break;
             case 3:
-              mmask = (int *) R_alloc(lpar, sizeof(int));
               vmmin(lpar, cpar, &Fmin,
                      fnpl, grpl, *maxit, 0,
                      mmask, R_NegInf, *reltol, 100,
@@ -614,7 +614,6 @@ void mixturepl(int *method, int *r, int *mask, double *siq, int *siind, int *n, 
 
           if (Fmin < rss) rss = Fmin;
           Fmin = fnpl(lpar, x, &myoptimpar); // should return the same value
-          int ind[k];
           ord = 0;
           sw = 0.;
           for (i = 0; i < k; i++)
@@ -668,13 +667,13 @@ void mixturepl(int *method, int *r, int *mask, double *siq, int *siind, int *n, 
 
             for (i = 0; i < k; i++)
             {
-              double theta = x[2*ind[i]+1];
+              theta = x[2*ind[i]+1];
               while (theta < 0.) 
               {
                 theta += M_PI;
               }
               while (theta > M_PI) theta -= M_PI;
-              double phi = x[2*ind[i]+2];
+              phi = x[2*ind[i]+2];
               while (phi < 0.) phi += M_2PI;
               while (phi > M_2PI) phi -= M_2PI;
               orient[get_ind3d(0, i, iv, 2, mc)] = theta;
