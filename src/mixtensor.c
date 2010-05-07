@@ -495,8 +495,23 @@ void mixture(int *method, int *r, int *mask, double *siq, int *siind, int *n, do
   return;
 }
 
-void mixturepl(int *method, int *r, int *mask, double *siq, int *siind, int *n, double *grad, int *sneighbors, int *maxcomp, int *ep, int *maxit, double *reltol,
-               int *order, double *lev, double *mix, double *orient, double *sigma2){
+void mixturepl(int *method,
+               int *r,
+               int *mask,
+               double *siq,
+               int *siind,
+               int *n,
+               double *grad,
+               int *sneighbors,
+               int *maxcomp,
+               int *ep,
+               int *maxit,
+               double *reltol,
+               int *order,
+               double *lev,
+               double *mix,
+               double *orient,
+               double *sigma2){
 
   int nv = *r, ngrad = *n, mc = *maxcomp;
   int iv, mc0, lpar, ord, maxc;
