@@ -112,7 +112,7 @@ C
       real*8 vert(3,nv),ev(2,nobj),ori(2,mo,nobj),mix(mo,nobj),
      1       radii(nv,nobj)
       integer i,j,k
-      real*8 dotprod3,c12,sth,dir(3,5),fourpi,c12fp,z,utd,zk,e1,e2
+      real*8 dotprod3,c12,sth,dir(3,5),fourpi,c12fp,z,utd,zk,e1,e2,sm
 C     assumes maximum of 5 micxture components
       if(mo.gt.5) THEN
          call intpr("mo restricted to 5, is",18,mo,1)
@@ -125,14 +125,17 @@ C     assumes maximum of 5 micxture components
 C   limit maximal excentricity to mex+1 for visualisation purposes
          c12 = e1/(e1+e2)
          c12fp = sqrt(e2/(e1+e2))/fourpi
+         sm = 1.d0
+C   calculate weight for order 0 component in sm
          DO k = 1,ord(j)
+            sm = sm - mix(k,j)
             sth = sin(ori(1,k,j))
             dir(1,k) = sth*cos(ori(2,k,j))
             dir(2,k) = sth*sin(ori(2,k,j))
             dir(3,k) = cos(ori(1,k,j))
          END DO
          DO i = 1,nv
-            z = 0.d0
+            z = sm
             DO k = 1,ord(j)
                utd = dotprod3(dir(1,k),vert(1,i))
                zk = 1.d0-c12*utd*utd

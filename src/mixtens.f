@@ -1,3 +1,154 @@
+      subroutine corrw(z,ngrad,m,siq,erg,th1,w)
+C
+C  reduce weights if sum(w) > exp(-eps*th1) 
+C
+      implicit logical (a-z)
+      integer m,ngrad
+      real*8 z(ngrad,m),siq(ngrad),erg,th1,w(m)
+      integer i,j
+      real*8 z1,z2,sw
+      sw=w(1)
+      DO i=2,m
+         sw=sw+w(i)
+      END DO
+      z1 = exp(-1.d-2*th1)
+      IF(sw.gt.z1) THEN
+         DO i=1,m
+            w(i)=w(i)*z1/sw
+         END DO
+         z2=0.d0
+         DO j=1,ngrad
+            z1=siq(j)
+            DO i=1,m
+               z1=z1-w(i)*z(j,i)
+            END DO
+            z2=z2+z1*z1
+         END DO
+         erg=sqrt(erg)
+      END IF
+      RETURN
+      END
+      
+      subroutine mfunpl0(par,siq,grad,m,lpar,ngrad,z,w,work1,erg)
+C  
+C   only call for m>1  otherwise we have a trivial solution  c1 = 0, c2 = -log(mean(siq))
+C   corresponding to an isotropic tensor and weight 1
+C
+      implicit logical (a-z)
+      integer m,lpar,ngrad
+      real*8 par(lpar),siq(ngrad),grad(3,ngrad),z(ngrad,m),erg
+      integer i,j,i3,ind(10),mode
+      real*8 c1,w(m),sw,sth,z1,p0,p1,d1,d2,d3,emc1,
+     1       work1(ngrad),work2(10)
+      c1 = par(1)
+      emc1 = exp(-c1)
+      sw = 0
+      DO j=1,ngrad
+         z(j,1) = emc1
+      END DO
+      DO i = 2,m
+         i3=2*i
+         p0=par(i3-2)
+         p1=par(i3-1)
+         sth = sin(p0)
+         d1 = sth*cos(p1)
+         d2 = sth*sin(p1)
+         d3 = cos(p0)
+         DO j = 1,ngrad
+            z1 = d1*grad(1,j)+d2*grad(2,j)+d3*grad(3,j)
+            z(j,i) = exp(-c1*z1*z1)
+         END DO
+      END DO
+C  
+C    siq will be replaced, need to copy it if C-version of optim is used
+C
+      call nnls(z,ngrad,ngrad,m,siq,w,erg,work2,work1,ind,mode)
+      IF(mode.gt.1) THEN
+         call intpr("mode",4,mode,1)
+      END IF
+      call corrw(z,ngrad,m,siq,erg,c1,w)
+      RETURN
+      END 
+C
+C __________________________________________________________________
+C
+      subroutine mfunpl0g(par,siq,grad,m,lpar,ngrad,z,w,work1,erg,
+     1                    fv,dfv,qv,dqv,mm1,dh)
+C  
+C   only call for m>1  otherwise we have a trivial solution  c1 = 0, c2 = -log(mean(siq))
+C   corresponding to an isotropic tensor and weight 1
+C
+      implicit logical (a-z)
+      integer m,mm1,lpar,ngrad
+      real*8 par(lpar),siq(ngrad),grad(3,ngrad),z(ngrad,m),fv(ngrad),
+     1   erg,dfv(lpar,ngrad),qv(mm1,ngrad),dqv(2,mm1,ngrad),dh(lpar)
+      integer i,j,i3,ind(10),mode
+      real*8 c1,w(m),sw,sth,cth,spsi,cpsi,z1,p0,p1,d1,d2,d3,emc1,
+     1       work1(ngrad),work2(10)
+      c1 = par(1)
+      emc1 = exp(-c1)
+      sw = 0
+      DO j=1,ngrad
+         z(j,1) = emc1
+      END DO
+      DO i = 2,m
+         i3=2*i
+         p0=par(i3-2)
+         p1=par(i3-1)
+         sth = sin(p0)
+         cth = cos(p0)
+         spsi = sin(p1)
+         cpsi = cos(p1)
+         d1 = sth*cpsi
+         d2 = sth*spsi
+         d3 = cth
+         DO j = 1,ngrad
+            z1 = d1*grad(1,j)+d2*grad(2,j)+d3*grad(3,j)
+            z(j,i) = exp(-c1*z1*z1)
+            qv(i-1,j) = z1*z1
+            dqv(1,i-1,j) = 2.d0*(cth*(cpsi*grad(1,j)+spsi*grad(2,j))-
+     1                         sth*grad(3,j))*qv(i-1,j)
+            dqv(2,i-1,j) = 2.d0*sth*(cpsi*grad(2,j)-spsi*grad(1,j))*
+     1                         qv(i-1,j)
+         END DO
+      END DO
+C  
+C    siq will be replaced, need to copy it if C-version of optim is used
+C
+      call dcopy(ngrad,siq,1,fv,1)
+      call nnls(z,ngrad,ngrad,m,fv,w,erg,work2,work1,ind,mode)
+      IF(mode.gt.1) THEN
+         call intpr("mode",4,mode,1)
+      END IF
+      call corrw(z,ngrad,m,siq,erg,c1,w)
+C
+C   now compute what's needed for the gradient
+C
+      DO j = 1,ngrad
+C        call intpr("j1",2,j,1)
+         fv(j) = 0.d0 
+         fv(j) = w(1)*emc1
+         dfv(1,j) = -w(i)*emc1
+         DO i = 2,m
+            z1 = exp(-c1*qv(i-1,j))
+            fv(j) = fv(j)+w(i)*z1
+            dfv(1,j) = dfv(1,j)-w(i)*qv(i-1,j)*z1
+            dfv(2*i-2,j) = -w(i)*c1*dqv(1,i-1,j)*z1
+            dfv(2*i-1,j) = -w(i)*c1*dqv(2,i-1,j)*z1
+         END DO
+      END DO
+C
+C   now compute the gradient in dh
+C
+      DO i=1,lpar
+         dh(i) = 0.d0
+         DO j = 1,ngrad
+           dh(i) = dh(i)-dfv(i,j)*(siq(j)-fv(j))
+         END DO
+         dh(i) = 2.d0*dh(i)
+      END DO
+      RETURN
+      END 
       subroutine mfunpl(par,siq,grad,m,lpar,ngrad,z,w,work1,erg)
       implicit logical (a-z)
       integer m,lpar,ngrad
@@ -360,3 +511,31 @@ C  now search for minima of sms (or weighted sms
       END DO
       RETURN
       END
+C
+C __________________________________________________________________
+C
+      subroutine getev0(si,ngrad,n1,n2,n3,lev)
+      implicit logical (a-z)
+      integer n1,n2,n3,ngrad
+      real*8 si(ngrad,n1,n2,n3),lev(2,n1,n2,n3)
+      integer i1,i2,i3,j
+      real*8 z,z1
+C      real*8 z,DASUM
+C      external DASUM
+      z=ngrad
+      DO i1=1,n1
+         DO i2=1,n2
+            DO i3=1,n3
+               lev(1,i1,i2,i3)=0
+               z1=si(1,i1,i2,i3)
+               DO j=2,ngrad
+                  z1=z1+si(j,i1,i2,i3)
+               END DO
+               lev(2,i1,i2,i3)=-log(z1/z)
+C               lev(2,i1,i2,i3)=-log(DASUM(ngrad,si(1,i1,i2,i3),1)/z)
+            END DO
+         END DO
+      END DO
+      RETURN
+      END
+ 

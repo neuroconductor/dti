@@ -31,7 +31,7 @@ setMethod("sdpar","dtiData",function(object,level=NULL,sdmethod="sd",interactive
     accept <- FALSE
     ddim <- object@ddim
     bw <- min(bw.nrd(if(ls0ind>1) s0mean[s0mean>0] else s0[s0>0]),diff(range(if(ls0ind>1) s0mean else s0))/256)
-    z <- density(if(ls0ind>1) s0mean[s0mean>0&s0mean<A1] else s0[s0>0&s0<A1],bw = bw,n=1024)
+    z <- density(if(ls0ind>1) s0mean[s0mean>0&s0mean<A1] else s0[s0>0&s0<A1],bw = max(bw,.01),,n=1024)
     indx1 <- trunc(0.05*ddim[1]):trunc(0.95*ddim[1])
     indx2 <- trunc(0.1*ddim[1]):trunc(0.9*ddim[1])
     indx3 <- trunc(0.15*ddim[1]):trunc(0.85*ddim[1])

@@ -680,7 +680,7 @@ show3dCdata <- function(radii,polyeder,centers=NULL,minalpha=1,scale=.5,...){
 #############
 
 show3dODF <- function(radii,polyeder,centers=NULL,minalpha=1,...){
-   if(is.null(centers)){
+   if(is.null(centers)||length(centers)==3){
       centers <- matrix(0,3,1)
       n <- 1
    } else {
