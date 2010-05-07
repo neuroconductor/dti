@@ -214,7 +214,7 @@ setClass("dwiMixtensor",
                         mix    = "array",
                         orient = "array",
                         order  = "array",
-                        p      = "narray", # p in "method"=="Jian"
+                        p      = "array", # p in "method"=="Jian"
                         th0    = "array",
                         sigma  = "array",
                         scorr  = "array",
@@ -243,7 +243,7 @@ setClass("dwiMixtensor",
             return(invisible(FALSE))
           }
           if (any(dim(object@order)!=object@ddim)) {
-            cat("  \n")
+            cat("invalid dimension of order array orient \n")
             return(invisible(FALSE))
           }
           if (any(object@mix<0)) {

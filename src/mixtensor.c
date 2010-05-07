@@ -496,7 +496,7 @@ void mixture(int *method, int *r, int *mask, double *siq, int *siind, int *n, do
 }
 
 void mixturepl(int *method, int *r, int *mask, double *siq, int *siind, int *n, double *grad, int *sneighbors, int *maxcomp, int *ep, int *maxit, double *reltol,
-               double *order, double *lev, double *mix, double *orient, double *sigma2){
+               int *order, double *lev, double *mix, double *orient, double *sigma2){
 
   int nv = *r, ngrad = *n, mc = *maxcomp;
   int iv, mc0, lpar, ord, maxc;

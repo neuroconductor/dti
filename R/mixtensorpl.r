@@ -156,10 +156,10 @@ setMethod("dwiMixtensorpl","dtiData",function(object, maxcomp=3, ex=.2,  p=40, m
   index <- if(z$lindex>0) z$index[1:z$lindex] else numeric(0)
   rm(z)
   ngrad0 <- ngrad - length(s0ind)
-  s0 <- si[,,,s0ind]
-  if(length(s0ind)>1) s0 <- apply(s0,1:3,mean)
+  s0 <- si[,,,s0ind,drop=FALSE]
+  if(length(s0ind)>1) s0 <- apply(s0,1:3,mean) else dim(s0) <- dim(s0)[1:3]
   mask <- s0>0
-  si <- si[,,,-s0ind]
+  si <- si[,,,-s0ind,drop=FALSE]
   siq <- sweep(si,1:3,s0,"/")
   siqmed <- apply(siq,1:3,median)
   siqmed[siqmed<.9] <- .9
@@ -368,9 +368,9 @@ setMethod("dwiMixtensorpl.new",
 
              cat("prepare data and initial estimates ... ")
              # prepare data for optim
-             s0 <- si[,,,s0ind]
-             si <- si[,,,-s0ind]
-             if (length(s0ind)>1) s0 <- apply(s0, 1:3, mean)
+             s0 <- si[,,,s0ind,drop=FALSE]
+             si <- si[,,,-s0ind,drop=FALSE]
+             if (length(s0ind)>1) s0 <- apply(s0, 1:3, mean) else dim(s0) <- dim(s0)[1:3]
              # normalized DW data
              siq <- sweep(si,1:3,s0,"/")
              # heuristics to avoid DWI that are larger than s0.
@@ -407,13 +407,13 @@ setMethod("dwiMixtensorpl.new",
                      as.integer(pl),                         # exp for Jian model
                      as.integer(maxit),                      # max number of iterations for optim
                      as.double(reltol),                      # reltol crit for optim
-                     order   = double(prod(ddim)),           # selected order of mixture
+                     order   = integer(prod(ddim)),           # selected order of mixture
                      lev     = double(2*prod(ddim)),         # logarithmic eigenvalues
                      mix     = double(maxcomp*prod(ddim)),   # mixture weights
                      orient  = double(2*maxcomp*prod(ddim)), # phi/theta for all mixture tensors
                      sigma2  = double(prod(ddim)),           # parameter variance ???
                      DUP     = FALSE,
-                     PACKAGE = "dti")[c("order", "lev", "mix", "orient", "p", "sigma2")]
+                     PACKAGE = "dti")[c("order", "lev", "mix", "orient", "sigma2")]
 
              # set dimension attr
              dim(a$order) <- ddim;
@@ -430,7 +430,7 @@ setMethod("dwiMixtensorpl.new",
                            mix         = a$mix,
                            orient      = a$orient,
                            order       = a$order,
-                           p           = 1,
+                           p           = array(1, c(1,1,1)),
                            th0         = s0,
                            sigma       = a$sigma2,
                            scorr       = array(1, c(1,1,1)), # ???
