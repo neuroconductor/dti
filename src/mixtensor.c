@@ -54,12 +54,12 @@ void paroforient(double *dir, double *angles)
   return;
 }
 
-inline int get_ind2d(int i, int j, int n1)
+static R_INLINE int get_ind2d(int i, int j, int n1)
 {
   return i + j*n1;
 }
 
-inline int get_ind3d(int i, int j, int k, int n1, int n2)
+static R_INLINE int get_ind3d(int i, int j, int k, int n1, int n2)
 {
   return i + j*n1 + k*n1*n2;
 }
@@ -525,7 +525,7 @@ void mixturepl(int *method,
 //          for (i = 0; i < lpar; i++) {Rprintf("%f ", x[i]);}
 //          Rprintf("\n");
 
-          if (Fmin < rss) rss = Fmin;
+          if (Fmin*Fmin < rss) rss = Fmin*Fmin;
           Fmin = fnpl(lpar, x, &myoptimpar); // should return the same value
           ord = 0;
           sw = 0.;
@@ -548,7 +548,7 @@ void mixturepl(int *method,
           }
           else
           {
-            ttt = Fmin + (6.*ord+2.)/(ngrad - 3.*maxc - 1.) * rss;
+            ttt = Fmin*Fmin + (6.*ord+2.)/(ngrad - 3.*maxc - 1.) * rss;
             revsort(myoptimpar.w, ind, k);
 //            Rprintf("weights ");
 //            for (i = 0; i < ord; i++) Rprintf("%f ", myoptimpar.w[i]/sw);
