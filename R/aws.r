@@ -38,7 +38,7 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
   ddim0 <- object@ddim0
   ddim <- object@ddim
   z <- .Fortran("outlier",
-                as.integer(object@si),
+                as.double(object@si),
                 as.integer(prod(ddim)),
                 as.integer(ngrad),
                 as.logical((1:ngrad)%in%s0ind),

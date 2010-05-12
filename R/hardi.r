@@ -20,7 +20,7 @@ setMethod("dwiQball","dtiData",function(object,what="wODF",order=4,lambda=0){
   ns0 <- length(s0ind)
   sdcoef <- object@sdcoef
   z <- .Fortran("outlier",
-                as.integer(object@si),
+                as.double(object@si),
                 as.integer(prod(ddim)),
                 as.integer(ngrad),
                 as.logical((1:ngrad)%in%s0ind),

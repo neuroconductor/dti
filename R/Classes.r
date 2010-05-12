@@ -214,7 +214,7 @@ setClass("dwiMixtensor",
                         mix    = "array",
                         orient = "array",
                         order  = "array",
-                        p      = "array", # p in "method"=="Jian"
+                        p      = "numeric", # p in "method"=="Jian"
                         th0    = "array",
                         sigma  = "array",
                         scorr  = "array",

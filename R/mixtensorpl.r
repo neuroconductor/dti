@@ -23,7 +23,6 @@ gmfunpl0 <- function(par,siq,grad){
 #
 lpar <- length(par)
 m <- (lpar+1)/2
-mm1 <- m-1
 ngrad <- dim(grad)[1]
 .Fortran("mfunpl0g",as.double(par),#par
                 as.double(siq),#siq
@@ -37,9 +36,8 @@ ngrad <- dim(grad)[1]
                 double(1),#erg
                 double(ngrad),#fv
                 double(lpar*ngrad),#dfv
-                double(mm1*ngrad),#qv
-                double(2*mm1*ngrad),#dqv
-                as.integer(mm1),#m-1
+                double(m*ngrad),#qv
+                double(2*m*ngrad),#dqv
                 gradient=double(lpar),#dh
                 PACKAGE="dti")$gradient
 }
@@ -150,7 +148,7 @@ w<-.Fortran("mfunpl",as.double(par),
            }
            sw <- sum(w)
            lev <- c(par[1],-log(sw))
-           mix <- (w[o]/sw)[-1] 
+           mix <- (w[o]/sw)
            or <- matrix(par[2:lpar],2,m)[,o,drop=FALSE]
            or[1,or[1,]<0] <- or[1,or[1,]<0]+pi
            or[1,or[1,]>pi] <- or[1,or[1,]>pi]-pi
@@ -231,7 +229,7 @@ setMethod("dwiMixtensorpl0","dtiData",function(object, maxcomp=3, ex=.2,  p=40, 
   ns0 <- length(s0ind)
   cat("ngrad",ngrad,"mean(si)",range(apply(object@si[,,,-object@s0ind],1:3,mean)),"\n")
   z <- .Fortran("outlier",
-                as.integer(object@si),
+                as.double(object@si),
                 as.integer(prod(ddim)),
                 as.integer(ngrad),
                 as.logical((1:ngrad)%in%s0ind),
@@ -245,12 +243,13 @@ setMethod("dwiMixtensorpl0","dtiData",function(object, maxcomp=3, ex=.2,  p=40, 
   index <- if(z$lindex>0) z$index[1:z$lindex] else numeric(0)
   rm(z)
   ngrad0 <- ngrad - length(s0ind)
-  s0 <- si[,,,s0ind]
+  s0 <- si[,,,s0ind,drop=FALSE]
   if(length(s0ind)>1) s0 <- apply(s0,1:3,mean)
-  mask <- s0>0
-  si <- si[,,,-s0ind]
-  cat("ngrad",ngrad0,"mean(si)",range(apply(si,1:3,mean)),"\n")
-  siq <- sweep(si,1:3,s0,"/")
+  mask <- s0 > object@level
+  siq <- si[,,,-s0ind,drop=FALSE]
+  dim(siq) <- c(prod(ddim),ngrad-ns0)
+  siq[mask,] <- sweep(siq[mask,],1,s0[mask],"/")
+  dim(siq) <- c(ddim,ngrad-ns0)
   cat("ngrad",ngrad0,"mean(siq)",range(apply(siq,1:3,mean)),"\n")
   siqmed <- apply(siq,1:3,median)
   siqmed[siqmed<.9] <- .9
@@ -262,11 +261,10 @@ setMethod("dwiMixtensorpl0","dtiData",function(object, maxcomp=3, ex=.2,  p=40, 
 #
   grad <- t(object@gradient[,-s0ind])
   cat("ngrad",ngrad0,"mean(siq)",range(apply(siq,1:3,mean)),"\n")
-  sneighbors <- neighbors(grad,maxneighb)
 #
 #   determine initial estimates for orientations 
 #
-  siind <- getsiind(siq,sneighbors,grad,maxcomp,maxc=.866)
+  siind <- getsiind(siq,mask,grad,maxcomp,maxc=.866)
 #
 # initial estimates for eigenvalues
 #
@@ -443,7 +441,7 @@ setMethod("dwiMixtensorpl","dtiData",function(object, maxcomp=3, ex=.2,  p=40, m
   s0ind <- object@s0ind
   ns0 <- length(s0ind)
   z <- .Fortran("outlier",
-                as.integer(object@si),
+                as.double(object@si),
                 as.integer(prod(ddim)),
                 as.integer(ngrad),
                 as.logical((1:ngrad)%in%s0ind),
@@ -459,9 +457,11 @@ setMethod("dwiMixtensorpl","dtiData",function(object, maxcomp=3, ex=.2,  p=40, m
   ngrad0 <- ngrad - length(s0ind)
   s0 <- si[,,,s0ind,drop=FALSE]
   if(length(s0ind)>1) s0 <- apply(s0,1:3,mean) else dim(s0) <- dim(s0)[1:3]
-  mask <- s0>0
-  si <- si[,,,-s0ind,drop=FALSE]
-  siq <- sweep(si,1:3,s0,"/")
+  mask <- s0 > object@level
+  siq <- si[,,,-s0ind,drop=FALSE]
+  dim(siq) <- c(prod(ddim),ngrad-ns0)
+  siq[mask,] <- sweep(siq[mask,],1,s0[mask],"/")
+  dim(siq) <- c(ddim,ngrad-ns0)
   siqmed <- apply(siq,1:3,median)
   siqmed[siqmed<.9] <- .9
   siqmed[siqmed>.99] <- .99
@@ -470,11 +470,10 @@ setMethod("dwiMixtensorpl","dtiData",function(object, maxcomp=3, ex=.2,  p=40, m
 #  avoid situations where si's are larger than s0
 #
   grad <- t(object@gradient[,-s0ind])
-  sneighbors <- neighbors(grad,maxneighb)
 #
 #   determine initial estimates for orientations 
 #
-  siind <- getsiind(siq,sneighbors,grad,maxcomp,maxc=.866)
+  siind <- getsiind(siq,mask,grad,maxcomp,maxc=.866)
   order <- array(0,ddim)
   lev <- array(0,c(2,ddim))
 #  logarithmic eigen values
@@ -488,11 +487,27 @@ setMethod("dwiMixtensorpl","dtiData",function(object, maxcomp=3, ex=.2,  p=40, m
   ingc <- 0
   prt0 <- proc.time()[1]
   prta <- prt0-prta
+  siind0 <- siind
+  dim(siind0) <- c(maxcomp+1,n1*n2*n3)
+  if(any(siind0[2,mask]==0)){
+   cat("siindcontains zeros\n")
+   return(list(siind=siind,siq=siq,mask=mask,grad=grad,maxcomp=maxcomp))
+  }
   for(i1 in 1:n1) for(i2 in 1:n2) for(i3 in 1:n3){
      if(mask[i1,i2,i3]){
      mc0 <- maxcomp
      ord <- mc0+1
-     for(j in 1:mc0) orient[,j,i1,i2,i3] <- paroforient(grad[siind[j+1,i1,i2,i3],])
+     for(j in 1:mc0) {
+       if(siind[j+1,i1,i2,i3]<1||siind[j+1,i1,i2,i3]>ngrad0){
+        cat("i1",i1,"i2",i2,"i3",i3,"j",j,"mc0",mc0,"\n")
+        cat("siind",siind[,i1,i2,i3],"mask",mask[i1,i2,i3],"\n")
+       }
+       if(is.na(sin(acos(grad[siind[j+1,i1,i2,i3],3])))){
+        cat("i1",i1,"i2",i2,"i3",i3,"j",j,"mc0",mc0,"\n")
+        cat("siind",siind[j+1,i1,i2,i3],"\n")
+       }
+       orient[,j,i1,i2,i3] <- paroforient(grad[siind[j+1,i1,i2,i3],])
+       }
 #
 #   these are the gradient vectors corresponding to minima in spherical coordinates
 #
@@ -569,7 +584,7 @@ setMethod("dwiMixtensorpl","dtiData",function(object, maxcomp=3, ex=.2,  p=40, m
            krit <- ttt
            order[i1,i2,i3] <- ord
            lev[,i1,i2,i3] <- zz$lev
-           mix[,i1,i2,i3] <- if(ord==maxcomp) zz$mix else c(zz$mix,rep(0,maxcomp-ord))
+           mix[,i1,i2,i3] <- if(length(zz$mix)==maxcomp) zz$mix else c(zz$mix,rep(0,maxcomp-length(zz$mix)))
            orient[,1:ord,i1,i2,i3] <- zz$orient
        }
      }
@@ -652,7 +667,7 @@ setMethod("dwiMixtensorpl.new",
 
              cat("determine outliers ... ")
              z <- .Fortran("outlier",
-                           as.integer(object@si),
+                           as.double(object@si),
                            as.integer(prod(ddim)),
                            as.integer(ngrad),
                            as.logical((1:ngrad)%in%s0ind),
@@ -670,20 +685,22 @@ setMethod("dwiMixtensorpl.new",
              cat("prepare data and initial estimates ... ")
              # prepare data for optim
              s0 <- si[,,,s0ind,drop=FALSE]
-             si <- si[,,,-s0ind,drop=FALSE]
              if (length(s0ind)>1) s0 <- apply(s0, 1:3, mean) else dim(s0) <- dim(s0)[1:3]
              # normalized DW data
-             siq <- sweep(si,1:3,s0,"/")
+             mask <- s0 > object@level
+             siq <- si[,,,-s0ind,drop=FALSE]
+             dim(siq) <- c(prod(ddim),ngrad-ns0)
+             siq[mask,] <- sweep(siq[mask,],1,s0[mask],"/")
+             dim(siq) <- c(ddim,ngrad-ns0)
              # heuristics to avoid DWI that are larger than s0.
              siqmed <- apply(siq, 1:3, median)
              siqmed[siqmed < .9] <- .9
              siqmed[siqmed > .99] <- .99
              siq <- sweep(siq,1:3,siqmed,pmin)
              # mask for calculation
-             mask <- s0 > 0
+             mask <- s0 > object@level
              grad <- t(object@gradient[,-s0ind])
-             sneighbors <- neighbors(grad, maxneighb)
-             siind <- getsiind(siq, sneighbors, grad, maxcomp, maxc=.866)
+             siind <- getsiind(siq, mask, grad, maxcomp, maxc=.866)
              # siind[1,,,] contains number of potential directions 
              # siind[-1,,,] contains indices of grad corresponding to these directions
              cat("done\n")
@@ -703,7 +720,6 @@ setMethod("dwiMixtensorpl.new",
                      as.integer(siind),                      # DWI indices of local minima
                      as.integer(ngrad - length(s0ind)),      # number of DWI
                      as.double(grad),                        # gradient directions
-                     as.integer(sneighbors),                 # (maxneighb x ngrad) matrix of nearest gradient neighbors
                      as.integer(maxcomp),                    # max number of gradient neighbors
                      as.integer(pl),                         # exp for Jian model
                      as.integer(maxit),                      # max number of iterations for optim
@@ -731,7 +747,7 @@ setMethod("dwiMixtensorpl.new",
                            mix         = a$mix,
                            orient      = a$orient,
                            order       = a$order,
-                           p           = array(1, c(1,1,1)),
+                           p           = pl,
                            th0         = s0,
                            sigma       = a$sigma2,
                            scorr       = array(1, c(1,1,1)), # ???

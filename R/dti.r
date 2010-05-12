@@ -24,7 +24,7 @@ setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="r
     sdcoef <- sdpar(object,interactive=FALSE)@sdcoef
   }
   z <- .Fortran("outlier",
-                as.integer(object@si),
+                as.double(object@si),
                 as.integer(prod(ddim)),
                 as.integer(ngrad),
                 as.logical((1:ngrad)%in%s0ind),
