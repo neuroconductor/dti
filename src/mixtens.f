@@ -1,16 +1,15 @@
-      subroutine mfunpl0(par,siq,grad,m,lpar,ngrad,z,w,erg)
+      subroutine mfunpl1(par,siq,grad,m,lpar,ngrad,pen,z,w,erg)
 C  
 C   only call for m>1  otherwise we have a trivial solution  c1 = 0, c2 = -log(mean(siq))
 C   corresponding to an isotropic tensor and weight 1
 C
-C   code is restricted to m<=6
+C   code is restricted to m<=7 (six nontrivial compartments)
 C
       implicit logical (a-z)
       integer m,lpar,ngrad
-      real*8 par(lpar),siq(ngrad),grad(3,ngrad),z(ngrad,m),erg
-      integer i,j,i3,ind(10),mode,lwork
-      real*8 c1,w(ngrad),sw,sth,z1,p0,p1,d1,d2,d3,emc1,
-     1       work(30)
+      real*8 par(lpar),siq(ngrad),grad(3,ngrad),z(ngrad,m),erg,pen
+      integer i,j,i3,mode,r
+      real*8 c1,w(ngrad),sw,sth,z1,p0,p1,d1,d2,d3,emc1,work(1000),s(7)
       c1 = par(1)
       emc1 = exp(-c1)
       DO j=1,ngrad
@@ -34,24 +33,50 @@ C    need to copy siq to w since corresponding argument of dgels
 C    will be overwritten by the solution
 C
       call dcopy(ngrad,siq,1,w,1)
-      call dgels('N',ngrad,m,1,z,m,w,ngrad,work,30,mode)
-      IF(mode.gt.0) THEN
+      call dgelss(ngrad,m,1,z,ngrad,w,ngrad,s,-1.d0,r,work,1000,mode)
+      IF(mode.ne.0) THEN
          call intpr("mode",4,mode,1)
+         erg = 1d20
+      ELSE 
+         IF(work(1).gt.1000) THEN
+            call intpr("ngrad",5,ngrad,1)
+            call intpr("m",1,m,1)
+            call dblepr("optimal LWORK",13,work,1)
+         END IF
+         sw=0.d0
+C penalize for extreme c1 values
+         if(c1.gt.5.d0) sw=sw+c1-5.d0
+C penalize for small or negative c1 values
+         if(c1.lt.1.d-2) sw=sw-1.d3*c1+1.d1
+         z1=0.d0
+         DO i=1,m
+            if(w(i).gt.0.d0) z1=z1+w(i)
+         END DO
+         DO i=1,m
+            if(w(i).lt.z1/pen) sw=sw-pen/z1*w(i)+1.d0/z1
+         END DO
+         DO i=m+1,ngrad
+            sw=sw+w(i)**2
+         END DO
+         IF(r.lt.m) THEN
+            call intpr("rank",4,r,1)
+            call dblepr("par",3,par,lpar)
+            call dblepr("siq",3,siq,ngrad)
+            DO i=1,m
+               call dblepr("z",1,z(1,i),ngrad)
+            END DO
+            call dblepr("w",1,w,m)
+            call dblepr("rss",3,sw,1)
+         END IF
+         erg=sw
       END IF
-      IF(work(1).gt.30) THEN
-         call dblepr("optimal LWORK",13,work,1)
-      END IF
-      sw=0.d0
-      DO i=m+1,ngrad
-         sw=sw+w(i)**2
-      END DO
-      erg=sw
+      call rchkusr()
       RETURN
       END 
 C
 C __________________________________________________________________
 C
-      subroutine mfunpl0g(par,siq,grad,m,lpar,ngrad,z,w,erg,
+      subroutine mfunpl1g(par,siq,grad,m,lpar,ngrad,z,w,erg,
      1                    ztz,fv,dfv,qv,dqv,dh,dz,dztz,zts,
      1                    dzts,dw)
 C  
@@ -69,7 +94,7 @@ C
      1   dw(m,lpar)
       integer i,j,k,i3,ind(6),mode
       real*8 c1,w(m),sw,sth,cth,spsi,cpsi,z1,p0,p1,d1,d2,d3,emc1,
-     1       work(30)
+     1       work(300)
       c1 = par(1)
       emc1 = exp(-c1)
       DO j=1,ngrad
@@ -135,8 +160,8 @@ C
 C    siq will be replaced, need to copy it if C-version of optim is used
 C
       call dcopy(ngrad,siq,1,w,1)
-      call dgels('N',ngrad,m,1,z,m,w,ngrad,work,30,mode)
-      IF(mode.gt.0) THEN
+      call dgels('N',ngrad,m,1,z,ngrad,w,ngrad,work,30,mode)
+      IF(mode.ne.0) THEN
          call intpr("mode2",4,mode,1)
       END IF
 C
@@ -167,6 +192,138 @@ C
       END DO
       RETURN
       END 
+C
+C __________________________________________________________________
+C
+      subroutine mfunpl0(par,siq,grad,m,lpar,ngrad,pen,z,w,erg)
+C
+C   model without isotropic compartment 
+C   same as mfunpl but with unconstrained least squares for weights
+C
+C   code is restricted to m<=6
+C
+      implicit logical (a-z)
+      integer m,lpar,ngrad
+      real*8 par(lpar),siq(ngrad),grad(3,ngrad),z(ngrad,m),erg,pen
+      integer i,j,i3,mode,r
+      real*8 c1,w(ngrad),sw,sth,z1,p0,p1,d1,d2,d3,work(1000),s(6)
+      c1 = par(1)
+      DO i = 1,m
+         i3=2*i
+         p0=par(i3)
+         p1=par(i3+1)
+         sth = sin(p0)
+         d1 = sth*cos(p1)
+         d2 = sth*sin(p1)
+         d3 = cos(p0)
+         DO j = 1,ngrad
+            z1 = d1*grad(1,j)+d2*grad(2,j)+d3*grad(3,j)
+            z(j,i) = exp(-c1*z1*z1)
+         END DO
+      END DO
+C  
+C    siq will be replaced, need to copy it if C-version of optim is used
+C
+      call dcopy(ngrad,siq,1,w,1)
+      call dgelss(ngrad,m,1,z,ngrad,w,ngrad,s,-1.d0,r,work,1000,mode)
+      IF(mode.ne.0) THEN
+         call intpr("mode",4,mode,1)
+         erg = 1d20
+      ELSE
+         IF(work(1).gt.1000) THEN
+            call intpr("ngrad",5,ngrad,1)
+            call intpr("m",1,m,1)
+            call dblepr("optimal LWORK",13,work,1)
+         END IF
+         sw=0.d0
+C penalize for extreme c1 values
+         if(c1.gt.8.d0) sw=sw+c1-8.d0
+C penalize for negative weights
+         if(c1.lt.1.d-2) sw=sw-1.d2*c1+1.d0
+         DO i=1,m
+            if(w(i).lt.0.d0) sw=sw-pen*w(i)
+         END DO
+         DO i=m+1,ngrad
+            sw=sw+w(i)**2
+         END DO
+         erg=sw
+      END IF
+      call rchkusr()
+      RETURN
+      END 
+C
+C __________________________________________________________________
+C
+      subroutine mfunpl0g(par,siq,grad,m,lpar,ngrad,z,w,work1,erg,
+     1                    fv,dfv,qv,dqv,dh)
+      implicit logical (a-z)
+      integer m,lpar,ngrad
+      real*8 par(lpar),siq(ngrad),grad(3,ngrad),z(ngrad,m),erg,
+     1   fv(ngrad),dfv(lpar,ngrad),qv(m,ngrad),dqv(2,m,ngrad),dh(lpar)
+      integer i,j,i3,ind(10),mode
+      real*8 c1,w(m),sw,sth,cth,spsi,cpsi,z1,p0,p1,d1,d2,d3,
+     1       work1(ngrad),work2(10)
+      c1 = par(1)
+      sw = 0
+      DO i = 1,m
+         i3=2*i
+         p0=par(i3)
+         p1=par(i3+1)
+         sth = sin(p0)
+         cth = cos(p0)
+         spsi = sin(p1)
+         cpsi = cos(p1)
+         d1 = sth*cpsi
+         d2 = sth*spsi
+         d3 = cth
+         DO j = 1,ngrad
+            z1 = d1*grad(1,j)+d2*grad(2,j)+d3*grad(3,j)
+            z(j,i) = exp(-c1*z1*z1)
+            qv(i,j) = z1*z1
+            dqv(1,i,j) = 2.d0*(cth*(cpsi*grad(1,j)+spsi*grad(2,j))-
+     1                         sth*grad(3,j))*qv(i,j)
+            dqv(2,i,j) = 2.d0*sth*(cpsi*grad(2,j)-spsi*grad(1,j))*
+     1                         qv(i,j)
+         END DO
+      END DO
+C  
+C    siq will be replaced, need to copy it if C-version of optim is used
+C
+      call dcopy(ngrad,siq,1,fv,1)
+      call nnls(z,ngrad,ngrad,m,fv,w,erg,work2,work1,ind,mode)
+      IF(mode.gt.1) THEN
+         call intpr("mode",4,mode,1)
+      END IF
+C
+C   now compute what's needed for the gradient
+C
+      DO j = 1,ngrad
+C        call intpr("j1",2,j,1)
+         fv(j) = 0.d0
+         dfv(1,j) = 0.d0 
+         DO i = 1,m
+            z1 = exp(-c1*qv(i,j))
+            fv(j) = fv(j)+w(i)*z1
+            dfv(1,j) = dfv(1,j)-w(i)*qv(i,j)*z1
+            dfv(2*i,j) = -w(i)*c1*dqv(1,i,j)*z1
+            dfv(2*i+1,j) = -w(i)*c1*dqv(2,i,j)*z1
+         END DO
+      END DO
+C
+C   now compute the gradient in dh
+C
+      DO i=1,lpar
+         dh(i) = 0.d0
+         DO j = 1,ngrad
+           dh(i) = dh(i)-dfv(i,j)*(siq(j)-fv(j))
+         END DO
+         dh(i) = 2.d0*dh(i)
+      END DO
+      RETURN
+      END 
+C
+C __________________________________________________________________
+C
       subroutine mfunpl(par,siq,grad,m,lpar,ngrad,z,w,work1,erg)
       implicit logical (a-z)
       integer m,lpar,ngrad

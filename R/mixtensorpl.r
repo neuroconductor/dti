@@ -1,30 +1,30 @@
-mfunpl0 <- function(par,siq,grad){
+mfunpl1 <- function(par,siq,grad,pen=1e2){
 #
-#   evaluate rss for Mixtensor-model
+#   evaluate rss for Mixtensor-model (with isotropic component)
 #
 lpar <- length(par)
 m <- (lpar+1)/2
 ngrad <- dim(grad)[1]
-.Fortran("mfunpl0",as.double(par),
-                as.double(siq),
-                as.double(t(grad)),
-                as.integer(m),
-                as.integer(lpar),
-                as.integer(ngrad),
-                double(ngrad*m),
-                double(m),
-                double(ngrad),
-                erg = double(1),
+.Fortran("mfunpl1",as.double(par),#par(lpar)
+                as.double(siq),#siq(ngrad)
+                as.double(t(grad)),#grad(3,ngrad)
+                as.integer(m),#number of components
+                as.integer(lpar),#number of parameters
+                as.integer(ngrad),#number of gradients
+                as.double(pen),#penalty for negative weights
+                double(ngrad*m),#z(ngrad,m) working array
+                double(ngrad),#w(ngrad) working array
+                erg = double(1),#residual sum of squares
                 PACKAGE="dti")$erg
 }
-gmfunpl0 <- function(par,siq,grad){
+gmfunpl1 <- function(par,siq,grad){
 #
 #   evaluate rss for Mixtensor-model
 #
 lpar <- length(par)
 m <- (lpar+1)/2
 ngrad <- dim(grad)[1]
-.Fortran("mfunpl0g",as.double(par),#par
+.Fortran("mfunpl1g",as.double(par),#par
                 as.double(siq),#siq
                 as.double(t(grad)),#grad
                 as.integer(m),#m
@@ -41,31 +41,31 @@ ngrad <- dim(grad)[1]
                 gradient=double(lpar),#dh
                 PACKAGE="dti")$gradient
 }
-mfunplwghts0 <- function(par,siq,grad){
+mfunplwghts1 <- function(par,siq,grad,pen=1e2){
 #
-#   get weights for Mixtensor-model and extract parameters
+#   get weights for Mixtensor-model (with isotropic component) and extract parameters
 #
 lpar <- length(par)
 m <- (lpar+1)/2
 ngrad <- dim(grad)[1]
-w<-.Fortran("mfunpl0",as.double(par),
-                as.double(siq),
-                as.double(t(grad)),
-                as.integer(m),
-                as.integer(lpar),
-                as.integer(ngrad),
-                double(ngrad*m),
-                w=double(m),
-                double(ngrad),
-                erg = double(1),
-                PACKAGE="dti")$w
-           wm1 <- w[-1]
+w<-.Fortran("mfunpl1",as.double(par),#par(lpar)
+                as.double(siq),#siq(ngrad)
+                as.double(t(grad)),#grad(3,ngrad)
+                as.integer(m),#number of components
+                as.integer(lpar),#number of parameters
+                as.integer(ngrad),#number of gradients
+                as.double(pen),#penalty for negative weights
+                double(ngrad*m),#z(ngrad,m) working array
+                w=double(ngrad),#w(ngrad) working array
+                double(1),#residual sum of squares
+                PACKAGE="dti")$w[1:m]
+           wm1 <- w[-1] # first comonent corresponds to isotropic part
            o <- order(wm1,decreasing=TRUE)
            ord <- sum(wm1>0)
            if(ord<m-1){
               o <- o[1:ord]
            }
-           sw <- sum(w)
+           sw <- sum(w[w>0])
            lev <- c(par[1],-log(sw))
            if(ord>0){
            mix <- wm1[o]/sw
@@ -73,6 +73,87 @@ w<-.Fortran("mfunpl0",as.double(par),
            mix <- NULL
            } 
            or <- matrix(par[2:lpar],2,m-1)[,o,drop=FALSE]
+           or[1,or[1,]<0] <- or[1,or[1,]<0]+pi
+           or[1,or[1,]>pi] <- or[1,or[1,]>pi]-pi
+           or[2,or[2,]<0] <- or[2,or[2,]<0]+2*pi
+           or[2,or[2,]>2*pi] <- or[2,or[2,]>2*pi]-2*pi
+           par <- c(par[1],or[,1:ord])
+list(ord=ord,lev=lev,mix=mix,orient=or,par=par)
+}
+mfunpl0 <- function(par,siq,grad,pen=1e2){
+#
+#   evaluate rss for Mixtensor-model (without isotropic component)
+#
+lpar <- length(par)
+m <- (lpar-1)/2
+ngrad <- dim(grad)[1]
+.Fortran("mfunpl0",as.double(par),#par(lpar)
+                as.double(siq),#siq(ngrad)
+                as.double(t(grad)),#grad(3,ngrad)
+                as.integer(m),#number of components
+                as.integer(lpar),#number of parameters
+                as.integer(ngrad),#number of gradients
+                as.double(pen),#penalty for negative weights
+                double(ngrad*m),#z(ngrad,m) working array
+                double(ngrad),#w(ngrad) working array
+                erg = double(1),#residual sum of squares
+                PACKAGE="dti")$erg
+}
+gmfunpl0 <- function(par,siq,grad){
+#
+#   evaluate rss for Mixtensor-model
+#
+lpar <- length(par)
+m <- (lpar-1)/2
+ngrad <- dim(grad)[1]
+.Fortran("mfunpl1g",as.double(par),#par
+                as.double(siq),#siq
+                as.double(t(grad)),#grad
+                as.integer(m),#m
+                as.integer(lpar),#lpar
+                as.integer(ngrad),#ngrad
+                double(ngrad*m),#z
+                double(m),#w
+                double(ngrad),#work
+                double(1),#erg
+                double(ngrad),#fv
+                double(lpar*ngrad),#dfv
+                double(m*ngrad),#qv
+                double(2*m*ngrad),#dqv
+                gradient=double(lpar),#dh
+                PACKAGE="dti")$gradient
+}
+mfunplwghts0 <- function(par,siq,grad,pen=1e2){
+#
+#   get weights for Mixtensor-model (without isotropic component) and extract parameters 
+#
+lpar <- length(par)
+m <- (lpar-1)/2
+ngrad <- dim(grad)[1]
+w<-.Fortran("mfunpl0",as.double(par),#par(lpar)
+                as.double(siq),#siq(ngrad)
+                as.double(t(grad)),#grad(3,ngrad)
+                as.integer(m),#number of components
+                as.integer(lpar),#number of parameters
+                as.integer(ngrad),#number of gradients
+                as.double(pen),#penalty for negative weights
+                double(ngrad*m),#z(ngrad,m) working array
+                w = double(ngrad),#w(ngrad) working array
+                double(1),#residual sum of squares
+                PACKAGE="dti")$w[1:m]
+           o <- order(w,decreasing=TRUE)
+           ord <- sum(w>0)
+           if(ord<m-1){
+              o <- o[1:ord]
+           }
+           sw <- sum(w[w>0])
+           lev <- c(par[1],-log(sw))
+           if(ord>0){
+           mix <- w[o]/sw
+           } else {
+           mix <- NULL
+           } 
+           or <- matrix(par[2:lpar],2,m)[,o,drop=FALSE]
            or[1,or[1,]<0] <- or[1,or[1,]<0]+pi
            or[1,or[1,]>pi] <- or[1,or[1,]>pi]-pi
            or[2,or[2,]<0] <- or[2,or[2,]<0]+2*pi
@@ -216,7 +297,7 @@ dwiMixtensorpl0 <- function(object, ...) cat("No dwiMixtensorpl calculation defi
 
 setGeneric("dwiMixtensorpl0", function(object,  ...) standardGeneric("dwiMixtensorpl0"))
 
-setMethod("dwiMixtensorpl0","dtiData",function(object, maxcomp=3, ex=.2,  p=40, maxneighb=7, method="mixtensor", reltol=1e-8, maxit=5000,ngc=100, optmethod="Nelder-Mead"){
+setMethod("dwiMixtensorpl0","dtiData",function(object, maxcomp=3, ex=.2,  p=40, maxneighb=7, method="mixtensor", isocomp=TRUE, reltol=1e-8, maxit=5000,ngc=100, optmethod="Nelder-Mead", pen=1e2){
 #
 #  uses  S(g)/s_0 = w_0 exp(-l_1) +\sum_{i} w_i exp(-l_2-(l_1-l_2)(g^T d_i)^2)
 #
@@ -227,7 +308,6 @@ setMethod("dwiMixtensorpl0","dtiData",function(object, maxcomp=3, ex=.2,  p=40, 
   ddim <- object@ddim
   s0ind <- object@s0ind
   ns0 <- length(s0ind)
-  cat("ngrad",ngrad,"mean(si)",range(apply(object@si[,,,-object@s0ind],1:3,mean)),"\n")
   z <- .Fortran("outlier",
                 as.double(object@si),
                 as.integer(prod(ddim)),
@@ -250,17 +330,14 @@ setMethod("dwiMixtensorpl0","dtiData",function(object, maxcomp=3, ex=.2,  p=40, 
   dim(siq) <- c(prod(ddim),ngrad-ns0)
   siq[mask,] <- sweep(siq[mask,],1,s0[mask],"/")
   dim(siq) <- c(ddim,ngrad-ns0)
-  cat("ngrad",ngrad0,"mean(siq)",range(apply(siq,1:3,mean)),"\n")
   siqmed <- apply(siq,1:3,median)
   siqmed[siqmed<.9] <- .9
   siqmed[siqmed>.99] <- .99
-  cat("ngrad",ngrad0,"mean(siq)",range(apply(siq,1:3,mean)),"\n")
   siq <- sweep(siq,1:3,siqmed,pmin)
 #
 #  avoid situations where si's are larger than s0
 #
   grad <- t(object@gradient[,-s0ind])
-  cat("ngrad",ngrad0,"mean(siq)",range(apply(siq,1:3,mean)),"\n")
 #
 #   determine initial estimates for orientations 
 #
@@ -268,7 +345,6 @@ setMethod("dwiMixtensorpl0","dtiData",function(object, maxcomp=3, ex=.2,  p=40, 
 #
 # initial estimates for eigenvalues
 #
-  cat("ngrad",ngrad0,"mean(siq)",range(apply(siq,1:3,mean)),"\n")
   lev <- array(.Fortran("getev0",
                as.double(aperm(siq,c(4,1:3))),
                as.integer(ngrad0),
@@ -314,7 +390,7 @@ setMethod("dwiMixtensorpl0","dtiData",function(object, maxcomp=3, ex=.2,  p=40, 
 #
 #  these is an initial estimate for the eigen-value parameter
 #
-     par[rep(2*(1:mc0),rep(2,mc0))+c(1,2)] <- orient[,1:mc0,i1,i2,i3] 
+     par[rep(2*(1:mc0),rep(2,mc0))+c(1,2)] <- orient[,1:mc0,i1,i2,i3]
      }
      sigma2[i1,i2,i3] <- var(siq[i1,i2,i3,])
      krit <- rss <- (ngrad-1)*sigma2[i1,i2,i3]
@@ -328,41 +404,50 @@ setMethod("dwiMixtensorpl0","dtiData",function(object, maxcomp=3, ex=.2,  p=40, 
         if(method=="mixtensor"){
            lpar <- 2*k+1
            if(optmethod=="BFGS"){
-           zz <- mfunplwghts0(par[1:(2*k+1)],siq=siq[i1,i2,i3,],grad=grad)
-           count <- 0
-           while(any(zz$mix==0)&count<10) {
-              par[1] <- -log(siq[i1,i2,i3,siind[2,i1,i2,i3]])*runif(1)
-              cat("k1",k,"par",par,"\n")
-              zz <- mfunplwghts0(par[1:(2*k+1)],siq=siq[i1,i2,i3,],grad=grad)
-              count <- count+1
-              if(count>10) cat("problem with initial values in voxel(",c(i1,i2,i3),"\n")
-           }
-           z <- optim(par[1:(2*k+1)],mfunpl0,gmfunpl0,siq=siq[i1,i2,i3,],grad=grad,
-                   method="BFGS",control=list(maxit=maxit,reltol=reltol))
+              if(isocomp) {
+                 z <- optim(par[1:(2*k+1)],mfunpl1,gmfunpl1,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
+                         method="BFGS",control=list(maxit=maxit,reltol=reltol))
+              } else {
+                 z <- optim(par[1:(2*k+1)],mfunpl0,gmfunpl0,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
+                         method="BFGS",control=list(maxit=maxit,reltol=reltol))
+              }
            } else {
-           z <- optim(par[1:(2*k+1)],mfunpl0,siq=siq[i1,i2,i3,],grad=grad,
-                   method=optmethod,control=list(maxit=maxit,reltol=reltol))
+#              cat("i1",i1,"i2",i2,"i3",i3,"k",k,"par",par[1:(2*k+1)],"\n")
+              if(isocomp) {
+                 z <- optim(par[1:(2*k+1)],mfunpl1,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
+                         method=optmethod,control=list(maxit=maxit,reltol=reltol))
+              } else {
+                 z <- optim(par[1:(2*k+1)],mfunpl0,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
+                         method=optmethod,control=list(maxit=maxit,reltol=reltol))
+              }
            }
         } else {
            lpar <- 2*k+2
            z <- optim(par[1:(2*k+2)],mfunpl2,siq=siq[i1,i2,i3,],grad=grad,pex=p,
                    method=optmethod,control=list(maxit=maxit,reltol=reltol))
         }
-        value <- z$value^2 
-        rss <- min(z$value^2,rss)
+        value <- z$value
+        rss <- min(z$value,rss)
         if(method=="mixtensor"){
-           zz <- mfunplwghts0(z$par[1:lpar],siq[i1,i2,i3,],grad)
+           if(isocomp) {
+              zz <- mfunplwghts1(z$par[1:lpar],siq[i1,i2,i3,],grad)
+           } else {
+              zz <- mfunplwghts0(z$par[1:lpar],siq[i1,i2,i3,],grad,pen)
+           }
         } else {
            zz <- mfunpl2wghts(z$par[1:lpar],siq[i1,i2,i3,],grad,pex=p)
         }
         ord <- zz$ord
-        if(any(zz$lev<0)){
+#        cat("ord",ord,"krit",krit,"value",value,"rss",rss,"\n")
+#        cat("lev",zz$lev,"par",zz$par,"wghts",zz$mix,"\n")
+        if(any(zz$lev<0)||ord<k){
            ttt <- krit
            maxcomp0 <- k-1
 #   parameters not interpretable reduce order
         } else {
-        ttt <- value+2*(3*ord+1)/(ngrad0-3*maxcomp0-1)*rss
-        par <- zz$par
+           penalty <- if(isocomp) 2*(3*ord+2)/(ngrad0-3*maxcomp0-2) else 2*(3*ord+1)/(ngrad0-3*maxcomp0-1)
+           ttt <- value+penalty*rss
+           par <- zz$par
         }
 #
 #     use directions corresponding to largest weights as initial directions
@@ -373,10 +458,10 @@ setMethod("dwiMixtensorpl0","dtiData",function(object, maxcomp=3, ex=.2,  p=40, 
            lev[,i1,i2,i3] <- zz$lev
            mix[,i1,i2,i3] <- if(ord==maxcomp) zz$mix else c(zz$mix,rep(0,maxcomp-ord))
            orient[,1:ord,i1,i2,i3] <- zz$orient
+           sigma2[i1,i2,i3] <- rss/(ngrad0-3*maxcomp0-1-isocomp)
        }
      }
    }
-   sigma2[i1,i2,i3] <- rss/(ngrad0-3*maxcomp0-1)
 #   cat("order",order[i1,i2,i3],"\n")
 #   cat("error variance",sigma2[i1,i2,i3]*s0[i1,i2,i3]^2,"\n")
 #   cat("ev",c(exp(lev[1,i1,i2,i3]),0,0)+exp(lev[2,i1,i2,i3]),"\n")
