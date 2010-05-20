@@ -31,22 +31,45 @@ th[1,,,] <- 4
 th[2,,,] <- .8
 alpha[1,,,] <- 0
 beta[1,,,] <- 0
-for(i in 1:n) alpha[1,i,,] <- pi*(i-1)/(n-1)
-for(i in 1:n) beta[1,i,,] <- pi*(i-1)/(n-1)
-for(i in 1:n) alpha[2,,i,] <- pi/2/(n-1)*(i-1)
-for(i in 1:n) beta[2,,i,] <- 0
-for(i in 1:n) alpha[3,,,i] <- pi/2/(n-1)*(i-1)
-for(i in 1:n) beta[3,,,i] <- pi/2
+#for(i in 1:n) alpha[1,i,,] <- pi*(i-1)/(n-1)
+#for(i in 1:n) beta[1,i,,] <- pi*(i-1)/(n-1)
+#for(i in 1:n) alpha[2,,i,] <- pi/2/(n-1)*(i-1)
+#for(i in 1:n) beta[2,,i,] <- 0
+#for(i in 1:n) alpha[3,,,i] <- pi/2/(n-1)*(i-1)
+#for(i in 1:n) beta[3,,,i] <- pi/2
+# first component in x -direction
+for(i in 1:n) alpha[1,i,,] <- pi/2
+for(i in 1:n) beta[1,i,,] <- 0
+# second component in x-y -plane
+for(i in 1:n) alpha[2,,,i] <- pi/2
+for(i in 1:n) beta[2,,,i] <- pi/2*(i-1)/(n-1)
+# third component in x-z -plane
+for(i in 1:n) alpha[3,,i,] <- pi/2*(1-(i-1)/(n-1))
+for(i in 1:n) beta[3,,i,] <- 0
 } else { 
-for(i in 1:n) alpha[1,i,,] <- pi
-for(i in 1:n) beta[1,i,,] <- pi
+angle <- readline("angle between directions (in radiant) default (and maximum) pi/2\n ") 
+
+if (!is.null(angle)) angle <- as.numeric(angle) else angle <- pi/2
+if(is.na(angle)) angle <- pi/2 else angle <- min(pi/2,max(0,angle))
+# first component in x -direction
+for(i in 1:n) alpha[1,i,,] <- pi/2  
+for(i in 1:n) beta[1,i,,] <- 0
+# second component in x-y -plane
 for(i in 1:n) alpha[2,,i,] <- pi/2
-for(i in 1:n) beta[2,,i,] <- 0
-for(i in 1:n) alpha[3,,,i] <- pi/2
-for(i in 1:n) beta[3,,,i] <- pi/2
+for(i in 1:n) beta[2,,i,] <- angle  
+# third component in x-z -plane
+for(i in 1:n) alpha[3,,,i] <- pi/2-angle
+for(i in 1:n) beta[3,,,i] <- 0
 }
 if(scenario!=2){
-mix[-1,,,] <- 1/3
+mix1 <- readline("first mixture coefficient (default 1/3)\n
+                  0 corresponds 2 mixtures of order 2, 1 to order 1") 
+
+if (!is.null(mix1)) mix1 <- as.numeric(mix1) else mix1 <- 1/3
+if(is.na(mix1)) mix1 <- 1/3 else mix1 <- min(1,max(0,mix1))
+
+mix[2,,,] <- mix1
+mix[3:4,,,] <- (1-mix1)/2
 } else {
 for(i in 1:n) mix[2,i,,] <- i/2/(n+1) 
 for(i in 1:n) mix[3,,i,] <- i/2/(n+1) 
@@ -54,17 +77,23 @@ mix[4,,,] <- 1-mix[2,,,]-mix[3,,,]
 }
 th[2,,,] <- .8
 if(scenario!=3){
+gfa <- readline("Generalized FA (default gfa = .8)") 
+
+if (!is.null(gfa)) gfa <- as.numeric(gfa) else gfa <- .8
+if(is.na(gfa)) gfa <- .8 else gfa <- min(.9,max(.2,gfa))
+
 th[1,,,] <- 4
 } else {
 a <- seq(.3,.9,length=n^3) 
-th[1,,,] <- .8*(1+a)/(1-a^2)
+th[1,,,] <- .8*(1+a*sqrt(3-2*a^2))/(1-a^2)
+
 }
 
 
 maxcomp <- readline("maximal order of mix-tensor model (default 3)") 
 
 if (is.null(maxcomp)) maxcomp <- 3 else maxcomp <- as.numeric(maxcomp)
-if(is.na(maxcomp)) maxcomp <- 3 else maxcomp <- min(6,max(1,maxcomp))
+if(is.na(maxcomp)) maxcomp <- 3 else maxcomp <- min(5,max(1,maxcomp))
 
 z0 <- truemixtens(mix,th,alpha,beta,grad,sigma)
 z <- tdatamixtens(mix,th,alpha,beta,grad,sigma)
