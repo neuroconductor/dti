@@ -297,7 +297,7 @@ dwiMixtensorpl0 <- function(object, ...) cat("No dwiMixtensorpl calculation defi
 
 setGeneric("dwiMixtensorpl0", function(object,  ...) standardGeneric("dwiMixtensorpl0"))
 
-setMethod("dwiMixtensorpl0","dtiData",function(object, maxcomp=3, ex=.2,  p=40, maxneighb=7, method="mixtensor", isocomp=TRUE, reltol=1e-8, maxit=5000,ngc=100, optmethod="Nelder-Mead", pen=1e2){
+setMethod("dwiMixtensorpl0","dtiData",function(object, maxcomp=3, ex=.2,  p=40, maxneighb=7, method="mixtensor", isocomp=TRUE, reltol=1e-8, maxit=5000,ngc=100, optmethod="Nelder-Mead", pen=1e2,maxc=.866){
 #
 #  uses  S(g)/s_0 = w_0 exp(-l_1) +\sum_{i} w_i exp(-l_2-(l_1-l_2)(g^T d_i)^2)
 #
@@ -324,7 +324,7 @@ setMethod("dwiMixtensorpl0","dtiData",function(object, maxcomp=3, ex=.2,  p=40, 
   rm(z)
   ngrad0 <- ngrad - length(s0ind)
   s0 <- si[,,,s0ind,drop=FALSE]
-  if(length(s0ind)>1) s0 <- apply(s0,1:3,mean)
+  if(length(s0ind)>1) s0 <- apply(s0,1:3,mean) else dim(s0) <- dim(s0)[1:3]
   mask <- s0 > object@level
   siq <- si[,,,-s0ind,drop=FALSE]
   dim(siq) <- c(prod(ddim),ngrad-ns0)
@@ -341,7 +341,7 @@ setMethod("dwiMixtensorpl0","dtiData",function(object, maxcomp=3, ex=.2,  p=40, 
 #
 #   determine initial estimates for orientations 
 #
-  siind <- getsiind(siq,mask,grad,maxcomp,maxc=.866)
+  siind <- getsiind(siq,mask,grad,maxcomp,maxc=maxc)
 #
 # initial estimates for eigenvalues
 #
@@ -403,29 +403,31 @@ setMethod("dwiMixtensorpl0","dtiData",function(object, maxcomp=3, ex=.2,  p=40, 
 #
         if(method=="mixtensor"){
            lpar <- 2*k+1
+#
+#  in case of isocomp==TRUE use estimates from the more restrictive model as
+#  initial parameters
+#
            if(optmethod=="BFGS"){
-              if(isocomp) {
-                 z <- optim(par[1:(2*k+1)],mfunpl1,gmfunpl1,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
-                         method="BFGS",control=list(maxit=maxit,reltol=reltol))
-              } else {
+              if(!isocomp||k==mc0)
                  z <- optim(par[1:(2*k+1)],mfunpl0,gmfunpl0,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
                          method="BFGS",control=list(maxit=maxit,reltol=reltol))
-              }
+              if(isocomp) {
+                 if(k==mc0) par[1:(2*k+1)] <- z$par[1:(2*k+1)]
+                 z <- optim(z$par[1:(2*k+1)],mfunpl1,gmfunpl1,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
+                         method="BFGS",control=list(maxit=maxit,reltol=reltol))
+              } 
            } else {
 #              cat("i1",i1,"i2",i2,"i3",i3,"k",k,"par",par[1:(2*k+1)],"\n")
-              if(isocomp) {
-                 z <- optim(par[1:(2*k+1)],mfunpl1,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
+              if(!isocomp||k==mc0)
+              z <- optim(par[1:(2*k+1)],mfunpl0,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
                          method=optmethod,control=list(maxit=maxit,reltol=reltol))
-              } else {
-                 z <- optim(par[1:(2*k+1)],mfunpl0,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
+              if(isocomp) {
+                 if(k==mc0) par[1:(2*k+1)] <- z$par[1:(2*k+1)]
+                 z <- optim(z$par[1:(2*k+1)],mfunpl1,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
                          method=optmethod,control=list(maxit=maxit,reltol=reltol))
               }
            }
-        } else {
-           lpar <- 2*k+2
-           z <- optim(par[1:(2*k+2)],mfunpl2,siq=siq[i1,i2,i3,],grad=grad,pex=p,
-                   method=optmethod,control=list(maxit=maxit,reltol=reltol))
-        }
+        }         
         value <- z$value
         rss <- min(z$value,rss)
         if(method=="mixtensor"){
