@@ -4,6 +4,8 @@
 #include <string>
 #include <sstream>
 #include <math.h>
+#include <R.h>
+#include <Rinternals.h>
 
 using namespace std;
 

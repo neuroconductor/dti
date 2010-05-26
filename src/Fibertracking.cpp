@@ -23,9 +23,9 @@ Fibertracking::Fibertracking()
 	this->change_dir = false;
 }
 
-Fibertracking::Fibertracking(Voxel& voxels, int x, int y, int z, double voxelext_x, double voxelext_y, double voxelext_z, double min_anisotropy, double max_angle)
+Fibertracking::Fibertracking(Voxel& voxels_in, int x, int y, int z, double voxelext_x_in, double voxelext_y_in, double voxelext_z_in, double min_anisotropy_in, double max_angle)
 {
-	this->voxels = &voxels;
+	this->voxels = &voxels_in;
 	
 	this->n_e1 = *(new Vector( 0, 0, 1));
 	this->n_e2 = *(new Vector( 0, 1, 0));
@@ -42,11 +42,11 @@ Fibertracking::Fibertracking(Voxel& voxels, int x, int y, int z, double voxelext
 	last_plane_dir = 0;
 	
 	num_fibers = 0;
-	this->voxelext_x = voxelext_x, this->voxelext_y = voxelext_y, this->voxelext_z = voxelext_z;
+	this->voxelext_x = voxelext_x_in, this->voxelext_y = voxelext_y_in, this->voxelext_z = voxelext_z_in;
 	
 	cur_voxel_index = 0;
 	
-	this->min_anisotropy = min_anisotropy;
+	this->min_anisotropy = min_anisotropy_in;
 	
 	intersec_angle = 0.;
 	this->max_intersec_angle = max_angle;
@@ -91,7 +91,7 @@ double* Fibertracking::convertToDouble()
 
 	if (allVectors.getLength() == 0)
 	{
-//		printf("\nAll found fibers are too short to be recognized.\nChoose another region of interest\n\n");
+//		Rprintf("\nAll found fibers are too short to be recognized.\nChoose another region of interest\n\n");
 		
 		return NULL;
 	}
@@ -179,7 +179,7 @@ void Fibertracking::nextVoxel_forward()
 //	int cur_order 	  = voxels[cur_voxel_index].getOrder();
 	int cur_dir_index = voxels[cur_voxel_index].getDir_Index();
 	
-//	printf("forw, %d, %d, %d, %d, %d\n", cur_x, cur_y, cur_z, cur_order, cur_dir_index);
+//	Rprintf("forw, %d, %d, %d, %d, %d\n", cur_x, cur_y, cur_z, cur_order, cur_dir_index);
 	
 	int x = cur_x, y = cur_y, z = cur_z;
 	
@@ -334,7 +334,7 @@ void Fibertracking::nextVoxel_forward()
 			temp = 180-temp;
 		}
 		
-//		printf("angle = %f would be dir_index %d\n", temp, i);
+//		Rprintf("angle = %f would be dir_index %d\n", temp, i);
 		
 		if (temp < angles)
 		{
@@ -349,7 +349,7 @@ void Fibertracking::nextVoxel_forward()
 	
 	intersec_angle = angles;
 	
-//	printf("angle = %f is dir_index %d\n", intersec_angle, dir_index);
+//	Rprintf("angle = %f is dir_index %d\n", intersec_angle, dir_index);
 	
 	last_plane_dir = plane_dir;
 
@@ -364,7 +364,7 @@ void Fibertracking::nextVoxel_backward()
 //	int cur_order 	  = voxels[cur_voxel_index].getOrder();
 	int cur_dir_index = voxels[cur_voxel_index].getDir_Index();
 	
-//	printf("back, %d, %d, %d, %d, %d\n", cur_x, cur_y, cur_z, cur_order, cur_dir_index);
+//	Rprintf("back, %d, %d, %d, %d, %d\n", cur_x, cur_y, cur_z, cur_order, cur_dir_index);
 	
 	int x = cur_x, y = cur_y, z = cur_z;
 	
@@ -520,7 +520,7 @@ void Fibertracking::nextVoxel_backward()
 			temp = 180-temp;
 		}
 		
-//		printf("angle = %f would be dir_index %d\n", temp, i);
+//		Rprintf("angle = %f would be dir_index %d\n", temp, i);
 		
 		if (temp < angles)
 		{
@@ -535,7 +535,7 @@ void Fibertracking::nextVoxel_backward()
 	
 	intersec_angle = angles;
 	
-//	printf("angle = %f is dir_index %d\n", intersec_angle, dir_index);
+//	Rprintf("angle = %f is dir_index %d\n", intersec_angle, dir_index);
 
 	last_plane_dir = plane_dir;
 
@@ -668,22 +668,22 @@ void Fibertracking::trackFiber_backward()
 
 void Fibertracking::findAllFibers()
 {
-//	printf("Searching for fibers...\n");
+//	Rprintf("Searching for fibers...\n");
 	
 	while (last_start_voxel < dim_x*dim_y*dim_z)
 	{
 		if (voxels[last_start_voxel].getAnisotropy() >= min_anisotropy && voxels[last_start_voxel].isStartable())
 		{
 //			num_fibers++;
-//			printf("currentFiber = *new Fiber();\n");
+//			Rprintf("currentFiber = *new Fiber();\n");
 			currentFiber = *new Fiber();
-//			printf("currentFiber angelegt\n");
-//			printf("curVectorList = *new VectorList();\n");
+//			Rprintf("currentFiber angelegt\n");
+//			Rprintf("curVectorList = *new VectorList();\n");
 			curVectorList = *new VectorList();
-//			printf("curVecotrList angelegt\n");
+//			Rprintf("curVecotrList angelegt\n");
 			
-//			printf("Fiber found!\n");
-//			printf("============\n");
+//			Rprintf("Fiber found!\n");
+//			Rprintf("============\n");
 			
 			cur_voxel_index = voxels[last_start_voxel].getX() + voxels[last_start_voxel].getY()*dim_x + voxels[last_start_voxel].getZ()*dim_x*dim_y;
 			trackFiber_forward();
@@ -697,8 +697,8 @@ void Fibertracking::findAllFibers()
 			
 			currentFiber.unvisit();
 			
-//			printf("============\n");
-//			printf("Searching continued...\n");
+//			Rprintf("============\n");
+//			Rprintf("Searching continued...\n");
 		}
 		
 		last_start_voxel++;
@@ -706,7 +706,7 @@ void Fibertracking::findAllFibers()
 	
 	allVectors.del_at_start();
 	
-//	printf("End of searching.\n");
+//	Rprintf("End of searching.\n");
 }
 
 void Fibertracking::findMarkedFibers(int* ranges)
@@ -747,8 +747,8 @@ void Fibertracking::findMarkedFibers(int* ranges)
 				currentFiber = *new Fiber();
 				curVectorList = *new VectorList(); 
 				
-//				printf("Fiber found!\n");
-//				printf("============\n");
+//				Rprintf("Fiber found!\n");
+//				Rprintf("============\n");
 	
 				cur_voxel_index = marked[last_start_voxel].getX() + marked[last_start_voxel].getY()*dim_x + marked[last_start_voxel].getZ()*dim_x*dim_y;			
 				
@@ -768,8 +768,8 @@ void Fibertracking::findMarkedFibers(int* ranges)
 				currentFiber.unvisit();
 			}
 			
-//			printf("============\n");
-//			printf("Searching continued...\n");
+//			Rprintf("============\n");
+//			Rprintf("Searching continued...\n");
 		}
 		
 		last_start_voxel++;
@@ -780,13 +780,13 @@ void Fibertracking::findMarkedFibers(int* ranges)
 		allVectors.del_at_start();
 	}
 	
-//	printf("End of searching.\n");
+//	Rprintf("End of searching.\n");
 	
 //	double all_abort = n_visited+n_angle+n_aniso+n_border+n_turn;
 
-//	printf("Abort fibers because of:\nvisited\t=\t%d ( %f% )\naniso\t=\t%d ( %f% )\nangle\t=\t%d ( %f% )\nborder\t=\t%d ( %f% )\nturn\t=\t%d ( %f% )\n", n_visited, (double)n_visited*100./all_abort, n_aniso, (double)n_aniso*100./all_abort, n_angle, (double)n_angle*100./all_abort, n_border, (double)n_border*100./all_abort, n_turn, (double)n_turn*100./all_abort);
+//	Rprintf("Abort fibers because of:\nvisited\t=\t%d ( %f% )\naniso\t=\t%d ( %f% )\nangle\t=\t%d ( %f% )\nborder\t=\t%d ( %f% )\nturn\t=\t%d ( %f% )\n", n_visited, (double)n_visited*100./all_abort, n_aniso, (double)n_aniso*100./all_abort, n_angle, (double)n_angle*100./all_abort, n_border, (double)n_border*100./all_abort, n_turn, (double)n_turn*100./all_abort);
 	
-//	printf("num_fibers = %d\n", num_fibers);
+//	Rprintf("num_fibers = %d\n", num_fibers);
 	
 	n_angle = 0;
 	n_visited = 0;

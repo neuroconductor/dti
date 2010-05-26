@@ -34,7 +34,7 @@ extern "C"{
 		
 		double *vals = tester->convertToDouble();
 		
-//		printf("length: %d\n", length);
+//		Rprintf("length: %d\n", length);
 	
 		delete tester;
 			
@@ -85,7 +85,7 @@ extern "C"{
 		
 		double *vals = tester->convertToDouble();
 		
-//		printf("length: %d\n", length);
+//		Rprintf("length: %d\n", length);
 	
 		delete tester;
 			

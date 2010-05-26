@@ -45,21 +45,21 @@ void Vector::print()
 {
 	if (this == NULL)
 	{
-//		printf("Vector is NULL\n");
+//		Rprintf("Vector is NULL\n");
 		return;
 	}
 	
-//	printf(" _   _ \n");	
+//	Rprintf(" _   _ \n");	
 		
 	for (int i = 0; i < this->n; i++)
 	{
 		if (i == n-1)
 		{
-//			printf("|_%f_|\n", this->components[i]);
+//			Rprintf("|_%f_|\n", this->components[i]);
 		}
 		else
 		{
-//			printf("| %f |\n", this->components[i]);
+//			Rprintf("| %f |\n", this->components[i]);
 		}
 	}
 }
@@ -70,8 +70,8 @@ int Vector::getN()				{return n;}
 Vector* Vector::getNext()		{return next;}
 Vector* Vector::getPrev()		{return prev;}
 
-void Vector::setNext(Vector *next)		{this->next = next;}
-void Vector::setPrev(Vector *prev)		{this->prev = prev;}
+void Vector::setNext(Vector *set_next)		{this->next = set_next;}
+void Vector::setPrev(Vector *set_prev)		{this->prev = set_prev;}
 
 double Vector::norm(Vector& v)
 {
@@ -113,7 +113,7 @@ double Vector::operator *(Vector& v2)
 {
 	if (this->n != v2.n)
 	{
-		cout << "error in multiplication: vectors must have the same length!" << endl;
+	  Rprintf("error in multiplication: vectors must have the same length!\n");
 		return 0.;
 	}
 	else
@@ -133,7 +133,7 @@ Vector& Vector::operator +(Vector& v2)
 {
 	if (this->n != v2.n)
 	{
-		cout << "error in addition: vectors must have the same length!" << endl;
+	  Rprintf("error in addition: vectors must have the same length!\n");
 		
 		Vector * out = NULL;
 		return *out;
@@ -156,7 +156,7 @@ Vector& Vector::operator -(Vector& v2)
 {
 	if (this->n != v2.n)
 	{
-		cout << "error in addition: vectors must have the same length!" << endl;
+	  Rprintf("error in addition: vectors must have the same length!\n");
 		
 		static Vector out;
 		return out;
@@ -178,7 +178,7 @@ Vector& Vector::cross(Vector& v2)
 {
 	if (this->n != v2.n)
 	{
-		cout << "error im cross product: vectors must have the same length!" << endl;
+	  Rprintf("error im cross product: vectors must have the same length!\n");
 		
 		static Vector out;
 		return out;
