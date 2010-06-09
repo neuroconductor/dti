@@ -87,13 +87,24 @@ double Vector::norm(Vector& v)
 
 Vector& Vector::operator /(double d)
 {
+        int nan_counter = 0;
+
 	static Vector out(this->n);
 	
 	for (int i = 0; i < out.n; i++)
 	{
 		out.components[i] = (this->components[i] / d);
+		if (isnan(out.components[i]))
+		{
+		      nan_counter++;
+		}
 	}
 	
+	if (nan_counter == out.n)
+	{
+	        Rprintf("Illigal argument 'd'.\n");
+	}
+
 	return out;
 }
 
@@ -113,7 +124,8 @@ double Vector::operator *(Vector& v2)
 {
 	if (this->n != v2.n)
 	{
-	  Rprintf("error in multiplication: vectors must have the same length!\n");
+	        Rprintf("error in multiplication: vectors must have the same length!\n");
+
 		return 0.;
 	}
 	else

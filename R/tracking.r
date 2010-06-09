@@ -251,6 +251,7 @@ function(obj, roix=NULL, roiy=NULL, roiz=NULL, method="LINEPROP", minanindex=0.3
     roize <- roize*subsample
   }
   maxorder <- dim(ex$andir)[2]
+  gc()
   
   dd <- .Call("interface_tracking_mixtensor",
               as.double(ex$andir), # dim = c(3, maxorder, dimx, dimy, dimz)

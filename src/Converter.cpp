@@ -66,7 +66,7 @@ Converter::Converter(double* data_dir_coords, double* data_FA_values, int* data_
 		   		order = data_order[i + j * dim_x + k * dim_x * dim_y];
 		   		
 		   		Vector *dir = new Vector[order];
-		   		
+
 		   		for (l = 0; l < order; l++)
 		   		{
 			   		dir_x = data_dir_coords[num_vector];num_vector++;

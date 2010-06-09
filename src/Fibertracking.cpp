@@ -345,9 +345,15 @@ void Fibertracking::nextVoxel_forward()
 		
 	voxels[cur_voxel_index].setDir_Index(dir_index);
 	
-	vec_product = voxel_d * (voxels[cur_voxel_index].getDirections()[dir_index]);
-	
-	intersec_angle = angles;
+	if (voxels[cur_voxel_index].getAnisotropy() > min_anisotropy)
+	{
+	    vec_product = voxel_d * (voxels[cur_voxel_index].getDirections()[dir_index]);
+	    intersec_angle = angles;
+	}
+	else
+	{
+	    intersec_angle = 90.;
+	}
 	
 //	Rprintf("angle = %f is dir_index %d\n", intersec_angle, dir_index);
 	
@@ -530,10 +536,16 @@ void Fibertracking::nextVoxel_backward()
 	}
 	
 	voxels[cur_voxel_index].setDir_Index(dir_index);
-	
-	vec_product = voxel_d * (voxels[cur_voxel_index].getDirections()[dir_index]);
-	
-	intersec_angle = angles;
+
+	if (voxels[cur_voxel_index].getAnisotropy() > min_anisotropy)
+	{
+	    vec_product = voxel_d * (voxels[cur_voxel_index].getDirections()[dir_index]);
+	    intersec_angle = angles;
+	}
+	else
+	{
+	    intersec_angle = 90.;
+	}
 	
 //	Rprintf("angle = %f is dir_index %d\n", intersec_angle, dir_index);
 
@@ -738,7 +750,7 @@ void Fibertracking::findMarkedFibers(int* ranges)
 	
 	while (last_start_voxel < length)
 	{
-		if (marked[last_start_voxel].getAnisotropy() >= min_anisotropy && marked[last_start_voxel].isStartable())
+		if (marked[last_start_voxel].getAnisotropy() > min_anisotropy && marked[last_start_voxel].isStartable())
 		{
 			num_fibers++;
 
