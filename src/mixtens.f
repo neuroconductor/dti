@@ -230,11 +230,11 @@ C
          call intpr("mode",4,mode,1)
          erg = 1d20
       ELSE
-         IF(work(1).gt.1000) THEN
-            call intpr("ngrad",5,ngrad,1)
-            call intpr("m",1,m,1)
-            call dblepr("optimal LWORK",13,work,1)
-         END IF
+C         IF(work(1).gt.1000) THEN
+C            call intpr("ngrad",5,ngrad,1)
+C            call intpr("m",1,m,1)
+C            call dblepr("optimal LWORK",13,work,1)
+C         END IF
          sw=0.d0
 C penalize for extreme c1 values
          if(c1.gt.8.d0) sw=sw+c1-8.d0
@@ -467,6 +467,75 @@ C add penalty for sum of weight .neq. 1
       erg=erg+1.d2*sw*sw
       RETURN
       END 
+C
+C __________________________________________________________________
+C
+      subroutine getsiin2(si,ngrad,n1,n2,n3,m,dgrad,
+     1         egrad,isample,ntry,sms,z,siind,mval,ns,mask)
+C
+C  compute diagnostics for initial estimates in siind
+C  siind(1,i1,i2,i3) will contain the model order 
+C  
+C  si     - array of si-values
+C  m      - model order
+C  maxc   - maximum of cos(angle between directions)
+C  dgrad  - matrix of pairwise cos of gradient directions
+C  exgrad - exp(-theta1*dgrad^2) 
+C  isample - guesses for gradient directions
+C  ntry   - number of guesses
+C  sms    - copies of si
+C  z      - array for design matrix corresponding to guesses
+C  siind  - array of indices (output)
+C  ns     - m+1
+C  mask   - mask
+C
+C  restricted to ngrad<=1000 and m <=10
+C
+      implicit logical (a-z)
+      integer n1,n2,n3,ngrad,ns,siind(ns,n1,n2,n3),m,ntry,
+     1       isample(m,ntry)
+      real*8 si(ngrad,n1,n2,n3),sms(ngrad),dgrad(ngrad,ngrad),
+     1       egrad(ngrad,ngrad),z(ngrad,ns),mval(n1,n2,n3)
+      logical mask(n1,n2,n3)
+      integer i1,i2,i3,k,ibest,mode,ind(10),l
+      real*8 w(1000),krit,work1(1000),work2(10),erg
+      DO i1=1,n1
+         DO i2=1,n2
+            DO i3=1,n3
+               if(mask(i1,i2,i3)) THEN
+C  now search for minima of sms (or weighted sms
+                  ibest=1
+                  krit=1e10
+                  DO k=1,ntry
+                     call dcopy(ngrad,si(1,i1,i2,i3),1,sms,1)
+                     DO l=1,m
+                  call dcopy(ngrad,egrad(1,isample(l,k)),1,z(1,l),1)
+                     END DO
+        call nnls(z,ngrad,ngrad,m,sms,w,erg,work2,work1,ind,mode)
+                     IF(mode.gt.1) THEN
+                        call intpr("mode",4,mode,1)
+                        call intpr("isample",7,isample(1,k),m)
+                     ELSE 
+                        IF(erg.lt.krit) THEN
+                           krit=erg
+                           ibest=k
+                        END IF  
+                     END IF
+                  END DO
+                  siind(1,i1,i2,i3)=m
+                  DO l=1,m
+                     siind(l+1,i1,i2,i3)=isample(l,ibest)
+                  END DO
+                  mval(i1,i2,i3)=krit
+               ELSE
+                  siind(1,i1,i2,i3)=-1
+                  mval(i1,i2,i3)=0
+               END IF
+            END DO
+         END DO
+      END DO
+      RETURN
+      END
 C
 C __________________________________________________________________
 C

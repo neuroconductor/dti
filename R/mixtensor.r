@@ -45,7 +45,9 @@ paroforient <- function(dir){
   c(theta, phi)
 }
 
-
+orientofpar <- function(par){
+c(sin(par[1])*cos(par[2]),sin(par[1])*sin(par[2]),cos(par[1]))
+}
 
 dwiMixtensor <- function(object, ...) cat("No dwiMixtensor calculation defined for this class:",class(object),"\n")
 

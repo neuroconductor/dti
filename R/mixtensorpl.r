@@ -293,11 +293,60 @@ w<-.Fortran("mfunpl2",as.double(par),
 list(ord=ord,lev=lev,mix=mix,orient=or,par=par)
 }
 
+selisample <- function(ngrad,maxcomp,ntry,dgrad,maxc){
+saved.seed <- .Random.seed
+set.seed(1)
+isample <- matrix(sample(ngrad,maxcomp*ntry,replace=TRUE),maxcomp,ntry)
+ind <- rep(TRUE,ntry)
+for(i in 1:ntry) for(j in 1:(maxcomp-1)) for(k in (j+1):maxcomp){
+if(dgrad[isample[j,i],isample[k,i]]>maxc) ind[i] <- FALSE
+}
+.Random.seed <- saved.seed
+isample[,ind]
+}
+
+getsiind2 <- function(si,mask,grad,theta1,maxcomp=3,maxc=.866,ntry=100){
+# assumes dim(grad) == c(ngrad,3)
+# assumes dim(si) == c(n1,n2,n3,ngrad)
+# SO removed
+ngrad <- dim(grad)[1]
+dgrad <- matrix(abs(grad%*%t(grad)),ngrad,ngrad)
+dgrad <- dgrad/max(dgrad)
+egrad <- exp(-theta1*dgrad^2)
+isample <- selisample(ngrad,maxcomp,ntry,dgrad,maxc)
+#
+#  eliminate configurations with close directions 
+#
+ntry <- dim(isample)[2]
+# this provides configurations of initial estimates with minimum angle between 
+# directions > acos(maxc)
+cat("using ",ntry,"guesses for initial estimates\n")
+siind <- .Fortran("getsiin2",
+         as.double(aperm(si,c(4,1:3))),
+         as.integer(ngrad),
+         as.integer(dim(si)[1]),
+         as.integer(dim(si)[2]),
+         as.integer(dim(si)[3]),
+         as.integer(maxcomp),
+         as.double(dgrad),
+         as.double(egrad),
+         as.integer(isample),
+         as.integer(ntry),
+         double(ngrad),
+         double(ngrad*(maxcomp+1)),
+         siind=integer((maxcomp+1)*prod(dim(si)[-4])),
+         krit=double(prod(dim(si)[1:3])),
+         as.integer(maxcomp+1),
+         as.logical(mask),
+         PACKAGE="dti")[c("siind","krit")]
+array(siind$siind,c(maxcomp+1,dim(si)[-4]))
+}
+
 dwiMixtensorpl0 <- function(object, ...) cat("No dwiMixtensorpl calculation defined for this class:",class(object),"\n")
 
 setGeneric("dwiMixtensorpl0", function(object,  ...) standardGeneric("dwiMixtensorpl0"))
 
-setMethod("dwiMixtensorpl0","dtiData",function(object, maxcomp=3, ex=.2,  p=40, maxneighb=7, method="mixtensor", isocomp=TRUE, reltol=1e-8, maxit=5000,ngc=100, optmethod="Nelder-Mead", pen=1e2,maxc=.866){
+setMethod("dwiMixtensorpl0","dtiData",function(object, maxcomp=3, ex=1.5,  p=40, maxneighb=7, method="mixtensor", reltol=1e-8, maxit=5000,ngc=100, optmethod="Nelder-Mead", pen=1e2,maxc=.866,theta=1.25,ntry=100,penalty="BIC"){
 #
 #  uses  S(g)/s_0 = w_0 exp(-l_1) +\sum_{i} w_i exp(-l_2-(l_1-l_2)(g^T d_i)^2)
 #
@@ -308,6 +357,7 @@ setMethod("dwiMixtensorpl0","dtiData",function(object, maxcomp=3, ex=.2,  p=40, 
   ddim <- object@ddim
   s0ind <- object@s0ind
   ns0 <- length(s0ind)
+  cat("Start search outlier detection at",date(),"\n")
   z <- .Fortran("outlier",
                 as.double(object@si),
                 as.integer(prod(ddim)),
@@ -319,6 +369,7 @@ setMethod("dwiMixtensorpl0","dtiData",function(object, maxcomp=3, ex=.2,  p=40, 
                 lindex=integer(1),
                 DUP=FALSE,
                 PACKAGE="dti")[c("si","index","lindex")]
+  cat("End search outlier detection at",date(),"\n")
   si <- array(z$si,c(ddim,ngrad))
   index <- if(z$lindex>0) z$index[1:z$lindex] else numeric(0)
   rm(z)
@@ -334,17 +385,15 @@ setMethod("dwiMixtensorpl0","dtiData",function(object, maxcomp=3, ex=.2,  p=40, 
   siqmed[siqmed<.9] <- .9
   siqmed[siqmed>.99] <- .99
   siq <- sweep(siq,1:3,siqmed,pmin)
+  if(penalty=="BIC") pen <- log(ngrad-ns0) else pen <- 2
 #
 #  avoid situations where si's are larger than s0
 #
   grad <- t(object@gradient[,-s0ind])
 #
-#   determine initial estimates for orientations 
-#
-  siind <- getsiind(siq,mask,grad,maxcomp,maxc=maxc)
-#
 # initial estimates for eigenvalues
 #
+  cat("Start search for initial estimates of eigenvalues at",date(),"\n")
   lev <- array(.Fortran("getev0",
                as.double(aperm(siq,c(4,1:3))),
                as.integer(ngrad0),
@@ -354,6 +403,14 @@ setMethod("dwiMixtensorpl0","dtiData",function(object, maxcomp=3, ex=.2,  p=40, 
                lev=double(2*prod(ddim)),
                DUPL=FALSE,
                PACKAGE="dti")$lev,c(2,ddim))
+  theta <- theta*median(lev[2,,,][mask])
+  cat("using theta=",theta,"\n")
+#
+#   determine initial estimates for orientations 
+#
+  cat("Start search for initial directions at",date(),"\n")
+  siind <- getsiind2(siq,mask,grad,theta,maxcomp,maxc=maxc,ntry=ntry)
+ cat("End search for initial values at",date(),"\n")
   order <- array(0,ddim)
 #  logarithmic eigen values
   mix <- array(0,c(maxcomp,ddim))
@@ -381,20 +438,10 @@ setMethod("dwiMixtensorpl0","dtiData",function(object, maxcomp=3, ex=.2,  p=40, 
 #  these is an initial estimate for the eigen-value parameter
 #
      par[rep(2*(1:mc0),rep(2,mc0))+c(0,1)] <- orient[,1:mc0,i1,i2,i3]
-     } else {
-     par <- numeric(2*mc0+2)
-     par[1:2] <- c((1+lev[2,i1,i2,i3]/p),lev[1,i1,i2,i3]/p)
-#
-#  Initial values for JIAN-Model need to be checked
-#
-#
-#  these is an initial estimate for the eigen-value parameter
-#
-     par[rep(2*(1:mc0),rep(2,mc0))+c(1,2)] <- orient[,1:mc0,i1,i2,i3]
-     }
+     } 
      sigma2[i1,i2,i3] <- var(siq[i1,i2,i3,])
      krit <- rss <- (ngrad-1)*sigma2[i1,i2,i3]
-     krit <- rss <- Inf
+#     krit <- rss <- Inf
      maxcomp0 <- maxcomp
      for(k in mc0:1){
         if(k<ord) {
@@ -404,50 +451,39 @@ setMethod("dwiMixtensorpl0","dtiData",function(object, maxcomp=3, ex=.2,  p=40, 
         if(method=="mixtensor"){
            lpar <- 2*k+1
 #
-#  in case of isocomp==TRUE use estimates from the more restrictive model as
-#  initial parameters
-#
            if(optmethod=="BFGS"){
-              if(!isocomp||k==mc0)
                  z <- optim(par[1:(2*k+1)],mfunpl0,gmfunpl0,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
                          method="BFGS",control=list(maxit=maxit,reltol=reltol))
-              if(isocomp) {
-                 if(k==mc0) par[1:(2*k+1)] <- z$par[1:(2*k+1)]
-                 z <- optim(z$par[1:(2*k+1)],mfunpl1,gmfunpl1,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
-                         method="BFGS",control=list(maxit=maxit,reltol=reltol))
-              } 
            } else {
-#              cat("i1",i1,"i2",i2,"i3",i3,"k",k,"par",par[1:(2*k+1)],"\n")
-              if(!isocomp||k==mc0)
               z <- optim(par[1:(2*k+1)],mfunpl0,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
                          method=optmethod,control=list(maxit=maxit,reltol=reltol))
-              if(isocomp) {
-                 if(k==mc0) par[1:(2*k+1)] <- z$par[1:(2*k+1)]
-                 z <- optim(z$par[1:(2*k+1)],mfunpl1,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
+              if(k==mc0 & z$value >= .99*rss){
+#                this would be an isotropic tensor, search for a better solution 
+                 ntry <- 10
+                 cat("failed in voxel ",i1,i2,i3,"with parameters",par,"value",z$value,"rss",rss,"\n") 
+                 while(ntry>0&z$value >= .99*rss){
+                    par[1] <- rchisq(1,10)/10*lev[2,i1,i2,i3]
+                    par[rep(2*(1:mc0),rep(2,mc0))+c(0,1)] <- rnorm(orient[,1:mc0,i1,i2,i3],orient[,1:mc0,i1,i2,i3],pi/6)
+                    z <- optim(par[1:(2*k+1)],mfunpl0,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
                          method=optmethod,control=list(maxit=maxit,reltol=reltol))
+                    cat("try ",11-ntry,"with parameters",par,"value",z$value,"rss",rss,"\n") 
+                    ntry <- ntry-1
+                 }
               }
            }
         }         
         value <- z$value
         rss <- min(z$value,rss)
         if(method=="mixtensor"){
-           if(isocomp) {
-              zz <- mfunplwghts1(z$par[1:lpar],siq[i1,i2,i3,],grad)
-           } else {
-              zz <- mfunplwghts0(z$par[1:lpar],siq[i1,i2,i3,],grad,pen)
-           }
-        } else {
-           zz <- mfunpl2wghts(z$par[1:lpar],siq[i1,i2,i3,],grad,pex=p)
-        }
+            zz <- mfunplwghts0(z$par[1:lpar],siq[i1,i2,i3,],grad)
+        } 
         ord <- zz$ord
-#        cat("ord",ord,"krit",krit,"value",value,"rss",rss,"\n")
-#        cat("lev",zz$lev,"par",zz$par,"wghts",zz$mix,"\n")
         if(any(zz$lev<0)||ord<k){
            ttt <- krit
            maxcomp0 <- k-1
 #   parameters not interpretable reduce order
         } else {
-           penalty <- if(isocomp) 2*(3*ord+2)/(ngrad0-3*maxcomp0-2) else 2*(3*ord+1)/(ngrad0-3*maxcomp0-1)
+           penalty <- pen*(3*ord+1)/(ngrad0-3*maxcomp0-1)
            ttt <- value+penalty*rss
            par <- zz$par
         }
@@ -460,15 +496,10 @@ setMethod("dwiMixtensorpl0","dtiData",function(object, maxcomp=3, ex=.2,  p=40, 
            lev[,i1,i2,i3] <- zz$lev
            mix[,i1,i2,i3] <- if(ord==maxcomp) zz$mix else c(zz$mix,rep(0,maxcomp-ord))
            orient[,1:ord,i1,i2,i3] <- zz$orient
-           sigma2[i1,i2,i3] <- rss/(ngrad0-3*maxcomp0-1-isocomp)
+           sigma2[i1,i2,i3] <- rss/(ngrad0-3*maxcomp0-1)
        }
      }
    }
-#   cat("order",order[i1,i2,i3],"\n")
-#   cat("error variance",sigma2[i1,i2,i3]*s0[i1,i2,i3]^2,"\n")
-#   cat("ev",c(exp(lev[1,i1,i2,i3]),0,0)+exp(lev[2,i1,i2,i3]),"\n")
-#   cat("mix",mix[,i1,i2,i3],"\n")
-#   cat("orient",orient[,,i1,i2,i3],"\n")
     if(igc<ngc){
        igc <- igc+1
     } else {
@@ -580,27 +611,26 @@ setMethod("dwiMixtensorpl","dtiData",function(object, maxcomp=3, ex=.2,  p=40, m
    cat("siindcontains zeros\n")
    return(list(siind=siind,siq=siq,mask=mask,grad=grad,maxcomp=maxcomp))
   }
-  for(i1 in 1:n1) for(i2 in 1:n2) for(i3 in 1:n3){
-     if(mask[i1,i2,i3]){
+  for(i1 in 1:n1) for(i2 in 1:n2) for(i3 in 1:n3){#1
+     if(mask[i1,i2,i3]){#2
      mc0 <- maxcomp
      ord <- mc0+1
-     for(j in 1:mc0) {
-       if(siind[j+1,i1,i2,i3]<1||siind[j+1,i1,i2,i3]>ngrad0){
+     for(j in 1:mc0) {#3
+       if(siind[j+1,i1,i2,i3]<1||siind[j+1,i1,i2,i3]>ngrad0){#4
         cat("i1",i1,"i2",i2,"i3",i3,"j",j,"mc0",mc0,"\n")
         cat("siind",siind[,i1,i2,i3],"mask",mask[i1,i2,i3],"\n")
-       }
-       if(is.na(sin(acos(grad[siind[j+1,i1,i2,i3],3])))){
+       }#e4
+       if(is.na(sin(acos(grad[siind[j+1,i1,i2,i3],3])))){#5
         cat("i1",i1,"i2",i2,"i3",i3,"j",j,"mc0",mc0,"\n")
         cat("siind",siind[j+1,i1,i2,i3],"\n")
-       }
+       }#e5
        orient[,j,i1,i2,i3] <- paroforient(grad[siind[j+1,i1,i2,i3],])
-       }
+       }#e3
 #
 #   these are the gradient vectors corresponding to minima in spherical coordinates
 #
-     if(method=="mixtensor"){
+     if(method=="mixtensor"){#6
      par <- numeric(2*mc0+1)
-#     lev[,i1,i2,i3] <-  log(-log(siq[i1,i2,i3,siind[2,i1,i2,i3]])*c(.8,.2))
      lev[,i1,i2,i3] <-  -log(siq[i1,i2,i3,siind[2,i1,i2,i3]])*c(ex,1-ex)
      par[1] <- lev[1,i1,i2,i3]
 #
@@ -615,47 +645,46 @@ setMethod("dwiMixtensorpl","dtiData",function(object, maxcomp=3, ex=.2,  p=40, m
 #  these is an initial estimate for the eigen-value parameter
 #
      par[rep(2*(1:mc0),rep(2,mc0))+c(1,2)] <- orient[,1:mc0,i1,i2,i3] 
-     }
+     }#e6
      rss <- Inf
      krit <- Inf
      maxcomp0 <- maxcomp
-     for(k in mc0:1){
-        if(k<ord) {
+     for(k in mc0:1){#7
+        if(k<ord) {#8
 #
 #  otherwise we would reanalyze a model
 #
-        if(method=="mixtensor"){
+        if(method=="mixtensor"){#9
            lpar <- 2*k+1
-           if(optmethod=="BFGS"){
+           if(optmethod=="BFGS"){#10
            zz <- mfunplwghts(par[1:(2*k+1)],siq=siq[i1,i2,i3,],grad=grad)
            count <- 0
-#           while(any(zz$lev<0)&count<10) {
-           while(any(zz$mix==0)&count<10) {
+           while(any(zz$mix==0)&count<10) {#11
               par[1] <- -log(siq[i1,i2,i3,siind[2,i1,i2,i3]])*runif(1)
               zz <- mfunplwghts(par[1:(2*k+1)],siq=siq[i1,i2,i3,],grad=grad)
               count <- count+1
               if(count>10) cat("problem with initial values in voxel(",c(i1,i2,i3),"\n")
-           }
+           }#e11
            z <- optim(par[1:(2*k+1)],mfunpl,gmfunpl,siq=siq[i1,i2,i3,],grad=grad,
                    method="BFGS",control=list(maxit=maxit,reltol=reltol))
            } else {
            z <- optim(par[1:(2*k+1)],mfunpl,siq=siq[i1,i2,i3,],grad=grad,
                    method=optmethod,control=list(maxit=maxit,reltol=reltol))
-           }
+           }#e10
         } else {
            lpar <- 2*k+2
            z <- optim(par[1:(2*k+2)],mfunpl2,siq=siq[i1,i2,i3,],grad=grad,pex=p,
                    method=optmethod,control=list(maxit=maxit,reltol=reltol))
-        }
+        }#e9
         value <- z$value^2
         rss <- min(z$value^2,rss)
-        if(method=="mixtensor"){
+        if(method=="mixtensor"){#12
            zz <- mfunplwghts(z$par[1:lpar],siq[i1,i2,i3,],grad)
         } else {
            zz <- mfunpl2wghts(z$par[1:lpar],siq[i1,i2,i3,],grad,pex=p)
-        }
+        }#e12
         ord <- zz$ord
-        if(any(zz$lev<0)){
+        if(any(zz$lev<0)){#13
            ttt <- Inf
            rss <- Inf
            maxcomp0 <- k-1
@@ -663,37 +692,32 @@ setMethod("dwiMixtensorpl","dtiData",function(object, maxcomp=3, ex=.2,  p=40, m
         } else {
         ttt <- value+2*(3*ord+1)/(ngrad0-3*maxcomp0-1)*rss
         par <- zz$par
-        }
+        }#e13
 #
 #     use directions corresponding to largest weights as initial directions
 #
-        if(ttt < krit) {
+        if(ttt < krit) {#14
            krit <- ttt
            order[i1,i2,i3] <- ord
            lev[,i1,i2,i3] <- zz$lev
            mix[,i1,i2,i3] <- if(length(zz$mix)==maxcomp) zz$mix else c(zz$mix,rep(0,maxcomp-length(zz$mix)))
            orient[,1:ord,i1,i2,i3] <- zz$orient
-       }
-     }
-   }
+       }#e14
+     }#e8
+   }#e7
    sigma2[i1,i2,i3] <- rss/(ngrad0-3*maxcomp0-1)
-#   cat("order",order[i1,i2,i3],"\n")
-#   cat("error variance",sigma2[i1,i2,i3]*s0[i1,i2,i3]^2,"\n")
-#   cat("ev",c(exp(lev[1,i1,i2,i3]),0,0)+exp(lev[2,i1,i2,i3]),"\n")
-#   cat("mix",mix[,i1,i2,i3],"\n")
-#   cat("orient",orient[,,i1,i2,i3],"\n")
-    if(igc<ngc){
+   if(igc<ngc){#15
        igc <- igc+1
-    } else {
+   } else {
        igc <- 0
        ingc <- ingc+1
        prt1 <- proc.time()[1]
        gc()
        cat("Nr. of voxel",ingc*ngc,"time elapsed:",prta+prt1-prt0,"remaining time:",
             (prt1-prt0)/(ingc*ngc)*(sum(mask)-ingc*ngc),"\n")
-    }
-  }
-  }
+     }#e15
+  }#e2
+  }#e1
   invisible(new("dwiMixtensor",
                 call   = args,
                 ev     = lev,
