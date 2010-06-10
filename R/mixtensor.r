@@ -49,13 +49,13 @@ orientofpar <- function(par){
 c(sin(par[1])*cos(par[2]),sin(par[1])*sin(par[2]),cos(par[1]))
 }
 
-dwiMixtensor <- function(object, ...) cat("No dwiMixtensor calculation defined for this class:",class(object),"\n")
+dwiMixtensor.old <- function(object, ...) cat("No dwiMixtensor calculation defined for this class:",class(object),"\n")
 
-setGeneric("dwiMixtensor", function(object,  ...) standardGeneric("dwiMixtensor"))
+setGeneric("dwiMixtensor.old", function(object,  ...) standardGeneric("dwiMixtensor"))
 
-setMethod("dwiMixtensor", "dtiData", function(object, maxcomp=2, p=2, maxneighb=7, method="mixtensor", reltol=1e-8, maxit=5000) {
+setMethod("dwiMixtensor.old", "dtiData", function(object, maxcomp=2, p=2, maxneighb=7, method="mixtensor", reltol=1e-8, maxit=5000) {
 
-  cat("entering method dwiMixtensor\n")
+  cat("entering method dwiMixtensor (old C-based version)\n")
 
   if (maxcomp > 3) {
     stop("maximum number of tensor components is 3\n");

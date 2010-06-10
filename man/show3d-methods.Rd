@@ -21,7 +21,7 @@ level=0, scale=.75, bgcolor="black", add=FALSE, subdivide=2, maxobjects=729, wha
 odfscale = 3, minalpha=.25, normalize=NULL, box=FALSE, title=FALSE,\dots)
   \S4method{show3d}{dtiIndices}(obj, index="FA", nx=NULL, ny=NULL, nz=NULL, center=NULL, method=1, 
 falevel=0, bgcolor="black", add=FALSE, lwd=1, box=FALSE, title=FALSE, \dots)
-  \S4method{show3d}{dwiMixtensor}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, level=0, scale=.75, 
+  \S4method{show3d}{dwiMixtensor}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, falevel=0.3, level=0, scale=.75, 
 bgcolor="black", add=FALSE, subdivide=3, maxobjects=729, what="ODF", odfscale=3, minalpha=1, 
 lwd=3, box=FALSE, title=FALSE, \dots) 
  \S4method{show3d}{dwiQball}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, level=0, scale=0.75, 
@@ -44,7 +44,7 @@ lwd=3, box=FALSE, title=FALSE, \dots)
 \item{box}{Logical, add a bounding box.}
 \item{title}{Either a character string specifying a title or a logical. If \code{title==TRUE} a default title characterizing the type of plot is generated. }
 \item{method}{\code{method==1} and \code{method==2} specify two different color schemes for directional FA-maps.}
-\item{falevel}{Minimal FA value of tensors.}
+\item{falevel}{Minimal FA value for dtiTensor objects and Minimal gFA for dwiMixtensor objects.}
 \item{level}{Radius of sphere used as support for ODF visualisation}
 \item{subdivide}{Level of subdivisions for meshing, level \code{0:4} correspond to use of
 \code{c(12,42,162,642,2562)} vertices per tensor, respectively.}

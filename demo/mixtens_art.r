@@ -64,7 +64,7 @@ for(i in 1:n) beta[3,,,i] <- 0
 }
 if(scenario!=2){
 mix1 <- readline("first mixture coefficient (default 1/3)\n
-                  0 corresponds 2 mixtures of order 2, 1 to order 1") 
+                  0 corresponds to mixtures of order 2, 1 to order 1") 
 
 if (!is.null(mix1)) mix1 <- as.numeric(mix1) else mix1 <- 1/3
 if(is.na(mix1)) mix1 <- 1/3 else mix1 <- min(1,max(0,mix1))
@@ -82,13 +82,10 @@ gfa <- readline("Generalized FA (default gfa = .8)")
 
 if (!is.null(gfa)) gfa <- as.numeric(gfa) else gfa <- .8
 if(is.na(gfa)) gfa <- .8 else gfa <- min(.9,max(.2,gfa))
-
-th[1,,,] <- 4
 } else {
-a <- seq(.3,.9,length=n^3) 
-th[1,,,] <- .8*(1+a*sqrt(3-2*a^2))/(1-a^2)
-
+gfa <- seq(.3,.9,length=n^3) 
 }
+th[1,,,] <- .8*(gfa^2+sqrt(3*gfa^2-2*gfa^4))/(1-gfa^2)
 
 
 maxcomp <- readline("maximal order of mix-tensor model (default 3)") 
@@ -99,7 +96,7 @@ if(is.na(maxcomp)) maxcomp <- 3 else maxcomp <- min(5,max(1,maxcomp))
 z0 <- truemixtens(mix,th,alpha,beta,grad,sigma)
 z <- tdatamixtens(mix,th,alpha,beta,grad,sigma)
 zt <- dtiTensor(z)
-zmix <- dwiMixtensorpl0(z,optmethod="Nelder-Mead",maxcomp=maxcomp,ex=1.5,reltol=1e-7)
+zmix <- dwiMixtensor(z,optmethod="Nelder-Mead",maxcomp=maxcomp,reltol=1e-6)
 zqball <- dwiQball(z,order=8)
 size <- as.integer(min(.adimpro$xsize/3.2,.adimpro$ysize/2.4))
  

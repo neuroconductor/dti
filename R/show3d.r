@@ -237,7 +237,7 @@ setMethod("show3d","dtiTensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL
   invisible(rgl.cur())
 })
 
-setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,level=0,scale=.75,bgcolor="black",add=FALSE,subdivide=3,maxobjects=729,what="ODF",odfscale=3,minalpha=1,lwd=3,box=FALSE,title=FALSE,...){
+setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,falevel=0.3,level=0,scale=.75,bgcolor="black",add=FALSE,subdivide=3,maxobjects=729,what="ODF",odfscale=3,minalpha=1,lwd=3,box=FALSE,title=FALSE,...){
   if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
   if(!exists("icosa0")) data("polyeders")
   if(subdivide<0||subdivide>4) subdivide <- 3
@@ -282,6 +282,22 @@ setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=N
   tmean[2,,,] <- outer(rep(1,n1),yind)*vext[2]
   tmean[3,,,] <- outer(rep(1,n1),outer(rep(1,n2),zind))*vext[3]
   mask <- obj@mask
+  gfa <- extract(obj,"gfa")$gfa
+  dim(ev) <- c(2,n)
+  dim(tmean) <- c(3,n)
+  dim(orient) <- c(dim(orient)[1:2],n)
+  dim(mix) <- c(dim(mix)[1],n)
+  if(falevel>0){
+    indpos <- (1:n)[(gfa>falevel)&mask]
+    ev <- ev[,indpos]
+    tmean <- tmean[,indpos]
+    orient <- orient[,,indpos]
+    mix <- mix[,indpos]
+    order <- order[indpos]
+    gfa <- gfa[indpos]
+    n <- length(indpos)
+  }
+  
   polyeder <- switch(subdivide+1,icosa0,icosa1,icosa2,icosa3,icosa4)
   if(toupper(what) %in% c("ODF","BOTH")){
   radii <- .Fortran("mixtradi",
@@ -312,7 +328,6 @@ setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=N
   radii <- radii/max(radii)*scale
   }
   if(toupper(what) %in% c("AXIS","BOTH")){
-   gfa <- extract(obj,"gfa")$gfa
    colors <- rainbow(1024,end=2/3,gamma=1.2)
    ranger <- range(gfa)
    ind <- 1024-(gfa-ranger[1])/(ranger[2]-ranger[1])*1023
@@ -326,12 +341,12 @@ setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=N
                     andir=double(3*n*dim(mix)[1]),
                     DUP=FALSE,
                     PACKAGE="dti")$andir,c(3,dim(mix)[1],n1,n2,n3))
-  lcoord <- array(0,c(3,2*dim(mix)[1],n1,n2,n3))
+  lcoord <- array(0,c(3,2*dim(mix)[1],n))
   for(i in 1:dim(mix)[1]){
-       lcoord[,2*i-1,,,] <-  andir[,i,,,]*scale+tmean[,,,]
-       lcoord[,2*i,,,] <-  -andir[,i,,,]*scale+tmean[,,,]
+       lcoord[,2*i-1,] <-  andir[,i,]*scale+tmean
+       lcoord[,2*i,] <-  -andir[,i,]*scale+tmean
      }          
-     dim(lcoord) <- c(3,2*dim(mix)[1]*n1*n2*n3)
+     dim(lcoord) <- c(3,2*dim(mix)[1]*n)
   }
   dim(tmean) <- c(3,n)
   if(!add) {

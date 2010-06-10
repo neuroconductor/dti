@@ -345,6 +345,12 @@ setMethod("extract","dtiData",function(x, what="data", xind=TRUE, yind=TRUE, zin
   if("btb" %in% what) z$btb <- x@btb
   if("s0" %in% what) z$S0 <- x@si[,,,x@s0ind,drop=FALSE]
   if("sb" %in% what) z$Si <- x@si[,,,-x@s0ind,drop=FALSE]
+  if("siq" %in% what) {
+     S0 <- x@si[,,,x@s0ind,drop=FALSE]
+     Si <- x@si[,,,-x@s0ind,drop=FALSE]
+     z$siq <- sweep(Si,1:3,apply(S0,1:3,mean),"/")
+     z$siq[is.na(z$siq)] <- 0
+  }
   if("data" %in% what) z$data <- x@si
   invisible(z)
 })
@@ -367,7 +373,7 @@ setMethod("extract","dwiMixtensor",function(x, what="andir", xind=TRUE, yind=TRU
      z$ev <- ev
      }
   if("mix" %in% what) z$mix <- x@mix
-  if(any(c("andir","aorder","agfa") %in% what)){
+  if("andir" %in% what) {
      orient <- x@orient
      andir <- array(0,c(3,prod(dim(orient))/2))
      dim(orient) <- c(2,prod(dim(orient))/2)
@@ -375,48 +381,25 @@ setMethod("extract","dwiMixtensor",function(x, what="andir", xind=TRUE, yind=TRU
      andir[1,] <- sth*cos(orient[2,])
      andir[2,] <- sth*sin(orient[2,])
      andir[3,] <- cos(orient[1,])
-  } 
-  if("andir" %in% what) {
      z$andir <- array(andir,c(3,dim(x@orient)[-1]))
      }
   if("s0" %in% what) z$S0 <- x@S0
   if("mask" %in% what) z$mask <- x@mask
-  if(any(c("gfa","agfa") %in% what)){
+  if("gfa" %in% what){
       gfa <- x@ev[1,,,]/sqrt((x@ev[1,,,]+x@ev[2,,,])^2+2*x@ev[2,,,]^2)
       gfa[x@order==0] <- 0
+      z$gfa <- gfa
     }
-  if("gfa" %in% what) z$gfa <- gfa
-  if(any(c("eorder","aorder","agfa") %in% what)){
+  if("eorder" %in% what) {
      maxorder <- dim(x@mix)[1]
      mix <- x@mix
      dim(mix) <- c(maxorder,n1*n2*n3)     
-  }
-  if(any(c("agfa","eorder") %in% what)) {
-     eorder <- array((2*(1:maxorder)-1)%*%mix,c(n1,n2,n3))
-  }
-  if("eorder" %in% what) z$eorder <- eorder
-  if(any(c("aorder","agfa") %in% what)) {
-     dim(andir) <- c(3,maxorder,n1*n2*n3)
-     aorder <- array(mix[1,],c(n1,n2,n3))
-     for(i in 2:maxorder) aorder[x@order>=i] <- (aorder + (2*i-1)*mix[i,]*sangle(andir[,1:i,]))[x@order>=i]
-  }
-  if("aorder" %in% what) z$aorder <- aorder
-  if("agfa" %in% what) {
-     z$agfa <- gfa
-     z$agfa[eorder>0] <- gfa[eorder>0]*aorder[eorder>0]/eorder[eorder>0]
+     z$eorder <- array((2*(1:maxorder)-1)%*%mix,c(n1,n2,n3))
   }
   invisible(z)
 })
 
 
-sangle <- function(x){
-m <- dim(x)[2]
-z <- 1
-for(i in 1:(m-1)) for(j in (i+1):m){
-z <- z*sqrt(pmax((1-(x[1,i,]*x[1,j,]+x[2,i,]*x[2,j,]+x[3,i,]*x[3,j,])^2),0))
-}
-z
-}
 
 setMethod("extract","dtiTensor",function(x, what="tensor", xind=TRUE, yind=TRUE, zind=TRUE){
   what <- tolower(what) 
