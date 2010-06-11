@@ -27,23 +27,6 @@ array(.Fortran("getsiind",
          PACKAGE="dti")$siind,c(maxcomp+1,dim(si)[-4]))
 }
 
-paroforient <- function(dir){
-  theta <- acos(dir[3])
-  sth <- sin(theta)
-  phi <- 0
-  if(sth<1e-8) {
-    theta <- 0
-  } else {
-    z <- dir[1]/sth
-    if(abs(z)>=1) {
-      phi <- if(z<0) 0 else pi
-    } else {
-      phi <- acos(z)*sign(dir[2])
-    }
-    if(phi < 0) phi <- phi+2*pi
-  }
-  c(theta, phi)
-}
 
 orientofpar <- function(par){
 c(sin(par[1])*cos(par[2]),sin(par[1])*sin(par[2]),cos(par[1]))
@@ -51,7 +34,7 @@ c(sin(par[1])*cos(par[2]),sin(par[1])*sin(par[2]),cos(par[1]))
 
 dwiMixtensor.old <- function(object, ...) cat("No dwiMixtensor calculation defined for this class:",class(object),"\n")
 
-setGeneric("dwiMixtensor.old", function(object,  ...) standardGeneric("dwiMixtensor"))
+setGeneric("dwiMixtensor.old", function(object,  ...) standardGeneric("dwiMixtensor.old"))
 
 setMethod("dwiMixtensor.old", "dtiData", function(object, maxcomp=2, p=2, maxneighb=7, method="mixtensor", reltol=1e-8, maxit=5000) {
 

@@ -67,6 +67,24 @@ if(dgrad[isample[j,i],isample[k,i]]>maxc) ind[i] <- FALSE
 isample[,ind]
 }
 
+paroforient <- function(dir){
+  theta <- acos(dir[3])
+  sth <- sin(theta)
+  phi <- 0
+  if(sth<1e-8) {
+    theta <- 0
+  } else {
+    z <- dir[1]/sth
+    if(abs(z)>=1) {
+      phi <- if(z<0) 0 else pi
+    } else {
+      phi <- acos(z)*sign(dir[2])
+    }
+    if(phi < 0) phi <- phi+2*pi
+  }
+  c(theta, phi)
+}
+
 getsiind2 <- function(si,mask,grad,theta1,maxcomp=3,maxc=.866,nguess=100){
 # assumes dim(grad) == c(ngrad,3)
 # assumes dim(si) == c(n1,n2,n3,ngrad)

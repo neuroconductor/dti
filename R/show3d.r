@@ -283,6 +283,7 @@ setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=N
   tmean[3,,,] <- outer(rep(1,n1),outer(rep(1,n2),zind))*vext[3]
   mask <- obj@mask
   gfa <- extract(obj,"gfa")$gfa
+  dim(gfa) <- dim(mask)
   dim(ev) <- c(2,n)
   dim(tmean) <- c(3,n)
   dim(orient) <- c(dim(orient)[1:2],n)
