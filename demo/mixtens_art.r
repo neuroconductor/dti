@@ -96,7 +96,7 @@ if(is.na(maxcomp)) maxcomp <- 3 else maxcomp <- min(5,max(1,maxcomp))
 z0 <- truemixtens(mix,th,alpha,beta,grad,sigma)
 z <- tdatamixtens(mix,th,alpha,beta,grad,sigma)
 zt <- dtiTensor(z)
-zmix <- dwiMixtensor(z,optmethod="Nelder-Mead",maxcomp=maxcomp,reltol=1e-6)
+zmix <- dwiMixtensor(z,optmethod="BFGS",maxcomp=maxcomp,reltol=1e-6)
 zqball <- dwiQball(z,order=8)
 size <- as.integer(min(.adimpro$xsize/3.2,.adimpro$ysize/2.4))
  

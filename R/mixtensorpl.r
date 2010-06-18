@@ -162,7 +162,7 @@ dwiMixtensor <- function(object, ...) cat("No dwiMixtensor calculation defined f
 
 setGeneric("dwiMixtensor", function(object,  ...) standardGeneric("dwiMixtensor"))
 
-setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mixtensor", reltol=1e-8, maxit=5000,ngc=100, optmethod="Nelder-Mead", nguess=25*maxcomp^2,penalty="BIC"){
+setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mixtensor", reltol=1e-6, maxit=5000,ngc=1000, optmethod="BFGS", nguess=25*maxcomp^2,penalty="BIC"){
 #
 #  uses  S(g)/s_0 = w_0 exp(-l_1) +\sum_{i} w_i exp(-l_2-(l_1-l_2)(g^T d_i)^2)
 #
