@@ -17,6 +17,43 @@ ngrad <- dim(grad)[1]
                 erg = double(1),#residual sum of squares
                 PACKAGE="dti")$erg
 }
+gmfunpl0 <- function(par,siq,grad,pen=1e2){
+#
+#   evaluate rss for Mixtensor-model
+#
+lpar <- length(par)
+m <- (lpar-1)/2
+ngrad <- dim(grad)[1]
+.Fortran("mfunpl0g",
+         as.double(par),#par(lpar)
+         as.double(siq),#s(n)
+         as.double(t(grad)),#g(3,n)
+         as.integer(m),
+         as.integer(lpar),
+         as.integer(ngrad),
+         double(3*m),# d(3,m)
+         double(ngrad*m),# z(n,m)
+         double(m*m),# v(m,m)
+         double(m),# w(m)
+         double(ngrad*m),# dkgj(n,m)
+         double(ngrad*m),# dkgj2(n,m)
+         double(ngrad*m),# ddkdphig(n,m)
+         double(ngrad*m),# ddkdetag(n,m)
+         double(3*m),# dddphi(3,m)
+         double(3*m),# dddeta(3,m)
+         double(m*m),# dvdth(m,m)
+         double(m*m*m),# dvdphi(m,m,m)
+         double(m*m*m),# dvdeta(m,m,m)
+         double(ngrad*m*lpar),# dzdpars(n,m,lpar)
+         double(m*lpar),# dwdpars(m,lpar)
+         double(ngrad*m),# zs(n,m)
+         double(ngrad*m),# work1(n,m)
+         double(ngrad*m),# work2(n,m)
+         double(ngrad),# scopy(n)
+         as.double(pen),# pen
+         dfdpar=double(lpar),# dfdpar(lpar)
+         PACKAGE="dti")$dfdpar
+}
 mfunplwghts0 <- function(par,siq,grad,pen=1e2){
 #
 #   get weights for Mixtensor-model (without isotropic component) and extract parameters 
@@ -239,19 +276,6 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
            } else {
               z <- optim(par[1:(2*k+1)],mfunpl0,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
                          method=optmethod,control=list(maxit=maxit,reltol=reltol))
-#              if(k==mc0 & z$value/(ngrad0-3*k-1) >= sigmai){
-#                this would be an isotropic tensor, search for a better solution 
-#                 ntry <- 10
-#                 cat("failed in voxel ",i1,i2,i3,"with parameters",par,"value",z$value/(ngrad0-3*k-1),"sigmai",sigmai,"\n") 
-#                 while(ntry>0&z$value/(ngrad0-3*k-1) >= .99*sigmai){
-#                    par[1] <- rchisq(1,10)/10*theta*lev[2,i1,i2,i3]/mlev
-#                    par[rep(2*(1:mc0),rep(2,mc0))+c(0,1)] <- #rnorm(orient[,1:mc0,i1,i2,i3],orient[,1:mc0,i1,i2,i3],pi/12)
-#                    z <- optim(par[1:(2*k+1)],mfunpl0,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
-#                         method=optmethod,control=list(maxit=maxit,reltol=reltol))
-#                    cat("try ",11-ntry,"with parameters",par,"value",z$value/(ngrad0-3*k-1),"sigmai",sigmai,"\n") 
-#                    ntry <- ntry-1
-#                 }
-#              }
            }
         }         
         value <- z$value
@@ -288,7 +312,7 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
     if(igc<ngc){
        igc <- igc+1
     } else {
-       igc <- 0
+       igc <- 1
        ingc <- ingc+1
        prt1 <- proc.time()[1]
        gc()

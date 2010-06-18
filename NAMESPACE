@@ -12,3 +12,4 @@ export(dtiData,readDWIdata)
 export(tensor2medinria,medinria2tensor)
 exportMethods("sdpar")
 
+

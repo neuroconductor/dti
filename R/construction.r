@@ -80,30 +80,6 @@ w<-.Fortran("mfunpl1",as.double(par),#par(lpar)
            par <- c(par[1],or[,1:ord])
 list(ord=ord,lev=lev,mix=mix,orient=or,par=par)
 }
-gmfunpl0 <- function(par,siq,grad){
-#
-#   evaluate rss for Mixtensor-model
-#
-lpar <- length(par)
-m <- (lpar-1)/2
-ngrad <- dim(grad)[1]
-.Fortran("mfunpl1g",as.double(par),#par
-                as.double(siq),#siq
-                as.double(t(grad)),#grad
-                as.integer(m),#m
-                as.integer(lpar),#lpar
-                as.integer(ngrad),#ngrad
-                double(ngrad*m),#z
-                double(m),#w
-                double(ngrad),#work
-                double(1),#erg
-                double(ngrad),#fv
-                double(lpar*ngrad),#dfv
-                double(m*ngrad),#qv
-                double(2*m*ngrad),#dqv
-                gradient=double(lpar),#dh
-                PACKAGE="dti")$gradient
-}
 mfunpl <- function(par,siq,grad){
 #
 #   evaluate rss for Mixtensor-model

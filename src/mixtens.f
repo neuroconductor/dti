@@ -12,8 +12,8 @@ C
       integer m,lpar,ngrad
       real*8 par(lpar),siq(ngrad),grad(3,ngrad),z(ngrad,m),erg,pen
       integer i,j,i3,mode,r
-      real*8 c1,w(ngrad),sw,sth,z1,p0,p1,d1,d2,d3,work(1000),s(6)
-      c1 = par(1)
+      real*8 th,w(ngrad),sw,sth,z1,p0,p1,d1,d2,d3,work(1000),s(6)
+      th = max(par(1),-5.d0)
       DO i = 1,m
          i3=2*i
          p0=par(i3)
@@ -24,7 +24,7 @@ C
          d3 = cos(p0)
          DO j = 1,ngrad
             z1 = d1*grad(1,j)+d2*grad(2,j)+d3*grad(3,j)
-            z(j,i) = exp(-c1*z1*z1)
+            z(j,i) = exp(-th*z1*z1)
          END DO
       END DO
 C  
@@ -36,16 +36,11 @@ C
          call intpr("mode",4,mode,1)
          erg = 1d20
       ELSE
-C         IF(work(1).gt.1000) THEN
-C            call intpr("ngrad",5,ngrad,1)
-C            call intpr("m",1,m,1)
-C            call dblepr("optimal LWORK",13,work,1)
-C         END IF
          sw=0.d0
-C penalize for extreme c1 values
-         if(c1.gt.8.d0) sw=sw+c1-8.d0
+C penalize for extreme th values
+         if(th.gt.8.d0) sw=sw+th-8.d0
 C penalize for negative weights
-         if(c1.lt.1.d-2) sw=sw-1.d2*c1+1.d0
+         if(th.lt.1.d-2) sw=sw-1.d2*th+1.d0
          DO i=1,m
             if(w(i).lt.0.d0) sw=sw-pen*w(i)
          END DO
@@ -54,6 +49,201 @@ C penalize for negative weights
          END DO
          erg=sw
       END IF
+      call rchkusr()
+      RETURN
+      END 
+C
+C __________________________________________________________________
+C
+      subroutine mfunpl0g(par,s,g,m,lpar,n,d,z,v,w,dkgj,dkgj2,
+     1                    ddkdphig,ddkdetag,dddphi,
+     2                    dddeta,dvdth,dvdphi,dvdeta,dzdpars,
+     3                    dwdpars,zs,work1,
+     3                    work2,scopy,pen,dfdpar)
+      implicit logical (a-z)
+      integer m,n,lpar
+      real*8 par(lpar),s(n),g(3,n),d(3,m),z(n,m),v(m,m),dkgj(n,m),
+     1       w(m),dkgj2(n,m),ddkdphig(n,m),ddkdetag(n,m),dddphi(3,m),
+     2       dddeta(3,m),dvdth(m,m),dvdphi(m,m,m),dvdeta(m,m,m),
+     3       dzdpars(n,m,lpar),dwdpars(m,lpar),zs(n,m),dfdpar(lpar),pen
+      integer i,j,k,l,i3,ind(10),mode
+      real*8 th,sw,sphi,cphi,seta,ceta,z1,z2,p0,p1,
+     1       work(1000),work1(n,m),work2(n,m),scopy(n)
+      real*8 ddot
+      external ddot
+      th = max(-5.d0,par(1))
+      sw = 0
+C
+C  get d, dkgj, dkgj2, dddphi, dddeta, z, ddkdphig, ddkdetag
+C
+      DO i = 1,m
+         i3=2*i
+         p0=par(i3)
+         p1=par(i3+1)
+         sphi = sin(p0)
+         cphi = cos(p0)
+         seta = sin(p1)
+         ceta = cos(p1)
+         d(1,i) = sphi*ceta
+         d(2,i) = sphi*seta
+         d(3,i) = cphi
+         dddphi(1,i) = cphi*ceta
+         dddphi(2,i) = cphi*seta
+         dddphi(3,i) = -sphi
+         dddeta(1,i) = -sphi*seta
+         dddeta(2,i) = sphi*ceta
+         dddeta(3,i) = 0.d0
+         DO j = 1,n
+            z1 = ddot(3,d(1,i),1,g(1,j),1)
+            dkgj(j,i) = z1
+            z2 = z1*z1
+            dkgj2(j,i) = z2
+            z(j,i) = exp(-th*z2)
+            zs(j,i) = z(j,i)*s(j)
+            ddkdphig(j,i) = ddot(3,dddphi(1,i),1,g(1,j),1)
+            ddkdetag(j,i) = ddot(3,dddeta(1,i),1,g(1,j),1)
+         END DO
+      END DO
+C  
+C   we now have d, dkgj,dddphi, dddeta, z, ddkdphig, ddkdetag
+C   next w
+C
+      call dcopy(n,s,1,scopy,1)
+      call dcopy(n*m,z,1,work1,1)
+      call dgelss(n,m,1,work1,n,scopy,n,w,-1.d0,r,work,1000,mode)
+      IF(mode.gt.1) THEN
+         call intpr("mode",4,mode,1)
+      END IF
+      call dcopy(m,scopy,1,w,1)
+C
+C   thats weights in w now V, dVdth, dVdphi, dVdeta, dzdpars
+C
+C   use work1, work2 and scopy for intermediate results
+      DO k=1,m
+         DO j=1,n
+            work1(j,k) = dkgj(j,k)*ddkdphig(j,k)
+            work2(j,k) = dkgj(j,k)*ddkdetag(j,k)
+         END DO
+      END DO
+C initialize unneeded elements
+      DO k=1,m
+         DO l=1,m
+            DO j=1,n
+               dzdpars(j,k,1+l)=0.d0
+            END DO
+         END DO
+      END DO
+      DO k=1,m
+         DO j=1,n
+            dzdpars(j,k,1)=-dkgj2(j,k)*z(j,k)
+            dzdpars(j,k,1+k)=-2.d0*th*work1(j,k)*z(j,k)
+            dzdpars(j,k,1+m+k)=-2.d0*th*work2(j,k)*z(j,k)
+         END DO
+      END DO
+      DO k=1,m
+         v(k,k)=ddot(n,z(1,k),1,z(1,k),1)
+         z1 = ddot(n,dzdpars(1,k,1),1,z(1,k),1)
+         dVdth(k,k) = 2.d0*z1
+         DO l=k+1,m
+            z2=z1+ddot(n,dzdpars(1,l,1),1,z(1,l),1)
+            dVdth(k,l) = z2
+            dVdth(l,k) = z2
+         END DO
+         DO i=1,m
+            DO l=1,m
+               dVdphi(i,l,k) = 0.d0
+               dVdeta(i,l,k) = 0.d0
+            END DO
+         END DO
+         DO i=1,m
+            dVdphi(i,k,k) = dVdphi(i,k,k)+
+     1                      ddot(n,dzdpars(1,k,1+k),1,z(1,i),1)
+            dVdphi(k,i,k) = dVdphi(i,k,k)+
+     1                      ddot(n,dzdpars(1,k,1+k),1,z(1,i),1)
+            dVdeta(i,k,k) = dVdeta(i,k,k)+
+     1                      ddot(n,dzdpars(1,k,1+m+k),1,z(1,i),1)
+            dVdeta(k,i,k) = dVdeta(i,k,k)+
+     1                      ddot(n,dzdpars(1,k,1+m+k),1,z(1,i),1)
+         END DO
+      END DO
+C
+C   thats V, dVdth, dVdphi, dVdeta now fill dwdpars)
+C
+      DO k=1,m
+         dwdpars(k,1) = ddot(n,dzdpars(1,k,1),1,s,1) -
+     1                         ddot(m,dVdth(1,k),1,w,1)
+         DO l=1,m
+            dwdpars(k,1+l) = ddot(n,dzdpars(1,k,1+l),1,s,1)  - 
+     1                              ddot(m,dVdphi(1,k,l),1,w,1)
+            dwdpars(k,1+m+l) = ddot(n,dzdpars(1,k,1+m+l),1,s,1)  -
+     1                              ddot(m,dVdeta(1,k,l),1,w,1)
+         END DO
+      END DO
+C
+C   thats  dzdpars  now compute  dw/dpar in dwdpars
+C
+      call dsysv("U",m,lpar,v,m,ind,dwdpars,m,work,1000,mode)
+      IF(mode.ne.0) THEN
+         call intpr("mode2",5,mode,1)
+      END IF
+C
+C   now we have dw/dpar in dzdpars next residuals in scopy
+C
+      DO j=1,n
+         z1 = s(j)
+         DO k=1,m
+            z1 = z1 - w(k)*z(j,k)
+         END DO
+         scopy(j) = z1
+      END DO
+C
+C   now we have residuals in scopy compute gradient of f
+C   use work for intermediate results
+      DO j = 1,n
+         z1 = 0.d0
+         DO k=1,m
+            z1=z1+w(k)*dzdpars(j,k,1)+dwdpars(k,1)*z(j,k)
+         END DO
+         work(j)=z1
+      END DO
+      dfdpar(1)=-2.d0*ddot(n,work,1,scopy,1)
+      if(th.gt.8) dfdpar(1)=dfdpar(1)+1.d0
+      if(th.lt.1d-2) dfdpar(1)=dfdpar(1)-1.d2
+      DO k=1,m
+         if(w(k).lt.0.d0) dfdpar(1)=dfdpar(1)-pen*dwdpars(k,1)
+      END DO
+C 
+C    dzdpars contains dw/dpars 
+C
+      DO i = 1,m
+         DO j = 1,n
+            z1=w(i)*dzdpars(j,i,1+i)
+            DO k=1,m
+               z1=z1+dwdpars(k,1+i)*z(j,k)
+            END DO
+            work(j)=z1
+         END DO
+         dfdpar(1+2*i-1)=-2.d0*ddot(n,work,1,scopy,1)
+         DO k=1,m
+            if(w(k).lt.0) dfdpar(1+2*i-1)=dfdpar(1+2*i-1)-
+     1                                    pen*dwdpars(k,1+i)
+         END DO
+         DO j = 1,n
+            z1=w(i)*dzdpars(j,i,1+m+i)
+            DO k=1,m
+               z1=z1+dwdpars(k,1+m+i)*z(j,k)
+            END DO
+            work(j)=z1
+         END DO
+         dfdpar(1+2*i)=-2.d0*ddot(n,work,1,scopy,1)
+         DO k=1,m
+            if(w(k).lt.0) dfdpar(1+2*i)=dfdpar(1+2*i)-
+     1                                pen*dwdpars(k,1+m+i)
+         END DO
+      END DO
+C
+C   thats derivative with respect to theta
+C
       call rchkusr()
       RETURN
       END 
@@ -193,8 +383,6 @@ C
       real*8 si(ngrad,n1,n2,n3),lev(2,n1,n2,n3)
       integer i1,i2,i3,j
       real*8 z,z1
-C      real*8 z,DASUM
-C      external DASUM
       z=ngrad
       DO i1=1,n1
          DO i2=1,n2
@@ -205,7 +393,6 @@ C      external DASUM
                   z1=z1+si(j,i1,i2,i3)
                END DO
                lev(2,i1,i2,i3)=-log(z1/z)
-C               lev(2,i1,i2,i3)=-log(DASUM(ngrad,si(1,i1,i2,i3),1)/z)
             END DO
          END DO
       END DO

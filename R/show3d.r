@@ -276,6 +276,7 @@ setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=N
   order <- obj@order
   ev <- obj@ev
   mix <- obj@mix
+  maxorder <- dim(mix)[1]
   orient <- obj@orient
   tmean <- array(0,c(3,n1,n2,n3))
   tmean[1,,,] <- xind*vext[1]
@@ -308,7 +309,7 @@ setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=N
                     as.double(orient),
                     as.double(mix),
                     as.integer(order),
-                    as.integer(dim(mix)[1]),
+                    as.integer(maxorder),
                     as.integer(n),
                     radii=double(n*polyeder$nv),
                     DUP=FALSE,
@@ -337,7 +338,7 @@ setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=N
                     as.double(orient),
                     as.double(mix),
                     as.integer(order),
-                    as.integer(dim(mix)[1]),
+                    as.integer(maxorder),
                     as.integer(n),
                     andir=double(3*n*dim(mix)[1]),
                     DUP=FALSE,
