@@ -14,17 +14,17 @@
   The function provides 3D visualization of \code{"dtiData"}, \code{"dtiTensor"}, \code{"dwiQball"} and \code{"dtiIndices"} objects using the \code{"rgl"}-package. Functionality of the rgl-package allows to rotate and zoom the displayed object.
 }
 \usage{
-  \S4method{show3d}{dtiData}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, scale=.75, bgcolor="black", 
+  \S4method{show3d}{dtiData}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, quant=.8, scale=.4, bgcolor="black", 
 add=FALSE, maxobjects=729, what="ADC", minalpha=1, nn=1, normalize=FALSE, box=FALSE, title=FALSE, \dots)
-  \S4method{show3d}{dtiTensor}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, method=1, falevel=0.3, 
-level=0, scale=.75, bgcolor="black", add=FALSE, subdivide=2, maxobjects=729, what="tensor", 
+  \S4method{show3d}{dtiTensor}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, method=1, falevel=.3, 
+level=0, quant=.8, scale=.4, bgcolor="black", add=FALSE, subdivide=2, maxobjects=729, what="tensor", 
 odfscale = 3, minalpha=.25, normalize=NULL, box=FALSE, title=FALSE,\dots)
   \S4method{show3d}{dtiIndices}(obj, index="FA", nx=NULL, ny=NULL, nz=NULL, center=NULL, method=1, 
 falevel=0, bgcolor="black", add=FALSE, lwd=1, box=FALSE, title=FALSE, \dots)
-  \S4method{show3d}{dwiMixtensor}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, falevel=0.3, level=0, scale=.75, 
+  \S4method{show3d}{dwiMixtensor}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, falevel=.3, level=0, quant=.8, scale=.4, 
 bgcolor="black", add=FALSE, subdivide=3, maxobjects=729, what="ODF", odfscale=3, minalpha=1, 
 lwd=3, box=FALSE, title=FALSE, \dots) 
- \S4method{show3d}{dwiQball}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, level=0, scale=0.75, 
+ \S4method{show3d}{dwiQball}(obj, nx=NULL, ny=NULL, nz=NULL, center=NULL, level=0, quant=.8, scale=0.4, 
  odfscale=3, bgcolor="black", add=FALSE, subdivide=3, maxobjects=729, minalpha=1, box=FALSE, title=FALSE, \dots)
   \S4method{show3d}{dwiFiber}(obj, add=FALSE, bgcolor="black", box=FALSE, title=FALSE, lwd=1, \dots)
 }
@@ -34,7 +34,8 @@ lwd=3, box=FALSE, title=FALSE, \dots)
 \item{ny}{Number of voxel in y-direction}
 \item{nz}{Number of slices}
 \item{center}{Vector of length 3 specifying the center of the data cube (class \code{dtiData} or \code{dtiTensor}) or center of display (class \code{dtiIndices})}
-\item{scale}{Scale factor for the size of polyeders \code{dtiData} and ellipsoids (\code{dtiTensor})}
+\item{quant}{Quantile of maximal radii of objects used for scaling.}
+\item{scale}{Scale factor for the size of objects}
 \item{bgcolor}{Backgroundcolor for rgl-display}
 \item{add}{If true information is added to the current device, otherwise a new device is opened.}
 \item{maxobjects}{Maximal size of data cube (in voxel) to display}
