@@ -83,7 +83,7 @@ gfa <- readline("Generalized FA (default gfa = .8)")
 if (!is.null(gfa)) gfa <- as.numeric(gfa) else gfa <- .8
 if(is.na(gfa)) gfa <- .8 else gfa <- min(.9,max(.2,gfa))
 } else {
-gfa <- seq(.3,.9,length=n^3) 
+gfa <- seq(.5,.9,length=n^3) 
 }
 th[1,,,] <- .8*(gfa^2+sqrt(3*gfa^2-2*gfa^4))/(1-gfa^2)
 
@@ -97,7 +97,7 @@ z0 <- truemixtens(mix,th,alpha,beta,grad,sigma)
 z <- tdatamixtens(mix,th,alpha,beta,grad,sigma)
 zt <- dtiTensor(z)
 zmix <- dwiMixtensor(z,optmethod="BFGS",maxcomp=maxcomp,reltol=1e-6)
-zqball <- dwiQball(z,order=8)
+zqball <- dwiQball(z,order=8,lambda=2e-2)
 size <- as.integer(min(.adimpro$xsize/3.2,.adimpro$ysize/2.4))
  
 vodf <- readline("Visualize and compare estimated ODF's (Y/N) :")

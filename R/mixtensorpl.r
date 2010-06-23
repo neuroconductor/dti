@@ -322,6 +322,7 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
   }
   }
   invisible(new("dwiMixtensor",
+                model = "homogeneous_prolate",
                 call   = args,
                 ev     = lev,
                 mix    = mix,

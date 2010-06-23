@@ -210,6 +210,7 @@ setClass("dwiFiber",
         )
 setClass("dwiMixtensor",
          representation(method = "character",
+                        model  = "character",
                         ev     = "array",#length 2 (eigenvalues)
                         mix    = "array",
                         orient = "array",

@@ -80,6 +80,7 @@ orient[1,,,,] <- alpha
 orient[2,,,,] <- beta
 
   invisible(new("dwiMixtensor",
+                model  = "homogeneous_prolate",
                 call   = args,
                 ev     = th,
                 mix    = w[-1,,,],

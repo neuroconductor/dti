@@ -99,6 +99,9 @@ For class \code{"dwiFiber"}:
 For class \code{"dwiMixtensor"}:
 
 \describe{
+    \item{ \code{model}: }{ Object of class \code{"character"}, characterizes the type of the 
+            mixed tensor model. Currently the only implemented model is \code{model="homogeneous_prolate"}.
+           } 
     \item{ \code{ev}: }{ Object of class \code{"array"}, estimated eigenvalues, dimension \code{c(2,ddim)}} 
     \item{ \code{mix}: }{ Object of class \code{"array"}, estimated mixture coefficients, dimension \code{c(nmix,ddim)}. \code{nmix} is the number of mixture components specified.} 
     \item{ \code{orient}: }{ Object of class \code{"array"}, estimated tensor orientations, dimension \code{c(2,nmix,ddim)}} 
