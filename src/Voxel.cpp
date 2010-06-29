@@ -92,6 +92,6 @@ void Voxel::setPrev(Voxel *set_prev)		{this->prev = set_prev;}
 /**  print-methode  **/
 void Voxel::print()
 {
-    return;
-//	Rprintf("%d %d %d, visited = %d, aniso = %f\n", x, y, z, this->visited, this->anisotropy);
+  //    return;
+    Rprintf("%d %d %d, visited = %d, aniso = %f\n", x, y, z, this->visited, this->anisotropy);
 }

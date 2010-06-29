@@ -5,6 +5,7 @@
 #include <sstream>
 #include <math.h>
 #include <R.h>
+#include <R_ext/Utils.h>
 #include <Rinternals.h>
 
 using namespace std;
