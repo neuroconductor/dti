@@ -31,8 +31,10 @@ VectorList::VectorList(Vector &set_start)
 
 //VectorList::~VectorList()
 //{
-//	delete start;
-//	delete end;
+//	while (this.length > 0)
+//	{
+//		this.del_at_start();
+//	}
 //}
 
 int VectorList::getLength()			{return length;}
@@ -146,6 +148,8 @@ void VectorList::del_at_start()
 	}
 	else
 	{
+// 		Rprintf("%f, %f, %f\n", start->getComponents()[0],
+// 		start->getComponents()[1], start->getComponents()[2]);
 		delete start;
 	}
 	

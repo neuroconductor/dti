@@ -23,7 +23,7 @@ Vector::Vector(double x, double y, double z)
 	input[0] = x;
 	input[1] = y;
 	input[2] = z;
-	
+
 	this->components = input;
 	this->n = 3;
 }
@@ -34,12 +34,10 @@ Vector::Vector(double* d_input, int length)
 	this->components = d_input;
 }
 
-//Vector::~Vector()
-//{
-//	delete components;
-//	delete prev;
-//	delete next;
-//}
+// Vector::~Vector()
+// {
+// 	delete components;
+// }
 
 void Vector::print()
 {

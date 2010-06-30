@@ -34,7 +34,7 @@ class Vector
 		Vector(double, double, double);
 		Vector(double*, int);
 		
-//		~Vector();
+// 		~Vector();
 		
 		// print-method
 		void print();

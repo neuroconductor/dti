@@ -277,6 +277,7 @@ function(obj, roix=NULL, roiy=NULL, roiz=NULL, method="LINEPROP", minanindex=0.3
               DUP=FALSE, package="dti")
 
   dim(dd) <- c(length(dd)/6,6);
+  cat("dimension angepasst",dim(dd),"\n")
   istartfiber <- ident.fibers(dd)
   roimask <- array(0,obj@ddim)
   roimask[roix,roiy,roiz] <- 1

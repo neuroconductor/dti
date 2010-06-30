@@ -11,10 +11,14 @@ Converter::Converter(double* data_dir_coords, double* data_FA_values, int dim_x,
 //	Rprintf("%d, %d, %d\n", dim_x, dim_y, dim_z);
 	
 	voxels = new Voxel[dim_x*dim_y*dim_z];
-	
+
+	Rprintf("voxels angelegt\n");
+
 //	Rprintf("converting doubles to Voxels...\n");
 
 	Vector *dir;
+
+	Rprintf("temp. Richtungsvektor angelegt\n");
     
 	double dir_x, dir_y, dir_z, FA;
 	int i = 0, j = 0, k = 0, num_vector = 0, counter = 0;
@@ -41,7 +45,7 @@ Converter::Converter(double* data_dir_coords, double* data_FA_values, int dim_x,
 	    }
     }
 
-//    Rprintf("Converted %d Voxels.\n", counter);
+//     Rprintf("Converted %d Voxels.\n", counter);
 }
 
 
@@ -50,7 +54,7 @@ Converter::Converter(double* data_dir_coords, double* data_FA_values, int* data_
 //	Rprintf("%d, %d, %d\n", dim_x, dim_y, dim_z);
 	
 	voxels = new Voxel[dim_x*dim_y*dim_z];
-	
+
 //	Rprintf("converting doubles to Voxels...\n");
 
 	double dir_x, dir_y, dir_z, FA;
@@ -78,14 +82,12 @@ Converter::Converter(double* data_dir_coords, double* data_FA_values, int* data_
 				
 		   		num_vector += (maxorder - order)*3;
 		   				   		
-				Voxel v(i, j, k, order, *dir, FA);
-				
-				voxels[i + j * dim_x + k * dim_x * dim_y] = v;
-				
+				voxels[i + j * dim_x + k * dim_x * dim_y] = *new Voxel(i, j, k, order, *dir, FA);
+
 				counter++;
 		   	}
 	    }
     }
 
-//    Rprintf("Converted %d Voxels.\n", counter);
+//     Rprintf("Converted %d Voxels.\n", counter);
 }
