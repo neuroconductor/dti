@@ -158,6 +158,7 @@ setMethod("dwiMixtensor.old", "dtiData", function(object, maxcomp=2, p=2, maxnei
                 voxelext    = object@voxelext,
                 level       = object@level,
                 orientation = object@orientation,
+                rotation    = object@rotation,
                 source      = object@source,
                 outlier     = index,
                 scale       = 1,

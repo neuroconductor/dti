@@ -14,6 +14,7 @@ setClass("dwi",
                         voxelext = "numeric",
                         level  = "numeric",
                         orientation = "integer",
+                        rotation = "matrix",
                         source = "character"),
          )
 

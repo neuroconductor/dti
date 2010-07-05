@@ -127,6 +127,8 @@ getsiind2 <- function(si,mask,grad,theta1,maxcomp=3,maxc=.866,nguess=100){
 # assumes dim(si) == c(n1,n2,n3,ngrad)
 # SO removed
 ngrad <- dim(grad)[1]
+nsi <- dim(si)[4]
+cat("ngrad",ngrad,"\n")
 dgrad <- matrix(abs(grad%*%t(grad)),ngrad,ngrad)
 dgrad <- dgrad/max(dgrad)
 egrad <- exp(-theta1*dgrad^2)
@@ -140,7 +142,7 @@ nguess <- dim(isample)[2]
 cat("using ",nguess,"guesses for initial estimates\n")
 siind <- .Fortran("getsiin2",
          as.double(aperm(si,c(4,1:3))),
-         as.integer(ngrad),
+         as.integer(nsi),
          as.integer(dim(si)[1]),
          as.integer(dim(si)[2]),
          as.integer(dim(si)[3]),
@@ -148,8 +150,8 @@ siind <- .Fortran("getsiin2",
          as.double(egrad),
          as.integer(isample),
          as.integer(nguess),
-         double(ngrad),
-         double(ngrad*(maxcomp+1)),
+         double(nsi),
+         double(nsi*(maxcomp+1)),
          siind=integer((maxcomp+1)*prod(dim(si)[-4])),
          krit=double(prod(dim(si)[1:3])),
          as.integer(maxcomp+1),
@@ -229,7 +231,9 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
 #   determine initial estimates for orientations 
 #
   cat("Start search for initial directions at",date(),"\n")
-  siind <- getsiind2(siq,mask,grad,theta,maxcomp,maxc=maxc,nguess=nguess)
+  data("polyeders")
+#  siind <- getsiind2(siq,mask,grad,theta,maxcomp,maxc=maxc,nguess=nguess)
+  siind <- getsiind2(siq,mask,t(icosa3$vertices),theta,maxcomp,maxc=maxc,nguess=nguess)
  cat("End search for initial values at",date(),"\n")
   order <- array(0,ddim)
 #  logarithmic eigen values
@@ -247,7 +251,8 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
      if(mask[i1,i2,i3]){
      mc0 <- maxcomp
      ord <- mc0+1
-     for(j in 1:mc0) orient[,j,i1,i2,i3] <- paroforient(grad[siind[j+1,i1,i2,i3],])
+#     for(j in 1:mc0) orient[,j,i1,i2,i3] <- paroforient(grad[siind[j+1,i1,i2,i3],])
+     for(j in 1:mc0) orient[,j,i1,i2,i3] <- paroforient(icosa3$vertices[,siind[j+1,i1,i2,i3]])
 #
 #   these are the gradient vectors corresponding to minima in spherical coordinates
 #
@@ -348,6 +353,7 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
                 voxelext = object@voxelext,
                 level = object@level,
                 orientation = object@orientation,
+                rotation = object@rotation,
                 source = object@source,
                 outlier = index,
                 scale = 1,

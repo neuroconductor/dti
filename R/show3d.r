@@ -30,6 +30,9 @@ setMethod("show3d","dtiData", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,q
   xind <- xind[xind>0&xind<=obj@ddim[1]]
   yind <- yind[yind>0&yind<=obj@ddim[2]]
   zind <- zind[zind>0&zind<=obj@ddim[3]]
+  if (obj@orientation[1]==1) min(xind)+max(xind)-xind
+  if (obj@orientation[2]==3) min(yind)+max(yind)-yind
+  if (obj@orientation[3]==5) min(zind)+max(zind)-zind
   n1 <- length(xind)
   n2 <- length(yind)
   n3 <- length(zind)
@@ -130,6 +133,9 @@ setMethod("show3d","dtiTensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL
   xind <- xind[xind>0&xind<=obj@ddim[1]]
   yind <- yind[yind>0&yind<=obj@ddim[2]]
   zind <- zind[zind>0&zind<=obj@ddim[3]]
+  if (obj@orientation[1]==1) min(xind)+max(xind)-xind
+  if (obj@orientation[2]==3) min(yind)+max(yind)-yind
+  if (obj@orientation[3]==5) min(zind)+max(zind)-zind
   n1 <- length(xind)
   n2 <- length(yind)
   n3 <- length(zind)
@@ -261,6 +267,9 @@ setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=N
   xind <- xind[xind>0&xind<=obj@ddim[1]]
   yind <- yind[yind>0&yind<=obj@ddim[2]]
   zind <- zind[zind>0&zind<=obj@ddim[3]]
+  if (obj@orientation[1]==1) min(xind)+max(xind)-xind
+  if (obj@orientation[2]==3) min(yind)+max(yind)-yind
+  if (obj@orientation[3]==5) min(zind)+max(zind)-zind
   n1 <- length(xind)
   n2 <- length(yind)
   n3 <- length(zind)
@@ -299,7 +308,6 @@ setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=N
     gfa <- gfa[indpos]
     n <- length(indpos)
   }
-  
   polyeder <- switch(subdivide+1,icosa0,icosa1,icosa2,icosa3,icosa4)
   if(toupper(what) %in% c("ODF","BOTH")){
   radii <- .Fortran("mixtradi",
@@ -384,6 +392,9 @@ setMethod("show3d","dtiIndices",function(obj, index="FA", nx=NULL, ny=NULL, nz=N
   xind <- xind[xind>0&xind<=obj@ddim[1]]
   yind <- yind[yind>0&yind<=obj@ddim[2]]
   zind <- zind[zind>0&zind<=obj@ddim[3]]
+  if (obj@orientation[1]==1) min(xind)+max(xind)-xind
+  if (obj@orientation[2]==3) min(yind)+max(yind)-yind
+  if (obj@orientation[3]==5) min(zind)+max(zind)-zind
   n1 <- length(xind)
   n2 <- length(yind)
   n3 <- length(zind)
@@ -458,6 +469,9 @@ setMethod("show3d","dwiQball", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,
   xind <- xind[xind>0&xind<=obj@ddim[1]]
   yind <- yind[yind>0&yind<=obj@ddim[2]]
   zind <- zind[zind>0&zind<=obj@ddim[3]]
+  if (obj@orientation[1]==1) min(xind)+max(xind)-xind
+  if (obj@orientation[2]==3) min(yind)+max(yind)-yind
+  if (obj@orientation[3]==5) min(zind)+max(zind)-zind
   n1 <- length(xind)
   n2 <- length(yind)
   n3 <- length(zind)

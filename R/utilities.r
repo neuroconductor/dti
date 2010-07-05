@@ -111,11 +111,28 @@ setMethod("[","dtiData",function(x, i, j, k, drop=FALSE){
   if (is.logical(i)) ddimi <- x@ddim[1] else ddimi <- length(i)
   if (is.logical(j)) ddimj <- x@ddim[2] else ddimj <- length(j)
   if (is.logical(k)) ddimk <- x@ddim[3] else ddimk <- length(k)
-
+  swap <- rep(FALSE,3)
+  if (!is.logical(i)) swap[1] <- i[1] > i[length(i)]
+  if (!is.logical(j)) swap[2] <- j[1] > j[length(i)]
+  if (!is.logical(k)) swap[3] <- k[1] > k[length(i)]
+  orientation <- x@orientation
+  gradient <- x@gradient
+  if(swap[1]) {
+     orientation[1] <- (orientation[1]+1)%%2
+     gradient[1,] <- -gradient[1,]
+  }
+  if(swap[2]) {
+     orientation[2] <- (orientation[2]+1)%%2+2
+     gradient[2,] <- -gradient[2,]
+  }
+  if(swap[3]) {
+     orientation[3] <- (orientation[3]+1)%%2+4
+     gradient[3,] <- -gradient[3,]
+  }
   invisible(new("dtiData",
                 call   = args,
                 si     = x@si[i,j,k,,drop=FALSE],
-                gradient = x@gradient,
+                gradient = gradient,
                 btb    = x@btb,
                 ngrad  = x@ngrad,
                 s0ind  = x@s0ind,
@@ -128,7 +145,8 @@ setMethod("[","dtiData",function(x, i, j, k, drop=FALSE){
                 sdcoef = x@sdcoef,
                 level  = x@level,
                 voxelext = x@voxelext,
-                orientation = x@orientation,
+                orientation = orientation,
+                rotation = x@rotation,
                 source = x@source)
             )
 })
@@ -144,7 +162,32 @@ setMethod("[","dtiTensor",function(x, i, j, k, drop=FALSE){
   if (is.logical(i)) ddimi <- x@ddim[1] else ddimi <- length(i)
   if (is.logical(j)) ddimj <- x@ddim[2] else ddimj <- length(j)
   if (is.logical(k)) ddimk <- x@ddim[3] else ddimk <- length(k)
-
+  swap <- rep(FALSE,3)
+  if (!is.logical(i)) swap[1] <- i[1] > i[length(i)]
+  if (!is.logical(j)) swap[2] <- j[1] > j[length(i)]
+  if (!is.logical(k)) swap[3] <- k[1] > k[length(i)]
+  orientation <- x@orientation
+  gradient <- x@gradient
+  btb <- x@btb
+  D <- x@D
+  if(swap[1]) {
+     orientation[1] <- (orientation[1]+1)%%2
+     gradient[1,] <- -gradient[1,]
+     btb[2:3,] <- - btb[2:3,]
+     D[2:3,,,] <- - D[2:3,,,]
+  }
+  if(swap[2]) {
+     orientation[2] <- (orientation[2]+1)%%2+2
+     gradient[2,] <- -gradient[2,]
+     btb[c(2,5),] <- - btb[c(2,5),]
+     D[c(2,5),,,] <- - D[c(2,5),,,]
+  }
+  if(swap[3]) {
+     orientation[3] <- (orientation[3]+1)%%2+4
+     gradient[3,] <- -gradient[3,]
+     btb[c(3,5),] <- - btb[c(3,5),]
+     D[c(3,5),,,] <- - D[c(3,5),,,]
+  }
   ind <- 1:prod(x@ddim)
   if(length(x@outlier)>0){
     ind <- rep(FALSE,prod(x@ddim))
@@ -158,15 +201,15 @@ setMethod("[","dtiTensor",function(x, i, j, k, drop=FALSE){
 
   invisible(new("dtiTensor",
                 call  = args, 
-                D     = x@D[,i,j,k,drop=FALSE],
+                D     = D[,i,j,k,drop=FALSE],
                 th0   = x@th0[i,j,k,drop=FALSE],
                 sigma = if(x@method=="linear") x@sigma[i,j,k,drop=FALSE] else array(1,c(1,1,1)),
                 scorr = x@scorr, 
                 bw = x@bw,
                 mask = x@mask[i,j,k,drop=FALSE],
                 hmax = x@hmax,
-                gradient = x@gradient,
-                btb   = x@btb,
+                gradient = gradient,
+                btb   = btb,
                 ngrad = x@ngrad,
                 s0ind = x@s0ind,
                 replind = x@replind,
@@ -177,7 +220,8 @@ setMethod("[","dtiTensor",function(x, i, j, k, drop=FALSE){
                 zind  = x@zind[k],
                 voxelext = x@voxelext,
                 level = x@level,
-                orientation = x@orientation,
+                orientation = orientation,
+                rotation = x@rotation,
                 outlier = outlier,
                 scale = x@scale,
                 source = x@source,
@@ -194,7 +238,7 @@ setMethod("[","dwiMixtensor",function(x, i, j, k, drop=FALSE){
   if (is.logical(i)) ddimi <- x@ddim[1] else ddimi <- length(i)
   if (is.logical(j)) ddimj <- x@ddim[2] else ddimj <- length(j)
   if (is.logical(k)) ddimk <- x@ddim[3] else ddimk <- length(k)
-
+  
   ind <- 1:prod(x@ddim)
   if(length(x@outlier)>0){
     ind <- rep(FALSE,prod(x@ddim))
@@ -205,12 +249,35 @@ setMethod("[","dwiMixtensor",function(x, i, j, k, drop=FALSE){
   } else {
     outlier <- numeric(0)
   }
+  swap <- rep(FALSE,3)
+  if (!is.logical(i)) swap[1] <- i[1] > i[length(i)]
+  if (!is.logical(j)) swap[2] <- j[1] > j[length(i)]
+  if (!is.logical(k)) swap[3] <- k[1] > k[length(i)]
+  orientation <- x@orientation
+  gradient <- x@gradient
+  btb <- x@btb
+  orient <- x@orient
+  if(swap[1]) {
+     orientation[1] <- (orientation[1]+1)%%2
+     gradient[1,] <- -gradient[1,]
+     btb[2:3,] <- - btb[2:3,]
+  }
+  if(swap[2]) {
+     orientation[2] <- (orientation[2]+1)%%2+2
+     gradient[2,] <- -gradient[2,]
+     btb[c(2,5),] <- - btb[c(2,5),]
+ }
+  if(swap[3]) {
+     orientation[3] <- (orientation[3]+1)%%2+4
+     gradient[3,] <- -gradient[3,]
+     btb[c(3,5),] <- - btb[c(3,5),]
+  }
 
   invisible(new("dwiMixtensor",
                 call  = args, 
                 ev     = x@ev[,i,j,k,drop=FALSE],
                 mix    = x@mix[,i,j,k,drop=FALSE],
-                orient = x@orient[,,i,j,k,drop=FALSE],
+                orient = orient[,,i,j,k,drop=FALSE],
                 order  = x@order[i,j,k,drop=FALSE],
                 p      = x@p,
                 th0   = x@th0[i,j,k,drop=FALSE],
@@ -219,8 +286,8 @@ setMethod("[","dwiMixtensor",function(x, i, j, k, drop=FALSE){
                 bw = x@bw,
                 mask = x@mask[i,j,k,drop=FALSE],
                 hmax = x@hmax,
-                gradient = x@gradient,
-                btb   = x@btb,
+                gradient = gradient,
+                btb   = btb,
                 ngrad = x@ngrad,
                 s0ind = x@s0ind,
                 replind = x@replind,
@@ -231,7 +298,8 @@ setMethod("[","dwiMixtensor",function(x, i, j, k, drop=FALSE){
                 zind  = x@zind[k],
                 voxelext = x@voxelext,
                 level = x@level,
-                orientation = x@orientation,
+                orientation = orientation,
+                rotation = x@rotation,
                 outlier = outlier,
                 scale = x@scale,
                 source = x@source,
@@ -250,22 +318,45 @@ setMethod("[","dtiIndices",function(x, i, j, k, drop=FALSE){
   if (is.logical(i)) ddimi <- x@ddim[1] else ddimi <- length(i)
   if (is.logical(j)) ddimj <- x@ddim[2] else ddimj <- length(j)
   if (is.logical(k)) ddimk <- x@ddim[3] else ddimk <- length(k)
+  orientation <- x@orientation
+  gradient <- x@gradient
+  btb <- x@btb
+  andir <- x@andir
+  if(swap[1]) {
+     orientation[1] <- (orientation[1]+1)%%2
+     gradient[1,] <- -gradient[1,]
+     btb[2:3,] <- - btb[2:3,]
+     andir[1,,,] <- - andir[1,,,]
+  }
+  if(swap[2]) {
+     orientation[2] <- (orientation[2]+1)%%2+2
+     gradient[2,] <- -gradient[2,]
+     btb[c(2,5),] <- - btb[c(2,5),]
+     andir[2,,,] <- - andir[2,,,]
+  }
+  if(swap[3]) {
+     orientation[3] <- (orientation[3]+1)%%2+4
+     gradient[3,] <- -gradient[3,]
+     btb[c(3,5),] <- - btb[c(3,5),]
+     andir[3,,,] <- - andir[3,,,]
+  }
 
   invisible(new("dtiIndices",
                 call = args,
                 fa = x@fa[i,j,k,drop=FALSE],
                 ga = x@ga[i,j,k,drop=FALSE],
                 md = x@md[i,j,k,drop=FALSE],
-                andir = x@andir[,i,j,k,drop=FALSE],
+                andir = andir[,i,j,k,drop=FALSE],
                 bary = x@bary[,i,j,k,drop=FALSE],
-                gradient = x@gradient,
-                btb   = x@btb,
+                gradient = gradient,
+                btb   = btb,
                 ngrad = x@ngrad,
                 s0ind = x@s0ind,
                 ddim  = c(ddimi,ddimj,ddimk),
                 ddim0 = x@ddim0,
                 voxelext = x@voxelext,
-                orientation = x@orientation,
+                orientation = orientation,
+                rotation = x@rotation,
                 xind  = x@xind[i],
                 yind  = x@yind[j],
                 zind  = x@zind[k],
@@ -286,7 +377,14 @@ setMethod("[","dwiQball",function(x, i, j, k, drop=FALSE){
   if (is.logical(i)) ddimi <- x@ddim[1] else ddimi <- length(i)
   if (is.logical(j)) ddimj <- x@ddim[2] else ddimj <- length(j)
   if (is.logical(k)) ddimk <- x@ddim[3] else ddimk <- length(k)
-
+    swap <- rep(FALSE,3)
+  if (!is.logical(i)) swap[1] <- i[1] > i[length(i)]
+  if (!is.logical(j)) swap[2] <- j[1] > j[length(i)]
+  if (!is.logical(k)) swap[3] <- k[1] > k[length(i)]
+  if(any(swap)) {
+     warning("can't reverse order of indices")
+     return(invisible(x))
+  }
   ind <- 1:prod(x@ddim)
   if(length(x@outlier)>0){
     ind <- rep(FALSE,prod(x@ddim))
@@ -322,6 +420,7 @@ setMethod("[","dwiQball",function(x, i, j, k, drop=FALSE){
                 voxelext = x@voxelext,
                 level = x@level,
                 orientation = x@orientation,
+                rotation = x@rotation,
                 outlier = outlier,
                 scale = x@scale,
                 source = x@source,
@@ -338,8 +437,15 @@ setGeneric("extract", function(x, ...) standardGeneric("extract"))
 
 setMethod("extract","dtiData",function(x, what="data", xind=TRUE, yind=TRUE, zind=TRUE){
   what <- tolower(what) 
+  swap <- rep(FALSE,3)
+  if(is.numeric(xind)) swap[1] <- xind[1]>xind[length(xind)]
+  if(is.numeric(yind)) swap[2] <- yind[1]>yind[length(yind)]
+  if(is.numeric(zind)) swap[3] <- zind[1]>zind[length(zind)]
+  if(any(swap)) {
+     warning("can't reverse order of indices ")
+     return(NULL)
+  }
   x <- x[xind,yind,zind]
-
   z <- list(NULL)
   if("gradient" %in% what) z$gradient <- x@gradient
   if("btb" %in% what) z$btb <- x@btb
@@ -359,6 +465,14 @@ setMethod("extract","dtiData",function(x, what="data", xind=TRUE, yind=TRUE, zin
 
 setMethod("extract","dwiMixtensor",function(x, what="andir", xind=TRUE, yind=TRUE, zind=TRUE){
   what <- tolower(what) 
+  swap <- rep(FALSE,3)
+  if(is.numeric(xind)) swap[1] <- xind[1]>xind[length(xind)]
+  if(is.numeric(yind)) swap[2] <- yind[1]>yind[length(yind)]
+  if(is.numeric(zind)) swap[3] <- zind[1]>zind[length(zind)]
+  if(any(swap)) {
+     warning("can't reverse order of indices ")
+     return(NULL)
+  }
   x <- x[xind,yind,zind]
   n1 <- x@ddim[1]
   n2 <- x@ddim[2]
@@ -403,6 +517,14 @@ setMethod("extract","dwiMixtensor",function(x, what="andir", xind=TRUE, yind=TRU
 
 setMethod("extract","dtiTensor",function(x, what="tensor", xind=TRUE, yind=TRUE, zind=TRUE){
   what <- tolower(what) 
+  swap <- rep(FALSE,3)
+  if(is.numeric(xind)) swap[1] <- xind[1]>xind[length(xind)]
+  if(is.numeric(yind)) swap[2] <- yind[1]>yind[length(yind)]
+  if(is.numeric(zind)) swap[3] <- zind[1]>zind[length(zind)]
+  if(any(swap)) {
+     warning("can't reverse order of indices ")
+     return(NULL)
+  }
 
   x <- x[xind,yind,zind]
   n1 <- x@ddim[1]
@@ -487,6 +609,14 @@ setMethod("extract","dtiTensor",function(x, what="tensor", xind=TRUE, yind=TRUE,
 
 setMethod("extract","dtiIndices",function(x, what=c("fa","andir"), xind=TRUE, yind=TRUE, zind=TRUE){
   what <- tolower(what) 
+  swap <- rep(FALSE,3)
+  if(is.numeric(xind)) swap[1] <- xind[1]>xind[length(xind)]
+  if(is.numeric(yind)) swap[2] <- yind[1]>yind[length(yind)]
+  if(is.numeric(zind)) swap[3] <- zind[1]>zind[length(zind)]
+  if(any(swap)) {
+     warning("can't reverse order of indices ")
+     return(NULL)
+  }
 
   x <- x[xind,yind,zind]
   n1 <- x@ddim[1]
@@ -506,6 +636,14 @@ setMethod("extract","dtiIndices",function(x, what=c("fa","andir"), xind=TRUE, yi
 
 setMethod("extract","dwiQball",function(x, what="sphcoef", xind=TRUE, yind=TRUE, zind=TRUE){
   what <- tolower(what) 
+  swap <- rep(FALSE,3)
+  if(is.numeric(xind)) swap[1] <- xind[1]>xind[length(xind)]
+  if(is.numeric(yind)) swap[2] <- yind[1]>yind[length(yind)]
+  if(is.numeric(zind)) swap[3] <- zind[1]>zind[length(zind)]
+  if(any(swap)) {
+     warning("can't reverse order of indices ")
+     return(NULL)
+  }
 
   x <- x[xind,yind,zind]
   n1 <- x@ddim[1]

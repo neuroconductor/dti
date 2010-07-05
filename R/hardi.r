@@ -215,6 +215,7 @@ setMethod("dwiQball","dtiData",function(object,what="wODF",order=4,lambda=0){
                 voxelext = object@voxelext,
                 level = object@level,
                 orientation = object@orientation,
+                rotation = object@rotation,
                 source = object@source,
                 outlier = index,
                 scale = 0.5,

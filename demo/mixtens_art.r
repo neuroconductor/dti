@@ -97,9 +97,11 @@ z0 <- truemixtens(mix,th,alpha,beta,grad,sigma)
 z <- tdatamixtens(mix,th,alpha,beta,grad,sigma)
 zt <- dtiTensor(z)
 zmix <- dwiMixtensor(z,optmethod="BFGS",maxcomp=maxcomp,reltol=1e-6)
-zqball <- dwiQball(z,order=8,lambda=2e-2)
+gslexists <- "gsl" %in% .packages(TRUE)
+if(gslexists) zqball <- dwiQball(z,order=8,lambda=2e-2)
+
 size <- as.integer(min(.adimpro$xsize/3.2,.adimpro$ysize/2.4))
- 
+
 vodf <- readline("Visualize and compare estimated ODF's (Y/N) :")
 
 if(toupper(vodf)!="N"){
@@ -108,6 +110,7 @@ size <- 500
 w1 <- show3d(z0,scale=.5,maxobjects=n^3,FOV=1,windowRect = c(1, 1, size, size))
 w2 <- show3d(zt,what="odf",minalpha=1,falevel=0,scale=.5,maxobjects=n^3,FOV=1,windowRect = c(size+11, 1, 2*size+10, size))
 w3 <- show3d(zmix,scale=.5,maxobjects=n^3,FOV=1,windowRect = c(1, size+11 , size, 2*size+10))
+if(gslexists){ 
 w4 <- show3d(zqball,scale=.5,maxobjects=n^3,FOV=1,windowRect = c(size+11, size+11, 2*size+10, 2*size+10))
 mouseTrackball(dev=c(w1,w2,w3,w4))
 mouseZoom(2,dev=c(w1,w2,w3,w4))
@@ -116,6 +119,14 @@ cat("True ODF in device",w1,"\n")
 cat("Estimated tensor ODF in device",w2,"\n")
 cat("Estimated mixtensor ODF in ",w3,"\n")
 cat("Estimated q-Ball ODF in ",w4,"\n")
+} else {
+mouseTrackball(dev=c(w1,w2,w3))
+mouseZoom(2,dev=c(w1,w2,w3))
+mouseFOV(3,dev=c(w1,w2,w3))
+cat("True ODF in device",w1,"\n")
+cat("Estimated tensor ODF in device",w2,"\n")
+cat("Estimated mixtensor ODF in ",w3,"\n")
+}
 }
 
 vgfa <- readline("Visualize and compare estimated FA and GFA's (Y/N) :")

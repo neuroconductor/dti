@@ -25,6 +25,7 @@
     \item{ \code{xind}, \code{yind}, \code{zind}:}{ Objects of class \code{"integer"}, index for subcube definition in x-, y- and z-direction. }
     \item{ \code{voxelext}: }{ Object of class \code{"numeric"}, voxel extensions in x-, y- and z-direction. Vector of length 3. }
     \item{ \code{orientation}: }{ Object of class \code{"integer"}, orientation of data according to AFNI convention. Vector of length 3. }
+    \item{ \code{rotation}: }{ Object of class \code{"matrix"}, optional rotation matrix for gradient directions. }
     \item{ \code{level}: }{ Object of class \code{"numeric"}, minimal valid S0-level. No evaluation will be performed for voxels with S0-values less than \code{level}. } 
     \item{ \code{source}: }{ Object of class \code{"character"}, name of the source imgage file or source directory. }
     \item{ \code{call}: }{ Object of class \code{"call"}, call that created the object. }
