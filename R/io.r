@@ -4,7 +4,7 @@
 #                                                              #
 ################################################################
 
-dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=0,mins0value=0,maxvalue=10000,voxelext=c(1,1,1),orientation=c(1,3,5),rotation=diag(3)) {
+dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=0,mins0value=0,maxvalue=10000,voxelext=c(1,1,1),orientation=c(0,2,5),rotation=diag(3)) {
   args <- list(sys.call())
   if (any(sort((orientation)%/%2) != 0:2)) stop("invalid orientation \n")
   if (dim(gradient)[2]==3) gradient <- t(gradient)
@@ -37,7 +37,7 @@ dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=
 #   set correct orientation
 #
   xyz <- (orientation)%/%2+1
-  swap <- orientation-2*(orientation%/%2)
+  swap <- orientation%%2
   if(any(xyz!=1:3)) {
       abc <- 1:3
       abc[xyz] <- abc
@@ -221,7 +221,7 @@ readDWIdata <- function(gradient, dirlist, format, nslice = NULL, order = NULL,
 
   # redefine orientation
   xyz <- (orientation)%/%2+1
-  swap <- orientation-2*(orientation%/%2)
+  swap <- orientation%%2
   if(any(xyz!=1:3)) {
       abc <- 1:3
       abc[xyz] <- abc
@@ -564,9 +564,9 @@ tensor2medinria <- function(obj, filename, xind=NULL, yind=NULL, zind=NULL) {
   if (is.null(xind)) xind <- 1:obj@ddim[1]
   if (is.null(yind)) yind <- 1:obj@ddim[2]
   if (is.null(zind)) zind <- 1:obj@ddim[3]
-  if (obj@orientation[1]==1) min(xind)+max(xind)-xind
-  if (obj@orientation[2]==3) min(yind)+max(yind)-yind
-  if (obj@orientation[3]==5) min(zind)+max(zind)-zind
+  if (obj@orientation[1]==1) xind <- min(xind)+max(xind)-xind
+  if (obj@orientation[2]==3) yind <- min(yind)+max(yind)-yind
+  if (obj@orientation[3]==4) zind <- min(zind)+max(zind)-zind
   header <- list()
   header$dimension <- c(5,length(xind),length(yind),length(zind),1,6,0,0)
   header$pixdim <- c(-1, obj@voxelext[1:3], 0, 0, 0, 0)
@@ -611,7 +611,7 @@ medinria2tensor <- function(filename) {
                 yind  = 1:data$dim[2],
                 zind  = 1:data$dim[3],
                 voxelext = data$delta,
-                orientation = as.integer(c(0,2,4)),
+                orientation = as.integer(c(0,2,5)),
                 rotation = diag(3),
                 scale = 1,
                 source= "unknown")

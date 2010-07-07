@@ -128,7 +128,6 @@ getsiind2 <- function(si,mask,grad,theta1,maxcomp=3,maxc=.866,nguess=100){
 # SO removed
 ngrad <- dim(grad)[1]
 nsi <- dim(si)[4]
-cat("ngrad",ngrad,"\n")
 dgrad <- matrix(abs(grad%*%t(grad)),ngrad,ngrad)
 dgrad <- dgrad/max(dgrad)
 egrad <- exp(-theta1*dgrad^2)

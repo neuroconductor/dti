@@ -100,7 +100,7 @@ Vector& Vector::operator /(double d)
 	
 	if (nan_counter == out.n)
 	{
-	        Rprintf("Illigal argument 'd'.\n");
+//	        Rprintf("Illigal argument 'd'.\n");
 	}
 
 	return out;
@@ -122,7 +122,7 @@ double Vector::operator *(Vector& v2)
 {
 	if (this->n != v2.n)
 	{
-	        Rprintf("error in multiplication: vectors must have the same length!\n");
+//	        Rprintf("error in multiplication: vectors must have the same length!\n");
 
 		return 0.;
 	}
@@ -143,7 +143,7 @@ Vector& Vector::operator +(Vector& v2)
 {
 	if (this->n != v2.n)
 	{
-	  Rprintf("error in addition: vectors must have the same length!\n");
+//	  Rprintf("error in addition: vectors must have the same length!\n");
 		
 		Vector * out = NULL;
 		return *out;
@@ -166,7 +166,7 @@ Vector& Vector::operator -(Vector& v2)
 {
 	if (this->n != v2.n)
 	{
-	  Rprintf("error in addition: vectors must have the same length!\n");
+//	  Rprintf("error in addition: vectors must have the same length!\n");
 		
 		static Vector out;
 		return out;
@@ -188,7 +188,7 @@ Vector& Vector::cross(Vector& v2)
 {
 	if (this->n != v2.n)
 	{
-	  Rprintf("error im cross product: vectors must have the same length!\n");
+//	  Rprintf("error im cross product: vectors must have the same length!\n");
 		
 		static Vector out;
 		return out;

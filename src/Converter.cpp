@@ -12,13 +12,13 @@ Converter::Converter(double* data_dir_coords, double* data_FA_values, int dim_x,
 	
 	voxels = new Voxel[dim_x*dim_y*dim_z];
 
-	Rprintf("voxels angelegt\n");
+//	Rprintf("voxels angelegt\n");
 
 //	Rprintf("converting doubles to Voxels...\n");
 
 	Vector *dir;
 
-	Rprintf("temp. Richtungsvektor angelegt\n");
+//	Rprintf("temp. Richtungsvektor angelegt\n");
     
 	double dir_x, dir_y, dir_z, FA;
 	int i = 0, j = 0, k = 0, num_vector = 0, counter = 0;

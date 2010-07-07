@@ -113,8 +113,8 @@ setMethod("[","dtiData",function(x, i, j, k, drop=FALSE){
   if (is.logical(k)) ddimk <- x@ddim[3] else ddimk <- length(k)
   swap <- rep(FALSE,3)
   if (!is.logical(i)) swap[1] <- i[1] > i[length(i)]
-  if (!is.logical(j)) swap[2] <- j[1] > j[length(i)]
-  if (!is.logical(k)) swap[3] <- k[1] > k[length(i)]
+  if (!is.logical(j)) swap[2] <- j[1] > j[length(j)]
+  if (!is.logical(k)) swap[3] <- k[1] > k[length(k)]
   orientation <- x@orientation
   gradient <- x@gradient
   if(swap[1]) {
@@ -145,7 +145,7 @@ setMethod("[","dtiData",function(x, i, j, k, drop=FALSE){
                 sdcoef = x@sdcoef,
                 level  = x@level,
                 voxelext = x@voxelext,
-                orientation = orientation,
+                orientation = as.integer(orientation),
                 rotation = x@rotation,
                 source = x@source)
             )
@@ -164,8 +164,8 @@ setMethod("[","dtiTensor",function(x, i, j, k, drop=FALSE){
   if (is.logical(k)) ddimk <- x@ddim[3] else ddimk <- length(k)
   swap <- rep(FALSE,3)
   if (!is.logical(i)) swap[1] <- i[1] > i[length(i)]
-  if (!is.logical(j)) swap[2] <- j[1] > j[length(i)]
-  if (!is.logical(k)) swap[3] <- k[1] > k[length(i)]
+  if (!is.logical(j)) swap[2] <- j[1] > j[length(j)]
+  if (!is.logical(k)) swap[3] <- k[1] > k[length(k)]
   orientation <- x@orientation
   gradient <- x@gradient
   btb <- x@btb
@@ -220,7 +220,7 @@ setMethod("[","dtiTensor",function(x, i, j, k, drop=FALSE){
                 zind  = x@zind[k],
                 voxelext = x@voxelext,
                 level = x@level,
-                orientation = orientation,
+                orientation = as.integer(orientation),
                 rotation = x@rotation,
                 outlier = outlier,
                 scale = x@scale,
@@ -249,10 +249,14 @@ setMethod("[","dwiMixtensor",function(x, i, j, k, drop=FALSE){
   } else {
     outlier <- numeric(0)
   }
+#  cat("indix i",i,"\n")
+#  cat("indix j",j,"\n")
+#  cat("indix k",k,"\n")
   swap <- rep(FALSE,3)
   if (!is.logical(i)) swap[1] <- i[1] > i[length(i)]
-  if (!is.logical(j)) swap[2] <- j[1] > j[length(i)]
-  if (!is.logical(k)) swap[3] <- k[1] > k[length(i)]
+  if (!is.logical(j)) swap[2] <- j[1] > j[length(j)]
+  if (!is.logical(k)) swap[3] <- k[1] > k[length(k)]
+#  cat("swap",swap,"\n")
   orientation <- x@orientation
   gradient <- x@gradient
   btb <- x@btb
@@ -261,18 +265,24 @@ setMethod("[","dwiMixtensor",function(x, i, j, k, drop=FALSE){
      orientation[1] <- (orientation[1]+1)%%2
      gradient[1,] <- -gradient[1,]
      btb[2:3,] <- - btb[2:3,]
+     orient <- - orient
   }
   if(swap[2]) {
      orientation[2] <- (orientation[2]+1)%%2+2
      gradient[2,] <- -gradient[2,]
      btb[c(2,5),] <- - btb[c(2,5),]
+     orient[2,,,,] <- - orient[2,,,,]
  }
   if(swap[3]) {
      orientation[3] <- (orientation[3]+1)%%2+4
      gradient[3,] <- -gradient[3,]
      btb[c(3,5),] <- - btb[c(3,5),]
+     orient[1,,,,] <- pi - orient[1,,,,]
   }
-
+#  cat("new orientation",orientation,"\n")
+#  cat("indix i",i,"\n")
+#  cat("indix j",j,"\n")
+#  cat("indix k",k,"\n")
   invisible(new("dwiMixtensor",
                 call  = args, 
                 ev     = x@ev[,i,j,k,drop=FALSE],
@@ -298,7 +308,7 @@ setMethod("[","dwiMixtensor",function(x, i, j, k, drop=FALSE){
                 zind  = x@zind[k],
                 voxelext = x@voxelext,
                 level = x@level,
-                orientation = orientation,
+                orientation = as.integer(orientation),
                 rotation = x@rotation,
                 outlier = outlier,
                 scale = x@scale,
@@ -355,7 +365,7 @@ setMethod("[","dtiIndices",function(x, i, j, k, drop=FALSE){
                 ddim  = c(ddimi,ddimj,ddimk),
                 ddim0 = x@ddim0,
                 voxelext = x@voxelext,
-                orientation = orientation,
+                orientation = as.integer(orientation),
                 rotation = x@rotation,
                 xind  = x@xind[i],
                 yind  = x@yind[j],
@@ -379,8 +389,8 @@ setMethod("[","dwiQball",function(x, i, j, k, drop=FALSE){
   if (is.logical(k)) ddimk <- x@ddim[3] else ddimk <- length(k)
     swap <- rep(FALSE,3)
   if (!is.logical(i)) swap[1] <- i[1] > i[length(i)]
-  if (!is.logical(j)) swap[2] <- j[1] > j[length(i)]
-  if (!is.logical(k)) swap[3] <- k[1] > k[length(i)]
+  if (!is.logical(j)) swap[2] <- j[1] > j[length(j)]
+  if (!is.logical(k)) swap[3] <- k[1] > k[length(k)]
   if(any(swap)) {
      warning("can't reverse order of indices")
      return(invisible(x))

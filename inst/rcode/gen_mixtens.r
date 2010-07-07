@@ -53,7 +53,7 @@ invisible(new("dtiData",
                 level  = 1,
                 sdcoef = c(5.e-01, 0, 1, 2.e+04),
                 voxelext = c(1,1,1),
-                orientation = as.integer(c(0,2,4)),
+                orientation = as.integer(c(0,2,5)),
                 rotation = diag(3),
                 source = "artificial")
             )
@@ -106,7 +106,7 @@ orient[2,,,,] <- beta
                 zind   = 1:ddim[3],
                 voxelext = c(1,1,1),
                 level = 1,
-                orientation = as.integer(c(0,2,4)),
+                orientation = as.integer(c(0,2,5)),
                 rotation = diag(3),
                 source = "artificial",
                 outlier = numeric(0),

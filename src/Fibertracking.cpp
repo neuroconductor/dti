@@ -25,7 +25,7 @@ Fibertracking::Fibertracking()
 
 Fibertracking::Fibertracking(Voxel& voxels_in, int x, int y, int z, double voxelext_x_in, double voxelext_y_in, double voxelext_z_in, double min_anisotropy_in, double max_angle)
 {
-	Rprintf("Fibertracking Konstruktor\n");
+//	Rprintf("Fibertracking Konstruktor\n");
 	
 	this->voxels = &voxels_in;
 	
@@ -36,7 +36,7 @@ Fibertracking::Fibertracking(Voxel& voxels_in, int x, int y, int z, double voxel
 	this->n_e5 = *(new Vector( 0, 0,-1));
 	this->n_e6 = *(new Vector(-1, 0, 0));
 
-	Rprintf("Normalenvektoren angelegt\n");
+//	Rprintf("Normalenvektoren angelegt\n");
 	
 	dim_x = x;
 	dim_y = y;
@@ -59,7 +59,7 @@ Fibertracking::Fibertracking(Voxel& voxels_in, int x, int y, int z, double voxel
 	
 	allVectors = *new VectorList();
 
-	Rprintf("Vektorliste angelegt\n");
+//	Rprintf("Vektorliste angelegt\n");
 }
 
 //Fibertracking::~Fibertracking()

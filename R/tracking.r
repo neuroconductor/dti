@@ -19,13 +19,13 @@ setMethod("tracking","dtiTensor", function(obj, roix=NULL, roiy=NULL, roiz=NULL,
   dimx <- obj@ddim[1]
   dimy <- obj@ddim[2]
   dimz <- obj@ddim[3]
-  if(obj@orientation[1]==1||obj@orientation[2]==3||obj@orientation[3]==5){
+  if(obj@orientation[1]==1||obj@orientation[2]==3||obj@orientation[3]==4){
      xind <- if (obj@orientation[1]==1) dimx:1 else 1:dimx 
      yind <- if (obj@orientation[2]==3) dimy:1 else 1:dimy 
-     zind <- if (obj@orientation[3]==5) dimz:1 else 1:dimz 
+     zind <- if (obj@orientation[3]==4) dimz:1 else 1:dimz 
      if (!is.null(roix) & obj@orientation[1]==1) roix <- dimx+1-roix
      if (!is.null(roiy) & obj@orientation[2]==3) roiy <- dimy+1-roiy
-     if (!is.null(roiz) & obj@orientation[3]==5) roiz <- dimz+1-roiz
+     if (!is.null(roiz) & obj@orientation[3]==4) roiz <- dimz+1-roiz
      obj <- obj[xind,yind,zind]
   }
   if (is.null(roix)) roix <- 1:dimx
@@ -107,7 +107,7 @@ setMethod("tracking","dtiTensor", function(obj, roix=NULL, roiy=NULL, roiz=NULL,
                 zind  = obj@zind,
                 voxelext = obj@voxelext,
                 level = obj@level,
-                orientation = as.integer(c(0,2,4)),
+                orientation = as.integer(c(0,2,5)),
                 rotation = obj@rotation,
                 source = obj@source,
                 method = method,
@@ -127,13 +127,13 @@ setMethod("tracking","dtiIndices", function(obj, roix=NULL, roiy=NULL, roiz=NULL
   dimx <- obj@ddim[1]
   dimy <- obj@ddim[2]
   dimz <- obj@ddim[3]
-  if(obj@orientation[1]==1||obj@orientation[2]==3||obj@orientation[3]==5){
+  if(obj@orientation[1]==1||obj@orientation[2]==3||obj@orientation[3]==4){
      xind <- if (obj@orientation[1]==1) dimx:1 else 1:dimx 
      yind <- if (obj@orientation[2]==3) dimy:1 else 1:dimy 
-     zind <- if (obj@orientation[3]==5) dimz:1 else 1:dimz 
+     zind <- if (obj@orientation[3]==4) dimz:1 else 1:dimz 
      if (!is.null(roix) & obj@orientation[1]==1) roix <- dimx+1-roix
      if (!is.null(roiy) & obj@orientation[2]==3) roiy <- dimy+1-roiy
-     if (!is.null(roiz) & obj@orientation[3]==5) roiz <- dimz+1-roiz
+     if (!is.null(roiz) & obj@orientation[3]==4) roiz <- dimz+1-roiz
      obj <- obj[xind,yind,zind]
   }
   if (is.null(roix)) roix <- 1:dimx
@@ -214,7 +214,7 @@ setMethod("tracking","dtiIndices", function(obj, roix=NULL, roiy=NULL, roiz=NULL
                 zind  = obj@zind,
                 voxelext = obj@voxelext,
                 level = obj@level,
-                orientation = as.integer(c(0,2,4)),
+                orientation = as.integer(c(0,2,5)),
                 rotation = obj@rotation,
                 source = obj@source,
                 method = method,
@@ -235,14 +235,15 @@ function(obj, roix=NULL, roiy=NULL, roiz=NULL, method="LINEPROP", minanindex=0.3
   dimx <- obj@ddim[1]
   dimy <- obj@ddim[2]
   dimz <- obj@ddim[3]
-  if(obj@orientation[1]==1||obj@orientation[2]==3||obj@orientation[3]==5){
+  if(obj@orientation[1]==1||obj@orientation[2]==3||obj@orientation[3]==4){
      xind <- if (obj@orientation[1]==1) dimx:1 else 1:dimx 
      yind <- if (obj@orientation[2]==3) dimy:1 else 1:dimy 
-     zind <- if (obj@orientation[3]==5) dimz:1 else 1:dimz 
+     zind <- if (obj@orientation[3]==4) dimz:1 else 1:dimz 
      if (!is.null(roix) & obj@orientation[1]==1) roix <- dimx+1-roix
      if (!is.null(roiy) & obj@orientation[2]==3) roiy <- dimy+1-roiy
-     if (!is.null(roiz) & obj@orientation[3]==5) roiz <- dimz+1-roiz
+     if (!is.null(roiz) & obj@orientation[3]==4) roiz <- dimz+1-roiz
      obj <- obj[xind,yind,zind]
+     cat("orientation",obj@orientation,"\n")
   }
   if (is.null(roix)) roix <- 1:dimx
   if (is.null(roiy)) roiy <- 1:dimy
@@ -307,7 +308,6 @@ function(obj, roix=NULL, roiy=NULL, roiz=NULL, method="LINEPROP", minanindex=0.3
               DUP=FALSE, package="dti")
 
   dim(dd) <- c(length(dd)/6,6);
-  cat("dimension angepasst",dim(dd),"\n")
   istartfiber <- ident.fibers(dd)
   roimask <- array(0,obj@ddim)
   roimask[roix,roiy,roiz] <- 1
@@ -328,7 +328,7 @@ function(obj, roix=NULL, roiy=NULL, roiz=NULL, method="LINEPROP", minanindex=0.3
                 zind  = obj@zind,
                 voxelext = obj@voxelext,
                 level = obj@level,
-                orientation = as.integer(c(0,2,4)),
+                orientation = as.integer(c(0,2,5)),
                 rotation = obj@rotation,
                 source = obj@source,
                 method = method,
