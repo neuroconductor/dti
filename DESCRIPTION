@@ -1,6 +1,6 @@
 Package: dti
 Version: 0.9-2
-Date: 2010-04-30
+Date: 2010-07-08
 Title: DTI/DWI Analysis
 Author: Karsten Tabelow <tabelow@wias-berlin.de>
         Joerg Polzehl <polzehl@wias-berlin.de>
@@ -17,6 +17,6 @@ Description: Diffusion Weighted Imaging is a Magnetic Resonance Imaging
              Neuroimage 39(4), 1763-1773 (2008).
 License: GPL (>=2)
 Copyright: This package is 
-           Copyright (C) 2005-2008 Weierstrass Institute for 
+           Copyright (C) 2005-2010 Weierstrass Institute for 
                                    Applied Analysis and Stochastics.
 URL: http://www.wias-berlin.de/projects/matheon_a3
