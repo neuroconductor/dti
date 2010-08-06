@@ -250,8 +250,8 @@ C
 C
 C __________________________________________________________________
 C
-      subroutine getsiin2(si,ngrad,n1,n2,n3,m,dgrad,th,nth,
-     1         egrad,isample,ntry,sms,z,siind,mval,ns,mask)
+      subroutine getsiin2(si,ngrad,n1,n2,n3,m,dgrad,nv,th,nth,
+     1     egrad,isample,ntry,sms,z,siind,mval,vsi,ns,mask)
 C
 C  compute diagnostics for initial estimates in siind
 C  siind(1,i1,i2,i3) will contain the model order 
@@ -273,17 +273,28 @@ C
 C  restricted to ngrad<=1000 and m <=10
 C
       implicit logical (a-z)
-      integer n1,n2,n3,ngrad,ns,siind(ns,n1,n2,n3),m,ntry,nth,
+      integer n1,n2,n3,ngrad,ns,siind(ns,n1,n2,n3),m,ntry,nth,nv,
      1       isample(m,ntry)
-      real*8 si(ngrad,n1,n2,n3),sms(ngrad),dgrad(ngrad,ngrad),th(nth),
-     1       egrad(ngrad,ngrad),z(ngrad,ns),mval(n1,n2,n3)
+      real*8 si(ngrad,n1,n2,n3),sms(ngrad),dgrad(ngrad,nv),th(nth),
+     1    egrad(ngrad,nv),z(ngrad,ns),mval(n1,n2,n3),vsi(n1,n2,n3)
       logical mask(n1,n2,n3)
       integer i1,i2,i3,k,ibest,mode,ind(10),l,j
-      real*8 w(1000),krit,work1(1000),work2(10),erg,thj
+      real*8 w(1000),krit,work1(1000),work2(10),erg,thj,msi,m2si,
+     1       z1,dng
+      dng=ngrad
       DO i1=1,n1
          DO i2=1,n2
             DO i3=1,n3
-               mval(i1,i2,i3)=1e10
+               msi=0.d0
+               m2si=0.d0
+               DO k=1,ngrad
+                  z1=si(k,i1,i2,i3)
+                  msi=msi+z1
+                  m2si=m2si+z1*z1
+               END DO
+               z1=m2si-msi*msi/dng
+               mval(i1,i2,i3)=sqrt(z1)
+               vsi(i1,i2,i3)=z1/dng
                if(.not.mask(i1,i2,i3)) THEN
                   siind(1,i1,i2,i3)=-1
                   mval(i1,i2,i3)=0
@@ -294,11 +305,9 @@ C
       DO j=1,nth
          thj=th(j)
          egrad(1,1)=dexp(-thj*dgrad(1,1)*dgrad(1,1))
-         DO k=2,ngrad
-            egrad(k,k)=dexp(-thj*dgrad(k,k)*dgrad(k,k))
-            DO l=1,k-1
+         DO k=1,ngrad
+            DO l=1,nv
                egrad(k,l)=dexp(-thj*dgrad(k,l)*dgrad(k,l))
-               egrad(l,k)=egrad(k,l)
             END DO
          END DO
          DO i1=1,n1
