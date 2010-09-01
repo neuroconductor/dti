@@ -122,7 +122,7 @@ paroforient <- function(dir){
   c(theta, phi)
 }
 
-getsiind2 <- function(si,mask,grad,vico,th,maxcomp=3,maxc=.866,nguess=100){
+getsiind2 <- function(si,mask,sigma2,grad,vico,th,maxcomp=3,maxc=.866,nguess=100){
 # assumes dim(grad) == c(ngrad,3)
 # assumes dim(si) == c(n1,n2,n3,ngrad)
 # SO removed
@@ -133,17 +133,19 @@ dgrad <- matrix(abs(grad%*%t(vico)),ngrad,nvico)
 dgrad <- dgrad/max(dgrad)
 dgradi <- matrix(abs(vico%*%t(vico)),nvico,nvico)
 dgradi <- dgradi/max(dgradi)
-isample <- selisample(nvico,maxcomp,nguess,dgradi,maxc)
 nth <- length(th)
+isample <- selisample(nvico,maxcomp,nth*nguess,dgradi,maxc)
 #
 #  eliminate configurations with close directions 
 #
-nguess <- dim(isample)[2]
+nguess <- trunc(dim(isample)[2]/nth)
+isample <- array(isample[,1:(nguess*nth)],c(maxcomp,nguess,nth))
 # this provides configurations of initial estimates with minimum angle between 
 # directions > acos(maxc)
 cat("using ",nguess,"guesses for initial estimates\n")
 siind <- .Fortran("getsiin2",
          as.double(aperm(si,c(4,1:3))),
+         as.double(sigma2),
          as.integer(nsi),
          as.integer(dim(si)[1]),
          as.integer(dim(si)[2]),
@@ -160,25 +162,25 @@ siind <- .Fortran("getsiin2",
          double(nsi*(maxcomp+2)),
          siind=integer((maxcomp+2)*prod(dim(si)[-4])),
          krit=double(prod(dim(si)[1:3])),
-         vsi=double(prod(dim(si)[1:3])),
          as.integer(maxcomp+2),
          as.logical(mask),
-         PACKAGE="dti")[c("siind","krit","vsi")]
-failed <- (siind$krit^2/ngrad > siind$vsi-1e-10)
+         PACKAGE="dti")[c("siind","krit")]
+failed <- (siind$krit^2/ngrad) > (sigma2-1e-10)
 if(any(failed[mask])){
+print((siind$krit[mask])[failed[mask]])
 print(((1:prod(dim(si)[1:3]))[mask])[failed[mask]])
 print(sum(failed[mask]))
 }
-plot(density((siind$krit^2/ngrad-siind$vsi)[mask]))
+plot(density((siind$krit^2/ngrad-sigma2)[mask]))
 list(siind=array(siind$siind,c(maxcomp+2,dim(si)[-4])),
-     krit=array(siind$krit,dim(si)[-4]),vsi=array(siind$vsi,dim(si)[-4]))
+     krit=array(siind$krit,dim(si)[-4]))
 }
 
 dwiMixtensor <- function(object, ...) cat("No dwiMixtensor calculation defined for this class:",class(object),"\n")
 
 setGeneric("dwiMixtensor", function(object,  ...) standardGeneric("dwiMixtensor"))
 
-setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mixtensor", reltol=1e-6, maxit=5000,ngc=1000, optmethod="BFGS", nguess=50*maxcomp^2,penalty="BIC"){
+setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mixtensor", reltol=1e-6, maxit=5000,ngc=1000, optmethod="BFGS", nguess=25*maxcomp^2,penalty="BIC"){
 #
 #  uses  S(g)/s_0 = w_0 exp(-l_1) +\sum_{i} w_i exp(-l_2-(l_1-l_2)(g^T d_i)^2)
 #
@@ -206,23 +208,36 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
                 DUP=FALSE,
                 PACKAGE="dti")[c("si","index","lindex")]
   cat("End search outlier detection at",date(),"\n")
-  si <- array(z$si,c(ddim,ngrad))
+  si <- array(as.integer(z$si),c(ddim,ngrad))
   index <- if(z$lindex>0) z$index[1:z$lindex] else numeric(0)
   rm(z)
+  gc()
+  cat("Start generating auxiliary objects",date(),"\n")
   ngrad0 <- ngrad - ns0
-  s0 <- si[,,,s0ind,drop=FALSE]
-  if(length(s0ind)>1) s0 <- apply(s0,1:3,mean) else dim(s0) <- dim(s0)[1:3]
-  mask <- s0 > object@level
-  siq <- si[,,,-s0ind,drop=FALSE]
-  dim(siq) <- c(prod(ddim),ngrad0)
-  siq[mask,] <- sweep(siq[mask,],1,s0[mask],"/")
-  dim(siq) <- c(ddim,ngrad0)
-#  siqmed <- apply(siq,1:3,median)
-#  siqmed[siqmed<.9] <- .9
-#  siqmed[siqmed>.99] <- .99
-#  siq <- sweep(siq,1:3,siqmed,pmin)
-  siq[siq>.99] <- .99
+  z <- .Fortran("sweeps0",
+                as.integer(si[,,,-s0ind,drop=FALSE]),
+                as.integer(si[,,,s0ind,drop=FALSE]),
+                as.integer(ddim[1]),
+                as.integer(ddim[2]),
+                as.integer(ddim[3]),
+                as.integer(ns0),
+                as.integer(ngrad0),
+                as.integer(object@level),
+                siq=double(prod(ddim[1:3])*ngrad0),
+                s0=double(prod(ddim[1:3])),
+                vsi=double(prod(ddim[1:3])),
+                mask=logical(prod(ddim[1:3])),
+                DUPL=FALSE,
+                PACKAGE="dti")[c("siq","s0","vsi","mask")]
+  rm(si)
+  s0 <- array(z$s0,ddim[1:3])
+  siq <- array(z$siq,c(ddim[1:3],ngrad0))
+  sigma2 <- array(z$vsi,ddim[1:3])
+  mask <- array(z$mask,ddim[1:3])
+  rm(z)
+  gc()
   if(penalty=="BIC") penIC <- log(ngrad0) else penIC <- 2
+  cat("End generating auxiliary objects",date(),"\n")
 #
 #  avoid situations where si's are larger than s0
 #
@@ -252,8 +267,7 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
 #
   cat("Start search for initial directions at",date(),"\n")
   data("polyeders")
-  siind <- getsiind2(siq,mask,grad,t(icosa3$vertices),th,maxcomp,maxc=maxc,nguess=nguess)
-  sigma2 <- siind$vsi
+  siind <- getsiind2(siq,mask,sigma2,grad,t(icosa3$vertices),th,maxcomp,maxc=maxc,nguess=nguess)
   krit <- siind$krit
   siind <- siind$siind
   print(table(siind[2,,,]))

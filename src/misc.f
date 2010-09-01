@@ -83,6 +83,7 @@ C
             ind(lind)=i
          END IF
       END DO
+      call rchkusr()
       RETURN
       END
       subroutine mcorrlag(res,mask,n1,n2,n3,nv,sigma,mean,scorr,lag)

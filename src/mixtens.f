@@ -250,8 +250,8 @@ C
 C
 C __________________________________________________________________
 C
-      subroutine getsiin2(si,ngrad,n1,n2,n3,m,dgrad,nv,th,nth,
-     1     egrad,isample,ntry,sms,z,siind,mval,vsi,ns,mask)
+      subroutine getsiin2(si,vsi,ngrad,n1,n2,n3,m,dgrad,nv,th,nth,
+     1     egrad,isample,ntry,sms,z,siind,mval,ns,mask)
 C
 C  compute diagnostics for initial estimates in siind
 C  siind(1,i1,i2,i3) will contain the model order 
@@ -274,11 +274,11 @@ C  restricted to ngrad<=1000 and m <=10
 C
       implicit logical (a-z)
       integer n1,n2,n3,ngrad,ns,siind(ns,n1,n2,n3),m,ntry,nth,nv,
-     1       isample(m,ntry)
+     1       isample(m,ntry,nth)
       real*8 si(ngrad,n1,n2,n3),sms(ngrad),dgrad(ngrad,nv),th(nth),
      1    egrad(ngrad,nv),z(ngrad,ns),mval(n1,n2,n3),vsi(n1,n2,n3)
       logical mask(n1,n2,n3)
-      integer i1,i2,i3,k,ibest,mode,ind(10),l,j
+      integer i1,i2,i3,k,ibest,mode,ind(10),l,j,icount
       real*8 w(1000),krit,work1(1000),work2(10),erg,thj,msi,m2si,
      1       z1,dng
       dng=ngrad
@@ -287,24 +287,20 @@ C
             DO i3=1,n3
                msi=0.d0
                m2si=0.d0
-               DO k=1,ngrad
-                  z1=si(k,i1,i2,i3)
-                  msi=msi+z1
-                  m2si=m2si+z1*z1
-               END DO
-               z1=m2si-msi*msi/dng
-               mval(i1,i2,i3)=sqrt(z1)
-               vsi(i1,i2,i3)=z1/dng
+               z1=vsi(i1,i2,i3)
+               mval(i1,i2,i3)=sqrt(dng*z1)
                if(.not.mask(i1,i2,i3)) THEN
                   siind(1,i1,i2,i3)=-1
                   mval(i1,i2,i3)=0
                END IF
             END DO
          END DO
+      call rchkusr()
       END DO
       DO j=1,nth
          thj=th(j)
-         egrad(1,1)=dexp(-thj*dgrad(1,1)*dgrad(1,1))
+         call dblepr("Try theta=",10,thj,1)
+         icount=0
          DO k=1,ngrad
             DO l=1,nv
                egrad(k,l)=dexp(-thj*dgrad(k,l)*dgrad(k,l))
@@ -320,12 +316,12 @@ C  now search for minima of sms (or weighted sms
                      DO k=1,ntry
                         call dcopy(ngrad,si(1,i1,i2,i3),1,sms,1)
                         DO l=1,m
-                 call dcopy(ngrad,egrad(1,isample(l,k)),1,z(1,l),1)
+                 call dcopy(ngrad,egrad(1,isample(l,k,j)),1,z(1,l),1)
                         END DO
         call nnls(z,ngrad,ngrad,m,sms,w,erg,work2,work1,ind,mode)
                         IF(mode.gt.1) THEN
                            call intpr("mode",4,mode,1)
-                           call intpr("isample",7,isample(1,k),m)
+                           call intpr("isample",7,isample(1,k,j),m)
                         ELSE 
                            IF(erg.lt.krit) THEN
                               krit=erg
@@ -336,16 +332,77 @@ C  now search for minima of sms (or weighted sms
                      if(ibest.gt.0) THEN
                         siind(1,i1,i2,i3)=m
                         siind(2,i1,i2,i3)=j
+                        icount=icount+1
                         DO l=1,m
-                           siind(l+2,i1,i2,i3)=isample(l,ibest)
+                           siind(l+2,i1,i2,i3)=isample(l,ibest,j)
                         END DO
                         mval(i1,i2,i3)=krit
                      END IF
                   END IF
                END DO
+            call rchkusr()
             END DO
          END DO
 C         call dblepr("mval",4,mval,216)
+         call intpr("improved:",9,icount,1)
+         call rchkusr()
+      END DO
+      RETURN
+      END
+C
+C __________________________________________________________________
+C
+      subroutine sweeps0(si,s0,n1,n2,n3,ng0,ng1,level,siq,ms0,vsi,
+     1                   mask)
+C
+C   calculate mean s0 value
+C   generate mask
+C   sweep s0 from si to generate  siq
+C   calculate variance of siq
+C
+      integer n1,n2,n3,ng0,ng1,si(n1,n2,n3,ng1),s0(n1,n2,n3,ng0),
+     1        level
+      real*8 siq(n1,n2,n3,ng1),ms0(n1,n2,n3),vsi(n1,n2,n3)
+      logical mask(n1,n2,n3),maskk
+      integer i1,i2,i3,k
+      real*8 s,z,z2,thresh,cv,s0mean
+      thresh = level*ng0
+      cv=ng1*(ng1-1)
+      DO i1=1,n1
+         DO i2=1,n2
+            DO i3=1,n3
+               z=0.d0
+               DO k=1,ng0
+                  z=z+s0(i1,i2,i3,k)
+               END DO
+               s0mean = z/ng0
+               ms0(i1,i2,i3) = s0mean
+               maskk = z.ge.thresh
+               IF(maskk) THEN
+                  z=0.d0
+                  z2=0.d0
+                  DO k=1,ng1
+                     s=si(i1,i2,i3,k)/s0mean
+                     if(s.gt.0.99d0) s=0.99d0
+                     z=z+s
+                     z2=z2+s*s
+                     siq(i1,i2,i3,k)=s
+                  END DO
+                  vsi(i1,i2,i3)=(ng1*z2-z)/cv
+                  if(vsi(i1,i2,i3).lt.1d-8) THEN
+                     maskk = .FALSE.
+                     vsi(i1,i2,i3)=0.d0
+                  END IF
+               ELSE
+                  vsi(i1,i2,i3)=0.d0
+                  DO k=1,ng1
+                     siq(i1,i2,i3,k)=1.d0
+                  END DO
+               END IF
+               mask(i1,i2,i3) = maskk
+            END DO
+         END DO
+      call rchkusr()
       END DO
       RETURN
       END
@@ -429,6 +486,7 @@ C
                lev(2,i1,i2,i3)=-log(z1/z)
             END DO
          END DO
+      call rchkusr()
       END DO
       RETURN
       END
