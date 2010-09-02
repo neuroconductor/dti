@@ -97,10 +97,12 @@ saved.seed <- .Random.seed
 set.seed(1)
 isample <- matrix(sample(ngrad,maxcomp*nguess,replace=TRUE),maxcomp,nguess)
 ind <- rep(TRUE,nguess)
+if(maxcomp>1){
 for(i in 1:nguess) for(j in 1:(maxcomp-1)) for(k in (j+1):maxcomp){
 if(dgrad[isample[j,i],isample[k,i]]>maxc) ind[i] <- FALSE
 }
 .Random.seed <- saved.seed
+}
 isample[,ind]
 }
 
@@ -138,8 +140,10 @@ isample <- selisample(nvico,maxcomp,nth*nguess,dgradi,maxc)
 #
 #  eliminate configurations with close directions 
 #
-nguess <- trunc(dim(isample)[2]/nth)
+if(maxcomp>1) { 
+nguess <- trunc(dim(isample)[2]/nth) 
 isample <- array(isample[,1:(nguess*nth)],c(maxcomp,nguess,nth))
+} else nguess <- trunc(nguess/nth)
 # this provides configurations of initial estimates with minimum angle between 
 # directions > acos(maxc)
 cat("using ",nguess,"guesses for initial estimates\n")

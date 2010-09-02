@@ -328,6 +328,10 @@ setMethod("[","dtiIndices",function(x, i, j, k, drop=FALSE){
   if (is.logical(i)) ddimi <- x@ddim[1] else ddimi <- length(i)
   if (is.logical(j)) ddimj <- x@ddim[2] else ddimj <- length(j)
   if (is.logical(k)) ddimk <- x@ddim[3] else ddimk <- length(k)
+  swap <- rep(FALSE,3)
+  if (!is.logical(i)) swap[1] <- i[1] > i[length(i)]
+  if (!is.logical(j)) swap[2] <- j[1] > j[length(j)]
+  if (!is.logical(k)) swap[3] <- k[1] > k[length(k)]
   orientation <- x@orientation
   gradient <- x@gradient
   btb <- x@btb
@@ -618,7 +622,7 @@ setMethod("extract","dtiTensor",function(x, what="tensor", xind=TRUE, yind=TRUE,
 ##############
 
 setMethod("extract","dtiIndices",function(x, what=c("fa","andir"), xind=TRUE, yind=TRUE, zind=TRUE){
-  what <- tolower(what) 
+  what <- tolower(what)
   swap <- rep(FALSE,3)
   if(is.numeric(xind)) swap[1] <- xind[1]>xind[length(xind)]
   if(is.numeric(yind)) swap[2] <- yind[1]>yind[length(yind)]

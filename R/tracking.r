@@ -271,7 +271,7 @@ function(obj, roix=NULL, roiy=NULL, roiz=NULL, method="LINEPROP", minanindex=0.3
     indz <- rep(1:dimz, rep(subsample,dimz))
     ex$gfa <- ex$gfa[indx, indy, indz]
     ex$order <- ex$order[indx, indy, indz]
-    ex$mix <- ex$mix[,indx, indy, indz]
+    ex$mix <- ex$mix[,indx, indy, indz, drop=FALSE]
     ex$andir <- ex$andir[,,indx, indy, indz, drop=FALSE]
     dimx <- subsample*dimx
     dimy <- subsample*dimy
