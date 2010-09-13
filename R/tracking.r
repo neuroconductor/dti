@@ -89,13 +89,14 @@ setMethod("tracking","dtiTensor", function(obj, roix=NULL, roiy=NULL, roiz=NULL,
               DUP=FALSE)
 
   dim(dd) <- c(length(dd)/6,6);
-  istartfiber <- ident.fibers(dd)
+  istartfiber <- ident.fibers(dd[,1:3])
+  z <- compactFibers(dd,istartfiber)
   roimask <- array(0,obj@ddim)
   roimask[roix,roiy,roiz] <- 1
   invisible(new("dwiFiber",
                 call  = args,
-                fibers = dd,
-                startind = as.integer(istartfiber),
+                fibers = z$fibers,
+                startind = as.integer(z$startind),
                 roimask = as.raw(roimask),
                 gradient = obj@gradient,
                 btb   = obj@btb,
@@ -196,13 +197,14 @@ setMethod("tracking","dtiIndices", function(obj, roix=NULL, roiy=NULL, roiz=NULL
               DUP=FALSE, package="dti")
 
   dim(dd) <- c(length(dd)/6,6);
-  istartfiber <- ident.fibers(dd)
+  istartfiber <- ident.fibers(dd[1:3])
+  z <- compactFibers(dd,istartfiber)
   roimask <- array(0,obj@ddim)
   roimask[roix,roiy,roiz] <- 1
   invisible(new("dwiFiber",
                 call  = args,
-                fibers = dd,
-                startind = as.integer(istartfiber),
+                fibers = z$fibers,
+                startind = as.integer(z$startind),
                 roimask = as.raw(roimask),
                 gradient = obj@gradient,
                 btb   = obj@btb,
@@ -310,13 +312,14 @@ function(obj, roix=NULL, roiy=NULL, roiz=NULL, method="LINEPROP", minanindex=0.3
               DUP=FALSE, package="dti")
 
   dim(dd) <- c(length(dd)/6,6);
-  istartfiber <- ident.fibers(dd)
+  istartfiber <- ident.fibers(dd[,1:3])
+  z <- compactFibers(dd,istartfiber)
   roimask <- array(0,obj@ddim)
   roimask[roix,roiy,roiz] <- 1
   invisible(new("dwiFiber",
                 call  = args,
-                fibers = dd,
-                startind = as.integer(istartfiber),
+                fibers = z$fibers,
+                startind = as.integer(z$startind),
                 roimask = as.raw(roimask),
                 gradient = obj@gradient,
                 btb   = obj@btb,

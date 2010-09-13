@@ -369,7 +369,7 @@ function(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=
 
 setMethod("plot", "dwiFiber", 
 function(x, y, ...) {
-   plot(density(diff(c(x@startind,dim(x@fibers)[1]+1))/2), ...)
+   plot(density(diff(c(x@startind,dim(x@fibers)[1]+1))-1), ...)
    title("Density of fiber lenghts")
    invisible(NULL)
 })

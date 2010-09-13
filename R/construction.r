@@ -1,3 +1,5 @@
+
+
 mfunpl1 <- function(par,siq,grad,pen=1e2){
 #
 #   evaluate rss for Mixtensor-model (with isotropic component)

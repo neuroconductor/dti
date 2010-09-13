@@ -1,3 +1,9 @@
+2010-09-13 version 0.9-3
+
+  - compactified storage of fibers
+  - new method reduceFibers for dwiFiber-objects
+  - bugfixes in initial estimates for mixTensor-models
+
 2010-07-15 version 0.9-2.1
   - removed dependency on OMP
   - some changes in documentation

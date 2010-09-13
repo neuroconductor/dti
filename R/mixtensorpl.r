@@ -74,7 +74,7 @@ w<-.Fortran("mfunpl0",as.double(par),#par(lpar)
                 PACKAGE="dti")$w[1:m]
            o <- order(w,decreasing=TRUE)
            ord <- sum(w>0)
-           if(ord<m-1){
+           if(ord<m){
               o <- o[1:ord]
            }
            sw <- sum(w[w>0])
@@ -175,7 +175,6 @@ print((siind$krit[mask])[failed[mask]])
 print(((1:prod(dim(si)[1:3]))[mask])[failed[mask]])
 print(sum(failed[mask]))
 }
-plot(density((siind$krit^2/ngrad-sigma2)[mask]))
 list(siind=array(siind$siind,c(maxcomp+2,dim(si)[-4])),
      krit=array(siind$krit,dim(si)[-4]))
 }
@@ -200,7 +199,10 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
   s0ind <- object@s0ind
   ns0 <- length(s0ind)
   cat("Start search outlier detection at",date(),"\n")
-  z <- .Fortran("outlier",
+#
+#  replace physically meaningless S_i by mena S_0 values
+#
+  z <- .Fortran("outlier",#misc.f 
                 as.double(object@si),
                 as.integer(prod(ddim)),
                 as.integer(ngrad),
@@ -218,7 +220,10 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
   gc()
   cat("Start generating auxiliary objects",date(),"\n")
   ngrad0 <- ngrad - ns0
-  z <- .Fortran("sweeps0",
+#
+#  compute mean S_0, s_i/S_0 (siq), var(siq) and mask
+#
+  z <- .Fortran("sweeps0",# mixtens.f
                 as.integer(si[,,,-s0ind,drop=FALSE]),
                 as.integer(si[,,,s0ind,drop=FALSE]),
                 as.integer(ddim[1]),
@@ -250,7 +255,10 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
 # initial estimates for eigenvalues
 #
   cat("Start search for initial estimates of eigenvalues at",date(),"\n")
-  lev <- array(.Fortran("getev0",
+#
+#   initialize EV paramters
+#
+  lev <- array(.Fortran("getev0", # mixtens.f
                as.double(aperm(siq,c(4,1:3))),
                as.integer(ngrad0),
                as.integer(ddim[1]),
@@ -260,10 +268,13 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
                DUPL=FALSE,
                PACKAGE="dti")$lev,c(2,ddim))
   mlev <- median(lev[2,,,][mask])
+#
+#   get grid for searching EV-parameters
+#
   theta <- theta*mlev
-  minth <- .1*theta
-  maxth <- 1.4*theta
-  nth <- 9
+  minth <- .4*theta
+  maxth <- 1.6*theta
+  nth <- 7
   th <- seq(minth,maxth,length=nth)
   cat("using theta=",th,"\n")
 #
@@ -271,9 +282,20 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
 #
   cat("Start search for initial directions at",date(),"\n")
   data("polyeders")
-  siind <- getsiind2(siq,mask,sigma2,grad,t(icosa3$vertices),th,maxcomp,maxc=maxc,nguess=nguess)
-  krit <- siind$krit
-  siind <- siind$siind
+  vert <- icosa3$vertices
+# remove redundant directions
+  vind <- rep(TRUE,dim(vert)[2])
+  vind[vert[1,]<0] <- FALSE
+  vind[vert[1,]==0 & vert[2,] <0] <- FALSE
+  vind[vert[1,]==0 & vert[2,] == 0 &vert[3,]<0] <- FALSE
+  vert <- vert[,vind]
+#
+#  compute initial estimates (EV from grid and orientations from icosa3$vertices)
+#
+  siind <- getsiind2(siq,mask,sigma2,grad,t(vert),th,maxcomp,maxc=maxc,nguess=nguess)
+  krit <- siind$krit # sqrt(sum of squared residuals) for initial estimates
+  siind <- siind$siind # components 1: model order 2: 
+                       # grid index for EV 2+(1:m) index of orientations
   print(table(siind[2,,,]))
  cat("End search for initial values at",date(),"\n")
   order <- array(0,ddim)
@@ -287,35 +309,36 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
   ingc <- 0
   prt0 <- proc.time()[1]
   prta <- prt0-prta
-  for(i1 in 1:n1) for(i2 in 1:n2) for(i3 in 1:n3){
-     if(mask[i1,i2,i3]){
+#
+#   loop over voxel in volume
+#
+  for(i1 in 1:n1) for(i2 in 1:n2) for(i3 in 1:n3){ # begin loop
+     if(mask[i1,i2,i3]){ # begin mask
+#   only analyze voxel within mask
      mc0 <- maxcomp
      ord <- mc0+1
-#     for(j in 1:mc0) orient[,j,i1,i2,i3] <- paroforient(grad[siind[j+1,i1,i2,i3],])
-     for(j in 1:mc0) {
+     for(j in 1:mc0) { 
           iv <- siind[j+2,i1,i2,i3]
-          if(iv==0) iv <- j
-          orient[,j,i1,i2,i3] <- paroforient(icosa3$vertices[,iv])
+          if(iv==0) iv <- j # this should never happen
+          orient[,j,i1,i2,i3] <- paroforient(vert[,iv])
      }
 #
 #   these are the gradient vectors corresponding to minima in spherical coordinates
 #
      if(method=="mixtensor"){
      par <- numeric(2*mc0+1)
+#  initialize EV-parameter
      if(siind[2,i1,i2,i3]>0){
-     par[1] <- th[siind[2,i1,i2,i3]]#*lev[2,i1,i2,i3]/mlev
+     par[1] <- th[siind[2,i1,i2,i3]]
      } else {
      par[1] <- .001
      }
-#
-#  these is an initial estimate for the eigen-value parameter
-#
+#   initialize orientations
      par[rep(2*(1:mc0),rep(2,mc0))+c(0,1)] <- orient[,1:mc0,i1,i2,i3]
      } 
      sigmai <- sigma2[i1,i2,i3]
      krit <- sigmai*(ngrad0-1)
-     maxcomp0 <- maxcomp
-     for(k in mc0:1){
+     for(k in mc0:1){ # begin model order
         if(k<ord) {
 #
 #  otherwise we would reanalyze a model
@@ -331,7 +354,8 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
                          method=optmethod,control=list(maxit=maxit,reltol=reltol))
            }
         }         
-        value <- z$value
+        value <- z$value 
+# thats sum of squared residuals + penalties (w<0 or 0>th or or th > 8)
 #
 #   estimate of sigma from the best fitting model
 #
@@ -340,9 +364,9 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
         } 
         ord <- zz$ord
         sigmai <- min(value/(ngrad0-3*ord-1),sigmai)
+#  replace sigmai by best variance estimate from currently best model
         if(any(zz$lev<0)||ord<k){
            ttt <- krit
-           maxcomp0 <- k-1
 #   parameters not interpretable reduce order
         } else {
            penalty <- penIC*(3*ord+1)
@@ -361,7 +385,7 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
            sigma2[i1,i2,i3] <- sigmai
        }
      }
-   }
+   } # end model order
     if(igc<ngc){
        igc <- igc+1
     } else {
@@ -372,8 +396,8 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
        cat("Nr. of voxel",ingc*ngc,"time elapsed:",prta+prt1-prt0,"remaining time:",
             (prt1-prt0)/(ingc*ngc)*(sum(mask)-ingc*ngc),"\n")
     }
-  }
-  }
+  }# end mask
+  }# end loop
   invisible(new("dwiMixtensor",
                 model = "homogeneous_prolate",
                 call   = args,
@@ -407,5 +431,5 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
                 scale = 1,
                 method = method)
             )
-}
+   }
 )
