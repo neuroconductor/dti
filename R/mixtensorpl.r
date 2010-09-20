@@ -143,7 +143,7 @@ isample <- selisample(nvico,maxcomp,nth*nguess,dgradi,maxc)
 if(maxcomp>1) { 
 nguess <- trunc(dim(isample)[2]/nth) 
 isample <- array(isample[,1:(nguess*nth)],c(maxcomp,nguess,nth))
-} else nguess <- trunc(nguess/nth)
+} 
 # this provides configurations of initial estimates with minimum angle between 
 # directions > acos(maxc)
 cat("using ",nguess,"guesses for initial estimates\n")
@@ -183,9 +183,11 @@ dwiMixtensor <- function(object, ...) cat("No dwiMixtensor calculation defined f
 
 setGeneric("dwiMixtensor", function(object,  ...) standardGeneric("dwiMixtensor"))
 
-setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mixtensor", reltol=1e-6, maxit=5000,ngc=1000, optmethod="BFGS", nguess=25*maxcomp^2,penalty="BIC"){
+setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mixtensor", reltol=1e-6, maxit=5000,ngc=1000, optmethod="BFGS", nguess=25*maxcomp^2,msc="BIC"){
 #
 #  uses  S(g)/s_0 = w_0 exp(-l_1) +\sum_{i} w_i exp(-l_2-(l_1-l_2)(g^T d_i)^2)
+#
+#  
 #
   set.seed(1)
   pen <- 1e2
@@ -245,7 +247,13 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
   mask <- array(z$mask,ddim[1:3])
   rm(z)
   gc()
-  if(penalty=="BIC") penIC <- log(ngrad0) else penIC <- 2
+  npar <- 1+3*(0:maxcomp)
+#
+#   compute penalty for model selection, default BIC
+#
+  penIC <- switch(msc,"AIC"=2*npar/ngrad0,"BIC"=log(ngrad0)*npar/ngrad0,
+                  "AICC"=(1+npar/ngrad0)/(1-(npar+2)/ngrad0),
+                  log(ngrad0)*npar/ngrad0)
   cat("End generating auxiliary objects",date(),"\n")
 #
 #  avoid situations where si's are larger than s0
@@ -337,7 +345,10 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
      par[rep(2*(1:mc0),rep(2,mc0))+c(0,1)] <- orient[,1:mc0,i1,i2,i3]
      } 
      sigmai <- sigma2[i1,i2,i3]
-     krit <- sigmai*(ngrad0-1)
+     krit <- log(sigmai)+penIC[1]
+#
+#  use AIC/ngrad0, BIC/ngrad0 or AICC/ngrad0 respectively
+#
      for(k in mc0:1){ # begin model order
         if(k<ord) {
 #
@@ -363,14 +374,13 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
             zz <- mfunplwghts0(z$par[1:lpar],siq[i1,i2,i3,],grad)
         } 
         ord <- zz$ord
-        sigmai <- min(value/(ngrad0-3*ord-1),sigmai)
 #  replace sigmai by best variance estimate from currently best model
         if(any(zz$lev<0)||ord<k){
            ttt <- krit
 #   parameters not interpretable reduce order
         } else {
-           penalty <- penIC*(3*ord+1)
-           ttt <- value+penalty*sigmai
+           si2new <- value/(ngrad0-3*ord-1)
+           ttt <- log(si2new)+penIC[1+ord]
            par <- zz$par
         }
 #
@@ -382,7 +392,7 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
            lev[,i1,i2,i3] <- zz$lev
            mix[,i1,i2,i3] <- if(ord==maxcomp) zz$mix else c(zz$mix,rep(0,maxcomp-ord))
            orient[,1:ord,i1,i2,i3] <- zz$orient
-           sigma2[i1,i2,i3] <- sigmai
+           sigma2[i1,i2,i3] <- si2new
        }
      }
    } # end model order

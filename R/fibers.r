@@ -45,7 +45,6 @@ if(!(is.null(roix)&&is.null(roiy)&&is.null(roiz)&&is.null(nroimask))){
   }
   lnewmask <- as.integer(log(mroimask,2))+1
   roimask[nroimask>0] <- roimask[nroimask>0]+2^lnewmask
-  cat("dimension of roimask",dim(roimask),"\n")
   z <- .Fortran("roifiber",
                 as.double(fibers),
                 newfibers=double(prod(dim(fibers))),#new fibers
@@ -123,7 +122,7 @@ setMethod("reduceFibers","dwiFiber", function(fiberobj, maxdist=1)
     endf <- endf[keep]
     ind <- rep(startf,endf-startf+1)+sequence(endf-startf+1)-1
     fiberobj@fibers <- fiberobj@fibers[ind,]
-    fiberobj@startind <- c(0,cumsum(endf-startf+1))[1:length(startf)]+1
+    fiberobj@startind <- as.integer(c(0,cumsum(endf-startf+1))[1:length(startf)]+1)
     fiberobj
 }
 )

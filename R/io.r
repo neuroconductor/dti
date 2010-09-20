@@ -487,7 +487,7 @@ function(object, ...){
     cat("  mean variance         :", paste(signif(mean(object@sigma[object@mask]),3), collapse="x"), "\n")
     cat("  hmax                  :", paste(object@hmax, collapse="x"), "\n")
     if(length(object@outlier)>0) cat("  Number of outliers    :", paste(length(object@outlier), collapse="x"), "\n")
-    cat("  Numbers od mixture components:",table(object@order[object@mask]),"\n") 
+    cat("  Numbers of mixture components:",table(object@order[object@mask]),"\n") 
     cat("\n")
     invisible(NULL)
 })
