@@ -501,6 +501,7 @@ setMethod("show3d","dwiQball", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,
 #   rescale and use a sphere of radius level as baseline for the ODF
 #
   radii <- sweep(radii,2,mradii,"/")+level
+  radii[is.na(radii)] <- 0
 #
 #   to display results in a form that the volumes are comparable,
 #   need volume elements around vertices that have volume proportional to radii,

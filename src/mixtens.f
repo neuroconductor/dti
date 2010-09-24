@@ -278,7 +278,8 @@ C
       real*8 si(ngrad,n1,n2,n3),sms(ngrad),dgrad(ngrad,nv),th(nth),
      1    egrad(ngrad,nv),z(ngrad,ns),mval(n1,n2,n3),vsi(n1,n2,n3)
       logical mask(n1,n2,n3)
-      integer i1,i2,i3,k,ibest,mode,ind(10),l,j,icount
+      integer i1,i2,i3,k,ibest,mode,ind(10),l,j,i,icount,iw,wind(5),
+     1        nwi(5)
       real*8 w(1000),krit,work1(1000),work2(10),erg,thj,msi,m2si,
      1       z1,dng
       dng=ngrad
@@ -326,16 +327,33 @@ C  now search for minima of sms (or weighted sms
                            IF(erg.lt.krit) THEN
                               krit=erg
                               ibest=k
+                              iw=0
+                              DO i=1,m
+                                 if(w(i).gt.1.d-12) THEN
+                                    iw=iw+1
+                                    wind(iw)=i
+                                 ELSE
+                                    nwi(i-iw)=i
+C   nonactive directions
+                                 END IF 
+                              END DO
                            END IF  
                         END IF
                      END DO
                      if(ibest.gt.0) THEN
-                        siind(1,i1,i2,i3)=m
+                        siind(1,i1,i2,i3)=iw
                         siind(2,i1,i2,i3)=j
                         icount=icount+1
-                        DO l=1,m
-                           siind(l+2,i1,i2,i3)=isample(l,ibest,j)
-                        END DO
+                        IF (iw.gt.1) THEN
+                           DO l=1,iw
+                          siind(l+2,i1,i2,i3)=isample(wind(l),ibest,j)
+                           END DO
+                        END IF
+                        IF (iw.lt.m) THEN
+                           DO l=1,m-iw
+                           siind(l+2,i1,i2,i3)=isample(nwi(l),ibest,j)
+                           END DO
+                        END IF
                         mval(i1,i2,i3)=krit
                      END IF
                   END IF

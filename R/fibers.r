@@ -127,24 +127,24 @@ setMethod("reduceFibers","dwiFiber", function(fiberobj, maxdist=1)
 }
 )
 
-#ident.fibers <- function(mat){
+ident.fibers <- function(mat){
 #
 #  Identify indices in mat where a new fiber starts
 #
-#   dd <- dim(mat)
-#   if(dd[2]!=3){
-#      warning("Incorrect dimensions for fiber array")
-#   }
-#   dd <- dd[1]
-#   z <- .Fortran("fibersta",
-#                 as.double(mat),
-#                 as.integer(dd/2),
-#                 fiberstarts=integer(dd/2),#thats more the maximum needed
-#                 nfibers=integer(1),
-#                 DUP=FALSE,
-#                 PACKAGE="dti")[c("fiberstarts","nfibers")]
-#   z$fiberstarts[1:z$nfibers]
-#}
+   dd <- dim(mat)
+   if(dd[2]!=3){
+      warning("Incorrect dimensions for fiber array")
+   }
+   dd <- dd[1]
+   z <- .Fortran("fibersta",
+                 as.double(mat),
+                 as.integer(dd/2),
+                 fiberstarts=integer(dd/2),#thats more the maximum needed
+                 nfibers=integer(1),
+                 DUP=FALSE,
+                 PACKAGE="dti")[c("fiberstarts","nfibers")]
+   z$fiberstarts[1:z$nfibers]
+}
 
 sort.fibers <- function(fiberobj){
 #

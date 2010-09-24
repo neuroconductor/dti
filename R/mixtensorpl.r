@@ -281,8 +281,8 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
 #
   theta <- theta*mlev
   minth <- .4*theta
-  maxth <- 1.6*theta
-  nth <- 7
+  maxth <- 2*theta
+  nth <- 9
   th <- seq(minth,maxth,length=nth)
   cat("using theta=",th,"\n")
 #
@@ -304,6 +304,9 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
   krit <- siind$krit # sqrt(sum of squared residuals) for initial estimates
   siind <- siind$siind # components 1: model order 2: 
                        # grid index for EV 2+(1:m) index of orientations
+  cat("Model orders for initial estimates")
+  print(table(siind[1,,,]))
+  cat("Frequencies of selected initial thetas")
   print(table(siind[2,,,]))
  cat("End search for initial values at",date(),"\n")
   order <- array(0,ddim)
@@ -323,7 +326,8 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
   for(i1 in 1:n1) for(i2 in 1:n2) for(i3 in 1:n3){ # begin loop
      if(mask[i1,i2,i3]){ # begin mask
 #   only analyze voxel within mask
-     mc0 <- maxcomp
+   mc0 <- maxcomp
+#    mc0 <- siind[1,i1,i2,i3]
      ord <- mc0+1
      for(j in 1:mc0) { 
           iv <- siind[j+2,i1,i2,i3]
