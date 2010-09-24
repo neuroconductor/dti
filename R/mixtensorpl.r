@@ -200,6 +200,12 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
   ddim <- object@ddim
   s0ind <- object@s0ind
   ns0 <- length(s0ind)
+  ngrad0 <- ngrad - ns0
+  if(5*(1+3*maxcomp)>ngrad0){
+     maxcomp <- max(1,trunc((ngrad0-5)/15))
+     cat("Maximal number of components reduced to", maxcomp,"due to insufficient
+          number of gradient directions\n")
+  }
   cat("Start search outlier detection at",date(),"\n")
 #
 #  replace physically meaningless S_i by mena S_0 values
@@ -221,7 +227,6 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
   rm(z)
   gc()
   cat("Start generating auxiliary objects",date(),"\n")
-  ngrad0 <- ngrad - ns0
 #
 #  compute mean S_0, s_i/S_0 (siq), var(siq) and mask
 #
@@ -281,8 +286,8 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
 #
   theta <- theta*mlev
   minth <- .4*theta
-  maxth <- 2*theta
-  nth <- 9
+  maxth <- 1.2*theta
+  nth <- 5
   th <- seq(minth,maxth,length=nth)
   cat("using theta=",th,"\n")
 #
@@ -326,8 +331,7 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
   for(i1 in 1:n1) for(i2 in 1:n2) for(i3 in 1:n3){ # begin loop
      if(mask[i1,i2,i3]){ # begin mask
 #   only analyze voxel within mask
-   mc0 <- maxcomp
-#    mc0 <- siind[1,i1,i2,i3]
+     mc0 <- maxcomp
      ord <- mc0+1
      for(j in 1:mc0) { 
           iv <- siind[j+2,i1,i2,i3]
