@@ -501,7 +501,7 @@ C
      1       th(nvox),egrad(ngrad,nv),z(ngrad,ns),mval(nvox),
      2       vsi(nvox)
       logical mask(nvox)
-      integer i,k,ibest,mode,ind(10),l,j,ii,iw,wind(5),nwi(5),mis,
+      integer i,k,mode,ind(10),l,j,ii,iw,wind(5),nwi(5),mis,
      1        is(5),isbest(5)
       real*8 w(1000),krit,work1(1000),work2(10),erg,thj,msi,m2si,
      1       z1,dng
@@ -529,8 +529,7 @@ C
          DO i=1,nvox
             if(mask(i)) THEN
                IF(j.ne.indth(i)) CYCLE
-C  now search for minima of sms (or weighted sms
-               ibest=0
+C  now search for minima of sms (or weighted sms)
                krit=mval(i)
                DO k=1,ntry
                   call dcopy(ngrad,si(1,i),1,sms,1)
@@ -561,21 +560,19 @@ C   nonactive directions
                      END IF  
                   END IF
                END DO
-               if(ibest.gt.0) THEN
-                  siind(1,i)=iw
-                  siind(2,i)=j
-                  IF (iw.gt.1) THEN
-                     DO l=1,iw
-                        siind(l+2,i)=isbest(wind(l))
-                     END DO
-                  END IF
-                  IF (iw.lt.m) THEN
-                     DO l=1,m-iw
-                        siind(l+2,i)=isbest(nwi(l))
-                     END DO
-                  END IF
-                  mval(i)=krit
+               siind(1,i)=iw
+               siind(2,i)=j
+               IF (iw.gt.1) THEN
+                  DO l=1,iw
+                     siind(l+2,i)=isbest(wind(l))
+                  END DO
                END IF
+               IF (iw.lt.m) THEN
+                  DO l=1,m-iw
+                     siind(l+2,i)=isbest(nwi(l))
+                  END DO
+               END IF
+               mval(i)=krit
             END IF
             call rchkusr()
          END DO
@@ -614,7 +611,7 @@ C
      1       th(nvox),egrad(ngrad,nv),z(ngrad,ns),mval(nvox),
      2       vsi(nvox)
       logical mask(nvox)
-      integer i,k,ibest,mode,ind(10),l,j,ii,iw,wind(5),nwi(5),mis,
+      integer i,k,mode,ind(10),l,j,ii,iw,wind(5),nwi(5),mis,
      1        is(5),isbest(5)
       real*8 w(1000),krit,work1(1000),work2(10),erg,thj,msi,m2si,
      1       z1,dng
@@ -643,7 +640,6 @@ C
             if(mask(i)) THEN
                IF(j.ne.indth(i)) CYCLE
 C  now search for minima of sms (or weighted sms
-               ibest=0
                krit=mval(i)
                DO k=1,ntry
                   call dcopy(ngrad,si(1,i),1,sms,1)
@@ -676,21 +672,19 @@ C   nonactive directions
                      END IF  
                   END IF
                END DO
-               if(ibest.gt.0) THEN
-                  siind(1,i)=iw
-                  siind(2,i)=j
-                  IF (iw.gt.1) THEN
-                     DO l=1,iw
-                        siind(l+2,i)=isbest(wind(l))
-                     END DO
-                  END IF
-                  IF (iw.lt.m) THEN
-                     DO l=1,m-iw
-                        siind(l+2,i)=isbest(nwi(l))
-                     END DO
-                  END IF
-                  mval(i)=krit
+               siind(1,i)=iw
+               siind(2,i)=j
+               IF (iw.gt.1) THEN
+                  DO l=1,iw
+                     siind(l+2,i)=isbest(wind(l))
+                  END DO
                END IF
+               IF (iw.lt.m) THEN
+                  DO l=1,m-iw
+                     siind(l+2,i)=isbest(nwi(l))
+                  END DO
+               END IF
+               mval(i)=krit
             END IF
             call rchkusr()
          END DO
