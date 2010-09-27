@@ -98,9 +98,19 @@ set.seed(1)
 isample <- matrix(sample(ngrad,maxcomp*nguess,replace=TRUE),maxcomp,nguess)
 ind <- rep(TRUE,nguess)
 if(maxcomp>1){
-for(i in 1:nguess) for(j in 1:(maxcomp-1)) for(k in (j+1):maxcomp){
-if(dgrad[isample[j,i],isample[k,i]]>maxc) ind[i] <- FALSE
-}
+ind <- .Fortran("selisamp",
+                as.integer(isample),
+                as.integer(nguess),
+                as.integer(maxcomp),
+                as.double(dgrad),
+                as.integer(dim(dgrad)[1]),
+                ind = logical(nguess),
+                as.double(maxc),
+                DUPL=FALSE,
+                PACKAGE="dti")$ind 
+#for(i in 1:nguess) for(j in 1:(maxcomp-1)) for(k in (j+1):maxcomp){
+#if(dgrad[isample[j,i],isample[k,i]]>maxc) ind[i] <- FALSE
+#}
 .Random.seed <- saved.seed
 }
 isample[,ind]
@@ -147,13 +157,12 @@ isample <- array(isample[,1:(nguess*nth)],c(maxcomp,nguess,nth))
 # this provides configurations of initial estimates with minimum angle between 
 # directions > acos(maxc)
 cat("using ",nguess,"guesses for initial estimates\n")
+nvoxel <- prod(dim(si)[-4])
 siind <- .Fortran("getsiin2",
          as.double(aperm(si,c(4,1:3))),
          as.double(sigma2),
          as.integer(nsi),
-         as.integer(dim(si)[1]),
-         as.integer(dim(si)[2]),
-         as.integer(dim(si)[3]),
+         as.integer(nvoxel),
          as.integer(maxcomp),
          as.double(dgrad),
          as.integer(nvico),
@@ -164,7 +173,7 @@ siind <- .Fortran("getsiin2",
          as.integer(nguess),
          double(nsi),
          double(nsi*(maxcomp+2)),
-         siind=integer((maxcomp+2)*prod(dim(si)[-4])),
+         siind=integer((maxcomp+2)*nvoxel),
          krit=double(prod(dim(si)[1:3])),
          as.integer(maxcomp+2),
          as.logical(mask),
