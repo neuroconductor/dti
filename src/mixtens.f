@@ -326,9 +326,9 @@ C  now search for minima of sms (or weighted sms
                         DO ii=1,m
                            if(w(ii).gt.1.d-12) THEN
                               iw=iw+1
-                              wind(iw)=i
+                              wind(iw)=ii
                            ELSE
-                              nwi(ii-iw)=i
+                              nwi(ii-iw)=ii
 C   nonactive directions
                            END IF 
                         END DO
@@ -346,7 +346,7 @@ C   nonactive directions
                   END IF
                   IF (iw.lt.m) THEN
                      DO l=1,m-iw
-                        siind(l+2,i)=isample(nwi(l),ibest,j)
+                        siind(m-l+3,i)=isample(nwi(l),ibest,j)
                      END DO
                   END IF
                   mval(i)=krit
@@ -458,7 +458,7 @@ C   nonactive directions
                   END IF
                   IF (iw.lt.m) THEN
                      DO l=1,m-iw
-                        siind(l+2,i)=isample(nwi(l),ibest)
+                        siind(m-l+3,i)=isample(nwi(l),ibest)
                      END DO
                   END IF
                   mval(i)=krit
@@ -473,7 +473,8 @@ C
 C __________________________________________________________________
 C
       subroutine getsii31(si,vsi,ngrad,nvox,m,dgrad,nv,iandir,th,
-     1     nth,indth,egrad,isample,ntry,sms,z,siind,mval,ns,mask)
+     1     nth,indth,egrad,isample,ntry,sms,z,siind,mval,ns,mask,
+     2     dgradv,maxc)
 C
 C  compute diagnostics for initial estimates in siind
 C  siind(1,i1,i2,i3) will contain the model order 
@@ -499,14 +500,17 @@ C
      1       isample(1),indth(nvox),iandir(nvox)
       real*8 si(ngrad,nvox),sms(ngrad),dgrad(ngrad,nv),
      1       th(nvox),egrad(ngrad,nv),z(ngrad,ns),mval(nvox),
-     2       vsi(nvox)
-      logical mask(nvox)
+     2       vsi(nvox),dgradv(nv,nv),maxc
+      logical mask(nvox),skip
       integer i,k,mode,ind(10),l,j,ii,iw,wind(5),nwi(5),mis,
-     1        is(5),isbest(5)
+     1        is(5),isbest(5),ntry0
       real*8 w(1000),krit,work1(1000),work2(10),erg,thj,msi,m2si,
      1       z1,dng
       dng=ngrad
       mis=m-1
+      ntry0=ntry
+      iw=m
+      if(m.eq.1) ntry0=1 
       DO i=1,nvox
          msi=0.d0
          m2si=0.d0
@@ -531,12 +535,22 @@ C
                IF(j.ne.indth(i)) CYCLE
 C  now search for minima of sms (or weighted sms)
                krit=mval(i)
-               DO k=1,ntry
+               DO k=1,ntry0
+                  IF(m.gt.1) THEN
+                     skip=.FALSE.
+                     DO l=1,m-1
+                   if(dgradv(isample(mis*(k-1)+l),iandir(i)).gt.maxc)
+     1                    skip=.TRUE.
+                     END DO
+                     IF(skip) CYCLE
+                  END IF
                   call dcopy(ngrad,si(1,i),1,sms,1)
-                  DO l=1,m-1
-                     is(l)=isample(mis*(k-1)+l)
-                     call dcopy(ngrad,egrad(1,is(l)),1,z(1,l),1)
-                  END DO
+                  IF(m.gt.1) THEN
+                     DO l=1,m-1
+                        is(l)=isample(mis*(k-1)+l)
+                        call dcopy(ngrad,egrad(1,is(l)),1,z(1,l),1)
+                     END DO
+                  END IF
                   is(m)=iandir(i)
                   call dcopy(ngrad,egrad(1,is(m)),1,z(1,m),1)
         call nnls(z,ngrad,ngrad,m,sms,w,erg,work2,work1,ind,mode)
@@ -569,7 +583,7 @@ C   nonactive directions
                END IF
                IF (iw.lt.m) THEN
                   DO l=1,m-iw
-                     siind(l+2,i)=isbest(nwi(l))
+                     siind(m-l+3,i)=isbest(nwi(l))
                   END DO
                END IF
                mval(i)=krit
@@ -583,7 +597,8 @@ C
 C __________________________________________________________________
 C
       subroutine getsii32(si,vsi,ngrad,nvox,m,dgrad,nv,iandir,th,
-     1     nth,indth,egrad,isample,ntry,sms,z,siind,mval,ns,mask)
+     1     nth,indth,egrad,isample,ntry,sms,z,siind,mval,ns,mask,
+     2     dgradv,maxc)
 C
 C  compute diagnostics for initial estimates in siind
 C  siind(1,i1,i2,i3) will contain the model order 
@@ -609,14 +624,17 @@ C
      1       isample(1),indth(nvox),iandir(2,nvox)
       real*8 si(ngrad,nvox),sms(ngrad),dgrad(ngrad,nv),
      1       th(nvox),egrad(ngrad,nv),z(ngrad,ns),mval(nvox),
-     2       vsi(nvox)
-      logical mask(nvox)
+     2       vsi(nvox),dgradv(nv,nv),maxc
+      logical mask(nvox),skip
       integer i,k,mode,ind(10),l,j,ii,iw,wind(5),nwi(5),mis,
-     1        is(5),isbest(5)
+     1        is(5),isbest(5),ntry0
       real*8 w(1000),krit,work1(1000),work2(10),erg,thj,msi,m2si,
      1       z1,dng
       dng=ngrad
       mis=m-2
+      ntry0=ntry
+      iw=m
+      if(mis.eq.0) ntry0=1
       DO i=1,nvox
          msi=0.d0
          m2si=0.d0
@@ -641,12 +659,24 @@ C
                IF(j.ne.indth(i)) CYCLE
 C  now search for minima of sms (or weighted sms
                krit=mval(i)
-               DO k=1,ntry
+               DO k=1,ntry0
+                  if(mis.gt.0) THEN
+                     skip=.FALSE.
+                     DO l=1,m-2
+             if(dgradv(isample(mis*(k-1)+l),iandir(1,i)).gt.maxc)
+     1                    skip=.TRUE.
+             if(dgradv(isample(mis*(k-1)+l),iandir(2,i)).gt.maxc)
+     1                    skip=.TRUE.
+                     END DO
+                     IF(skip) CYCLE
+                  END IF
                   call dcopy(ngrad,si(1,i),1,sms,1)
-                  DO l=1,m-2
-                     is(l)=isample(mis*(k-1)+l)
-                     call dcopy(ngrad,egrad(1,is(l)),1,z(1,l),1)
-                  END DO
+                  if(mis.gt.0) THEN
+                     DO l=1,m-2
+                        is(l)=isample(mis*(k-1)+l)
+                        call dcopy(ngrad,egrad(1,is(l)),1,z(1,l),1)
+                     END DO
+                  END IF
                   is(m-1)=iandir(1,i)
                   call dcopy(ngrad,egrad(1,is(m-1)),1,z(1,m-1),1)
                   is(m)=iandir(2,i)
@@ -681,7 +711,7 @@ C   nonactive directions
                END IF
                IF (iw.lt.m) THEN
                   DO l=1,m-iw
-                     siind(l+2,i)=isbest(nwi(l))
+                     siind(m-l+3,i)=isbest(nwi(l))
                   END DO
                END IF
                mval(i)=krit
@@ -838,7 +868,7 @@ C
       subroutine iandir(vico,nvico,andir,nvox,nandir,iandi)
       implicit logical(a-z)
       integer nvico,nvox,iandi(2,nvox),nandir(nvox)
-      real*8 vico(nvico,3),andir(3,2,nvox)
+      real*8 vico(3,nvico),andir(3,2,nvox)
       integer i,j,jmax
       real*8 z,zmax,scprod3
       external scprod3
@@ -874,7 +904,7 @@ C
       real*8 function scprod3(a,b)
       implicit logical (a-z) 
       real*8 a(3),b(3)
-      scprod3=a(1)*b(1)+a(2)*b(2)+a(3)*b(3)
+      scprod3=abs(a(1)*b(1)+a(2)*b(2)+a(3)*b(3))
       RETURN
       END
 C

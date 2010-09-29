@@ -192,7 +192,7 @@ dwiMixtensor <- function(object, ...) cat("No dwiMixtensor calculation defined f
 
 setGeneric("dwiMixtensor", function(object,  ...) standardGeneric("dwiMixtensor"))
 
-setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mixtensor", reltol=1e-6, maxit=5000,ngc=1000, optmethod="BFGS", nguess=25*maxcomp^2,msc="BIC"){
+setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mixtensor", reltol=1e-6, maxit=5000,ngc=1000, optmethod="BFGS", nguess=100*maxcomp^2,msc="BIC"){
 #
 #  uses  S(g)/s_0 = w_0 exp(-l_1) +\sum_{i} w_i exp(-l_2-(l_1-l_2)(g^T d_i)^2)
 #
@@ -204,7 +204,6 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
   maxc <- .866
   args <- sys.call(-1)
   args <- c(object@call,args)
-  prta <- proc.time()[1]
   ngrad <- object@ngrad
   ddim <- object@ddim
   s0ind <- object@s0ind
@@ -215,6 +214,38 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
      cat("Maximal number of components reduced to", maxcomp,"due to insufficient
           number of gradient directions\n")
   }
+#
+#  First tensor estimates to generate eigenvalues and -vectors
+#
+  prta <- proc.time()[1]
+  cat("Start tensor estimation at",date(),"\n")
+  tensorobj <- dtiTensor(object)
+  cat("Start evaluation of eigenstructure at",date(),"\n")
+  z <- .Fortran("dtieigen",
+                as.double(tensorobj@D),
+                as.integer(ddim[1]),
+                as.integer(ddim[2]),
+                as.integer(ddim[3]),
+                as.logical(tensorobj@mask),
+                fa=double(prod(ddim)),
+                ev=double(3*prod(ddim)),
+                andir=double(6*prod(ddim)),
+                DUP=FALSE,
+                PACKAGE="dti")[c("fa","ev","andir")]
+  rm(tensorobj)
+  gc()
+  fa <- array(z$fa,ddim)
+  ev <- array(z$ev,c(3,ddim))
+  andir <- array(z$andir,c(3,2,ddim))
+  rm(z)
+  gc()
+  nth <- 11
+  th <- ev[1,,,] - (ev[2,,,]+ev[3,,,])/2
+  rth <- quantile(th[fa>.3],c(.1,.99))
+  th[th<rth[1]] <- rth[1]
+  th[th>rth[2]] <- rth[2]
+  indth <- trunc(10*(th-rth[1])/diff(rth)+1)
+  th <- seq(rth[1],rth[2],length=nth)
   cat("Start search outlier detection at",date(),"\n")
 #
 #  replace physically meaningless S_i by mena S_0 values
@@ -274,32 +305,6 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
 #
   grad <- t(object@gradient[,-s0ind])
 #
-# initial estimates for eigenvalues
-#
-  cat("Start search for initial estimates of eigenvalues at",date(),"\n")
-#
-#   initialize EV paramters
-#
-  lev <- array(.Fortran("getev0", # mixtens.f
-               as.double(aperm(siq,c(4,1:3))),
-               as.integer(ngrad0),
-               as.integer(ddim[1]),
-               as.integer(ddim[2]),
-               as.integer(ddim[3]),
-               lev=double(2*prod(ddim)),
-               DUPL=FALSE,
-               PACKAGE="dti")$lev,c(2,ddim))
-  mlev <- median(lev[2,,,][mask])
-#
-#   get grid for searching EV-parameters
-#
-  theta <- theta*mlev
-  minth <- .4*theta
-  maxth <- 1.2*theta
-  nth <- 5
-  th <- seq(minth,maxth,length=nth)
-  cat("using theta=",th,"\n")
-#
 #   determine initial estimates for orientations 
 #
   cat("Start search for initial directions at",date(),"\n")
@@ -314,7 +319,7 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
 #
 #  compute initial estimates (EV from grid and orientations from icosa3$vertices)
 #
-  siind <- getsiind2(siq,mask,sigma2,grad,t(vert),th,maxcomp,maxc=maxc,nguess=nguess)
+  siind <- getsiind3(siq,mask,sigma2,grad,t(vert),th,indth,ev,fa,andir,maxcomp,maxc=maxc,nguess=nguess)
   krit <- siind$krit # sqrt(sum of squared residuals) for initial estimates
   siind <- siind$siind # components 1: model order 2: 
                        # grid index for EV 2+(1:m) index of orientations
@@ -327,6 +332,7 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
 #  logarithmic eigen values
   mix <- array(0,c(maxcomp,ddim))
   orient <- array(0,c(2,maxcomp,ddim))
+  lev <- array(0,c(2,ddim))
   n1 <- ddim[1]
   n2 <- ddim[2]
   n3 <- ddim[3]
