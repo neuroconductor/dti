@@ -186,7 +186,7 @@ cat("using ",nguess,"guesses for initial estimates\n")
 siind <- matrix(as.integer(0),maxcomp+2,nvoxel)
 krit <- numeric(nvoxel)
 # first voxel with fa<.3
-cat("voxel with small FA\n")
+cat(sum(mask&(nandir==0)),"voxel with small FA\n")
 nguess <- length(isample0)/maxcomp
 z <- .Fortran("getsii30",
          as.double(aperm(si,c(4,1:3))),
@@ -214,7 +214,7 @@ siind[,nandir==0] <- z$siind[,nandir==0]
 krit[nandir==0] <- z$krit[nandir==0]
 # now voxel where first tensor direction seems important
 if(maxcomp >0){
-cat("voxel with distinct first eigenvalue \n")
+cat(sum(mask&(nandir==1)),"voxel with distinct first eigenvalue \n")
 nguess <- if(maxcomp>1) length(isample1)/(maxcomp-1) else length(isample1)
 z <- .Fortran("getsii31",
          as.double(aperm(si,c(4,1:3))),
@@ -245,7 +245,7 @@ siind[,nandir==1] <- z$siind[,nandir==1]
 krit[nandir==1] <- z$krit[nandir==1]
 }
 if(maxcomp >1){
-cat("voxel with distinct first and second eigenvalue \n")
+cat(sum(mask&(nandir==2)),"voxel with distinct first and second eigenvalue \n")
 nguess <- if(maxcomp>2) length(isample2)/(maxcomp-2) else length(isample2)
 z <- .Fortran("getsii32",
          as.double(aperm(si,c(4,1:3))),
@@ -392,7 +392,8 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
   gc()
   nth <- 11
   th <- ev[1,,,] - (ev[2,,,]+ev[3,,,])/2
-  rth <- quantile(th[fa>.3],c(.1,.99))
+  falevel <- min(quantile(fa[fa>0],.75),.3)
+  rth <- quantile(th[fa>falevel],c(.1,.99))
   th[th<rth[1]] <- rth[1]
   th[th>rth[2]] <- rth[2]
   indth <- trunc(10*(th-rth[1])/diff(rth)+1)
@@ -460,7 +461,8 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
 #
   cat("Start search for initial directions at",date(),"\n")
   data("polyeders")
-  vert <- icosa3$vertices
+  polyeder <- icosa3
+  vert <- polyeder$vertices
 # remove redundant directions
   vind <- rep(TRUE,dim(vert)[2])
   vind[vert[1,]<0] <- FALSE
@@ -476,9 +478,7 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
                        # grid index for EV 2+(1:m) index of orientations
   cat("Model orders for initial estimates")
   print(table(siind[1,,,]))
-  cat("Frequencies of selected initial thetas")
-  print(table(siind[2,,,]))
- cat("End search for initial values at",date(),"\n")
+  cat("End search for initial values at",date(),"\n")
   order <- array(0,ddim)
 #  logarithmic eigen values
   mix <- array(0,c(maxcomp,ddim))

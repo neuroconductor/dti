@@ -513,10 +513,10 @@ setMethod("extract","dwiMixtensor",function(x, what="andir", xind=TRUE, yind=TRU
      }
   if("s0" %in% what) z$S0 <- x@S0
   if("mask" %in% what) z$mask <- x@mask
-  if("gfa" %in% what){
-      gfa <- x@ev[1,,,]/sqrt((x@ev[1,,,]+x@ev[2,,,])^2+2*x@ev[2,,,]^2)
-      gfa[x@order==0] <- 0
-      z$gfa <- gfa
+  if("fa" %in% what){
+      fa <- x@ev[1,,,]/sqrt((x@ev[1,,,]+x@ev[2,,,])^2+2*x@ev[2,,,]^2)
+      fa[x@order==0] <- 0
+      z$fa <- fa
     }
   if("eorder" %in% what) {
      maxorder <- dim(x@mix)[1]

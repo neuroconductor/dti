@@ -11,7 +11,7 @@
 }
 \usage{
 \S4method{dwiMixtensor}{dtiData}(object, maxcomp=3,  p=40, method="mixtensor", reltol=1e-6,
-          maxit=5000, ngc=1000, optmethod="BFGS",nguess=50*maxcomp^2,
+          maxit=5000, ngc=1000, optmethod="BFGS",nguess=100*maxcomp^2,
           msc="BIC")
 }
 %- maybe also 'usage' for other objects documented here.

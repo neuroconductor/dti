@@ -109,7 +109,7 @@ setMethod("show3d","dtiData", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,q
 
 ##############
 
-setMethod("show3d","dtiTensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,method=1,falevel=.3,level=0,quant=.8,scale=.4,bgcolor="black",add=FALSE,subdivide=2,maxobjects=729,what="tensor",odfscale=3,minalpha=.25,normalize=NULL,box=FALSE,title=FALSE,...){
+setMethod("show3d","dtiTensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,method=1,minfa=.3,level=0,quant=.8,scale=.4,bgcolor="black",add=FALSE,subdivide=2,maxobjects=729,what="tensor",odfscale=3,minalpha=.25,normalize=NULL,box=FALSE,title=FALSE,...){
   if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
   if(!exists("icosa0")) data("polyeders")
   if(subdivide<0||subdivide>4) subdivide <- 3
@@ -177,8 +177,8 @@ setMethod("show3d","dtiTensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL
   }
   colorvalues <- rgb(andir[1,],andir[2,],andir[3,])
   dim(tens) <- c(6,n)
-  if(falevel>0){
-    indpos <- (1:n)[(fa>falevel)&mask]
+  if(minfa>0){
+    indpos <- (1:n)[(fa>minfa)&mask]
     tens <- tens[,indpos]
     tmean <- tmean[,indpos]
     colorvalues <- colorvalues[indpos]
@@ -243,7 +243,7 @@ setMethod("show3d","dtiTensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL
   invisible(rgl.cur())
 })
 
-setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,falevel=.3,level=0,quant=.8,scale=.4,bgcolor="black",add=FALSE,subdivide=3,maxobjects=729,what="ODF",odfscale=3,minalpha=1,lwd=3,box=FALSE,title=FALSE,...){
+setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,minfa=.3,level=0,quant=.8,scale=.4,bgcolor="black",add=FALSE,subdivide=3,maxobjects=729,what="ODF",odfscale=3,minalpha=1,lwd=3,box=FALSE,title=FALSE,...){
   if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
   if(!exists("icosa0")) data("polyeders")
   if(subdivide<0||subdivide>4) subdivide <- 3
@@ -292,20 +292,20 @@ setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=N
   tmean[2,,,] <- outer(rep(1,n1),yind)*vext[2]
   tmean[3,,,] <- outer(rep(1,n1),outer(rep(1,n2),zind))*vext[3]
   mask <- obj@mask
-  gfa <- extract(obj,"gfa")$gfa
-  dim(gfa) <- dim(mask)
+  fa <- extract(obj,"fa")$fa
+  dim(fa) <- dim(mask)
   dim(ev) <- c(2,n)
   dim(tmean) <- c(3,n)
   dim(orient) <- c(dim(orient)[1:2],n)
   dim(mix) <- c(dim(mix)[1],n)
-  if(falevel>0){
-    indpos <- (1:n)[(gfa>falevel)&mask]
+  if(minfa>0){
+    indpos <- (1:n)[(fa>minfa)&mask]
     ev <- ev[,indpos]
     tmean <- tmean[,indpos]
     orient <- orient[,,indpos]
     mix <- mix[,indpos]
     order <- order[indpos]
-    gfa <- gfa[indpos]
+    fa <- fa[indpos]
     n <- length(indpos)
   }
   polyeder <- switch(subdivide+1,icosa0,icosa1,icosa2,icosa3,icosa4)
@@ -339,8 +339,8 @@ setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=N
   }
   if(toupper(what) %in% c("AXIS","BOTH")){
    colors <- rainbow(1024,end=2/3,gamma=1.2)
-   ranger <- range(gfa)
-   ind <- 1024-(gfa-ranger[1])/(ranger[2]-ranger[1])*1023
+   ranger <- range(fa)
+   ind <- 1024-(fa-ranger[1])/(ranger[2]-ranger[1])*1023
    colorvalues <- rep(colors[ind],rep(2*dim(mix)[1],length(ind)))
   andir <- array(.Fortran("mixandir",
                     as.double(orient),
@@ -378,7 +378,7 @@ setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=N
 })
 ##############
 
-setMethod("show3d","dtiIndices",function(obj, index="FA", nx=NULL, ny=NULL, nz=NULL, center=NULL, method=1, falevel=0, bgcolor="black", add=FALSE, lwd=1,box=FALSE,title=FALSE,...){
+setMethod("show3d","dtiIndices",function(obj, index="FA", nx=NULL, ny=NULL, nz=NULL, center=NULL, method=1, minfa=0, bgcolor="black", add=FALSE, lwd=1,box=FALSE,title=FALSE,...){
   if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
   index <- tolower(index) 
   if(!(index%in%c("fa","ga"))) stop("index should be either 'FA' or 'GA'\n")
@@ -401,7 +401,7 @@ setMethod("show3d","dtiIndices",function(obj, index="FA", nx=NULL, ny=NULL, nz=N
   n <- n1*n2*n3
   vext <- obj@voxelext
   ind <- switch(index,"fa"=obj@fa[xind,yind,zind], "ga"=obj@ga[xind,yind,zind])
-  ind[ind<falevel] <- 0
+  ind[ind<minfa] <- 0
   ind <- ind*min(vext)
   tmean <- array(0,c(3,n1,n2,n3))
   tmean[1,,,] <- xind*vext[1]

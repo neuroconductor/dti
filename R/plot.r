@@ -61,7 +61,7 @@ function(x, y,slice=1, gradient=NULL, view= "axial", show=TRUE, density=FALSE, x
 
 ##############
 
-setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, minanindex=NULL, contrast.enh=1,what="FA", qrange=c(.01,.99),xind=NULL,yind=NULL,zind=NULL, mar=c(2,2,2,.2),mgp=c(2,1,0),...) {
+setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, minfa=NULL, contrast.enh=1,what="fa", qrange=c(.01,.99),xind=NULL,yind=NULL,zind=NULL, mar=c(2,2,2,.2),mgp=c(2,1,0),...) {
   if(is.null(x@D)) cat("No diffusion tensor yet")
   adimpro <- require(adimpro)
   if(is.null(xind)) xind<-(1:x@ddim[1])
@@ -146,7 +146,7 @@ setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, mi
    img[img<rg[1]]<-rg[1]
    show.image(make.image(img))
    title(paste("Dyz: min",signif(min(D[5,,][mask]),3),"max",signif(max(D[5,,][mask]),3)))
-   andir.image(matrix(z$fa,n1,n2),array(z$andir,c(3,n1,n2)),quant=quant,minanindex=minanindex)
+   andir.image(matrix(z$fa,n1,n2),array(z$andir,c(3,n1,n2)),quant=quant,minfa=minfa)
    title(paste("Anisotropy directions"))
    img <- matrix(z$md,n1,n2)
    show.image(make.image(65535*img/max(img)))
@@ -168,7 +168,7 @@ setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, mi
 
 ##############
 
-setMethod("plot", "dwiMixtensor", function(x, y, slice=1, view="axial", what="gfa", minanindex=NULL,  xind=NULL,yind=NULL,zind=NULL, mar=c(2,2,2,.2),mgp=c(2,1,0),...) {
+setMethod("plot", "dwiMixtensor", function(x, y, slice=1, view="axial", what="fa", minfa=NULL,  xind=NULL,yind=NULL,zind=NULL, mar=c(2,2,2,.2),mgp=c(2,1,0),...) {
   adimpro <- require(adimpro)
   if(is.null(xind)) xind<-(1:x@ddim[1])
   if(is.null(yind)) yind<-(1:x@ddim[2])
@@ -184,11 +184,11 @@ setMethod("plot", "dwiMixtensor", function(x, y, slice=1, view="axial", what="gf
   stats <- extract(x,what)
   oldpar <- par(mfrow=c(1,length(what)),mar=mar,mgp=mgp,...)
   on.exit(par(oldpar))
-  if("gfa" %in% what){
-     gfa <- drop(stats$gfa)
-     if(!is.null(minanindex)) gfa[gfa<minanindex] <- 0
-     show.image(make.image(65535*gfa))
-     title(paste("Slice",slice,"Generalized FA"))
+  if("fa" %in% what){
+     fa <- drop(stats$fa)
+     if(!is.null(minfa)) fa[fa<minfa] <- 0
+     show.image(make.image(65535*fa))
+     title(paste("Slice",slice,"FA"))
   }
   if("order" %in% what){
      order <- drop(stats$order)
@@ -201,7 +201,7 @@ setMethod("plot", "dwiMixtensor", function(x, y, slice=1, view="axial", what="gf
 ##############
 
 setMethod("plot", "dtiIndices", 
-function(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=TRUE, identify=FALSE, density=FALSE, contrast.enh=1,what="FA",xind=NULL,yind=NULL,zind=NULL, mar=c(3,3,3,.3),mgp=c(2,1,0), ...) {
+function(x, y, slice=1, view= "axial", method=1, quant=0, minfa=NULL, show=TRUE, identify=FALSE, density=FALSE, contrast.enh=1,what="fa",xind=NULL,yind=NULL,zind=NULL, mar=c(3,3,3,.3),mgp=c(2,1,0), ...) {
   if(is.null(x@fa)) cat("No anisotropy index yet")
   if(!(method %in% 1:6)) {
       warning("method out of range, reset to 1")
@@ -212,7 +212,7 @@ function(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=
   if(is.null(zind)) zind<-(1:x@ddim[3])
   if(density) { 
    x <- x[xind,yind,zind]
-   z <- density(if(what=="FA") x@fa[x@fa>0] else x@ga[x@ga>0])
+   z <- density(if(what=="fa") x@fa[x@fa>0] else x@ga[x@ga>0])
    if(show) {
       plot(z,main=paste("Density of positive",what,"-values")) 
    }
@@ -252,8 +252,8 @@ function(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=
   anindex[anindex<0] <- 0
   if ((method==1) || (method==2) || (method==4)) {
     if(contrast.enh<1&&fa.contrast.enh>0) anindex <- pmin(anindex/contrast.enh,1)
-    if(is.null(minanindex)) minanindex <- quantile(anindex,quant,na.rm=TRUE)
-    if (diff(range(anindex,na.rm=TRUE)) == 0) minanindex <- 0
+    if(is.null(minfa)) minfa <- quantile(anindex,quant,na.rm=TRUE)
+    if (diff(range(anindex,na.rm=TRUE)) == 0) minfa <- 0
     if(method==1) {
       andirection[1,,] <- abs(andirection[1,,])
       andirection[2,,] <- abs(andirection[2,,])
@@ -271,7 +271,7 @@ function(x, y, slice=1, view= "axial", method=1, quant=0, minanindex=NULL, show=
       andirection[3,,] <- andirection[3,,]^2
     }
     andirection <- aperm(andirection,c(2,3,1))
-    andirection <- andirection*as.vector(anindex)*as.numeric(anindex>minanindex)
+    andirection <- andirection*as.vector(anindex)*as.numeric(anindex>minfa)
     if(adimpro) {
       andirection[is.na(andirection)] <- 0
       andirection <- make.image(andirection,gammatype="ITU")

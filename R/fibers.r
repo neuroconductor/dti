@@ -91,12 +91,12 @@ if(!(is.null(roix)&&is.null(roiy)&&is.null(roiz)&&is.null(nroimask))){
                 rotation = obj@rotation,
                 source = obj@source,
                 method = obj@method,
-                minanindex = obj@minanindex,
+                minfa = obj@minfa,
                 maxangle = obj@maxangle)
             )
 })
 
-reduceFibers <- function(fiberobj,  ...) cat("Selection of fibers is not implemented for this class:",class(obj),"\n")
+reduceFibers <- function(fiberobj,  ...) cat("Selection of fibers is not implemented for this class:",class(fiberobj),"\n")
 
 setGeneric("reduceFibers", function(fiberobj,  ...) standardGeneric("reduceFibers"))
 

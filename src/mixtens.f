@@ -410,7 +410,6 @@ C
       call rchkusr()
       DO j=1,nth
          thj=th(j)
-         call dblepr("Try theta=",10,thj,1)
          DO k=1,ngrad
             DO l=1,nv
                egrad(k,l)=dexp(-thj*dgrad(k,l)*dgrad(k,l))
@@ -524,7 +523,6 @@ C
       call rchkusr()
       DO j=1,nth
          thj=th(j)
-         call dblepr("Try theta=",10,thj,1)
          DO k=1,ngrad
             DO l=1,nv
                egrad(k,l)=dexp(-thj*dgrad(k,l)*dgrad(k,l))
@@ -648,7 +646,6 @@ C
       call rchkusr()
       DO j=1,nth
          thj=th(j)
-         call dblepr("Try theta=",10,thj,1)
          DO k=1,ngrad
             DO l=1,nv
                egrad(k,l)=dexp(-thj*dgrad(k,l)*dgrad(k,l))

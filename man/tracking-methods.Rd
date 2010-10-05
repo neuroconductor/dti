@@ -15,11 +15,11 @@
 }
 \usage{
 \S4method{tracking}{dtiTensor}(obj, roix=NULL, roiy=NULL, roiz=NULL, method="LINEPROP",
-                    minanindex=0.3, maxangle=30, subsample = 1)
+                    minfa=0.3, maxangle=30, subsample = 1)
 \S4method{tracking}{dtiIndices}(obj, roix=NULL, roiy=NULL, roiz=NULL, method="LINEPROP",
-                    minanindex=0.3, maxangle=30, subsample = 1)
+                    minfa=0.3, maxangle=30, subsample = 1)
 \S4method{tracking}{dwiMixtensor}(obj, roix=NULL, roiy=NULL, roiz=NULL, method="LINEPROP",
-                    minanindex=0.3, maxangle=30, subsample = 1)
+                    minfa=0.3, maxangle=30, subsample = 1)
 \S4method{selectFibers}{dwiFiber}(obj, roix=NULL, roiy=NULL, roiz=NULL, nroimask=NULL, 
                     minlength=1)
 }
@@ -29,7 +29,7 @@
 \item{roiy}{Indices defining the ROI in y direction. Currently min/max is used to define ROIy}
 \item{roiz}{Indices defining the ROI in z direction. Currently min/max is used to define ROIz}
 \item{method}{Method for fibre tracking. "LINEPROP" is simple line propagation algorithm which is the default.}
-\item{minanindex}{Minimal FA to follow the tracks. default 0.3}
+\item{minfa}{Minimal FA to follow the tracks. default 0.3}
 \item{maxangle}{Maximal angle between fiber in adjacent voxels. default 30 degree.}
 \item{subsample}{Subsampling order of the data to get more dense fibre tracks. Note, that objects become very(!) large.}
 \item{nroimask}{Array of image size with 1 at voxel within the ROI to be choosen, and 0 otherwise.}
