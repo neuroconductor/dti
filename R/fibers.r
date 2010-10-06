@@ -100,7 +100,7 @@ reduceFibers <- function(obj,  ...) cat("Selection of fibers is not implemented 
 
 setGeneric("reduceFibers", function(obj,  ...) standardGeneric("reduceFibers"))
 
-setMethod("reduceFibers","dwiFiber", function(obj, maxdist=1)
+setMethod("reduceFibers","dwiFiber", function(obj, maxdist=1, ends=TRUE)
 {
    obj <- sort.fibers(obj)
    fibers <- obj@fibers[,1:3]
@@ -108,6 +108,18 @@ setMethod("reduceFibers","dwiFiber", function(obj, maxdist=1)
    startf <- obj@startind
    endf <- c(startf[-1]-1,nsegm)
    nfibers <- length(startf)
+   if(ends){
+   keep <- .Fortran("reducefe",
+                    as.double(t(fibers)),
+                    as.integer(nsegm),
+                    as.integer(startf),
+                    as.integer(endf),
+                    as.integer(nfibers),
+                    keep=logical(nfibers),
+                    as.double(maxdist),
+                    DUP=FALSE,
+                    PACKAGE="dti")$keep
+    } else {
    keep <- .Fortran("reducefi",
                     as.double(t(fibers)),
                     as.integer(nsegm),
@@ -118,6 +130,7 @@ setMethod("reduceFibers","dwiFiber", function(obj, maxdist=1)
                     as.double(maxdist),
                     DUP=FALSE,
                     PACKAGE="dti")$keep
+    } 
     startf <- startf[keep]
     endf <- endf[keep]
     ind <- rep(startf,endf-startf+1)+sequence(endf-startf+1)-1

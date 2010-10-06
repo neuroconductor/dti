@@ -122,14 +122,80 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
                END DO
                if(mindist.ge.maxd) THEN
                   keep(ishort)=.TRUE.
-                  CYCLE
+                  EXIT
                END IF
             END DO
             if(.not.keep(ishort)) THEN
                ncounts=ncounts+1
             END IF
          END DO
-         if((nlong/250)*250.eq.nlong) THEN
+         if((nlong/1000)*1000.eq.nlong) THEN
+            call intpr("Inspected Fibers",16,nlong,1)
+            call intpr("Current Fiber",13,ilong,1)
+            call intpr("removed",7,ncounts,1)
+         END IF
+         call rchkusr()
+      END DO
+      RETURN
+      END
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+C
+C   Remove fibers that have a distance less than maxd to longer ones
+C
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+      subroutine reducefe(fibers,nsegm,startf,endf,nfibers,keep,maxd)
+      implicit logical (a-z)
+      integer nsegm,nfibers,startf(nfibers),endf(nfibers)
+      logical keep(nfibers)
+      real*8 fibers(3,nsegm),maxd
+      integer i,il,is,ilong,ishort,ncounts,sfil,efil,nlong
+      real*8 z1,z2,z3,mindist,f1,f2,f3
+      DO i=1,nfibers
+         keep(i)=.TRUE.
+      END DO
+      ncounts=0
+      nlong=0
+      DO ilong=1,nfibers-1
+         if(.not.keep(ilong)) CYCLE
+         nlong=nlong+1
+         sfil=startf(ilong)
+         efil=endf(ilong)
+         DO ishort=ilong+1,nfibers
+            if(.not.keep(ishort)) CYCLE
+            keep(ishort)=.FALSE.
+            is=startf(ishort)
+            mindist=maxd
+            f1=fibers(1,is)
+            f2=fibers(2,is)
+            f3=fibers(3,is)
+            DO il=sfil,efil
+               z1=f1-fibers(1,il)
+               z2=f2-fibers(2,il)
+               z3=f3-fibers(3,il)
+               mindist=min(mindist,z1*z1+z2*z2+z3*z3)
+            END DO
+            if(mindist.ge.maxd) THEN
+               keep(ishort)=.TRUE.
+               CYCLE
+            END IF
+            is=endf(ishort)
+            mindist=maxd
+            f1=fibers(1,is)
+            f2=fibers(2,is)
+            f3=fibers(3,is)
+            DO il=sfil,efil
+               z1=f1-fibers(1,il)
+               z2=f2-fibers(2,il)
+               z3=f3-fibers(3,il)
+               mindist=min(mindist,z1*z1+z2*z2+z3*z3)
+            END DO
+            if(mindist.ge.maxd) THEN
+               keep(ishort)=.TRUE.
+               CYCLE
+            END IF
+            ncounts=ncounts+1
+         END DO
+         if((nlong/1000)*1000.eq.nlong) THEN
             call intpr("Inspected Fibers",16,nlong,1)
             call intpr("Current Fiber",13,ilong,1)
             call intpr("removed",7,ncounts,1)

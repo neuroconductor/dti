@@ -24,7 +24,7 @@
                     minfa=0.3, maxangle=30, subsample = 1)
 \S4method{selectFibers}{dwiFiber}(obj, roix=NULL, roiy=NULL, roiz=NULL, nroimask=NULL, 
                     minlength=1)
-\S4method{reduceFibers}{dwiFiber}(obj, maxdist=1)
+\S4method{reduceFibers}{dwiFiber}(obj, maxdist=1, ends=TRUE)
 }
 \arguments{
 \item{obj}{ An object of class \code{"dtiTensor"}, \code{"dtiIndices"}, or \code{"dwiMixtensor"} for tracking() and \code{"dwiFiber"} for selectFiber().}
@@ -38,6 +38,8 @@
 \item{nroimask}{Array of image size with 1 at voxel within the ROI to be choosen, and 0 otherwise.}
 \item{minlength}{Minimal length of fibers to be selected.}
 \item{maxdist}{Maximal supremum distance between fibers in mm}
+\item{ends}{Logical: Use only endpoints of shorter fibers for distance (TRUE) or
+           compute distances using full fiber-length (FALSE). Default (TRUE) removes more fibers and is significantly faster. }
 }
 \section{Methods}{
 \describe{
@@ -49,7 +51,7 @@
   \item{obj = "dwiMixtensor"}{ Fiber tracking is performed on the estimated vector fields of diffusion direction in the mixed tensor model using the method \code{method}. Currently only line propagation is implemented. The resulting tracks can be visualized using function \code{\link{show3d}}}.
  
   \item{obj = "dwiFiber"}{\code{selectFibers} produces a dwiFiber-object containing all fibers that cross the region of interest and exceed a minimum length. \code{reduceFibers} eliminates all fibers that are within a maximum supremum distance of \code{maxdist} mm of a longer fiber. \code{reduceFibers}
-  allows to reduce the size of a dwiFiber-object considerably but is very slow !
+  allows to reduce the size of a dwiFiber-object considerably but is slow !
 }
 }
 }
