@@ -96,16 +96,16 @@ if(!(is.null(roix)&&is.null(roiy)&&is.null(roiz)&&is.null(nroimask))){
             )
 })
 
-reduceFibers <- function(fiberobj,  ...) cat("Selection of fibers is not implemented for this class:",class(fiberobj),"\n")
+reduceFibers <- function(obj,  ...) cat("Selection of fibers is not implemented for this class:",class(obj),"\n")
 
-setGeneric("reduceFibers", function(fiberobj,  ...) standardGeneric("reduceFibers"))
+setGeneric("reduceFibers", function(obj,  ...) standardGeneric("reduceFibers"))
 
-setMethod("reduceFibers","dwiFiber", function(fiberobj, maxdist=1)
+setMethod("reduceFibers","dwiFiber", function(obj, maxdist=1)
 {
-   fiberobj <- sort.fibers(fiberobj)
-   fibers <- fiberobj@fibers[,1:3]
+   obj <- sort.fibers(obj)
+   fibers <- obj@fibers[,1:3]
    nsegm <- dim(fibers)[1]
-   startf <- fiberobj@startind
+   startf <- obj@startind
    endf <- c(startf[-1]-1,nsegm)
    nfibers <- length(startf)
    keep <- .Fortran("reducefi",
@@ -121,9 +121,9 @@ setMethod("reduceFibers","dwiFiber", function(fiberobj, maxdist=1)
     startf <- startf[keep]
     endf <- endf[keep]
     ind <- rep(startf,endf-startf+1)+sequence(endf-startf+1)-1
-    fiberobj@fibers <- fiberobj@fibers[ind,]
-    fiberobj@startind <- as.integer(c(0,cumsum(endf-startf+1))[1:length(startf)]+1)
-    fiberobj
+    obj@fibers <- obj@fibers[ind,]
+    obj@startind <- as.integer(c(0,cumsum(endf-startf+1))[1:length(startf)]+1)
+    obj
 }
 )
 
@@ -146,20 +146,20 @@ ident.fibers <- function(mat){
    z$fiberstarts[1:z$nfibers]
 }
 
-sort.fibers <- function(fiberobj){
+sort.fibers <- function(obj){
 #
 #  sort fiber array such that longest fibers come first
 #
-   fibers <- fiberobj@fibers
+   fibers <- obj@fibers
    nfs <- dim(fibers)[1]
-   starts <- fiberobj@startind
+   starts <- obj@startind
    ends <- c(starts[-1]-1,nfs)
    fiberlength <- diff(c(starts,nfs+1))
    of <- order(fiberlength,decreasing=TRUE)
    ind <-  rep(starts[of],ends[of]-starts[of]+1)+sequence(ends[of]-starts[of]+1)-1
-   fiberobj@fibers <- fiberobj@fibers[ind,]
-   fiberobj@startind <- as.integer(c(0,cumsum(ends[of]-starts[of]+1))[1:length(starts)]+1)
-   fiberobj
+   obj@fibers <- obj@fibers[ind,]
+   obj@startind <- as.integer(c(0,cumsum(ends[of]-starts[of]+1))[1:length(starts)]+1)
+   obj
 } 
 
   compactFibers <- function(fibers,startind){
