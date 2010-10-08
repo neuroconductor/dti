@@ -361,7 +361,7 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
   ns0 <- length(s0ind)
   ngrad0 <- ngrad - ns0
   if(5*(1+3*maxcomp)>ngrad0){
-     maxcomp <- max(1,trunc((ngrad0-5)/15))
+#     maxcomp <- max(1,trunc((ngrad0-5)/15))
      cat("Maximal number of components reduced to", maxcomp,"due to insufficient
           number of gradient directions\n")
   }

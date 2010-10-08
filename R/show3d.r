@@ -109,7 +109,7 @@ setMethod("show3d","dtiData", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,q
 
 ##############
 
-setMethod("show3d","dtiTensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,method=1,minfa=.3,level=0,quant=.8,scale=.4,bgcolor="black",add=FALSE,subdivide=2,maxobjects=729,what="tensor",odfscale=3,minalpha=.25,normalize=NULL,box=FALSE,title=FALSE,...){
+setMethod("show3d","dtiTensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,method=1,minfa=.3,mask=NULL,fibers=FALSE,maxangle=30,level=0,quant=.8,scale=.4,bgcolor="black",add=FALSE,subdivide=2,maxobjects=729,what="tensor",odfscale=3,minalpha=.25,normalize=NULL,box=FALSE,title=FALSE,...){
   if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
   if(!exists("icosa0")) data("polyeders")
   if(subdivide<0||subdivide>4) subdivide <- 3
@@ -144,29 +144,29 @@ setMethod("show3d","dtiTensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL
   cat(" selected cube specified by \n xind=",min(xind),":",max(xind),
       "\n yind=",min(yind),":",max(yind),
       "\n zind=",min(zind),":",max(zind),"\n")
-  obj <- obj[xind,yind,zind]
+  mask <- if(is.null(mask)) obj@mask else obj@mask&mask
+  mask[-xind,,] <- FALSE
+  mask[,-yind,] <- FALSE
+  mask[,,-zind] <- FALSE
+#  obj <- obj[xind,yind,zind]
   vext <- obj@voxelext
   center <- center*vext
+  n <- prod(obj@ddim) 
   D <- obj@D
   D <- D/max(D)
   dim(D) <- c(6,n)
-  indpos <- (1:n)[D[1,]*D[4,]*D[6,]>0]
-  tens <- D[,indpos,drop=FALSE]
-  tmean <- array(0,c(3,n1,n2,n3))
-  tmean[1,,,] <- xind*vext[1]
-  tmean[2,,,] <- outer(rep(1,n1),yind)*vext[2]
-  tmean[3,,,] <- outer(rep(1,n1),outer(rep(1,n2),zind))*vext[3]
+  mask <- mask & (D[1,]*D[4,]*D[6,]>0)
+  tmean <- array(0,c(3,obj@ddim))
+  tmean[1,,,] <- (1:obj@ddim[1])*vext[1]
+  tmean[2,,,] <- outer(rep(1,obj@ddim[1]),1:obj@ddim[2])*vext[2]
+  tmean[3,,,] <- outer(rep(1,obj@ddim[1]),outer(rep(1,obj@ddim[2]),1:obj@ddim[3]))*vext[3]
   dim(tmean) <- c(3,n)
-  tmean <- tmean[,indpos,drop=FALSE]
   z <- extract(obj,what=c("andir","fa"))
-  maxev <- extract(obj,what="evalues")$evalues[3,,,,drop=FALSE]
-  maxev <- maxev[indpos]
-  andir <- z$andir
-  dim(andir) <- c(3,n1*n2*n3)
-  andir <- andir[,indpos,drop=FALSE]
-  fa <- z$fa[indpos]
-  mask <- obj@mask[indpos]
-  n <- length(indpos)
+  if(minfa>0) mask <- mask&(z$fa>=minfa)
+  maxev <- extract(obj,what="evalues")$evalues[3,,,,drop=FALSE][mask]
+  dim(mask) <- NULL
+  andir <- matrix(z$andir,3,n)[,mask]
+  fa <- z$fa[mask]
   if(method==1) {
     andir <- abs(andir)
   } else {
@@ -176,22 +176,15 @@ setMethod("show3d","dtiTensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL
     andir[3,] <- (1+andir[3,])/2
   }
   colorvalues <- rgb(andir[1,],andir[2,],andir[3,])
-  dim(tens) <- c(6,n)
-  if(minfa>0){
-    indpos <- (1:n)[(fa>minfa)&mask]
-    tens <- tens[,indpos]
-    tmean <- tmean[,indpos]
-    colorvalues <- colorvalues[indpos]
-    fa <- fa[indpos]
-    maxev <- maxev[indpos]
-    n <- length(indpos)
-  }
+  D <- D[,mask]
+  tmean <- tmean[,mask]
+  n <- sum(mask)
   if(is.null(normalize)) normalize <- switch(tolower(what),"tensor"=FALSE,"adc"=TRUE,"odf"=FALSE)
   polyeder <- switch(subdivide+1,icosa0,icosa1,icosa2,icosa3,icosa4)
   radii <- .Fortran(switch(tolower(what),tensor="ellradii",adc="adcradii",odf="odfradii"),
                     as.double(polyeder$vertices),
                     as.integer(polyeder$nv),
-                    as.double(tens),
+                    as.double(D),
                     as.integer(n),
                     radii=double(n*polyeder$nv),
                     DUP=FALSE,
@@ -232,6 +225,15 @@ setMethod("show3d","dtiTensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL
      } else {
   show3dTens(radii,polyeder,centers=tmean,colors=colorvalues,alpha=minalpha+(1-minalpha)*fa)
     }
+  if(fibers){
+     tracks <- tracking(obj,mask=mask,minfa=minfa,maxangle=maxangle)
+     dd <- tracks@fibers
+     startind <- tracks@startind
+     dd <- expandFibers(dd,startind)$fibers
+     rgl.lines(dd[,1]+vext[1]/2,dd[,2]+vext[2]/2,dd[,3]+vext[3]/2,
+            color=rgb(abs(dd[,4]),abs(dd[,5]),abs(dd[,6])),
+            size=3)
+  }  
   if(box) bbox3d()
   if(is.character(title)) {
      title3d(title,color="white",cex=1.5)
@@ -243,7 +245,7 @@ setMethod("show3d","dtiTensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL
   invisible(rgl.cur())
 })
 
-setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,minfa=.3,level=0,quant=.8,scale=.4,bgcolor="black",add=FALSE,subdivide=3,maxobjects=729,what="ODF",odfscale=3,minalpha=1,lwd=3,box=FALSE,title=FALSE,...){
+setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,minfa=.3,minorder=1,mineo=1,fibers=FALSE,maxangle=30,level=0,quant=.8,scale=.4,bgcolor="black",add=FALSE,subdivide=3,maxobjects=729,what="ODF",odfscale=3,minalpha=1,lwd=3,box=FALSE,title=FALSE,...){
   if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
   if(!exists("icosa0")) data("polyeders")
   if(subdivide<0||subdivide>4) subdivide <- 3
@@ -278,7 +280,11 @@ setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=N
   cat(" selected cube specified by \n xind=",min(xind),":",max(xind),
       "\n yind=",min(yind),":",max(yind),
       "\n zind=",min(zind),":",max(zind),"\n")
-  obj <- obj[xind,yind,zind]
+  mask <- obj@mask
+  mask[-xind,,] <- FALSE
+  mask[,-yind,] <- FALSE
+  mask[,,-zind] <- FALSE
+#  obj <- obj[xind,yind,zind]
   vext <- obj@voxelext
   scale <- scale*min(vext)
   center <- center*vext
@@ -287,19 +293,23 @@ setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=N
   mix <- obj@mix
   maxorder <- dim(mix)[1]
   orient <- obj@orient
-  tmean <- array(0,c(3,n1,n2,n3))
-  tmean[1,,,] <- xind*vext[1]
-  tmean[2,,,] <- outer(rep(1,n1),yind)*vext[2]
-  tmean[3,,,] <- outer(rep(1,n1),outer(rep(1,n2),zind))*vext[3]
-  mask <- obj@mask
-  fa <- extract(obj,"fa")$fa
-  dim(fa) <- dim(mask)
+  n <- prod(obj@ddim) 
+  tmean <- array(0,c(3,obj@ddim))
+  tmean[1,,,] <- (1:obj@ddim[1])*vext[1]
+  tmean[2,,,] <- outer(rep(1,obj@ddim[1]),1:obj@ddim[2])*vext[2]
+  tmean[3,,,] <- outer(rep(1,obj@ddim[1]),outer(rep(1,obj@ddim[2]),1:obj@ddim[3]))*vext[3]
+  if(minfa > 0){
+     fa <- extract(obj,"fa")$fa
+     mask <- (fa>=minfa)&mask
+  }
+  if(mineo > 1) mask <- (extract(obj,"eorder")$eorder>=mineo)&mask
+  if(minorder > 1) mask <- (order>=minorder)&mask
   dim(ev) <- c(2,n)
   dim(tmean) <- c(3,n)
   dim(orient) <- c(dim(orient)[1:2],n)
   dim(mix) <- c(dim(mix)[1],n)
-  if(minfa>0){
-    indpos <- (1:n)[(fa>minfa)&mask]
+  if(minfa>0||mineo>1||minorder>1){
+    indpos <- (1:n)[mask]
     ev <- ev[,indpos]
     tmean <- tmean[,indpos]
     orient <- orient[,,indpos]
@@ -308,6 +318,7 @@ setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=N
     fa <- fa[indpos]
     n <- length(indpos)
   }
+  gc()
   polyeder <- switch(subdivide+1,icosa0,icosa1,icosa2,icosa3,icosa4)
   if(toupper(what) %in% c("ODF","BOTH")){
   radii <- .Fortran("mixtradi",
@@ -366,6 +377,15 @@ setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=N
      }
   if(toupper(what) %in% c("ODF","BOTH")) show3dODF(radii,polyeder,centers=tmean,minalpha=minalpha,...)
   if(toupper(what) %in% c("AXIS","BOTH"))  rgl.lines(lcoord[1,],lcoord[2,],lcoord[3,],color=colorvalues,size=lwd)
+  if(fibers){
+     tracks <- tracking(obj,mask=mask,minfa=minfa,maxangle=maxangle)
+     dd <- tracks@fibers
+     startind <- tracks@startind
+     dd <- expandFibers(dd,startind)$fibers
+     rgl.lines(dd[,1]+vext[1]/2,dd[,2]+vext[2]/2,dd[,3]+vext[3]/2,
+            color=rgb(abs(dd[,4]),abs(dd[,5]),abs(dd[,6])),
+            size=lwd)
+  }
   if(box) bbox3d()
   if(is.character(title)) {
      title3d(title,color="white",cex=1.5)

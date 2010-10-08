@@ -2,7 +2,7 @@ selectFibers <- function(obj,  ...) cat("Selection of fibers is not implemented 
 
 setGeneric("selectFibers", function(obj,  ...) standardGeneric("selectFibers"))
 
-setMethod("selectFibers","dwiFiber", function(obj, roix=NULL, roiy=NULL, roiz=NULL, nroimask=NULL, minlength=1)
+setMethod("selectFibers","dwiFiber", function(obj, roix=NULL, roiy=NULL, roiz=NULL, mask=NULL, minlength=1)
 {
 #)
 #     extract fiber information and descriptions
@@ -29,22 +29,28 @@ setMethod("selectFibers","dwiFiber", function(obj, roix=NULL, roiy=NULL, roiz=NU
   mroimask <- max(roimask)
   if(mroimask>127){
      warning("Recursive use of regions of interest is limited to 7")
-     roix <- NULL
-     roimask <- NULL
+     return(obj)
   }
-if(!(is.null(roix)&&is.null(roiy)&&is.null(roiz)&&is.null(nroimask))){
+if(!(is.null(roix)&&is.null(roiy)&&is.null(roiz)&&is.null(mask))){
 #
 #    no region of interest specified otherwise
 #
-  if(is.null(nroimask)){ 
-     nroimask <- array(0,obj@ddim)
+  if(is.null(mask)){ 
+     mask <- array(0,obj@ddim)
      if(is.null(roix)) roix <- 1:obj@ddim[1]
      if(is.null(roiy)) roiy <- 1:obj@ddim[2]
      if(is.null(roiz)) roiz <- 1:obj@ddim[3]
-     nroimask[roix,roiy,roiz] <- 1
+     mask[roix,roiy,roiz] <- 1
+  }
+  if(is.null(roimask)){ 
+     roimask <- array(0,obj@ddim)
+     if(is.null(roix)) roix <- 1:obj@ddim[1]
+     if(is.null(roiy)) roiy <- 1:obj@ddim[2]
+     if(is.null(roiz)) roiz <- 1:obj@ddim[3]
+     roimask[roix,roiy,roiz] <- 1
   }
   lnewmask <- as.integer(log(mroimask,2))+1
-  roimask[nroimask>0] <- roimask[nroimask>0]+2^lnewmask
+  roimask[mask>0] <- roimask[mask>0]+2^lnewmask
   z <- .Fortran("roifiber",
                 as.double(fibers),
                 newfibers=double(prod(dim(fibers))),#new fibers
@@ -54,7 +60,7 @@ if(!(is.null(roix)&&is.null(roiy)&&is.null(roiz)&&is.null(nroimask))){
                 start=as.integer(fiberstart),
                 as.integer(fiberlength),
                 as.integer(length(fiberstart)),#number of fibers
-                as.logical(nroimask>0),#roi
+                as.logical(mask>0),#roi
                 as.integer(obj@ddim[1]),
                 as.integer(obj@ddim[2]),
                 as.integer(obj@ddim[3]),

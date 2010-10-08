@@ -8,7 +8,8 @@ tracking <- function(obj,  ...) cat("Fiber tracking not implemented for this cla
 
 setGeneric("tracking", function(obj,  ...) standardGeneric("tracking"))
 
-setMethod("tracking","dtiTensor", function(obj, roix=NULL, roiy=NULL, roiz=NULL, method="LINEPROP", minfa=0.3, maxangle=30, subsample=1)
+setMethod("tracking","dtiTensor", function(obj, roix=NULL, roiy=NULL, roiz=NULL, 
+mask=NULL, method="LINEPROP", minfa=0.3, maxangle=30, subsample=1)
 {
 
   args <- sys.call(-1)
@@ -37,6 +38,10 @@ setMethod("tracking","dtiTensor", function(obj, roix=NULL, roiy=NULL, roiz=NULL,
   roiye <- max(roiy); # this is probably not sufficient
   roiza <- min(roiz); # this is probably not sufficient
   roize <- max(roiz); # this is probably not sufficient
+  if(is.null(mask)){
+      mask <- array(FALSE,obj@ddim)
+      mask[roix,roiy,roiz] <- TRUE
+  }
 
   dtind <- dtiIndices(obj);
   if(sum(dtind@fa[roix,roiy,roiz]>minfa)==0){
@@ -71,6 +76,7 @@ setMethod("tracking","dtiTensor", function(obj, roix=NULL, roiy=NULL, roiz=NULL,
   dd <- .Call("interface_tracking",
               as.double(andir),
               as.double(fa),
+              as.logical(mask),
               as.integer(dimx),
               as.integer(dimy),
               as.integer(dimz),
@@ -119,14 +125,14 @@ setMethod("tracking","dtiTensor", function(obj, roix=NULL, roiy=NULL, roiz=NULL,
             )
 })
 
-setMethod("tracking","dtiIndices", function(obj, roix=NULL, roiy=NULL, roiz=NULL, method="LINEPROP", minfa=0.3, maxangle=30, subsample = 1)
+setMethod("tracking","dtiIndices", function(obj, roix=NULL, roiy=NULL, roiz=NULL, mask=NULL, method="LINEPROP", minfa=0.3, maxangle=30, subsample = 1)
 {
 
   args <- sys.call(-1)
   args <- c(obj@call,args)
   imethod <- switch(method, "LINEPROP" = 1,
                            1)
-
+  
   dimx <- obj@ddim[1]
   dimy <- obj@ddim[2]
   dimz <- obj@ddim[3]
@@ -148,7 +154,10 @@ setMethod("tracking","dtiIndices", function(obj, roix=NULL, roiy=NULL, roiz=NULL
   roiye <- max(roiy); # this is probably not sufficient
   roiza <- min(roiz); # this is probably not sufficient
   roize <- max(roiz); # this is probably not sufficient
-
+  if(is.null(mask)){
+      mask <- array(FALSE,obj@ddim)
+      mask[roix,roiy,roiz] <- TRUE
+  }
   if(sum(obj@fa[roix,roiy,roiz]>minfa)==0){
      cat("No fiber with sufficint FA in region of interest\n")
      return(invisible(FALSE))
@@ -179,6 +188,7 @@ setMethod("tracking","dtiIndices", function(obj, roix=NULL, roiy=NULL, roiz=NULL
   dd <- .Call("interface_tracking",
               as.double(andir),
               as.double(fa),
+              as.logical(mask),
               as.integer(dimx),
               as.integer(dimy),
               as.integer(dimz),
@@ -228,7 +238,7 @@ setMethod("tracking","dtiIndices", function(obj, roix=NULL, roiy=NULL, roiz=NULL
 })
 
 setMethod("tracking", "dwiMixtensor",
-function(obj, roix=NULL, roiy=NULL, roiz=NULL, method="LINEPROP", minfa=0.3, maxangle=30, subsample = 1)
+function(obj, roix=NULL, roiy=NULL, roiz=NULL, mask=NULL, method="LINEPROP", minfa=0.3, maxangle=30, subsample = 1)
 {
 
   args <- sys.call(-1)
@@ -258,6 +268,10 @@ function(obj, roix=NULL, roiy=NULL, roiz=NULL, method="LINEPROP", minfa=0.3, max
   roiye <- max(roiy); # this is probably not sufficient
   roiza <- min(roiz); # this is probably not sufficient
   roize <- max(roiz); # this is probably not sufficient
+  if(is.null(mask)){
+      mask <- array(FALSE,obj@ddim)
+      mask[roix,roiy,roiz] <- TRUE
+  }
 
   ex <- extract(obj, c("andir", "order", "fa", "mix"))
 
@@ -292,6 +306,7 @@ function(obj, roix=NULL, roiy=NULL, roiz=NULL, method="LINEPROP", minfa=0.3, max
               as.double(ex$andir), # dim = c(3, maxorder, dimx, dimy, dimz)
               as.integer(ex$order), # NEW! dim = c(dimx, dimy, dimz)
               as.double(ex$fa),    # dim = c(dimx, dimy, dimz)
+              as.logical(mask),
               as.double(ex$mix),    # NEW! dim = c(maxorder, dimx, dimy, dimz)
               as.integer(maxorder), # NEW!
               as.integer(dimx),
