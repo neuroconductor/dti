@@ -14,11 +14,11 @@ setMethod("sdpar","dtiData",function(object,level=NULL,sdmethod="sd",interactive
     warning("sdmethod needs to be either 'sd' or 'mad'")
     return(object)
   }
-  if(is.null(level)) level <- object@level
+  level0 <- if(is.null(level)) object@level else max(0,level)
   s0ind<-object@s0ind
   s0 <- object@si[,,,s0ind]
   ls0ind <- length(s0ind)
-  A0 <- level
+  A0 <- level0
   if(ls0ind>1) {
     dim(s0) <- c(prod(object@ddim),ls0ind)
     s0mean <- s0%*%rep(1/ls0ind,ls0ind)
@@ -70,6 +70,7 @@ setMethod("sdpar","dtiData",function(object,level=NULL,sdmethod="sd",interactive
       }
     }
   } else {
+    if(is.null(level)){
     ddim <- object@ddim
     indx1 <- trunc(0.4*ddim[1]):trunc(0.6*ddim[1])
     indy1 <- trunc(0.4*ddim[2]):trunc(0.6*ddim[2])
@@ -85,6 +86,7 @@ setMethod("sdpar","dtiData",function(object,level=NULL,sdmethod="sd",interactive
 #  A0a provides a guess for a threshold based on upper quantiles of intensities
 #  in cubes located at the edges (probably only containing noise
     level <- A0 <- min(A0a,A0b)*threshfactor
+  } 
   }
   # determine parameters for linear relation between standard deviation and mean
   if(ls0ind>1) {
@@ -463,8 +465,8 @@ setMethod("extract","dtiData",function(x, what="data", xind=TRUE, yind=TRUE, zin
   z <- list(NULL)
   if("gradient" %in% what) z$gradient <- x@gradient
   if("btb" %in% what) z$btb <- x@btb
-  if("s0" %in% what) z$S0 <- x@si[,,,x@s0ind,drop=FALSE]
-  if("sb" %in% what) z$Si <- x@si[,,,-x@s0ind,drop=FALSE]
+  if("s0" %in% what) z$s0 <- x@si[,,,x@s0ind,drop=FALSE]
+  if("sb" %in% what) z$sb <- x@si[,,,-x@s0ind,drop=FALSE]
   if("siq" %in% what) {
      S0 <- x@si[,,,x@s0ind,drop=FALSE]
      Si <- x@si[,,,-x@s0ind,drop=FALSE]
@@ -511,7 +513,7 @@ setMethod("extract","dwiMixtensor",function(x, what="andir", xind=TRUE, yind=TRU
      andir[3,] <- cos(orient[1,])
      z$andir <- array(andir,c(3,dim(x@orient)[-1]))
      }
-  if("s0" %in% what) z$S0 <- x@S0
+  if("s0" %in% what) z$s0 <- x@S0
   if("mask" %in% what) z$mask <- x@mask
   if("fa" %in% what){
       fa <- x@ev[1,,,]/sqrt((x@ev[1,,,]+x@ev[2,,,])^2+2*x@ev[2,,,]^2)

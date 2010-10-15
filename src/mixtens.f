@@ -38,7 +38,7 @@ C
       ELSE
          sw=0.d0
 C penalize for extreme th values
-         if(th.gt.8.d0) sw=sw+th-8.d0
+         if(th.gt.1.d2) sw=sw+th-1.d2
 C penalize for negative weights
          if(th.lt.1.d-2) sw=sw-1.d2*th+1.d0
          DO i=1,m
@@ -207,7 +207,7 @@ C   use work for intermediate results
          work(j)=z1
       END DO
       dfdpar(1)=-2.d0*ddot(n,work,1,scopy,1)
-      if(th.gt.8) dfdpar(1)=dfdpar(1)+1.d0
+      if(th.gt.1.d1) dfdpar(1)=dfdpar(1)+1.d0
       if(th.lt.1d-2) dfdpar(1)=dfdpar(1)-1.d2
       DO k=1,m
          if(w(k).lt.0.d0) dfdpar(1)=dfdpar(1)-pen*dwdpars(k,1)

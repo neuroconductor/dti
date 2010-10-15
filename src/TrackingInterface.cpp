@@ -9,8 +9,8 @@
 using namespace std;
 
 extern "C"{
-
-	SEXP interface_tracking(SEXP data_dir_coords, SEXP data_FA_values, SEXP data_mask,
+	SEXP interface_tracking(SEXP data_dir_coords, SEXP data_FA_values, 
+                                SEXP data_mask,
 			        SEXP dim_x, SEXP dim_y, SEXP dim_z,
 			        SEXP roi_x_s, SEXP roi_x_e,
 			        SEXP roi_y_s, SEXP roi_y_e,

@@ -22,7 +22,7 @@ if (toupper(a) == "N") {
 
 a <- readline("Provide standard deviation in K-space (default: 2400, example in Neuroimage paper: 1600):")
 
-sigma <- if(sigma!="") as.numeric(a) else 2400
+sigma <- if(a!="") as.numeric(a) else 2400
 if( is.na(sigma)) sigma <- 2400
 
 

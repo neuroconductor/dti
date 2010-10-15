@@ -88,16 +88,17 @@ for(i in 1:n) mix[2,i,,] <- i/2/(n+1)
 for(i in 1:n) mix[3,,i,] <- i/2/(n+1) 
 mix[4,,,] <- 1-mix[2,,,]-mix[3,,,]
 }
-th[2,,,] <- .8
 if(scenario!=3){
 fa <- readline("fa (default fa = .8)") 
 
 if (!is.null(fa)) fa <- as.numeric(fa) else fa <- .8
 if(is.na(fa)) fa <- .8 else fa <- min(.9,max(.2,fa))
 } else {
-fa <- seq(.5,.9,length=n^3) 
+fa <- seq(.5,.9,length=n^3)
 }
-th[1,,,] <- .8*(fa^2+sqrt(3*fa^2-2*fa^4))/(1-fa^2)
+l1 <- (1+sqrt(3*fa^2-2*fa^4))/(1-fa^2)
+th[2,,,] <- (2/l1)^(1/3)
+th[1,,,] <- l1*th[2,,,]
 
 
 maxcomp <- readline("maximal order of mix-tensor model (default 3)") 

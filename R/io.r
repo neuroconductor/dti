@@ -12,7 +12,7 @@ dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=
   ngrad <- dim(gradient)[2]
   s0ind <- (1:ngrad)[apply(abs(gradient),2,max)==0] 
   if (!(file.exists(imagefile))) stop("Image file does not exist")
-  cat("Start Data reading",date(), "\n")
+  cat("Start Data reading",format(Sys.time()), "\n")
   zz <- file(imagefile,"rb")
 #  si now contains all images (S_0 and S_I), ngrad includes 
 #  number of zero gradients
@@ -31,7 +31,7 @@ dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=
   dim(si) <- c(length(xind),length(yind),length(zind),ngrad)
   dimsi <- dim(si)
 
-  cat("Data successfully read",date(), "\n")
+  cat("Data successfully read",format(Sys.time()), "\n")
 
 #
 #   set correct orientation
@@ -77,7 +77,7 @@ dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=
   ddim0 <- as.integer(ddim)
   ddim <- as.integer(dim(si)[1:3])
 
-  cat("Create auxiliary statistics",date(), " \n")
+  cat("Create auxiliary statistics",format(Sys.time()), " \n")
   rind <- replind(gradient)
   
   invisible(new("dtiData",
@@ -151,7 +151,7 @@ readDWIdata <- function(gradient, dirlist, format, nslice = NULL, order = NULL,
     filelist <- filelist[order]
   }
   # read all DICOM files
-  cat("Start reading data",date(), "\n")
+  cat("Start reading data",format(Sys.time()), "\n")
   si <- numeric()
   cat("\n")
   ddim <- NULL
@@ -217,7 +217,7 @@ readDWIdata <- function(gradient, dirlist, format, nslice = NULL, order = NULL,
   cat("\n")
   dim(si) <- c(length(xind),length(yind),length(zind),ngrad)
   dimsi <- dim(si)
-  cat("Data successfully read",date(), "\n")
+  cat("Data successfully read",format(Sys.time()), "\n")
 
   # redefine orientation
   xyz <- (orientation)%/%2+1
@@ -259,7 +259,7 @@ readDWIdata <- function(gradient, dirlist, format, nslice = NULL, order = NULL,
   ddim0 <- as.integer(ddim)
   ddim <- as.integer(dim(si)[1:3])
 
-  cat("Create auxiliary statistics",date(), " \n")
+  cat("Create auxiliary statistics",format(Sys.time()), " \n")
   rind <- replind(gradient)
 
   invisible(new("dtiData",
@@ -487,8 +487,10 @@ function(object, ...){
     cat("  mean variance         :", paste(signif(mean(object@sigma[object@mask]),3), collapse="x"), "\n")
     cat("  hmax                  :", paste(object@hmax, collapse="x"), "\n")
     if(length(object@outlier)>0) cat("  Number of outliers    :", paste(length(object@outlier), collapse="x"), "\n")
-    cat("  Numbers of mixture components:",table(object@order[object@mask]),"\n") 
-    cat("\n")
+    nofmc <- table(object@order[object@mask])
+    cat("  Numbers of mixture components:") 
+    cat(paste(names(nofmc),": ",nofmc,"  ",sep=""))
+    cat("\n\n")
     invisible(NULL)
 })
 setMethod("summary", "dwiQball",

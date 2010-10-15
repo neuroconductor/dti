@@ -148,7 +148,7 @@ dgradi <- matrix(abs(vico%*%t(vico)),nvico,nvico)
 dgradi <- dgradi/max(dgradi)
 nth <- length(th)
 nvoxel <- prod(ddim)
-nandir <- pmin((fa>.3)*(1+(ev[2,,,]+1e-8)/(ev[3,,,]+1e-8)>1.8),maxcomp)
+nandir <- pmin((fa>.3)*(1+((ev[2,,,]+1e-8)/(ev[3,,,]+1e-8)>1.8)),maxcomp)
 nandir[is.na(nandir)] <- 0
 if(any(is.na(andir))) {
 cat(sum(is.na(andir)),"na's in andir")
@@ -368,10 +368,10 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
 #
 #  First tensor estimates to generate eigenvalues and -vectors
 #
-  prta <- proc.time()[1]
-  cat("Start tensor estimation at",date(),"\n")
+  prta <- Sys.time()
+  cat("Start tensor estimation at",format(prta),"\n")
   tensorobj <- dtiTensor(object)
-  cat("Start evaluation of eigenstructure at",date(),"\n")
+  cat("Start evaluation of eigenstructure at",format(Sys.time()),"\n")
   z <- .Fortran("dtieigen",
                 as.double(tensorobj@D),
                 as.integer(ddim[1]),
@@ -398,7 +398,7 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
   th[th>rth[2]] <- rth[2]
   indth <- trunc(10*(th-rth[1])/diff(rth)+1)
   th <- seq(rth[1],rth[2],length=nth)
-  cat("Start search outlier detection at",date(),"\n")
+  cat("Start search outlier detection at",format(Sys.time()),"\n")
 #
 #  replace physically meaningless S_i by mena S_0 values
 #
@@ -413,12 +413,12 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
                 lindex=integer(1),
                 DUP=FALSE,
                 PACKAGE="dti")[c("si","index","lindex")]
-  cat("End search outlier detection at",date(),"\n")
+  cat("End search outlier detection at",format(Sys.time()),"\n")
   si <- array(as.integer(z$si),c(ddim,ngrad))
   index <- if(z$lindex>0) z$index[1:z$lindex] else numeric(0)
   rm(z)
   gc()
-  cat("Start generating auxiliary objects",date(),"\n")
+  cat("Start generating auxiliary objects",format(Sys.time()),"\n")
 #
 #  compute mean S_0, s_i/S_0 (siq), var(siq) and mask
 #
@@ -451,7 +451,7 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
   penIC <- switch(msc,"AIC"=2*npar/ngrad0,"BIC"=log(ngrad0)*npar/ngrad0,
                   "AICC"=(1+npar/ngrad0)/(1-(npar+2)/ngrad0),
                   log(ngrad0)*npar/ngrad0)
-  cat("End generating auxiliary objects",date(),"\n")
+  cat("End generating auxiliary objects",format(Sys.time()),"\n")
 #
 #  avoid situations where si's are larger than s0
 #
@@ -459,7 +459,7 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
 #
 #   determine initial estimates for orientations 
 #
-  cat("Start search for initial directions at",date(),"\n")
+  cat("Start search for initial directions at",format(Sys.time()),"\n")
   data("polyeders")
   polyeder <- icosa3
   vert <- polyeder$vertices
@@ -478,7 +478,7 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
                        # grid index for EV 2+(1:m) index of orientations
   cat("Model orders for initial estimates")
   print(table(siind[1,,,]))
-  cat("End search for initial values at",date(),"\n")
+  cat("End search for initial values at",format(Sys.time()),"\n")
   order <- array(0,ddim)
 #  logarithmic eigen values
   mix <- array(0,c(maxcomp,ddim))
@@ -489,8 +489,7 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
   n3 <- ddim[3]
   igc <- 0
   ingc <- 0
-  prt0 <- proc.time()[1]
-  prta <- prt0-prta
+  prt0 <- Sys.time()
 #
 #   loop over voxel in volume
 #
@@ -575,10 +574,10 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
     } else {
        igc <- 1
        ingc <- ingc+1
-       prt1 <- proc.time()[1]
+       prt1 <- Sys.time()
        gc()
-       cat("Nr. of voxel",ingc*ngc,"time elapsed:",prta+prt1-prt0,"remaining time:",
-            (prt1-prt0)/(ingc*ngc)*(sum(mask)-ingc*ngc),"\n")
+       cat("Nr. of voxel",ingc*ngc,"time elapsed:",format(difftime(prt1,prta),digits=3),"remaining time:",
+            format(difftime(prt1,prt0)/(ingc*ngc)*(sum(mask)-ingc*ngc),digits=3),"\n")
     }
   }# end mask
   }# end loop

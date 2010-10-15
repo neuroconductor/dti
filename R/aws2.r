@@ -289,8 +289,8 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
   rm(si)
   gc()
   if(result=="Tensor"){
-  cat("prepare final dtiTensor object",date(),"\n")
-  } else   cat("prepare final smoothed dtiData object",date(),"\n")
+  cat("prepare final dtiTensor object",format(Sys.time()),"\n")
+  } else   cat("prepare final smoothed dtiData object",format(Sys.time()),"\n")
   if(result=="Tensor") invisible(new("dtiTensor",
                 list(s2rician=if(rician) z$sigma2r else NULL, ni=z$bi),
                 call = args,
