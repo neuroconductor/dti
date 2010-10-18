@@ -148,15 +148,15 @@ dgradi <- matrix(abs(vico%*%t(vico)),nvico,nvico)
 dgradi <- dgradi/max(dgradi)
 nth <- length(th)
 nvoxel <- prod(ddim)
-nandir <- pmin((fa>.3)*(1+((ev[2,,,]+1e-8)/(ev[3,,,]+1e-8)>1.8)),maxcomp)
-nandir[is.na(nandir)] <- 0
+landir <- fa>.3
+landir[is.na(landir)] <- FALSE
 if(any(is.na(andir))) {
 cat(sum(is.na(andir)),"na's in andir")
 andir[is.na(andir)]<-sqrt(1/3)
 }
-if(any(is.na(nandir))) {
-cat(sum(is.na(nandir)),"na's in nandir")
-nandir[is.na(nandir)]<-0
+if(any(is.na(landir))) {
+cat(sum(is.na(landir)),"na's in landir")
+landir[is.na(landir)]<-0
 }
 if(any(is.na(fa))) {
 cat(sum(is.na(fa)),"na's in fa")
@@ -167,15 +167,13 @@ iandir <- array(.Fortran("iandir",
                    as.integer(nvico),
                    as.double(andir),
                    as.integer(nvoxel),
-                   as.integer(nandir),
+                   as.logical(landir),
                    iandir=integer(2*prod(ddim)),
                    DUPL=FALSE,
                    PACKAGE="dti")$iandir,c(2,nvoxel))
 isample0 <- selisample(nvico,maxcomp,nguess,dgradi,maxc)
 if(maxcomp>1) isample1 <- selisample(nvico,maxcomp-1,nguess,dgradi,maxc)
 if(maxcomp==1) isample1 <- sample(ngrad, nguess, replace = TRUE)
-if(maxcomp>2) isample2 <- selisample(nvico,maxcomp-2,nguess,dgradi,maxc)
-if(maxcomp==2) isample2 <- sample(ngrad, nguess, replace = TRUE)
 #
 #  eliminate configurations with close directions 
 #
@@ -186,7 +184,7 @@ cat("using ",nguess,"guesses for initial estimates\n")
 siind <- matrix(as.integer(0),maxcomp+2,nvoxel)
 krit <- numeric(nvoxel)
 # first voxel with fa<.3
-cat(sum(mask&(nandir==0)),"voxel with small FA\n")
+cat(sum(mask&!landir),"voxel with small FA\n")
 nguess <- length(isample0)/maxcomp
 z <- .Fortran("getsii30",
          as.double(aperm(si,c(4,1:3))),
@@ -207,14 +205,14 @@ z <- .Fortran("getsii30",
          siind=integer((maxcomp+2)*nvoxel),
          krit=double(nvoxel),
          as.integer(maxcomp+2),
-         as.logical(mask&(nandir==0)),
+         as.logical(mask&!landir),
          PACKAGE="dti")[c("siind","krit")]
 dim(z$siind) <- c(maxcomp+2,nvoxel)
-siind[,nandir==0] <- z$siind[,nandir==0]
-krit[nandir==0] <- z$krit[nandir==0]
+siind[,!landir] <- z$siind[,!landir]
+krit[!landir] <- z$krit[!landir]
 # now voxel where first tensor direction seems important
 if(maxcomp >0){
-cat(sum(mask&(nandir==1)),"voxel with distinct first eigenvalue \n")
+cat(sum(mask&landir),"voxel with distinct first eigenvalue \n")
 nguess <- if(maxcomp>1) length(isample1)/(maxcomp-1) else length(isample1)
 z <- .Fortran("getsii31",
          as.double(aperm(si,c(4,1:3))),
@@ -236,44 +234,13 @@ z <- .Fortran("getsii31",
          siind=integer((maxcomp+2)*nvoxel),
          krit=double(nvoxel),
          as.integer(maxcomp+2),
-         as.logical(mask&(nandir==1)),
+         as.logical(mask&landir),
          as.double(dgradi),
          as.double(maxc),
          PACKAGE="dti")[c("siind","krit")]
 dim(z$siind) <- c(maxcomp+2,nvoxel)
-siind[,nandir==1] <- z$siind[,nandir==1]
-krit[nandir==1] <- z$krit[nandir==1]
-}
-if(maxcomp >1){
-cat(sum(mask&(nandir==2)),"voxel with distinct first and second eigenvalue \n")
-nguess <- if(maxcomp>2) length(isample2)/(maxcomp-2) else length(isample2)
-z <- .Fortran("getsii32",
-         as.double(aperm(si,c(4,1:3))),
-         as.double(sigma2),
-         as.integer(nsi),
-         as.integer(nvoxel),
-         as.integer(maxcomp),
-         as.double(dgrad),
-         as.integer(nvico),
-         as.integer(iandir[1:2,]),
-         as.double(th),
-         as.integer(nth),
-         as.integer(indth),
-         double(ngrad*nvico),
-         as.integer(isample2),
-         as.integer(nguess),
-         double(nsi),
-         double(nsi*(maxcomp+2)),
-         siind=integer((maxcomp+2)*nvoxel),
-         krit=double(nvoxel),
-         as.integer(maxcomp+2),
-         as.logical(mask&(nandir==2)),
-         as.double(dgradi),
-         as.double(maxc),
-         PACKAGE="dti")[c("siind","krit")]
-dim(z$siind) <- c(maxcomp+2,nvoxel)
-siind[,nandir==2] <- z$siind[,nandir==2]
-krit[nandir==2] <- z$krit[nandir==2]
+siind[,landir] <- z$siind[,landir]
+krit[landir] <- z$krit[landir]
 }
 failed <- (krit^2/ngrad) > (sigma2-1e-10)
 if(any(failed[mask])){

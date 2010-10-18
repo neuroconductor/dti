@@ -862,36 +862,27 @@ C
 C
 C __________________________________________________________________
 C
-      subroutine iandir(vico,nvico,andir,nvox,nandir,iandi)
+      subroutine iandir(vico,nvico,andir,nvox,landir,iandi)
       implicit logical(a-z)
-      integer nvico,nvox,iandi(2,nvox),nandir(nvox)
+      integer nvico,nvox,iandi(2,nvox)
       real*8 vico(3,nvico),andir(3,2,nvox)
+      logical landir(nvox)
       integer i,j,jmax
       real*8 z,zmax,scprod3
       external scprod3
       DO i=1,nvox
-         if(nandir(i).eq.0) CYCLE
-         zmax = scprod3(vico(1,1),andir(1,1,i))
-         jmax = 1
-         DO j=2,nvico
-            z = scprod3(vico(1,j),andir(1,1,i))
-            if(z.gt.zmax) THEN
-               zmax=z
-               jmax=j
-            END IF
-         END DO
-         iandi(1,i)=jmax
-         if(nandir(i).eq.1) CYCLE
-         zmax = scprod3(vico(1,1),andir(1,2,i))
-         jmax = 1
-         DO j=2,nvico
-            z = scprod3(vico(1,j),andir(1,2,i))
-            if(z.gt.zmax) THEN
-               zmax=z
-               jmax=j
-            END IF
-         END DO
-         iandi(2,i)=jmax
+         if(landir(i)) THEN
+            zmax = scprod3(vico(1,1),andir(1,1,i))
+            jmax = 1
+            DO j=2,nvico
+               z = scprod3(vico(1,j),andir(1,1,i))
+               if(z.gt.zmax) THEN
+                  zmax=z
+                  jmax=j
+               END IF
+            END DO
+            iandi(1,i)=jmax
+         END IF
       END DO
       RETURN
       END
