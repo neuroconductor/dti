@@ -31,7 +31,8 @@ The package is based on S4 classes and methods.  For help on a specific topic us
 Index:
 \preformatted{
 dti-class               Classes "dti", "dtiData", "dtiTensor",
-                        "dtiIndices"
+                        "dtiIndices", "dwiQball", "dwiMixtensor"
+                        and "dwiFiber"
 
 dtiData                 Read Diffusion Weighted Data
                         from Image File

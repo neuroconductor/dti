@@ -14,6 +14,10 @@ setMethod("sdpar","dtiData",function(object,level=NULL,sdmethod="sd",interactive
     warning("sdmethod needs to be either 'sd' or 'mad'")
     return(object)
   }
+  if(prod(object@ddim)==1){
+    warning("you need more than one voxel to model variances")
+    return(object)
+  }
   level0 <- if(is.null(level)) object@level else max(0,level)
   s0ind<-object@s0ind
   s0 <- object@si[,,,s0ind]
@@ -92,7 +96,21 @@ setMethod("sdpar","dtiData",function(object,level=NULL,sdmethod="sd",interactive
   if(ls0ind>1) {
     s0sd <- apply(s0,1,sdmethod)
     ind <- s0mean>A0&s0mean<A1
+    if(length(ind)<2){
+         warning("you need more than one voxel to model variances choice of A0/A1 to restrictive")
+         return(object)
+         }
     sdcoef <- coefficients(lm(s0sd[ind]~s0mean[ind]))
+    if(sdcoef[1]<0){
+       sdcoef <- numeric(2)
+       sdcoef[1] <- .25  # this is an arbitrary (small) value to avaoid zero variances
+       sdcoef[2] <- coefficients(lm(s0sd[ind]~s0mean[ind]-1))
+       }
+    if(sdcoef[2]<0){
+       sdcoef <- numeric(2)
+       sdcoef[1] <- max(0.25,mean(s0sd[ind]))
+       sdcoef[2] <- 0
+       }
   } else {
     sdcoef <- awslinsd(s0,hmax=5,mask=NULL,A0=A0,A1=A1)$vcoef
   }
