@@ -8,5 +8,5 @@ exportClasses("dwi","dtiData","dtiTensor","dtiIndices","dwiQball","dwiMixtensor"
 exportMethods("show","plot","print","summary","dti.smooth","dtiTensor","dtiIndices","dwiQball","dwiMixtensor")
 exportMethods("extract","show3d","tracking","selectFibers","reduceFibers")
 export(dtiData,readDWIdata)
-export(tensor2medinria,medinria2tensor,s3d)
+export(tensor2medinria,medinria2tensor)
 exportMethods("sdpar")
