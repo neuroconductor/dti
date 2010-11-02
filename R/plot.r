@@ -202,6 +202,7 @@ setMethod("plot", "dwiMixtensor", function(x, y, slice=1, view="axial", what="fa
 
 setMethod("plot", "dtiIndices", 
 function(x, y, slice=1, view= "axial", method=1, quant=0, minfa=NULL, show=TRUE, identify=FALSE, density=FALSE, contrast.enh=1,what="fa",xind=NULL,yind=NULL,zind=NULL, mar=c(3,3,3,.3),mgp=c(2,1,0), ...) {
+  what <- tolower(what)
   if(is.null(x@fa)) cat("No anisotropy index yet")
   if(!(method %in% 1:6)) {
       warning("method out of range, reset to 1")
@@ -220,28 +221,22 @@ function(x, y, slice=1, view= "axial", method=1, quant=0, minfa=NULL, show=TRUE,
   }
   adimpro <- require(adimpro)
   oldpar <- par(mar=mar,mgp=mgp, ...)
-#  if(what=="GA") maxga <- max(x@ga) 
-#  if(what=="GA") maxga <- quantile(x@ga,0.99) 
-#  resulting image needs to be rescaled 
   if (view == "sagittal") {
-#    anindex <- if(what=="GA") pmin(x@ga[slice,yind,zind]/maxga, 1) else x@fa[slice,yind,zind]
-    anindex <- if(what=="GA") tanh(x@ga[slice,yind,zind]) else x@fa[slice,yind,zind]
+    anindex <- if(what=="ga") tanh(x@ga[slice,yind,zind]) else x@fa[slice,yind,zind]
     if (method == 3) {
       andirection <- x@bary[,slice,yind,zind]
     } else {
       andirection <- x@andir[,slice,yind,zind]
     }
   } else if (view == "coronal") {
-#    anindex <- if(what=="GA") pmin(x@ga[xind,slice,zind]/maxga, 1) else x@fa[xind,slice,zind]
-    anindex <- if(what=="GA") tanh(x@ga[xind,slice,zind]) else x@fa[xind,slice,zind]
+    anindex <- if(what=="ga") tanh(x@ga[xind,slice,zind]) else x@fa[xind,slice,zind]
     if (method == 3) {
       andirection <- x@bary[,xind,slice,zind]
     } else {
       andirection <- x@andir[,xind,slice,zind]
     }
   } else {
-#    anindex <- if(what=="GA") pmin(x@ga[xind,yind,slice]/maxga, 1) else x@fa[xind,yind,slice]
-    anindex <- if(what=="GA") tanh(x@ga[xind,yind,slice]) else x@fa[xind,yind,slice]
+    anindex <- if(what=="ga") tanh(x@ga[xind,yind,slice]) else x@fa[xind,yind,slice]
     if (method == 3) {
       andirection <- x@bary[,xind,yind,slice]
     } else {
@@ -259,11 +254,12 @@ function(x, y, slice=1, view= "axial", method=1, quant=0, minfa=NULL, show=TRUE,
       andirection[2,,] <- abs(andirection[2,,])
       andirection[3,,] <- abs(andirection[3,,])
     } else if (method==2) {
-      ind<-andirection[1,,]<0
+      ind<-andirection[3,,]<0
       dim(andirection) <- c(3,prod(dim(ind)))
       andirection[,ind] <- - andirection[,ind]
+      andirection[1,] <- (1+andirection[1,])/2
       andirection[2,] <- (1+andirection[2,])/2
-      andirection[3,] <- (1+andirection[3,])/2
+      andirection <- sweep(andirection,2,sqrt(apply(andirection^2,2,sum)),"/")
       dim(andirection) <- c(3,dim(ind))
     } else {
       andirection[1,,] <- andirection[1,,]^2

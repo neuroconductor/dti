@@ -360,11 +360,16 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
   nth <- 11
   th <- ev[1,,,] - (ev[2,,,]+ev[3,,,])/2
   falevel <- min(quantile(fa[fa>0],.75),.3)
-  rth <- quantile(th[fa>falevel],c(.1,.99))
+  rth <- quantile(th[fa>=falevel],c(.1,.99))
   th[th<rth[1]] <- rth[1]
   th[th>rth[2]] <- rth[2]
-  indth <- trunc(10*(th-rth[1])/diff(rth)+1)
-  th <- seq(rth[1],rth[2],length=nth)
+  if(diff(rth)>0){
+     indth <- trunc((nth-1)*(th-rth[1])/diff(rth)+1)
+     th <- seq(rth[1],rth[2],length=nth)
+  } else {
+     th <- rep(max(th),nth)
+     indth <- rep(1,length(th))
+  }
   cat("Start search outlier detection at",format(Sys.time()),"\n")
 #
 #  replace physically meaningless S_i by mena S_0 values

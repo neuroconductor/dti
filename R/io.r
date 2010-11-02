@@ -4,7 +4,7 @@
 #                                                              #
 ################################################################
 
-dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=0,mins0value=0,maxvalue=10000,voxelext=c(1,1,1),orientation=c(0,2,5),rotation=diag(3)) {
+dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=0,mins0value=0,maxvalue=32000,voxelext=c(1,1,1),orientation=c(0,2,5),rotation=diag(3)) {
   args <- list(sys.call())
   if (any(sort((orientation)%/%2) != 0:2)) stop("invalid orientation \n")
   if (dim(gradient)[2]==3) gradient <- t(gradient)
@@ -106,7 +106,7 @@ dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=
 
 readDWIdata <- function(gradient, dirlist, format, nslice = NULL, order = NULL,
                         xind=NULL, yind=NULL, zind=NULL,
-                        level=0, mins0value=0, maxvalue=10000,
+                        level=0, mins0value=0, maxvalue=32000,
                         voxelext=NULL, orientation=c(0,2,5), rotation=diag(3)) {
   # basic consistency checks
   args <- list(sys.call())
