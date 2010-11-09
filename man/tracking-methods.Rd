@@ -31,11 +31,11 @@
 \item{roix}{Indices defining the ROI in x direction. Currently min/max is used to define ROIx}
 \item{roiy}{Indices defining the ROI in y direction. Currently min/max is used to define ROIy}
 \item{roiz}{Indices defining the ROI in z direction. Currently min/max is used to define ROIz}
+\item{mask}{Mask defining seed points for tracking}
 \item{method}{Method for fibre tracking. "LINEPROP" is simple line propagation algorithm which is the default.}
 \item{minfa}{Minimal FA to follow the tracks. default 0.3}
 \item{maxangle}{Maximal angle between fiber in adjacent voxels. default 30 degree.}
 \item{subsample}{Subsampling order of the data to get more dense fibre tracks. Note, that objects become very(!) large.}
-\item{nroimask}{Array of image size with 1 at voxel within the ROI to be choosen, and 0 otherwise.}
 \item{minlength}{Minimal length of fibers to be selected.}
 \item{maxdist}{Maximal supremum distance between fibers in mm}
 \item{ends}{Logical: Use only endpoints of shorter fibers for distance (TRUE) or
