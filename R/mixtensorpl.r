@@ -1,3 +1,6 @@
+#
+#  Model without isotropic part
+#
 mfunpl0 <- function(par,siq,grad,pen=1e2){
 #
 #   evaluate rss for Mixtensor-model (without isotropic component)
@@ -92,6 +95,120 @@ w<-.Fortran("mfunpl0",as.double(par),#par(lpar)
            par <- c(par[1],or[,1:ord])
 list(ord=ord,lev=lev,mix=mix,orient=or,par=par)
 }
+#
+#  Model with isotropic part
+#
+mfunpl1 <- function(par,siq,grad,pen=1e2){
+#
+#   evaluate rss for Mixtensor-model (without isotropic component)
+#
+lpar <- length(par)
+m <- (lpar-1)/2
+mp1 <- m+1
+ngrad <- dim(grad)[1]
+z<-.Fortran("mfunpl1",as.double(par),#par(lpar)
+                as.double(siq),#siq(ngrad)
+                as.double(t(grad)),#grad(3,ngrad)
+                as.integer(m),#number of components
+                as.integer(mp1),#number of components+1
+                as.integer(lpar),#number of parameters
+                as.integer(ngrad),#number of gradients
+                as.double(pen),#penalty for negative weights
+                double(ngrad*mp1),#z(ngrad,m+1) working array
+                double(ngrad),#w(ngrad) working array
+                erg = double(1),#residual sum of squares
+                PACKAGE="dti")$erg
+#         cat("par:",signif(par,3),"fw:",signif(z,3),"\n")
+z
+}
+gmfunpl1 <- function(par,siq,grad,pen=1e2){
+#
+#   evaluate rss for Mixtensor-model
+#
+lpar <- length(par)
+m <- (lpar-1)/2
+mp1 <- m+1
+ngrad <- dim(grad)[1]
+z<-.Fortran("mfunpl1g",
+         as.double(par),#par(lpar)
+         as.double(siq),#s(n)
+         as.double(t(grad)),#g(3,n)
+         as.integer(m),
+         as.integer(mp1),
+         as.integer(lpar),
+         as.integer(ngrad),
+         double(3*m),# d(3,m)
+         double(ngrad*mp1),# z(n,mp1)
+         double(mp1*mp1),# v(mp1,mp1)
+         double(mp1),# w(mp1)
+         double(ngrad*m),# dkgj(n,m)
+         double(ngrad*m),# dkgj2(n,m)
+         double(ngrad*m),# ddkdphig(n,m)
+         double(ngrad*m),# ddkdetag(n,m)
+         double(3*m),# dddphi(3,m)
+         double(3*m),# dddeta(3,m)
+         double(mp1*mp1),# dvdth(mp1,mp1)
+         double(mp1*mp1*m),# dvdphi(mp1,mp1,m)
+         double(mp1*mp1*m),# dvdeta(mp1,mp1,m)
+         double(ngrad*mp1*lpar),# dzdpars(n,mp1,lpar)
+         double(mp1*lpar),# dwdpars(mp1,lpar)
+         double(ngrad*mp1),# zs(n,mp1)
+         double(ngrad*mp1),# work1(n,mp1)
+         double(ngrad*mp1),# work2(n,mp1)
+         double(ngrad),# scopy(n)
+         as.double(pen),# pen
+         dfdpar=double(lpar),# dfdpar(lpar)
+         PACKAGE="dti")$dfdpar
+#         cat("par:",signif(par,3),"\n")
+#         cat("gradient:",signif(z,3),"\n")
+         z
+}
+mfunplwghts1 <- function(par,siq,grad,pen=1e2){
+#
+#   get weights for Mixtensor-model (without isotropic component) and extract parameters 
+#
+lpar <- length(par)
+m <- (lpar-1)/2
+mp1 <- m+1
+ngrad <- dim(grad)[1]
+w<-.Fortran("mfunpl1",as.double(par),#par(lpar)
+                as.double(siq),#siq(ngrad)
+                as.double(t(grad)),#grad(3,ngrad)
+                as.integer(m),#number of components
+                as.integer(mp1),#number of components+1
+                as.integer(lpar),#number of parameters
+                as.integer(ngrad),#number of gradients
+                as.double(pen),#penalty for negative weights
+                double(ngrad*mp1),#z(ngrad,m) working array
+                w = double(ngrad),#w(ngrad) working array
+                double(1),#residual sum of squares
+                PACKAGE="dti")$w[1:mp1]
+           w0 <- w[1]
+           w <- w[-1]
+           o <- order(w,decreasing=TRUE)
+           ord <- sum(w>0)
+           if(ord<m){
+              o <- o[1:ord]
+           }
+           sw <- sum(w[w>0])+w0*exp(par[1])
+           lev <- c(par[1],-log(sw))
+           if(ord>0){
+           mix <- w[o]/sw
+           } else {
+           mix <- NULL
+           } 
+           mix0 <- w0/sw
+           or <- matrix(par[2:lpar],2,m)[,o,drop=FALSE]
+           or[1,or[1,]<0] <- or[1,or[1,]<0]+pi
+           or[1,or[1,]>pi] <- or[1,or[1,]>pi]-pi
+           or[2,or[2,]<0] <- or[2,or[2,]<0]+2*pi
+           or[2,or[2,]>2*pi] <- or[2,or[2,]>2*pi]-2*pi
+           par <- c(par[1],or[,1:ord])
+list(ord=ord,lev=lev,mix=mix,mix0=mix0,orient=or,par=par)
+}
+#
+#   Initial estimates
+#
 selisample <- function(ngrad,maxcomp,nguess,dgrad,maxc){
 saved.seed <- .Random.seed
 set.seed(1)
@@ -478,7 +595,7 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
 #
 #   these are the gradient vectors corresponding to minima in spherical coordinates
 #
-     if(method=="mixtensor"){
+     if(method=="mixtensor"||method=="mixtensoriso"){
      par <- numeric(2*mc0+1)
 #  initialize EV-parameter
      if(siind[2,i1,i2,i3]>0){
@@ -509,7 +626,17 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
               z <- optim(par[1:(2*k+1)],mfunpl0,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
                          method=optmethod,control=list(maxit=maxit,reltol=reltol))
            }
-        }         
+        } else if (method=="mixtensoriso"){
+           lpar <- 2*k+1
+#
+           if(optmethod=="BFGS"){
+                 z <- optim(par[1:(2*k+1)],mfunpl1,gmfunpl1,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
+                         method="BFGS",control=list(maxit=maxit,reltol=reltol))
+           } else {
+              z <- optim(par[1:(2*k+1)],mfunpl1,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
+                         method=optmethod,control=list(maxit=maxit,reltol=reltol))
+           }
+        }        
         value <- z$value 
 # thats sum of squared residuals + penalties (w<0 or 0>th or or th > 8)
 #
@@ -517,7 +644,9 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
 #
         if(method=="mixtensor"){
             zz <- mfunplwghts0(z$par[1:lpar],siq[i1,i2,i3,],grad)
-        } 
+        } else if (method=="mixtensoriso"){
+            zz <- mfunplwghts1(z$par[1:lpar],siq[i1,i2,i3,],grad)
+        }
         ord <- zz$ord
 #  replace sigmai by best variance estimate from currently best model
         if(any(zz$lev<0)||ord<k){
