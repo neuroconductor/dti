@@ -85,7 +85,7 @@ improve <- function(mixtensobj,dwiobj, maxcomp=3,  p=40, method="mixtensor", rel
   siq <- array(z$siq,c(ddim[1:3],ngrad0))
   rm(z)
   gc()
-  npar <- 1+3*(0:maxcomp)
+  npar <- if(method=="mixtensor") 1+3*(0:maxcomp) else c(1,2+3*(1:maxcomp))
 #
 #   compute penalty for model selection, default BIC
 #
@@ -155,14 +155,28 @@ improve <- function(mixtensobj,dwiobj, maxcomp=3,  p=40, method="mixtensor", rel
               z <- optim(par[1:(2*k+1)],mfunpl0,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
                          method=optmethod,control=list(maxit=maxit,reltol=reltol))
            }
+        } else if(method=="mixtensoriso"){
+           lpar <- 2*k+1
+#
+           if(optmethod=="BFGS"){
+                 z <- optim(par[1:(2*k+1)],mfunpl1,gmfunpl1,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
+                         method="BFGS",control=list(maxit=maxit,reltol=reltol))
+           } else {
+              z <- optim(par[1:(2*k+1)],mfunpl1,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
+                         method=optmethod,control=list(maxit=maxit,reltol=reltol))
+           }
         }         
         value <- z$value 
 # thats sum of squared residuals + penalties (w<0 or 0>th or or th > 8)
 #
 #   estimate of sigma from the best fitting model
 #
+        if(method=="mixtensor"){
             zz <- mfunplwghts0(z$par[1:lpar],siq[i1,i2,i3,],grad)
-        ord <- zz$ord
+        } else if (method=="mixtensoriso"){
+            zz <- mfunplwghts1(z$par[1:lpar],siq[i1,i2,i3,],grad)
+        }
+         ord <- zz$ord
 #  replace sigmai by best variance estimate from currently best model
         if(any(zz$lev<0)||ord<k){
            ttt <- krit

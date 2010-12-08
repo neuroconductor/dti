@@ -87,6 +87,7 @@ w<-.Fortran("mfunpl0",as.double(par),#par(lpar)
            } else {
            mix <- NULL
            } 
+           if(par[1]<0) cat("par",par,"\n")
            or <- matrix(par[2:lpar],2,m)[,o,drop=FALSE]
            or[1,or[1,]<0] <- or[1,or[1,]<0]+pi
            or[1,or[1,]>pi] <- or[1,or[1,]>pi]-pi
@@ -190,7 +191,13 @@ w<-.Fortran("mfunpl1",as.double(par),#par(lpar)
            if(ord<m){
               o <- o[1:ord]
            }
-           sw <- sum(w[w>0])+w0*exp(par[1])
+           problem <- FALSE
+           if(sum(w[w>0])+w0*exp(par[1])<=0){
+           cat("w0",w0,"w",w,"\n")
+           cat("par",par,"\n")
+           problem <- TRUE
+           }
+           sw <- sum(w[w>0])+max(w0,0)*exp(par[1])
            lev <- c(par[1],-log(sw))
            if(ord>0){
            mix <- w[o]/sw
@@ -204,6 +211,7 @@ w<-.Fortran("mfunpl1",as.double(par),#par(lpar)
            or[2,or[2,]<0] <- or[2,or[2,]<0]+2*pi
            or[2,or[2,]>2*pi] <- or[2,or[2,]>2*pi]-2*pi
            par <- c(par[1],or[,1:ord])
+           if(problem) cat("ord",ord,"lev",lev,"mix",mix,"mix0",mix0,"or",or,"par",par,"\n")
 list(ord=ord,lev=lev,mix=mix,mix0=mix0,orient=or,par=par)
 }
 #
@@ -533,7 +541,7 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
   mask <- array(z$mask,ddim[1:3])
   rm(z)
   gc()
-  npar <- 1+3*(0:maxcomp)
+  npar <- if(method=="mixtensor") 1+3*(0:maxcomp) else c(1,2+3*(1:maxcomp))
 #
 #   compute penalty for model selection, default BIC
 #

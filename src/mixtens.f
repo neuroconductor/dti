@@ -13,7 +13,8 @@ C
       real*8 par(lpar),siq(ngrad),grad(3,ngrad),z(ngrad,m),erg,pen
       integer i,j,i3,mode,r
       real*8 th,w(ngrad),sw,sth,z1,p0,p1,d1,d2,d3,work(1000),s(6)
-      th = max(par(1),-5.d0)
+      th = par(1)
+      th = max(th,-5.d0)
       DO i = 1,m
          i3=2*i
          p0=par(i3)
@@ -32,6 +33,9 @@ C    siq will be replaced, need to copy it if C-version of optim is used
 C
       call dcopy(ngrad,siq,1,w,1)
       call dgelss(ngrad,m,1,z,ngrad,w,ngrad,s,-1.d0,r,work,1000,mode)
+C      IF(r.lt.m) THEN
+C         call intpr("rank",4,r,1)
+C      END IF
       IF(mode.ne.0) THEN
          call intpr("mode",4,mode,1)
          erg = 1d20
@@ -66,7 +70,8 @@ C
       real*8 par(lpar),siq(ngrad),grad(3,ngrad),z(ngrad,mp1),erg,pen
       integer i,j,i3,mode,r
       real*8 th,w(ngrad),sw,sth,z1,p0,p1,d1,d2,d3,work(1000),s(6)
-      th = max(par(1),-5.d0)
+      th = par(1)
+      th = max(th,-5.d0)
       DO j = 1,ngrad
          z(j,1) = 1.d0
       END DO
@@ -90,6 +95,9 @@ C
       call dcopy(ngrad,siq,1,w,1)
       call dgelss(ngrad,mp1,1,z,ngrad,w,ngrad,s,-1.d0,r,work,
      1            1000,mode)
+C      IF(r.lt.mp1) THEN
+C         call intpr("rank",4,r,1)
+C      END IF
       IF(mode.ne.0) THEN
          call intpr("mode",4,mode,1)
          erg = 1d20
@@ -124,12 +132,14 @@ C
      1       w(m),dkgj2(n,m),ddkdphig(n,m),ddkdetag(n,m),dddphi(3,m),
      2       dddeta(3,m),dvdth(m,m),dvdphi(m,m,m),dvdeta(m,m,m),
      3       dzdpars(n,m,lpar),dwdpars(m,lpar),zs(n,m),dfdpar(lpar),pen
-      integer i,j,k,l,i3,ind(10),mode
+      integer i,j,k,l,i3,ind(10),mode,r
       real*8 th,sw,sphi,cphi,seta,ceta,z1,z2,p0,p1,
-     1       work(1000),work1(n,m),work2(n,m),scopy(n)
+     1       work(1000),work1(n,m),work2(n,m),scopy(n),m2th
       real*8 ddot
       external ddot
-      th = max(-5.d0,par(1))
+      th = par(1)
+      th = max(-5.d0,th)
+      m2th = -2.d0*th
       sw = 0
 C
 C  get d, dkgj, dkgj2, dddphi, dddeta, z, ddkdphig, ddkdetag
@@ -172,6 +182,9 @@ C
       IF(mode.gt.1) THEN
          call intpr("mode",4,mode,1)
       END IF
+C      IF(r.lt.m) THEN
+C         call intpr("rank",4,r,1)
+C      END IF
       call dcopy(m,scopy,1,w,1)
 C
 C   thats weights in w now V, dVdth, dVdphi, dVdeta, dzdpars
@@ -194,8 +207,8 @@ C initialize unneeded elements
       DO k=1,m
          DO j=1,n
             dzdpars(j,k,1)=-dkgj2(j,k)*z(j,k)
-            dzdpars(j,k,1+k)=-2.d0*th*work1(j,k)*z(j,k)
-            dzdpars(j,k,1+m+k)=-2.d0*th*work2(j,k)*z(j,k)
+            dzdpars(j,k,1+k)=m2th*work1(j,k)*z(j,k)
+            dzdpars(j,k,1+m+k)=m2th*work2(j,k)*z(j,k)
          END DO
       END DO
       DO k=1,m
@@ -203,7 +216,11 @@ C initialize unneeded elements
          z1 = ddot(n,dzdpars(1,k,1),1,z(1,k),1)
          dVdth(k,k) = 2.d0*z1
          DO l=k+1,m
-            z2=z1+ddot(n,dzdpars(1,l,1),1,z(1,l),1)
+            z2=ddot(n,z(1,k),1,z(1,l),1)
+            v(l,k)=z2
+            v(k,l)=z2
+            z2=ddot(n,dzdpars(1,l,1),1,z(1,k),1)+
+     1         ddot(n,dzdpars(1,k,1),1,z(1,l),1)
             dVdth(k,l) = z2
             dVdth(l,k) = z2
          END DO
@@ -265,7 +282,7 @@ C   use work for intermediate results
          work(j)=z1
       END DO
       dfdpar(1)=-2.d0*ddot(n,work,1,scopy,1)
-      if(th.gt.1.d1) dfdpar(1)=dfdpar(1)+1.d0
+      if(th.gt.1.d2) dfdpar(1)=dfdpar(1)+1.d0
       if(th.lt.1d-2) dfdpar(1)=dfdpar(1)-1.d2
       DO k=1,m
          if(w(k).lt.0.d0) dfdpar(1)=dfdpar(1)-pen*dwdpars(k,1)
@@ -321,12 +338,14 @@ C
      2       dddphi(3,m),dddeta(3,m),dvdth(mp1,mp1),dvdphi(mp1,mp1,m),
      3       dvdeta(mp1,mp1,m),dzdpars(n,mp1,lpar),dwdpars(mp1,lpar),
      4       zs(n,mp1),dfdpar(lpar),pen
-      integer i,j,k,l,i3,ind(10),mode,ip1,kp1,lp1
+      integer i,j,k,l,i3,ind(10),mode,ip1,kp1,lp1,r
       real*8 th,sw,sphi,cphi,seta,ceta,z1,z2,p0,p1,work(1000),
-     1       work1(n,mp1),work2(n,mp1),scopy(n),zji
+     1       work1(n,mp1),work2(n,mp1),scopy(n),zji,m2th
       real*8 ddot
       external ddot
-      th = max(-5.d0,par(1))
+      th = par(1)
+      th = max(-5.d0,th)
+      m2th = -2.d0*th
       sw = 0
 C
 C  get d, dkgj, dkgj2, dddphi, dddeta, z, ddkdphig, ddkdetag
@@ -373,6 +392,9 @@ C
       call dcopy(n,s,1,scopy,1)
       call dcopy(n*mp1,z,1,work1,1)
       call dgelss(n,mp1,1,work1,n,scopy,n,w,-1.d0,r,work,1000,mode)
+C      IF(r.lt.mp1) THEN
+C         call intpr("rank",4,r,1)
+C      END IF
       IF(mode.gt.1) THEN
          call intpr("mode",4,mode,1)
       END IF
@@ -400,8 +422,8 @@ C  derivatives of z(,1) are zero (isotrop part) dzdpars(.,1,.)=0
          kp1=k+1
          DO j=1,n
             dzdpars(j,kp1,1)=-dkgj2(j,k)*z(j,kp1)
-            dzdpars(j,kp1,kp1)=-2.d0*th*work1(j,k)*z(j,kp1)
-            dzdpars(j,kp1,m+kp1)=-2.d0*th*work2(j,k)*z(j,kp1)
+            dzdpars(j,kp1,kp1)=m2th*work1(j,k)*z(j,kp1)
+            dzdpars(j,kp1,m+kp1)=m2th*work2(j,k)*z(j,kp1)
          END DO
       END DO
 C  derivatives of v with respect to theta
@@ -410,7 +432,11 @@ C  derivatives of v with respect to theta
          z1 = ddot(n,dzdpars(1,k,1),1,z(1,k),1)
          dVdth(k,k) = 2.d0*z1
          DO l=k+1,mp1
-            z2=z1+ddot(n,dzdpars(1,l,1),1,z(1,l),1)
+            z2=ddot(n,z(1,k),1,z(1,l),1)
+            v(l,k)=z2
+            v(k,l)=z2
+            z2=ddot(n,dzdpars(1,l,1),1,z(1,k),1)+
+     1         ddot(n,dzdpars(1,k,1),1,z(1,l),1)
             dVdth(k,l) = z2
             dVdth(l,k) = z2
          END DO
@@ -474,14 +500,14 @@ C   now we have residuals in scopy compute gradient of f
 C   use work for intermediate results
 C   z(j,1)=0 und dzdpars(j,1,1) = 0
       DO j = 1,n
-         z1 = 0.d0
+         z1 = dwdpars(1,1)
          DO k=2,mp1
             z1=z1+w(k)*dzdpars(j,k,1)+dwdpars(k,1)*z(j,k)
          END DO
          work(j)=z1
       END DO
       dfdpar(1)=-2.d0*ddot(n,work,1,scopy,1)
-      if(th.gt.1.d1) dfdpar(1)=dfdpar(1)+1.d0
+      if(th.gt.1.d2) dfdpar(1)=dfdpar(1)+1.d0
       if(th.lt.1d-2) dfdpar(1)=dfdpar(1)-1.d2
       DO k=1,mp1
          if(w(k).lt.0.d0) dfdpar(1)=dfdpar(1)-pen*dwdpars(k,1)

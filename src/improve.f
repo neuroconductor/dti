@@ -109,8 +109,9 @@ C  mark this entry and all that are to close as uninteresting
 C   restricts maximum order to 6
       ord0=order(2,2,2)
 C  keep directions that are found to be informative
+      th=1.d0
       IF(ord0.gt.0) THEN
-         th=ord*(lev(1,2,2,2)-lev(2,2,2,2))
+         th=(lev(1,2,2,2)-lev(2,2,2,2))
          DO i=1,ord0
             par(2*(maxcomp-i+1))=orient(1,i,2,2,2)
             par(2*(maxcomp-i+1)+1)=orient(2,i,2,2,2)            
@@ -126,8 +127,8 @@ C  keep directions that are found to be informative
                dir(1)=(i1-2)*vext(1)
                dir(2)=(j1-2)*vext(2)
                dir(3)=(k1-2)*vext(3)
-               ord = order(i1,j1,k1)
-               DO o=1,ord
+               ord0 = order(i1,j1,k1)
+               DO o=1,ord0
                   z = abs(dir(1)*andir(1,o,i1,j1,k1)+
      1                    dir(2)*andir(2,o,i1,j1,k1)+
      1                    dir(3)*andir(3,o,i1,j1,k1))
