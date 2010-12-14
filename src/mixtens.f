@@ -42,7 +42,7 @@ C      END IF
       ELSE
          sw=0.d0
 C penalize for extreme th values
-         if(th.gt.1.d2) sw=sw+th-1.d2
+         if(th.gt.1.d1) sw=sw+th-1.d1
 C penalize for negative weights
          if(th.lt.1.d-2) sw=sw-1.d2*th+1.d0
          DO i=1,m
@@ -69,11 +69,12 @@ C
       integer m,mp1,lpar,ngrad
       real*8 par(lpar),siq(ngrad),grad(3,ngrad),z(ngrad,mp1),erg,pen
       integer i,j,i3,mode,r
-      real*8 th,w(ngrad),sw,sth,z1,p0,p1,d1,d2,d3,work(1000),s(6)
+      real*8 th,w(ngrad),sw,sth,z1,p0,p1,d1,d2,d3,work(1000),s(6),eth
       th = par(1)
       th = max(th,-5.d0)
+      eth = exp(-th)
       DO j = 1,ngrad
-         z(j,1) = 1.d0
+         z(j,1) = eth
       END DO
       DO i = 1,m
 C maximal m-1 components
@@ -104,7 +105,7 @@ C      END IF
       ELSE
          sw=0.d0
 C penalize for extreme th values
-         if(th.gt.1.d2) sw=sw+th-1.d2
+         if(th.gt.1.d1) sw=sw+th-1.d1
 C penalize for negative weights
          if(th.lt.1.d-2) sw=sw-1.d2*th+1.d0
          DO i=1,mp1
@@ -282,7 +283,7 @@ C   use work for intermediate results
          work(j)=z1
       END DO
       dfdpar(1)=-2.d0*ddot(n,work,1,scopy,1)
-      if(th.gt.1.d2) dfdpar(1)=dfdpar(1)+1.d0
+      if(th.gt.1.d1) dfdpar(1)=dfdpar(1)+1.d0
       if(th.lt.1d-2) dfdpar(1)=dfdpar(1)-1.d2
       DO k=1,m
          if(w(k).lt.0.d0) dfdpar(1)=dfdpar(1)-pen*dwdpars(k,1)
@@ -340,11 +341,12 @@ C
      4       zs(n,mp1),dfdpar(lpar),pen
       integer i,j,k,l,i3,ind(10),mode,ip1,kp1,lp1,r
       real*8 th,sw,sphi,cphi,seta,ceta,z1,z2,p0,p1,work(1000),
-     1       work1(n,mp1),work2(n,mp1),scopy(n),zji,m2th
+     1       work1(n,mp1),work2(n,mp1),scopy(n),zji,m2th,eth
       real*8 ddot
       external ddot
       th = par(1)
       th = max(-5.d0,th)
+      eth=exp(-th)
       m2th = -2.d0*th
       sw = 0
 C
@@ -382,8 +384,8 @@ C
       END DO
 C  isotrope part in z
       DO i=1,n
-         z(i,1) = 1.d0
-         zs(i,1) = s(i)
+         z(i,1) = eth
+         zs(i,1) = eth*s(i)
       END DO
 C  
 C   we now have d, dkgj,dddphi, dddeta, z, ddkdphig, ddkdetag
@@ -418,6 +420,9 @@ C initialize unneeded elements
          END DO
       END DO
 C  derivatives of z(,1) are zero (isotrop part) dzdpars(.,1,.)=0
+      DO j=1,n
+         dzdpars(j,1,1)=-eth
+      END DO
       DO k=1,m
          kp1=k+1
          DO j=1,n
@@ -500,14 +505,13 @@ C   now we have residuals in scopy compute gradient of f
 C   use work for intermediate results
 C   z(j,1)=0 und dzdpars(j,1,1) = 0
       DO j = 1,n
-         z1 = dwdpars(1,1)
-         DO k=2,mp1
+         DO k=1,mp1
             z1=z1+w(k)*dzdpars(j,k,1)+dwdpars(k,1)*z(j,k)
          END DO
          work(j)=z1
       END DO
       dfdpar(1)=-2.d0*ddot(n,work,1,scopy,1)
-      if(th.gt.1.d2) dfdpar(1)=dfdpar(1)+1.d0
+      if(th.gt.1.d1) dfdpar(1)=dfdpar(1)+1.d0
       if(th.lt.1d-2) dfdpar(1)=dfdpar(1)-1.d2
       DO k=1,mp1
          if(w(k).lt.0.d0) dfdpar(1)=dfdpar(1)-pen*dwdpars(k,1)

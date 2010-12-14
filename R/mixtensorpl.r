@@ -192,12 +192,12 @@ w<-.Fortran("mfunpl1",as.double(par),#par(lpar)
               o <- o[1:ord]
            }
            problem <- FALSE
-           if(sum(w[w>0])+w0*exp(par[1])<=0){
+           if(sum(w[w>0])+w0<=0){
            cat("w0",w0,"w",w,"\n")
            cat("par",par,"\n")
            problem <- TRUE
            }
-           sw <- sum(w[w>0])+max(w0,0)*exp(par[1])
+           sw <- sum(w[w>0])+max(w0,0)
            lev <- c(par[1],-log(sw))
            if(ord>0){
            mix <- w[o]/sw
