@@ -302,7 +302,7 @@ C
          END DO
          dfdpar(2*i)=-2.d0*ddot(n,work,1,scopy,1)
          DO k=1,m
-            if(w(k).lt.0) dfdpar(1+2*i-1)=dfdpar(1+2*i-1)-
+            if(w(k).lt.0) dfdpar(2*i)=dfdpar(2*i)-
      1                                    pen*dwdpars(k,1+i)
          END DO
 C    thats derivative with respect to phi
@@ -505,6 +505,7 @@ C   now we have residuals in scopy compute gradient of f
 C   use work for intermediate results
 C   z(j,1)=0 und dzdpars(j,1,1) = 0
       DO j = 1,n
+         z1=0.d0
          DO k=1,mp1
             z1=z1+w(k)*dzdpars(j,k,1)+dwdpars(k,1)*z(j,k)
          END DO
@@ -536,7 +537,7 @@ C
          END DO
 C    thats derivative with respect to phi
          DO j = 1,n
-            z1=w(i)*dzdpars(j,i,m+ip1)
+            z1=w(ip1)*dzdpars(j,ip1,m+ip1)
             DO k=1,mp1
                z1=z1+dwdpars(k,m+ip1)*z(j,k)
             END DO

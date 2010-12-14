@@ -159,7 +159,9 @@ improve <- function(mixtensobj,dwiobj, maxcomp=3,  p=40, method="mixtensor", rel
            lpar <- 2*k+1
 #
            if(optmethod=="BFGS"){
-                 z <- optim(par[1:(2*k+1)],mfunpl1,gmfunpl1,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
+                 z <- optim(par[1:(2*k+1)],mfunpl0,gmfunpl0,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
+                         method="BFGS",control=list(maxit=maxit,reltol=reltol))
+                 z <- optim(z$par,mfunpl1,gmfunpl1,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
                          method="BFGS",control=list(maxit=maxit,reltol=reltol))
            } else {
               z <- optim(par[1:(2*k+1)],mfunpl1,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
