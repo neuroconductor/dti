@@ -75,6 +75,16 @@ w<-.Fortran("mfunpl0",as.double(par),#par(lpar)
                 w = double(ngrad),#w(ngrad) working array
                 double(1),#residual sum of squares
                 PACKAGE="dti")$w[1:m]
+erg<-.Fortran("mfunpl0w",as.double(par),#par(lpar)
+                as.double(pmax(w,0)),
+                as.double(siq),#siq(ngrad)
+                as.double(t(grad)),#grad(3,ngrad)
+                as.integer(m),#number of components
+                as.integer(lpar),#number of parameters
+                as.integer(ngrad),#number of gradients
+                double(ngrad*m),#z(ngrad,m) working array
+                erg = double(1),#residual sum of squares
+                PACKAGE="dti")$erg
            o <- order(w,decreasing=TRUE)
            ord <- sum(w>0)
            if(ord<m){
@@ -94,7 +104,7 @@ w<-.Fortran("mfunpl0",as.double(par),#par(lpar)
            or[2,or[2,]<0] <- or[2,or[2,]<0]+2*pi
            or[2,or[2,]>2*pi] <- or[2,or[2,]>2*pi]-2*pi
            par <- c(par[1],or[,1:ord])
-list(ord=ord,lev=lev,mix=mix,orient=or,par=par)
+list(ord=ord,lev=lev,mix=mix,orient=or,par=par,value=erg)
 }
 #
 #  Model with isotropic part
@@ -184,6 +194,17 @@ w<-.Fortran("mfunpl1",as.double(par),#par(lpar)
                 w = double(ngrad),#w(ngrad) working array
                 double(1),#residual sum of squares
                 PACKAGE="dti")$w[1:mp1]
+           erg <- .Fortran("mfunpl1w",as.double(par),#par(lpar)
+                as.double(pmax(w,0)),#par(lpar) 
+                as.double(siq),#siq(ngrad)
+                as.double(t(grad)),#grad(3,ngrad)
+                as.integer(m),#number of components
+                as.integer(mp1),#number of components+1
+                as.integer(lpar),#number of parameters
+                as.integer(ngrad),#number of gradients
+                double(ngrad*mp1),#z(ngrad,m+1) working array
+                erg = double(1),#residual sum of squares
+                PACKAGE="dti")$erg
            w0 <- w[1]
            w <- w[-1]
            o <- order(w,decreasing=TRUE)
@@ -212,7 +233,7 @@ w<-.Fortran("mfunpl1",as.double(par),#par(lpar)
            or[2,or[2,]>2*pi] <- or[2,or[2,]>2*pi]-2*pi
            par <- c(par[1],or[,1:ord])
            if(problem) cat("ord",ord,"lev",lev,"mix",mix,"mix0",mix0,"or",or,"par",par,"\n")
-list(ord=ord,lev=lev,mix=mix,mix0=mix0,orient=or,par=par)
+list(ord=ord,lev=lev,mix=mix,mix0=mix0,orient=or,par=par,value=erg)
 }
 #
 #   Initial estimates
@@ -435,14 +456,14 @@ dwiMixtensor <- function(object, ...) cat("No dwiMixtensor calculation defined f
 
 setGeneric("dwiMixtensor", function(object,  ...) standardGeneric("dwiMixtensor"))
 
-setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mixtensor", reltol=1e-6, maxit=5000,ngc=1000, optmethod="BFGS", nguess=100*maxcomp^2,msc="BIC"){
+setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mixtensor", reltol=1e-6, maxit=5000,ngc=1000, optmethod="BFGS", nguess=100*maxcomp^2,msc="BIC",pen=NULL){
 #
 #  uses  S(g)/s_0 = w_0 exp(-l_1) +\sum_{i} w_i exp(-l_2-(l_1-l_2)(g^T d_i)^2)
 #
 #  
 #
   set.seed(1)
-  pen <- 1e2
+  if(is.null(pen)) pen <- 1e2
   theta <- .5
   maxc <- .866
   args <- sys.call(-1)
@@ -645,8 +666,6 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
                          method=optmethod,control=list(maxit=maxit,reltol=reltol))
            }
         }        
-        value <- z$value 
-# thats sum of squared residuals + penalties (w<0 or 0>th or or th > 8)
 #
 #   estimate of sigma from the best fitting model
 #
@@ -657,6 +676,8 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
         }
         ord <- zz$ord
 #  replace sigmai by best variance estimate from currently best model
+        value <- zz$value 
+# thats sum of squared residuals for the restricted model (w>0)
         if(any(zz$lev<0)||ord<k){
            ttt <- krit
 #   parameters not interpretable reduce order

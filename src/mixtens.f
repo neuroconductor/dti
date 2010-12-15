@@ -33,11 +33,8 @@ C    siq will be replaced, need to copy it if C-version of optim is used
 C
       call dcopy(ngrad,siq,1,w,1)
       call dgelss(ngrad,m,1,z,ngrad,w,ngrad,s,-1.d0,r,work,1000,mode)
-C      IF(r.lt.m) THEN
-C         call intpr("rank",4,r,1)
-C      END IF
       IF(mode.ne.0) THEN
-         call intpr("mode",4,mode,1)
+C         call intpr("mode",4,mode,1)
          erg = 1d20
       ELSE
          sw=0.d0
@@ -96,11 +93,8 @@ C
       call dcopy(ngrad,siq,1,w,1)
       call dgelss(ngrad,mp1,1,z,ngrad,w,ngrad,s,-1.d0,r,work,
      1            1000,mode)
-C      IF(r.lt.mp1) THEN
-C         call intpr("rank",4,r,1)
-C      END IF
       IF(mode.ne.0) THEN
-         call intpr("mode",4,mode,1)
+C         call intpr("mode",4,mode,1)
          erg = 1d20
       ELSE
          sw=0.d0
@@ -116,6 +110,95 @@ C penalize for negative weights
          END DO
          erg=sw
       END IF
+      call rchkusr()
+      RETURN
+      END 
+C
+C __________________________________________________________________
+C
+      subroutine mfunpl0w(par,w,siq,grad,m,lpar,ngrad,z,erg)
+C
+C   model without isotropic compartment 
+C   same as mfunpl but with unconstrained least squares for weights
+C
+C   code is restricted to m<=6
+C
+      implicit logical (a-z)
+      integer m,lpar,ngrad
+      real*8 par(lpar),siq(ngrad),grad(3,ngrad),z(ngrad,m),w(m)
+      integer i,j,i3
+      real*8 th,sth,z1,p0,p1,d1,d2,d3,rss,res,erg
+      th = par(1)
+      th = max(th,-5.d0)
+      DO i = 1,m
+         i3=2*i
+         p0=par(i3)
+         p1=par(i3+1)
+         sth = sin(p0)
+         d1 = sth*cos(p1)
+         d2 = sth*sin(p1)
+         d3 = cos(p0)
+         DO j = 1,ngrad
+            z1 = d1*grad(1,j)+d2*grad(2,j)+d3*grad(3,j)
+            z(j,i) = exp(-th*z1*z1)
+         END DO
+      END DO
+      rss =0.d0
+      DO j=1,ngrad
+         res=siq(j)
+         DO i=1,m
+            res=res-w(i)*z(j,i)
+         END DO
+         rss=rss+res*res
+      END DO
+      erg=rss
+      call rchkusr()
+      RETURN
+      END
+C
+C __________________________________________________________________
+C
+      subroutine mfunpl1w(par,w,siq,grad,m,mp1,lpar,ngrad,z,erg)
+C
+C   model with isotropic compartment 
+C
+C   code is restricted to m<=6
+C
+      implicit logical (a-z)
+      integer m,mp1,lpar,ngrad
+      real*8 par(lpar),w(mp1),siq(ngrad),grad(3,ngrad),z(ngrad,mp1),
+     1       erg
+      integer i,j,i3
+      real*8 th,sth,z1,p0,p1,d1,d2,d3,eth,rss,res
+      th = par(1)
+      th = max(th,-5.d0)
+      eth = exp(-th)
+      DO j = 1,ngrad
+         z(j,1) = eth
+      END DO
+      DO i = 1,m
+C maximal m-1 components
+         i3=2*i
+         p0=par(i3)
+         p1=par(i3+1)
+         sth = sin(p0)
+         d1 = sth*cos(p1)
+         d2 = sth*sin(p1)
+         d3 = cos(p0)
+         DO j = 1,ngrad
+            z1 = d1*grad(1,j)+d2*grad(2,j)+d3*grad(3,j)
+            z(j,i+1) = exp(-th*z1*z1)
+         END DO
+      END DO
+      rss =0.d0
+      DO j=1,ngrad
+         res=siq(j)
+         DO i=1,mp1
+            res=res-w(i)*z(j,i)
+         END DO
+         rss=rss+res*res
+      END DO
+      erg=rss
       call rchkusr()
       RETURN
       END 
@@ -258,6 +341,10 @@ C
 C
 C   thats  dzdpars  now compute  dw/dpar in dwdpars
 C
+C     add pen/2 to diagonal element of V id weights are negative
+      DO k=1,m
+         if(w(k).lt.0) v(k,k)=v(k,k)-pen/2
+      END DO
       call dsysv("U",m,lpar,v,m,ind,dwdpars,m,work,1000,mode)
       IF(mode.ne.0) THEN
          call intpr("mode2",5,mode,1)
@@ -485,6 +572,10 @@ C
 C
 C   thats  dzdpars  now compute  dw/dpar in dwdpars
 C
+C     add pen/2 to diagonal element of V id weights are negative
+      DO k=1,mp1
+         if(w(k).lt.0) v(k,k)=v(k,k)-pen/2
+      END DO
 C      call dblepr("V",1,v,mp1*mp1)
       call dsysv("U",mp1,lpar,v,mp1,ind,dwdpars,mp1,work,1000,mode)
       IF(mode.ne.0) THEN
