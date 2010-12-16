@@ -132,11 +132,10 @@ improve <- function(mixtensobj,dwiobj, maxcomp=3,  p=40, method="mixtensor", rel
                      as.double(orient[,,i1+ind3,i2+ind3,i3+ind3]),
                      as.double(lev[,i1+ind3,i2+ind3,i3+ind3]),
                      as.double(vext),
-#                     as.double(minw),# minimal weight of direction
-#                     as.double(mangle),# maximum angle 
                      param=numeric(2*maxcomp+1),
-                     npar=as.integer(2*maxcomp+1),
-                     DUPL=FALSE,
+                     as.integer(2*maxcomp+1),
+                     npar=integer(1),
+                     DUPL=TRUE,
                      PACKAGE="dti")[c("param","npar")]   
      par <- z$param
 #
@@ -145,7 +144,9 @@ improve <- function(mixtensobj,dwiobj, maxcomp=3,  p=40, method="mixtensor", rel
 #
 #  use AIC/ngrad0, BIC/ngrad0 or AICC/ngrad0 respectively
 #
+#        cat("i",i1,i2,i3,"par",par[1:z$npar],"npar",z$npar,"\n")
      mc0 <- (z$npar+1)/2
+
      for(k in mc0:1){ # begin model order
         if(k<ord) {
 #
@@ -154,6 +155,7 @@ improve <- function(mixtensobj,dwiobj, maxcomp=3,  p=40, method="mixtensor", rel
         if(method=="mixtensor"){
            lpar <- 2*k+1
 #
+#        cat("par",par[1:(2*k+1)],"pen",pen,"krit",krit,"\n")
            if(optmethod=="BFGS"){
                  z <- optim(par[1:(2*k+1)],mfunpl0,gmfunpl0,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
                          method="BFGS",control=list(maxit=maxit,reltol=reltol))
@@ -174,6 +176,7 @@ improve <- function(mixtensobj,dwiobj, maxcomp=3,  p=40, method="mixtensor", rel
                          method=optmethod,control=list(maxit=maxit,reltol=reltol))
            }
         }         
+#        cat("opt-par",z$par,"value",z$value,"krit",krit,"\n")
 # thats sum of squared residuals + penalties (w<0 or 0>th or or th > 8)
 #
 #   estimate of sigma from the best fitting model
@@ -198,15 +201,10 @@ improve <- function(mixtensobj,dwiobj, maxcomp=3,  p=40, method="mixtensor", rel
            ttt <- log(si2new)+penIC[1+ord]
            par <- zz$par
         }
+#        cat("par",par,"value",value,"ord",ord,"w",zz$mix,"lev",zz$lev,"\n")
 #
 #     use directions corresponding to largest weights as initial directions
 #
-        if(!is.logical(ttt < krit)){
-        cat(i1,i2,i3,"ttt",ttt,"krit",krit,"ord",ord,"si2new",si2new,"\n")
-        print(zz)
-        print(penIC)
-        break
-        }
         if(ttt < krit) {
            krit <- ttt
            norder[i1,i2,i3] <- ord

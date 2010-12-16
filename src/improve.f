@@ -2,7 +2,7 @@
      1                    vext,par,npar)
       implicit logical (a-z)
       integer maxcomp,maxorder,order(3,3,3),npar
-      real*8 mix(maxorder,3,3,3),andir(3,maxorder,3,3,3),minw,mangle,
+      real*8 mix(maxorder,3,3,3),andir(3,maxorder,3,3,3),
      1       orient(2,maxorder,3,3,3),lev(2,3,3,3),par(npar),vext(3)
       integer i1,j1,k1,i2,j2,k2,o,o2,ord,ord2,icomp,besti,bestj,
      1        bestk,besto
@@ -98,18 +98,18 @@ C  mark this entry and all that are to close as uninteresting
       RETURN
       END
       subroutine imprparb(maxcomp,maxorder,order,mix,andir,orient,lev,
-     1                    vext,par,npar)
+     1                    vext,par,npar,npar1)
       implicit logical (a-z)
-      integer maxcomp,maxorder,order(3,3,3),npar
-      real*8 mix(maxorder,3,3,3),andir(3,maxorder,3,3,3),minw,mangle,
+      integer maxcomp,maxorder,order(3,3,3),npar,npar1
+      real*8 mix(maxorder,3,3,3),andir(3,maxorder,3,3,3),
      1       orient(2,maxorder,3,3,3),lev(2,3,3,3),par(npar),vext(3)
       integer i1,j1,k1,i2,j2,k2,o,o2,ord,ord2,icomp,besti,bestj,
-     1        bestk,besto,ord0,i
+     1        bestk,besto,ord0,i,ord1
       real*8 krit(6,3,3,3),dir(3),bestor(2),th,z,bestkrit
 C   restricts maximum order to 6
       ord0=order(2,2,2)
 C  keep directions that are found to be informative
-      th=1.d0
+      th=2.5d0
       IF(ord0.gt.0) THEN
          th=(lev(1,2,2,2)-lev(2,2,2,2))
          DO i=1,ord0
@@ -127,8 +127,8 @@ C  keep directions that are found to be informative
                dir(1)=(i1-2)*vext(1)
                dir(2)=(j1-2)*vext(2)
                dir(3)=(k1-2)*vext(3)
-               ord0 = order(i1,j1,k1)
-               DO o=1,ord0
+               ord1 = order(i1,j1,k1)
+               DO o=1,ord1
                   z = abs(dir(1)*andir(1,o,i1,j1,k1)+
      1                    dir(2)*andir(2,o,i1,j1,k1)+
      1                    dir(3)*andir(3,o,i1,j1,k1))
@@ -151,22 +151,25 @@ C  make directions that are close to existing ones as uninteresting
          DO j1=1,3
             DO k1=1,3
                if(i1.eq.2.and.j1.eq.2.and.k1.eq.2) CYCLE
-                  ord = order(i1,j1,k1)
-                  DO o=1,ord
-                     z=0.d0
+               ord = order(i1,j1,k1)
+               DO o=1,ord
+                  z=0.d0
+                  if(ord0.gt.0) THEN
                      DO i=1,ord0
-                     z=max(z,abs(
-     1                  andir(1,i,2,2,2)*andir(1,o,i1,j1,k1)+
-     1                  andir(2,i,2,2,2)*andir(2,o,i1,j1,k1)+
-     2                  andir(3,i,2,2,2)*andir(3,o,i1,j1,k1)))
+                        z=max(z,abs(
+     1                     andir(1,i,2,2,2)*andir(1,o,i1,j1,k1)+
+     1                     andir(2,i,2,2,2)*andir(2,o,i1,j1,k1)+
+     2                     andir(3,i,2,2,2)*andir(3,o,i1,j1,k1)))
                      END DO
-                     krit(o,i1,j1,k1)=krit(o,i1,j1,k1)*(1-z*z)
-                  END DO
+                  END IF
+                  krit(o,i1,j1,k1)=krit(o,i1,j1,k1)*(1-z*z)
                END DO
             END DO
          END DO
+      END DO
 C  now prepare initial parameters
       icomp=maxcomp
+      npar1=2*ord0+1
       DO while (icomp.gt.ord0) 
 C
 C   search for highest ranked component (direction)
@@ -197,10 +200,11 @@ C
                END DO
             END DO
          END DO
-         if(bestkrit.gt.0.1d0) THEN
+         if(bestkrit.gt.0.2d0) THEN
             th=max(th,lev(1,besti,bestj,bestk)-lev(2,besti,bestj,bestk))
             par(2*(maxcomp-icomp+1))=bestor(1)
             par(2*(maxcomp-icomp+1)+1)=bestor(2)
+            npar1=npar1+2
 C  mark this entry and all that are to close as uninteresting
             dir(1)=andir(1,besto,besti,bestj,bestk)
             dir(2)=andir(2,besto,besti,bestj,bestk)
@@ -221,11 +225,13 @@ C  mark this entry and all that are to close as uninteresting
                END DO
             END DO
          ELSE
+C  no more intersting direction reduce order 
             DO i=1,icomp
                par(2*(maxcomp-i+1))=0.d0
                par(2*(maxcomp-i+1)+1)=0.d0
             END DO
-            npar=2*(maxcomp-icomp)+1
+C            npar=2*(maxcomp-icomp)-1
+            CONTINUE
             RETURN
          END IF
          icomp=icomp-1
