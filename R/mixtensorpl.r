@@ -75,6 +75,10 @@ w<-.Fortran("mfunpl0",as.double(par),#par(lpar)
                 w = double(ngrad),#w(ngrad) working array
                 double(1),#residual sum of squares
                 PACKAGE="dti")$w[1:m]
+                if(any(is.na(w)|abs(w)>1e10)){
+                   cat("par",par,"\n siq",siq,"\n m",m,"\n lpar",lpar,"\n pen",
+                        pen,"\n w",w,"\n")
+                }
 erg<-.Fortran("mfunpl0w",as.double(par),#par(lpar)
                 as.double(pmax(w,0)),
                 as.double(siq),#siq(ngrad)
@@ -670,9 +674,9 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
 #   estimate of sigma from the best fitting model
 #
         if(method=="mixtensor"){
-            zz <- mfunplwghts0(z$par[1:lpar],siq[i1,i2,i3,],grad)
+            zz <- mfunplwghts0(z$par[1:lpar],siq[i1,i2,i3,],grad,pen)
         } else if (method=="mixtensoriso"){
-            zz <- mfunplwghts1(z$par[1:lpar],siq[i1,i2,i3,],grad)
+            zz <- mfunplwghts1(z$par[1:lpar],siq[i1,i2,i3,],grad,pen)
         }
         ord <- zz$ord
 #  replace sigmai by best variance estimate from currently best model

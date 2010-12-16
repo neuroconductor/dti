@@ -1,17 +1,19 @@
-improve <- function(mixtensobj,dwiobj, maxcomp=3,  p=40, method="mixtensor", reltol=1e-6, maxit=5000,ngc=1000, optmethod="BFGS", nguess=100*maxcomp^2,msc="BIC"){
+improve <- function(mixtensobj,dwiobj, maxcomp=3,  p=40, method="mixtensor", reltol=1e-6, maxit=5000,ngc=1000, optmethod="BFGS", nguess=100*maxcomp^2,msc="BIC",pen=1,where=NULL){
 #
 #  uses  S(g)/s_0 = w_0 exp(-l_1) +\sum_{i} w_i exp(-l_2-(l_1-l_2)(g^T d_i)^2)
 #
 #  
 #
   set.seed(1)
-  pen <- 1e2
   theta <- .5
   maxc <- .866
   args <- sys.call(-1)
   args <- c(mixtensobj@call,args)
   ngrad <- mixtensobj@ngrad
   ddim <- mixtensobj@ddim
+  mask <- mixtensobj@mask
+  if(is.null(where)||any(dim(where)!=ddim[1:3])) where <- mask
+  where <- where & mask
   s0ind <- mixtensobj@s0ind
   vext <- mixtensobj@voxelext
   if(any(ddim != dwiobj@ddim)){
@@ -42,48 +44,50 @@ improve <- function(mixtensobj,dwiobj, maxcomp=3,  p=40, method="mixtensor", rel
   norient <- orient <- mixtensobj@orient
   nlev <- lev <-mixtensobj@ev
   mask <- mixtensobj@mask
-  cat("Start search outlier detection at",format(Sys.time()),"\n")
+#  cat("Start search outlier detection at",format(Sys.time()),"\n")
 #
 #  replace physically meaningless S_i by mena S_0 values
 #
-  z <- .Fortran("outlier",#misc.f 
-                as.double(dwiobj@si),
-                as.integer(prod(ddim)),
-                as.integer(ngrad),
-                as.logical((1:ngrad)%in%s0ind),
-                as.integer(ns0),
-                si=integer(prod(ddim)*ngrad),
-                index=integer(prod(ddim)),
-                lindex=integer(1),
-                DUP=FALSE,
-                PACKAGE="dti")[c("si","index","lindex")]
-  cat("End search outlier detection at",format(Sys.time()),"\n")
-  si <- array(as.integer(z$si),c(ddim,ngrad))
-  rm(z)
-  gc()
+#  z <- .Fortran("outlier1",#misc.f 
+#                as.double(dwiobj@si),
+#                as.logical(where),
+#                as.integer(prod(ddim)),
+#                as.integer(ngrad),
+#                as.logical((1:ngrad)%in%s0ind),
+#                as.integer(ns0),
+#                si=integer(prod(ddim)*ngrad),
+#                index=integer(prod(ddim)),
+#                lindex=integer(1),
+#                DUP=FALSE,
+#                PACKAGE="dti")[c("si","index","lindex")]
+#  cat("End search outlier detection at",format(Sys.time()),"\n")
+#  si <- array(as.integer(z$si),c(ddim,ngrad))
+#  rm(z)
+#  gc()
+#  gc()
   cat("Start generating auxiliary objects",format(Sys.time()),"\n")
 #
 #  compute mean S_0, s_i/S_0 (siq), var(siq) and mask
 #
-  z <- .Fortran("sweeps0",# mixtens.f
-                as.integer(si[,,,-s0ind,drop=FALSE]),
-                as.integer(si[,,,s0ind,drop=FALSE]),
-                as.integer(ddim[1]),
-                as.integer(ddim[2]),
-                as.integer(ddim[3]),
+  sii <- matrix(dwiobj@si,prod(ddim[1:3]),ngrad)[where,]      
+  z <- .Fortran("sweepimp",# mixtens.f
+                as.integer(sii[,-s0ind]),
+                as.integer(sii[,s0ind]),
+                as.integer(sum(where)),
                 as.integer(ns0),
                 as.integer(ngrad0),
-                as.integer(dwiobj@level),
-                siq=double(prod(ddim[1:3])*ngrad0),
-                s0=double(prod(ddim[1:3])),
-                vsi=double(prod(ddim[1:3])),
-                mask=logical(prod(ddim[1:3])),
+                siq=double(sum(where)*ngrad0),
+                s0=double(sum(where)),
                 DUPL=FALSE,
-                PACKAGE="dti")[c("siq","s0","vsi","mask")]
-  rm(si)
-  s0 <- array(z$s0,ddim[1:3])
-  siq <- array(z$siq,c(ddim[1:3],ngrad0))
+                PACKAGE="dti")[c("siq","s0")]
+  rm(sii)
+  s0 <- array(0,ddim[1:3])
+  s0[where] <- z$s0
+  siq <- matrix(0,prod(ddim[1:3]),ngrad0)
+  siq[where,] <- z$siq
+  dim(siq) <- c(ddim[1:3],ngrad0)
   rm(z)
+  gc()
   gc()
   npar <- if(method=="mixtensor") 1+3*(0:maxcomp) else c(1,2+3*(1:maxcomp))
 #
@@ -115,11 +119,11 @@ improve <- function(mixtensobj,dwiobj, maxcomp=3,  p=40, method="mixtensor", rel
   for(i3 in 2:(n3-1)) for(i2 in 2:(n2-1)) for(i1 in 2:(n1-1)){ # begin loop
      ordi <- order[i1,i2,i3]
      krit <- log(sigma2[i1,i2,i3])+penIC[ordi+1]
-     if(mask[i1,i2,i3]&(ordi<maxcomp)){ # begin mask
+     if(where[i1,i2,i3]&(ordi<maxcomp)){ # begin mask
 #   only analyze voxel within mask
      mc0 <- maxcomp
      ord <- mc0+1
-     par <- .Fortran("imprparb",
+     z <- .Fortran("imprparb",
                      as.integer(maxcomp),
                      as.integer(maxorder),
                      as.integer(order[i1+ind3,i2+ind3,i3+ind3]),
@@ -131,15 +135,17 @@ improve <- function(mixtensobj,dwiobj, maxcomp=3,  p=40, method="mixtensor", rel
 #                     as.double(minw),# minimal weight of direction
 #                     as.double(mangle),# maximum angle 
                      param=numeric(2*maxcomp+1),
-                     as.integer(2*maxcomp+1),
+                     npar=as.integer(2*maxcomp+1),
                      DUPL=FALSE,
-                     PACKAGE="dti")$param                     
+                     PACKAGE="dti")[c("param","npar")]   
+     par <- z$param
 #
 #   these are the gradient vectors corresponding to minima in spherical coordinates
 #
 #
 #  use AIC/ngrad0, BIC/ngrad0 or AICC/ngrad0 respectively
 #
+     mc0 <- (z$npar+1)/2
      for(k in mc0:1){ # begin model order
         if(k<ord) {
 #
@@ -168,17 +174,17 @@ improve <- function(mixtensobj,dwiobj, maxcomp=3,  p=40, method="mixtensor", rel
                          method=optmethod,control=list(maxit=maxit,reltol=reltol))
            }
         }         
-        value <- z$value 
 # thats sum of squared residuals + penalties (w<0 or 0>th or or th > 8)
 #
 #   estimate of sigma from the best fitting model
 #
         if(method=="mixtensor"){
-            zz <- mfunplwghts0(z$par[1:lpar],siq[i1,i2,i3,],grad)
+            zz <- mfunplwghts0(z$par[1:lpar],siq[i1,i2,i3,],grad,pen)
         } else if (method=="mixtensoriso"){
-            zz <- mfunplwghts1(z$par[1:lpar],siq[i1,i2,i3,],grad)
+            zz <- mfunplwghts1(z$par[1:lpar],siq[i1,i2,i3,],grad,pen)
         }
-         ord <- zz$ord
+        value <- zz$value 
+        ord <- zz$ord
 #  replace sigmai by best variance estimate from currently best model
         if(any(zz$lev<0)||ord<k){
            ttt <- krit
@@ -219,7 +225,7 @@ improve <- function(mixtensobj,dwiobj, maxcomp=3,  p=40, method="mixtensor", rel
        prt1 <- Sys.time()
        gc()
        cat("Nr. of voxel",ingc*ngc,"time elapsed:",format(difftime(prt1,prta),digits=3),"remaining time:",
-            format(difftime(prt1,prt0)/(ingc*ngc)*(sum(mask&(order<maxcomp))-ingc*ngc),digits=3),"\n")
+            format(difftime(prt1,prt0)/(ingc*ngc)*(sum(where)-ingc*ngc),digits=3),"\n")
     }
   }# end mask
   }# end loop

@@ -197,30 +197,111 @@ C
                END DO
             END DO
          END DO
-         th=th+lev(1,besti,bestj,bestk)-lev(2,besti,bestj,bestk)
-         par(2*(maxcomp-icomp+1))=bestor(1)
-         par(2*(maxcomp-icomp+1)+1)=bestor(2)
+         if(bestkrit.gt.0.1d0) THEN
+            th=max(th,lev(1,besti,bestj,bestk)-lev(2,besti,bestj,bestk))
+            par(2*(maxcomp-icomp+1))=bestor(1)
+            par(2*(maxcomp-icomp+1)+1)=bestor(2)
 C  mark this entry and all that are to close as uninteresting
-         dir(1)=andir(1,besto,besti,bestj,bestk)
-         dir(2)=andir(2,besto,besti,bestj,bestk)
-         dir(3)=andir(3,besto,besti,bestj,bestk)
-         DO i1=1,3
-            DO j1=1,3
-               DO k1=1,3
-                  if(i1.eq.2.and.j1.eq.2.and.k1.eq.2) CYCLE
-                  ord = order(i1,j1,k1)
-                  DO o=1,ord
-                     if(dir(1)*andir(1,o,i1,j1,k1)+
-     1                  dir(2)*andir(2,o,i1,j1,k1)+
-     2                  dir(3)*andir(3,o,i1,j1,k1).gt..9) THEN
-                        krit(o,i1,j1,k1)=0.d0
-                     END IF
+            dir(1)=andir(1,besto,besti,bestj,bestk)
+            dir(2)=andir(2,besto,besti,bestj,bestk)
+            dir(3)=andir(3,besto,besti,bestj,bestk)
+            DO i1=1,3
+               DO j1=1,3
+                  DO k1=1,3
+                     if(i1.eq.2.and.j1.eq.2.and.k1.eq.2) CYCLE
+                     ord = order(i1,j1,k1)
+                     DO o=1,ord
+                        if(dir(1)*andir(1,o,i1,j1,k1)+
+     1                     dir(2)*andir(2,o,i1,j1,k1)+
+     2                     dir(3)*andir(3,o,i1,j1,k1).gt..9) THEN
+                           krit(o,i1,j1,k1)=0.d0
+                        END IF
+                     END DO
                   END DO
                END DO
             END DO
-         END DO
+         ELSE
+            DO i=1,icomp
+               par(2*(maxcomp-i+1))=0.d0
+               par(2*(maxcomp-i+1)+1)=0.d0
+            END DO
+            npar=2*(maxcomp-icomp)+1
+            RETURN
+         END IF
          icomp=icomp-1
       END DO
-      par(1)=th/(maxcomp+1)
+      par(1)=th
+      RETURN
+      END
+C
+C __________________________________________________________________
+C
+      subroutine sweepimp(si,s0,n,ng0,ng1,siq,ms0)
+C
+C   for voxel in mask:
+C   calculate mean s0 value
+C   sweep s0 from si to generate  siq
+C   calculate variance of siq
+C
+      integer n,ng0,ng1,si(n,ng1),s0(n,ng0)
+      real*8 siq(n,ng1),ms0(n)
+      integer i,k
+      real*8 s0mean
+      DO i=1,n
+         z=0.d0
+         DO k=1,ng0
+            z=z+s0(i,k)
+         END DO
+         s0mean = z/ng0
+         ms0(i) = s0mean
+         DO k=1,ng1
+            siq(i,k)=min(si(i,k)/s0mean,0.99d0)
+         END DO
+      call rchkusr()
+      END DO
+      RETURN
+      END
+      subroutine outlier1(si,mask,n,nb,s0ind,ls0,sinew,ind,lind)
+C
+C   same as subroutine outlier but restricted to a mask
+C   replace physically meaningless Si values by mean S0
+C
+      implicit logical(a-z)
+      integer n,nb,ls0,sinew(n,nb),ind(n),lind
+      real*8 si(n,nb)
+      logical s0ind(nb),mask(n)
+      integer i,j,ls0m1
+      real*8 s0
+      logical changed
+      ls0m1=ls0-1
+      lind=0
+      DO i=1,n
+         if(mask(i)) THEN
+            s0=0
+            DO j=1,nb
+               if(s0ind(j)) THEN
+                  s0=s0+si(i,j)
+                  sinew(i,j)=si(i,j)
+               END IF
+            END DO
+            s0=(s0+ls0m1)/ls0
+            changed=.FALSE.
+            DO j=1,nb
+               if(.not.s0ind(j)) THEN 
+                  if(si(i,j).gt.s0) THEN
+                     sinew(i,j)=s0
+                     changed=.TRUE.
+                  ELSE 
+                     sinew(i,j)=si(i,j)
+                  END IF
+               END IF
+            END DO
+            if(changed) THEN
+               lind=lind+1
+               ind(lind)=i
+            END IF
+         END IF
+      END DO
+      call rchkusr()
       RETURN
       END
