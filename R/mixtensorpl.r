@@ -64,6 +64,7 @@ mfunplwghts0 <- function(par,siq,grad,pen=1e2){
 lpar <- length(par)
 m <- (lpar-1)/2
 ngrad <- dim(grad)[1]
+par[1] <- max(0,par[1])
 w<-.Fortran("mfunpl0",as.double(par),#par(lpar)
                 as.double(siq),#siq(ngrad)
                 as.double(t(grad)),#grad(3,ngrad)
@@ -75,10 +76,10 @@ w<-.Fortran("mfunpl0",as.double(par),#par(lpar)
                 w = double(ngrad),#w(ngrad) working array
                 double(1),#residual sum of squares
                 PACKAGE="dti")$w[1:m]
-                if(any(is.na(w)|abs(w)>1e10)){
-                   cat("par",par,"\n siq",siq,"\n m",m,"\n lpar",lpar,"\n pen",
-                        pen,"\n w",w,"\n")
-                }
+#                if(any(is.na(w)|abs(w)>1e10)){
+#                   cat("par",par,"\n siq",siq,"\n m",m,"\n lpar",lpar,"\n pen",
+#                        pen,"\n w",w,"\n")
+#                }
 erg<-.Fortran("mfunpl0w",as.double(par),#par(lpar)
                 as.double(pmax(w,0)),
                 as.double(siq),#siq(ngrad)
@@ -101,7 +102,7 @@ erg<-.Fortran("mfunpl0w",as.double(par),#par(lpar)
            } else {
            mix <- NULL
            } 
-           if(par[1]<0) cat("par",par,"\n")
+#           if(par[1]<0) cat("par",par,"\n")
            or <- matrix(par[2:lpar],2,m)[,o,drop=FALSE]
            or[1,or[1,]<0] <- or[1,or[1,]<0]+pi
            or[1,or[1,]>pi] <- or[1,or[1,]>pi]-pi
@@ -218,8 +219,8 @@ w<-.Fortran("mfunpl1",as.double(par),#par(lpar)
            }
            problem <- FALSE
            if(sum(w[w>0])+w0<=0){
-           cat("w0",w0,"w",w,"\n")
-           cat("par",par,"\n")
+#           cat("w0",w0,"w",w,"\n")
+#           cat("par",par,"\n")
            problem <- TRUE
            }
            sw <- sum(w[w>0])+max(w0,0)

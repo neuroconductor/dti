@@ -346,9 +346,9 @@ C     add pen/2 to diagonal element of V id weights are negative
          if(w(k).lt.0) v(k,k)=v(k,k)-pen/2
       END DO
       call dsysv("U",m,lpar,v,m,ind,dwdpars,m,work,1000,mode)
-      IF(mode.ne.0) THEN
-         call intpr("mode2",5,mode,1)
-      END IF
+C      IF(mode.ne.0) THEN
+C         call intpr("mode2",5,mode,1)
+C      END IF
 C
 C   now we have dw/dpar in dzdpars next residuals in scopy
 C
@@ -484,9 +484,9 @@ C
 C      IF(r.lt.mp1) THEN
 C         call intpr("rank",4,r,1)
 C      END IF
-      IF(mode.gt.1) THEN
-         call intpr("mode",4,mode,1)
-      END IF
+C      IF(mode.gt.1) THEN
+C         call intpr("mode",4,mode,1)
+C      END IF
       call dcopy(mp1,scopy,1,w,1)
 C
 C   thats weights in w now V, dVdth, dVdphi, dVdeta, dzdpars
@@ -578,9 +578,9 @@ C     add pen/2 to diagonal element of V id weights are negative
       END DO
 C      call dblepr("V",1,v,mp1*mp1)
       call dsysv("U",mp1,lpar,v,mp1,ind,dwdpars,mp1,work,1000,mode)
-      IF(mode.ne.0) THEN
-         call intpr("mode2",5,mode,1)
-      END IF
+C      IF(mode.ne.0) THEN
+C         call intpr("mode2",5,mode,1)
+C      END IF
 C
 C   now we have dw/dpar in dzdpars next residuals in scopy
 C
