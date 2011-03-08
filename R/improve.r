@@ -153,7 +153,8 @@ setMethod("dwiMtImprove",c("dwiMixtensor","dtiData"), function(mtobj, dwiobj, ma
                  z <- optim(par[1:(2*k+1)],mfunpl0,gmfunpl0,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
                          method="BFGS",control=list(maxit=maxit,reltol=reltol))
                  z <- optim(z$par,mfunpl1,gmfunpl1,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
-                         method="BFGS",control=list(maxit=maxit,reltol=reltol))
+#                         method="BFGS",control=list(maxit=maxit,reltol=reltol))
+                         method="Nelder-Mead",control=list(maxit=maxit,reltol=reltol))
            } else {
               z <- optim(par[1:(2*k+1)],mfunpl1,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
                          method=optmethod,control=list(maxit=maxit,reltol=reltol))
@@ -314,6 +315,7 @@ setMethod("dwiMtCombine",c("dwiMixtensor","dwiMixtensor"), function(mtobj1,mtobj
      dim(z1$mix) <- c(ncomp1,n)
      dim(z2$mix) <- c(ncomp2,n)
      z1$mix[1:ncomp2,ind] <- z2$mix[,ind]
+     if(ncomp2<ncomp1) z1$mix[-(1:ncomp2),ind] <- 0
      dim(z1$mix) <- c(ncomp1,ddim)
      dim(orient1) <- c(2,ncomp1,n)
      dim(orient2) <- c(2,ncomp2,n)

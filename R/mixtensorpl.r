@@ -76,10 +76,7 @@ w<-.Fortran("mfunpl0",as.double(par),#par(lpar)
                 w = double(ngrad),#w(ngrad) working array
                 double(1),#residual sum of squares
                 PACKAGE="dti")$w[1:m]
-#                if(any(is.na(w)|abs(w)>1e10)){
-#                   cat("par",par,"\n siq",siq,"\n m",m,"\n lpar",lpar,"\n pen",
-#                        pen,"\n w",w,"\n")
-#                }
+                w <- pmax(0,w)
 erg<-.Fortran("mfunpl0w",as.double(par),#par(lpar)
                 as.double(pmax(w,0)),
                 as.double(siq),#siq(ngrad)
@@ -134,7 +131,6 @@ z<-.Fortran("mfunpl1",as.double(par),#par(lpar)
                 double(ngrad),#w(ngrad) working array
                 erg = double(1),#residual sum of squares
                 PACKAGE="dti")$erg
-#         cat("par:",signif(par,3),"fw:",signif(z,3),"\n")
 z
 }
 gmfunpl1 <- function(par,siq,grad,pen=1e2){
@@ -175,8 +171,6 @@ z<-.Fortran("mfunpl1g",
          as.double(pen),# pen
          dfdpar=double(lpar),# dfdpar(lpar)
          PACKAGE="dti")$dfdpar
-#         cat("par:",signif(par,3),"\n")
-#         cat("gradient:",signif(z,3),"\n")
          z
 }
 mfunplwghts1 <- function(par,siq,grad,pen=1e2){
@@ -259,9 +253,6 @@ ind <- .Fortran("selisamp",
                 as.double(maxc),
                 DUPL=FALSE,
                 PACKAGE="dti")$ind 
-#for(i in 1:nguess) for(j in 1:(maxcomp-1)) for(k in (j+1):maxcomp){
-#if(dgrad[isample[j,i],isample[k,i]]>maxc) ind[i] <- FALSE
-#}
 .Random.seed <- saved.seed
 }
 isample[,ind]

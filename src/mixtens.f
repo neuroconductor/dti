@@ -576,11 +576,7 @@ C     add pen/2 to diagonal element of V id weights are negative
       DO k=1,mp1
          if(w(k).lt.0) v(k,k)=v(k,k)-pen/2
       END DO
-C      call dblepr("V",1,v,mp1*mp1)
       call dsysv("U",mp1,lpar,v,mp1,ind,dwdpars,mp1,work,1000,mode)
-C      IF(mode.ne.0) THEN
-C         call intpr("mode2",5,mode,1)
-C      END IF
 C
 C   now we have dw/dpar in dzdpars next residuals in scopy
 C
@@ -696,7 +692,6 @@ C
       call rchkusr()
       DO j=1,nth
          thj=th(j)
-         call dblepr("Try theta=",10,thj,1)
          icount=0
          DO k=1,ngrad
             DO l=1,nv
@@ -753,7 +748,6 @@ C   nonactive directions
             END IF
             call rchkusr()
          END DO
-C         call dblepr("mval",4,mval,216)
          call intpr("improved:",9,icount,1)
          call rchkusr()
       END DO
@@ -796,6 +790,11 @@ C
      1       z1,dng
       dng=ngrad
       iw=m
+      DO i=1,m
+         wind(i)=i
+         nwi(i)=i
+      END DO
+      ibest=1
       DO i=1,nvox
          msi=0.d0
          m2si=0.d0
@@ -901,14 +900,19 @@ C
      2       vsi(nvox),dgradv(nv,nv),maxc
       logical mask(nvox),skip
       integer i,k,mode,ind(10),l,j,ii,iw,wind(5),nwi(5),mis,
-     1        is(5),isbest(5),ntry0
+     1        is(5),isbest(5),ntry0,iii
       real*8 w(1000),krit,work1(1000),work2(10),erg,thj,msi,m2si,
      1       z1,dng
       dng=ngrad
       mis=m-1
       ntry0=ntry
+      if(m.eq.1) ntry0=1
       iw=m
-      if(m.eq.1) ntry0=1 
+      DO i=1,m
+         wind(i)=i
+         nwi(i)=i
+         isbest(i)=i
+      END DO
       DO i=1,nvox
          msi=0.d0
          m2si=0.d0
@@ -936,6 +940,7 @@ C  now search for minima of sms (or weighted sms)
                   IF(m.gt.1) THEN
                      skip=.FALSE.
                      DO l=1,m-1
+                        iii=mis*(k-1)+l
                    if(dgradv(isample(mis*(k-1)+l),iandir(i)).gt.maxc)
      1                    skip=.TRUE.
                      END DO
@@ -1031,6 +1036,11 @@ C
       mis=m-2
       ntry0=ntry
       iw=m
+      DO i=1,m
+         wind(i)=i
+         nwi(i)=i
+         isbest(i)=i
+      END DO
       if(mis.eq.0) ntry0=1
       DO i=1,nvox
          msi=0.d0
