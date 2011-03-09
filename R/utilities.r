@@ -122,17 +122,15 @@ setMethod("sdpar","dtiData",function(object,level=NULL,sdmethod="sd",interactive
 
 ############### [
 
-setMethod("[","dtiData",function(x, i, j, k, gind, drop=FALSE){
+setMethod("[","dtiData",function(x, i, j, k, drop=FALSE){
   args <- sys.call(-1)
   args <- c(x@call,args)
   if (missing(i)) i <- TRUE
   if (missing(j)) j <- TRUE
   if (missing(k)) k <- TRUE
-  if (missing(gind)) gind <- TRUE
   if (is.logical(i)) ddimi <- x@ddim[1] else ddimi <- length(i)
   if (is.logical(j)) ddimj <- x@ddim[2] else ddimj <- length(j)
   if (is.logical(k)) ddimk <- x@ddim[3] else ddimk <- length(k)
-  if (is.logical(gind)) ddimgind <- x@ngrad else ddimgind <- length(gind)
   swap <- rep(FALSE,3)
   if (!is.logical(i)) swap[1] <- i[1] > i[length(i)]
   if (!is.logical(j)) swap[2] <- j[1] > j[length(j)]
@@ -153,12 +151,12 @@ setMethod("[","dtiData",function(x, i, j, k, gind, drop=FALSE){
   }
   invisible(new("dtiData",
                 call   = args,
-                si     = x@si[i,j,k,gind,drop=FALSE],
-                gradient = gradient[,gind],
-                btb    = create.designmatrix.dti(gradient[,gind]),
-                ngrad  = ddimgind,
-                s0ind  = (1:ddimgind)[apply(abs(gradient[,gind]),2,max)==0],
-                replind = replind(gradient[,gind]),
+                si     = x@si[i,j,k,,drop=FALSE],
+                gradient = gradient,
+                btb    = x@btb,
+                ngrad  = x@ngrad,
+                s0ind  = x@s0ind,
+                replind = x@replind,
                 ddim   = c(ddimi,ddimj,ddimk),
                 ddim0  = x@ddim0,
                 xind   = x@xind[i],

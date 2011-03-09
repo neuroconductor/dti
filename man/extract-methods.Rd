@@ -25,7 +25,7 @@
   \S4method{extract}{dwiMixtensor}(x, what="andir", xind=TRUE, yind=TRUE, zind=TRUE)
   \S4method{extract}{dtiIndices}(x, what=c("fa","andir"), xind=TRUE, yind=TRUE, zind=TRUE)
   \S4method{extract}{dwiQball}(x, what="sphcoef", xind=TRUE, yind=TRUE, zind=TRUE)
-  \S4method{[}{dtiData}(x, i, j, k, gind, drop=FALSE)
+  \S4method{[}{dtiData}(x, i, j, k, drop=FALSE)
   \S4method{[}{dtiTensor}(x, i, j, k, drop=FALSE)
   \S4method{[}{dtiIndices}(x, i, j, k, drop=FALSE)
   \S4method{[}{dwiQball}(x, i, j, k, drop=FALSE)
@@ -35,7 +35,6 @@
   \item{i}{ vector of x-coordinates, defaults to whole range. }
   \item{j}{ vector of y-coordinates, defaults to whole range. }
   \item{k}{ vector of z-coordinates, defaults to whole range. }
-  \item{gind}{ vector of gradient indices, defaults to whole range. }
   \item{xind}{ vector of x-coordinates, defaults to whole range. }
   \item{yind}{ vector of y-coordinates, defaults to whole range. }
   \item{zind}{ vector of z-coordinates, defaults to whole range. }
