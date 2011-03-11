@@ -62,9 +62,9 @@ dfdpar<-.Fortran("mfunpl0g",
          as.double(pen),# pen
          dfdpar=double(lpar),# dfdpar(lpar)
          PACKAGE="dti")$dfdpar
-if(any(abs(dfdpar)>1e6)) {
-cat("dfdpar",dfdpar,"\n")
-dfdpar[1] <- min(10,abs(dfdpar[1]))*sign(dfdpar[1])
+if(any(abs(dfdpar)>1e3)) {
+#cat("dfdpar",dfdpar,"\n")
+dfdpar <- gmfunpln(par,siq,grad,pen=pen)
 }
 dfdpar
 }
@@ -415,8 +415,8 @@ krit[landir] <- z$krit[landir]
 }
 failed <- (krit^2/ngrad) > (sigma2-1e-10)
 if(any(failed[mask])){
-print((krit[mask])[failed[mask]])
-print(((1:prod(dim(si)[1:3]))[mask])[failed[mask]])
+#print((krit[mask])[failed[mask]])
+#print(((1:prod(dim(si)[1:3]))[mask])[failed[mask]])
 print(sum(failed[mask]))
 }
 list(siind=array(siind,c(maxcomp+2,dim(si)[-4])),

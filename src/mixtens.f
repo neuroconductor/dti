@@ -570,15 +570,16 @@ C
       DO k=1,mp1
          dwdpars(k,1) = ddot(n,dzdpars(1,k,1),1,s,1) -
      1                         ddot(mp1,dVdth(1,k),1,w,1)
+         kp1=k+1
          DO l=1,m
             lp1=l+1
             dwdpars(k,lp1) = - ddot(mp1,dVdphi(1,k,l),1,w,1)
             dwdpars(k,m+lp1) = - ddot(mp1,dVdeta(1,k,l),1,w,1)
          END DO
-         dwdpars(k,lp1) = dwdpars(k,lp1) +
-     1                    ddot(n,dzdpars(1,k,lp1),1,s,1)
-         dwdpars(k,m+lp1) = dwdpars(k,m+lp1) +
-     1                    ddot(n,dzdpars(1,k,m+lp1),1,s,1)
+         dwdpars(k,kp1) = dwdpars(k,kp1) +
+     1                    ddot(n,dzdpars(1,k,kp1),1,s,1)
+         dwdpars(k,m+kp1) = dwdpars(k,m+kp1) +
+     1                    ddot(n,dzdpars(1,k,m+kp1),1,s,1)
       END DO
 C
 C   thats  dzdpars  now compute  dw/dpar in dwdpars
