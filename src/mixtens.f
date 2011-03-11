@@ -215,7 +215,7 @@ C
       real*8 par(lpar),s(n),g(3,n),d(3,m),z(n,m),v(m,m),dkgj(n,m),
      1       w(m),dkgj2(n,m),ddkdphig(n,m),ddkdetag(n,m),dddphi(3,m),
      2       dddeta(3,m),dvdth(m,m),dvdphi(m,m,m),dvdeta(m,m,m),
-     3       dzdpars(n,m,lpar),dwdpars(m,lpar),zs(n,m),dfdpar(lpar),pen
+     3       dzdpars(n,m,3),dwdpars(m,lpar),zs(n,m),dfdpar(lpar),pen
       integer i,j,k,l,i3,ind(10),mode,r
       real*8 th,sw,sphi,cphi,seta,ceta,z1,z2,p0,p1,
      1       work(1000),work1(n,m),work2(n,m),scopy(n),m2th
@@ -282,7 +282,7 @@ C   use work1, work2 and scopy for intermediate results
       END DO
 C initialize unneeded elements
       DO k=1,m
-         DO l=1,lpar
+         DO l=1,3
             DO j=1,n
                dzdpars(j,k,l)=0.d0
             END DO
@@ -291,8 +291,8 @@ C initialize unneeded elements
       DO k=1,m
          DO j=1,n
             dzdpars(j,k,1)=-dkgj2(j,k)*z(j,k)
-            dzdpars(j,k,1+k)=m2th*work1(j,k)*z(j,k)
-            dzdpars(j,k,1+m+k)=m2th*work2(j,k)*z(j,k)
+            dzdpars(j,k,2)=m2th*work1(j,k)*z(j,k)
+            dzdpars(j,k,3)=m2th*work2(j,k)*z(j,k)
          END DO
       END DO
       DO k=1,m
@@ -315,14 +315,12 @@ C initialize unneeded elements
             END DO
          END DO
          DO i=1,m
-            dVdphi(i,k,k) = dVdphi(i,k,k)+
-     1                      ddot(n,dzdpars(1,k,1+k),1,z(1,i),1)
-            dVdphi(k,i,k) = dVdphi(i,k,k)+
-     1                      ddot(n,dzdpars(1,k,1+k),1,z(1,i),1)
-            dVdeta(i,k,k) = dVdeta(i,k,k)+
-     1                      ddot(n,dzdpars(1,k,1+m+k),1,z(1,i),1)
-            dVdeta(k,i,k) = dVdeta(i,k,k)+
-     1                      ddot(n,dzdpars(1,k,1+m+k),1,z(1,i),1)
+            z2 = ddot(n,dzdpars(1,k,2),1,z(1,i),1)
+            dVdphi(i,k,k) = dVdphi(i,k,k) + z2
+            dVdphi(k,i,k) = dVdphi(k,i,k) + z2
+            z2 = ddot(n,dzdpars(1,k,3),1,z(1,i),1)
+            dVdeta(i,k,k) = dVdeta(i,k,k) + z2
+            dVdeta(k,i,k) = dVdeta(k,i,k) + z2
          END DO
       END DO
 C
@@ -332,23 +330,35 @@ C
          dwdpars(k,1) = ddot(n,dzdpars(1,k,1),1,s,1) -
      1                         ddot(m,dVdth(1,k),1,w,1)
          DO l=1,m
-            dwdpars(k,1+l) = ddot(n,dzdpars(1,k,1+l),1,s,1)  - 
-     1                              ddot(m,dVdphi(1,k,l),1,w,1)
-            dwdpars(k,1+m+l) = ddot(n,dzdpars(1,k,1+m+l),1,s,1)  -
-     1                              ddot(m,dVdeta(1,k,l),1,w,1)
+            dwdpars(k,1+l) = -ddot(m,dVdphi(1,k,l),1,w,1)    
+            dwdpars(k,1+m+l) = -ddot(m,dVdeta(1,k,l),1,w,1)    
          END DO
+         dwdpars(k,1+k) = dwdpars(k,1+k) + 
+     1                    ddot(n,dzdpars(1,k,2),1,s,1)
+         dwdpars(k,1+m+k) = dwdpars(k,1+m+k) + 
+     1                    ddot(n,dzdpars(1,k,3),1,s,1)
       END DO
 C
 C   thats  dzdpars  now compute  dw/dpar in dwdpars
 C
 C     add pen/2 to diagonal element of V id weights are negative
-      DO k=1,m
-         if(w(k).lt.0) v(k,k)=v(k,k)-pen/2
-      END DO
+C      DO k=1,m
+C         if(w(k).lt.0) v(k,k)=v(k,k)+pen/2
+C      END DO
+C  check for condition matrix of v first if to large use numerical gradients
       call dsysv("U",m,lpar,v,m,ind,dwdpars,m,work,1000,mode)
-C      IF(mode.ne.0) THEN
-C         call intpr("mode2",5,mode,1)
-C      END IF
+      IF(mode.ne.0) THEN
+C   solving the linear system fails due to renk deficiency of v
+C compute numerical gradients instead
+         call mfunpl0(par,s,grad,m,lpar,n,pen,z,w,z1)
+         DO i=1,lpar
+            call dcopy(lpar,par,1,scopy,1)
+            scopy(i)=scopy(i)+1.d-6
+            call mfunpl0(scopy,s,grad,m,lpar,n,pen,z,w,z2)
+            dfdpar(i)=(z2-z1)*1.d6
+         END DO
+         RETURN
+      END IF
 C
 C   now we have dw/dpar in dzdpars next residuals in scopy
 C
@@ -381,7 +391,7 @@ C    dzdpars contains dw/dpars
 C
       DO i = 1,m
          DO j = 1,n
-            z1=w(i)*dzdpars(j,i,1+i)
+            z1=w(i)*dzdpars(j,i,2)
             DO k=1,m
                z1=z1+dwdpars(k,1+i)*z(j,k)
             END DO
@@ -394,7 +404,7 @@ C
          END DO
 C    thats derivative with respect to phi
          DO j = 1,n
-            z1=w(i)*dzdpars(j,i,1+m+i)
+            z1=w(i)*dzdpars(j,i,3)
             DO k=1,m
                z1=z1+dwdpars(k,1+m+i)*z(j,k)
             END DO
@@ -409,6 +419,7 @@ C    thats derivative with respect to phi
 C
 C   thats derivative with respect to eta
 C
+C      call dblepr("dfdpar",6,dfdpar,lpar)
       call rchkusr()
       RETURN
       END 
@@ -545,14 +556,12 @@ C  derivatives of v with respect to theta
 C    dVdxxx(1,l,k) = 0.d0  dVdxxx(i,1,k) = 0.d0  -> dVdphi(1,.,.)=dVdphi(.,1,.)=0
          DO i=1,m
             ip1=i+1
-            dVdphi(ip1,kp1,k) = dVdphi(ip1,kp1,k)+
-     1                      ddot(n,dzdpars(1,kp1,kp1),1,z(1,ip1),1)
-            dVdphi(kp1,ip1,k) = dVdphi(ip1,kp1,k)+
-     1                      ddot(n,dzdpars(1,kp1,kp1),1,z(1,ip1),1)
-            dVdeta(ip1,kp1,k) = dVdeta(ip1,kp1,k)+
-     1                      ddot(n,dzdpars(1,kp1,m+kp1),1,z(1,ip1),1)
-            dVdeta(kp1,ip1,k) = dVdeta(ip1,kp1,k)+
-     1                      ddot(n,dzdpars(1,kp1,m+kp1),1,z(1,ip1),1)
+            z2 = ddot(n,dzdpars(1,kp1,kp1),1,z(1,ip1),1)
+            dVdphi(ip1,kp1,k) = dVdphi(ip1,kp1,k)+ z2
+            dVdphi(kp1,ip1,k) = dVdphi(kp1,ip1,k)+ z2
+            z2 = ddot(n,dzdpars(1,kp1,m+kp1),1,z(1,ip1),1)
+            dVdeta(ip1,kp1,k) = dVdeta(ip1,kp1,k)+ z2
+            dVdeta(kp1,ip1,k) = dVdeta(kp1,ip1,k)+ z2
          END DO
       END DO
 C
@@ -563,20 +572,34 @@ C
      1                         ddot(mp1,dVdth(1,k),1,w,1)
          DO l=1,m
             lp1=l+1
-            dwdpars(k,lp1) = ddot(n,dzdpars(1,k,lp1),1,s,1)  - 
-     1                              ddot(mp1,dVdphi(1,k,l),1,w,1)
-            dwdpars(k,m+lp1) = ddot(n,dzdpars(1,k,m+lp1),1,s,1)  -
-     1                              ddot(mp1,dVdeta(1,k,l),1,w,1)
+            dwdpars(k,lp1) = - ddot(mp1,dVdphi(1,k,l),1,w,1)
+            dwdpars(k,m+lp1) = - ddot(mp1,dVdeta(1,k,l),1,w,1)
          END DO
+         dwdpars(k,lp1) = dwdpars(k,lp1) +
+     1                    ddot(n,dzdpars(1,k,lp1),1,s,1)
+         dwdpars(k,m+lp1) = dwdpars(k,m+lp1) +
+     1                    ddot(n,dzdpars(1,k,m+lp1),1,s,1)
       END DO
 C
 C   thats  dzdpars  now compute  dw/dpar in dwdpars
 C
 C     add pen/2 to diagonal element of V id weights are negative
-      DO k=1,mp1
-         if(w(k).lt.0) v(k,k)=v(k,k)-pen/2
-      END DO
+C      DO k=1,mp1
+C         if(w(k).lt.0) v(k,k)=v(k,k)-pen/2
+C      END DO
       call dsysv("U",mp1,lpar,v,mp1,ind,dwdpars,mp1,work,1000,mode)
+      IF(mode.ne.0) THEN
+C   solving the linear system fails due to renk deficiency of v
+C compute numerical gradients instead
+         call mfunpl0(par,s,grad,mp1,lpar,n,pen,z,w,z1)
+         DO i=1,lpar
+            call dcopy(lpar,par,1,scopy,1)
+            scopy(i)=scopy(i)+1.d-6
+            call mfunpl0(scopy,s,grad,mp1,lpar,n,pen,z,w,z2)
+            dfdpar(i)=(z2-z1)*1.d6
+         END DO
+         RETURN
+      END IF
 C
 C   now we have dw/dpar in dzdpars next residuals in scopy
 C

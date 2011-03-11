@@ -8,7 +8,7 @@ mfunpl0 <- function(par,siq,grad,pen=1e2){
 lpar <- length(par)
 m <- (lpar-1)/2
 ngrad <- dim(grad)[1]
-.Fortran("mfunpl0",as.double(par),#par(lpar)
+erg <- .Fortran("mfunpl0",as.double(par),#par(lpar)
                 as.double(siq),#siq(ngrad)
                 as.double(t(grad)),#grad(3,ngrad)
                 as.integer(m),#number of components
@@ -19,6 +19,12 @@ ngrad <- dim(grad)[1]
                 double(ngrad),#w(ngrad) working array
                 erg = double(1),#residual sum of squares
                 PACKAGE="dti")$erg
+#if(erg>1e10){
+#cat("par",par,"erg",erg,"\n")
+#cat("siq",siq,"\n")
+#erg <- min(erg,1e10)
+#}
+erg
 }
 gmfunpl0 <- function(par,siq,grad,pen=1e2){
 #
@@ -27,7 +33,7 @@ gmfunpl0 <- function(par,siq,grad,pen=1e2){
 lpar <- length(par)
 m <- (lpar-1)/2
 ngrad <- dim(grad)[1]
-.Fortran("mfunpl0g",
+dfdpar<-.Fortran("mfunpl0g",
          as.double(par),#par(lpar)
          as.double(siq),#s(n)
          as.double(t(grad)),#g(3,n)
@@ -47,7 +53,7 @@ ngrad <- dim(grad)[1]
          double(m*m),# dvdth(m,m)
          double(m*m*m),# dvdphi(m,m,m)
          double(m*m*m),# dvdeta(m,m,m)
-         double(ngrad*m*lpar),# dzdpars(n,m,lpar)
+         double(ngrad*m*3),# dzdpars(n,m,3)
          double(m*lpar),# dwdpars(m,lpar)
          double(ngrad*m),# zs(n,m)
          double(ngrad*m),# work1(n,m)
@@ -56,6 +62,29 @@ ngrad <- dim(grad)[1]
          as.double(pen),# pen
          dfdpar=double(lpar),# dfdpar(lpar)
          PACKAGE="dti")$dfdpar
+if(any(abs(dfdpar)>1e6)) {
+cat("dfdpar",dfdpar,"\n")
+dfdpar[1] <- min(10,abs(dfdpar[1]))*sign(dfdpar[1])
+}
+dfdpar
+}
+gmfunpln <- function(par,siq,grad,pen=1e2){
+#
+#   evaluate rss for Mixtensor-model
+#
+lpar <- length(par)
+dfdpar <-  par
+f0 <- mfunpl0(par,siq,grad,pen=pen)
+for(i in 1:lpar){
+pari <- par
+pari[i] <- pari[i]+1e-8
+dfdpar[i] <- (mfunpl0(pari,siq,grad,pen=pen)-f0)*1e8
+}
+#if(any(abs(dfdpar)>1e6)) {
+#cat("dfdpar",dfdpar,"\n")
+#dfdpar[1] <- min(10,abs(dfdpar[1]))*sign(dfdpar[1])
+#}
+dfdpar
 }
 mfunplwghts0 <- function(par,siq,grad,pen=1e2){
 #
@@ -417,6 +446,7 @@ isample <- array(isample[,1:(nguess*nth)],c(maxcomp,nguess,nth))
 # this provides configurations of initial estimates with minimum angle between 
 # directions > acos(maxc)
 cat("using ",nguess,"guesses for initial estimates\n")
+cat("using th",th,"\n")
 nvoxel <- prod(dim(si)[-4])
 siind <- .Fortran("getsiin2",
          as.double(aperm(si,c(4,1:3))),
@@ -452,14 +482,14 @@ dwiMixtensor <- function(object, ...) cat("No dwiMixtensor calculation defined f
 
 setGeneric("dwiMixtensor", function(object,  ...) standardGeneric("dwiMixtensor"))
 
-setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mixtensor", reltol=1e-6, maxit=5000,ngc=1000, optmethod="BFGS", nguess=100*maxcomp^2,msc="BIC",pen=NULL){
+setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mixtensor", reltol=1e-6, maxit=5000,ngc=1000, optmethod="BFGS", nguess=100*maxcomp^2,msc="BIC",pen=NULL,rth=NULL){
 #
 #  uses  S(g)/s_0 = w_0 exp(-l_1) +\sum_{i} w_i exp(-l_2-(l_1-l_2)(g^T d_i)^2)
 #
 #  
 #
   set.seed(1)
-  if(is.null(pen)) pen <- 1e2
+  if(is.null(pen)) pen <- 100
   theta <- .5
   maxc <- .866
   args <- sys.call(-1)
@@ -501,10 +531,10 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
   gc()
   nth <- 11
   th <- ev[1,,,] - (ev[2,,,]+ev[3,,,])/2
-  falevel <- min(quantile(fa[fa>0],.75),.3)
-  rth <- quantile(th[fa>=falevel],c(.1,.99))
-  th[th<rth[1]] <- rth[1]
-  th[th>rth[2]] <- rth[2]
+  if(is.null(rth)) {
+     falevel <- min(quantile(fa[fa>0],.75),.3)
+     rth <- quantile(th[fa>=falevel],c(.1,.99))
+  }
   if(diff(rth)>0){
      indth <- trunc((nth-1)*(th-rth[1])/diff(rth)+1)
      th <- seq(rth[1],rth[2],length=nth)
@@ -512,6 +542,7 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
      th <- rep(max(th),nth)
      indth <- rep(1,length(th))
   }
+cat("using th:::",th,"\n")
   cat("Start search outlier detection at",format(Sys.time()),"\n")
 #
 #  replace physically meaningless S_i by mena S_0 values
@@ -670,11 +701,18 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
         } else if (method=="mixtensoriso"){
             zz <- mfunplwghts1(z$par[1:lpar],siq[i1,i2,i3,],grad,pen)
         }
+#        gmfn <- gmfunpln(z$par[1:lpar],siq[i1,i2,i3,],grad,pen)    
+#        gmf0 <- gmfunpl0(z$par[1:lpar],siq[i1,i2,i3,],grad,pen)
+#        if(any(abs(gmfn-gmf0)>1e-2)){
+#           cat("gmfn",signif(gmfn,3),"\n",
+#               "gmf0",signif(gmf0,3),"\n",
+#               "neg w",k-zz$ord,"ev",zz$lev,"mix",zz$mix,"\n")
+#        }
         ord <- zz$ord
 #  replace sigmai by best variance estimate from currently best model
         value <- zz$value 
 # thats sum of squared residuals for the restricted model (w>0)
-        if(any(zz$lev<0)||ord<k){
+if(any(zz$lev<0)||ord<k){
            ttt <- krit
 #   parameters not interpretable reduce order
         } else {
