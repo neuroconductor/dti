@@ -546,60 +546,6 @@ list(siind=array(siind,c(maxcomp+2,dim(si)[-4])),
      krit=array(krit,dim(si)[-4]))
 }
 
-getsiind2 <- function(si,mask,sigma2,grad,vico,th,maxcomp=3,maxc=.866,nguess=100){
-# assumes dim(grad) == c(ngrad,3)
-# assumes dim(si) == c(n1,n2,n3,ngrad)
-# SO removed
-ngrad <- dim(grad)[1]
-nvico <- dim(vico)[1]
-nsi <- dim(si)[4]
-dgrad <- matrix(abs(grad%*%t(vico)),ngrad,nvico)
-dgrad <- dgrad/max(dgrad)
-dgradi <- matrix(abs(vico%*%t(vico)),nvico,nvico)
-dgradi <- dgradi/max(dgradi)
-nth <- length(th)
-isample <- selisample(nvico,maxcomp,nth*nguess,dgradi,maxc)
-#
-#  eliminate configurations with close directions 
-#
-if(maxcomp>1) { 
-nguess <- trunc(dim(isample)[2]/nth) 
-isample <- array(isample[,1:(nguess*nth)],c(maxcomp,nguess,nth))
-} 
-# this provides configurations of initial estimates with minimum angle between 
-# directions > acos(maxc)
-cat("using ",nguess,"guesses for initial estimates\n")
-cat("using th",th,"\n")
-nvoxel <- prod(dim(si)[-4])
-siind <- .Fortran("getsiin2",
-         as.double(aperm(si,c(4,1:3))),
-         as.double(sigma2),
-         as.integer(nsi),
-         as.integer(nvoxel),
-         as.integer(maxcomp),
-         as.double(dgrad),
-         as.integer(nvico),
-         as.double(th),
-         as.integer(nth),
-         double(ngrad*nvico),
-         as.integer(isample),
-         as.integer(nguess),
-         double(nsi),
-         double(nsi*(maxcomp+2)),
-         siind=integer((maxcomp+2)*nvoxel),
-         krit=double(prod(dim(si)[1:3])),
-         as.integer(maxcomp+2),
-         as.logical(mask),
-         PACKAGE="dti")[c("siind","krit")]
-failed <- (siind$krit^2/ngrad) > (sigma2-1e-10)
-if(any(failed[mask])){
-print((siind$krit[mask])[failed[mask]])
-print(((1:prod(dim(si)[1:3]))[mask])[failed[mask]])
-print(sum(failed[mask]))
-}
-list(siind=array(siind$siind,c(maxcomp+2,dim(si)[-4])),
-     krit=array(siind$krit,dim(si)[-4]))
-}
 
 dwiMixtensor <- function(object, ...) cat("No dwiMixtensor calculation defined for this class:",class(object),"\n")
 
@@ -806,7 +752,7 @@ cat("using th:::",th,"\n")
                  z <- optim(par[1:(2*k+1)],mfunpl0,gmfunpl0,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
                          method="BFGS",control=list(maxit=maxit,reltol=reltol))
            }  else {
-              z <- optim(par[1:(2*k+1)],mfunpl0h,siq=siq[i1,i2,i3,],grad=grad,
+              z <- optim(par[1:(2*k+1)],mfunpl0,siq=siq[i1,i2,i3,],grad=grad,
                          method="Nelder-Mead",control=list(maxit=maxit,reltol=reltol))
            }
         } else if (method=="mixtensoriso"){
