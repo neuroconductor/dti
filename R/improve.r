@@ -2,7 +2,7 @@ dwiMtImprove <- function( mtobj,dwiobj, ...) cat("No dwiMixtensor calculation de
 
 setGeneric("dwiMtImprove", function( mtobj,dwiobj, ...) standardGeneric("dwiMtImprove"))
 
-setMethod("dwiMtImprove",c("dwiMixtensor","dtiData"), function(mtobj, dwiobj, maxcomp=3,  p=40, method="mixtensor", reltol=1e-6, maxit=5000,ngc=1000, optmethod="BFGS", nguess=100*maxcomp^2,msc="BIC",pen=1,where=NULL){
+setMethod("dwiMtImprove",c("dwiMixtensor","dtiData"), function(mtobj, dwiobj, maxcomp=3,  p=40, method="mixtensor", reltol=1e-6, maxit=5000,ngc=1000, optmethod="BFGS", nguess=100*maxcomp^2,msc="BIC",pen=NULL,where=NULL){
 #
 #  uses  S(g)/s_0 = w_0 exp(-l_1) +\sum_{i} w_i exp(-l_2-(l_1-l_2)(g^T d_i)^2)
 #
@@ -13,6 +13,7 @@ setMethod("dwiMtImprove",c("dwiMixtensor","dtiData"), function(mtobj, dwiobj, ma
   maxc <- .866
   args <- sys.call(-1)
   args <- c(mtobj@call,args)
+  if(is.null(pen)) pen <- 100
   ngrad <- mtobj@ngrad
   ddim <- mtobj@ddim
   mask <- mtobj@mask
@@ -41,7 +42,7 @@ setMethod("dwiMtImprove",c("dwiMixtensor","dtiData"), function(mtobj, dwiobj, ma
   norder <- order <- z$order
   nandir <- andir <- z$andir
   maxorder <- dim(andir)[2]
-  maxcomp <- min(maxcomp,maxorder) 
+  maxcomp <- max(min(maxcomp,maxorder),max(mtobj@order))
   rm(z)
   gc()
   nsigma2 <- sigma2 <- mtobj@sigma
@@ -102,7 +103,7 @@ setMethod("dwiMtImprove",c("dwiMixtensor","dtiData"), function(mtobj, dwiobj, ma
   for(i3 in 2:(n3-1)) for(i2 in 2:(n2-1)) for(i1 in 2:(n1-1)){ # begin loop
      ordi <- order[i1,i2,i3]
      krit <- log(sigma2[i1,i2,i3])+penIC[ordi+1]
-     if(where[i1,i2,i3]&(ordi<maxcomp)){ # begin mask
+     if(where[i1,i2,i3]&((ordi<maxcomp)||method=="mixtensoriso")){ # begin mask
 #   only analyze voxel within mask
      mc0 <- maxcomp
      ord <- mc0+1
@@ -140,23 +141,22 @@ setMethod("dwiMtImprove",c("dwiMixtensor","dtiData"), function(mtobj, dwiobj, ma
 #
 #        cat("par",par[1:(2*k+1)],"pen",pen,"krit",krit,"\n")
            if(optmethod=="BFGS"){
-                 z <- optim(par[1:(2*k+1)],mfunpl0,gmfunpl0,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
+#                 z <- optim(par[1:(2*k+1)],mfunpl0,gmfunpl0,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
+#                         method="BFGS",control=list(maxit=maxit,reltol=reltol))
+                 z <- optim(par[1:lpar],mfunpl0,gmfunpl0,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
                          method="BFGS",control=list(maxit=maxit,reltol=reltol))
            } else {
-              z <- optim(par[1:(2*k+1)],mfunpl0,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
+              z <- optim(par[1:lpar],mfunpl0,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
                          method=optmethod,control=list(maxit=maxit,reltol=reltol))
            }
         } else if(method=="mixtensoriso"){
            lpar <- 2*k+1
 #
            if(optmethod=="BFGS"){
-                 z <- optim(par[1:(2*k+1)],mfunpl0,gmfunpl0,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
+                 z <- optim(par[1:lpar],mfunpl1,gmfunpl1,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
                          method="BFGS",control=list(maxit=maxit,reltol=reltol))
-                 z <- optim(z$par,mfunpl1,gmfunpl1,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
-#                         method="BFGS",control=list(maxit=maxit,reltol=reltol))
-                         method="Nelder-Mead",control=list(maxit=maxit,reltol=reltol))
            } else {
-              z <- optim(par[1:(2*k+1)],mfunpl1,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
+              z <- optim(par[1:lpar],mfunpl1,siq=siq[i1,i2,i3,],grad=grad,pen=pen,
                          method=optmethod,control=list(maxit=maxit,reltol=reltol))
            }
         }         
@@ -166,9 +166,9 @@ setMethod("dwiMtImprove",c("dwiMixtensor","dtiData"), function(mtobj, dwiobj, ma
 #   estimate of sigma from the best fitting model
 #
         if(method=="mixtensor"){
-            zz <- mfunplwghts0(z$par[1:lpar],siq[i1,i2,i3,],grad,pen)
+            zz <- mfunplwghts0(z$par,siq[i1,i2,i3,],grad,pen)
         } else if (method=="mixtensoriso"){
-            zz <- mfunplwghts1(z$par[1:lpar],siq[i1,i2,i3,],grad,pen)
+            zz <- mfunplwghts1(z$par,siq[i1,i2,i3,],grad,pen)
         }
         value <- zz$value 
         ord <- zz$ord
