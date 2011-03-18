@@ -540,7 +540,124 @@ failed <- (krit^2/ngrad) > (sigma2-1e-10)
 if(any(failed[mask])){
 #print((krit[mask])[failed[mask]])
 #print(((1:prod(dim(si)[1:3]))[mask])[failed[mask]])
-print(sum(failed[mask]))
+#print(sum(failed[mask]))
+}
+list(siind=array(siind,c(maxcomp+2,dim(si)[-4])),
+     krit=array(krit,dim(si)[-4]))
+}
+getsiind3iso <- function(si,mask,sigma2,grad,vico,th,indth,ev,fa,andir,maxcomp=3,maxc=.866,nguess=100){
+# assumes dim(grad) == c(ngrad,3)
+# assumes dim(si) == c(n1,n2,n3,ngrad)
+# SO removed
+ngrad <- dim(grad)[1]
+nvico <- dim(vico)[1]
+ddim <- dim(fa)
+nsi <- dim(si)[4]
+dgrad <- matrix(abs(grad%*%t(vico)),ngrad,nvico)
+dgrad <- dgrad/max(dgrad)
+dgradi <- matrix(abs(vico%*%t(vico)),nvico,nvico)
+dgradi <- dgradi/max(dgradi)
+nth <- length(th)
+nvoxel <- prod(ddim)
+landir <- fa>.3
+landir[is.na(landir)] <- FALSE
+if(any(is.na(andir))) {
+cat(sum(is.na(andir)),"na's in andir")
+andir[is.na(andir)]<-sqrt(1/3)
+}
+if(any(is.na(landir))) {
+cat(sum(is.na(landir)),"na's in landir")
+landir[is.na(landir)]<-0
+}
+if(any(is.na(fa))) {
+cat(sum(is.na(fa)),"na's in fa")
+fa[is.na(fa)]<-0
+}
+iandir <- array(.Fortran("iandir",
+                   as.double(t(vico)),
+                   as.integer(nvico),
+                   as.double(andir),
+                   as.integer(nvoxel),
+                   as.logical(landir),
+                   iandir=integer(2*prod(ddim)),
+                   DUPL=FALSE,
+                   PACKAGE="dti")$iandir,c(2,nvoxel))
+isample0 <- selisample(nvico,maxcomp,nguess,dgradi,maxc)
+if(maxcomp>1) isample1 <- selisample(nvico,maxcomp-1,nguess,dgradi,maxc)
+if(maxcomp==1) isample1 <- sample(ngrad, nguess, replace = TRUE)
+#
+#  eliminate configurations with close directions 
+#
+# this provides configurations of initial estimates with minimum angle between 
+# directions > acos(maxc)
+nvoxel <- prod(dim(si)[-4])
+cat("using ",nguess,"guesses for initial estimates\n")
+siind <- matrix(as.integer(0),maxcomp+2,nvoxel)
+krit <- numeric(nvoxel)
+# first voxel with fa<.3
+cat(sum(mask&!landir),"voxel with small FA\n")
+nguess <- length(isample0)/maxcomp
+z <- .Fortran("getsi30i",
+         as.double(aperm(si,c(4,1:3))),
+         as.double(sigma2),
+         as.integer(nsi),
+         as.integer(nvoxel),
+         as.integer(maxcomp),
+         as.double(dgrad),
+         as.integer(nvico),
+         as.double(th),
+         as.integer(nth),
+         as.integer(indth),
+         double(ngrad*nvico),
+         as.integer(isample0),
+         as.integer(nguess),
+         double(nsi),
+         double(nsi*(maxcomp+3)),
+         siind=integer((maxcomp+2)*nvoxel),
+         krit=double(nvoxel),
+         as.integer(maxcomp+2),
+         as.logical(mask&!landir),
+         PACKAGE="dti")[c("siind","krit")]
+dim(z$siind) <- c(maxcomp+2,nvoxel)
+siind[,!landir] <- z$siind[,!landir]
+krit[!landir] <- z$krit[!landir]
+# now voxel where first tensor direction seems important
+if(maxcomp >0){
+cat(sum(mask&landir),"voxel with distinct first eigenvalue \n")
+nguess <- if(maxcomp>1) length(isample1)/(maxcomp-1) else length(isample1)
+z <- .Fortran("getsi31i",
+         as.double(aperm(si,c(4,1:3))),
+         as.double(sigma2),
+         as.integer(nsi),
+         as.integer(nvoxel),
+         as.integer(maxcomp),
+         as.double(dgrad),
+         as.integer(nvico),
+         as.integer(iandir[1,]),
+         as.double(th),
+         as.integer(nth),
+         as.integer(indth),
+         double(ngrad*nvico),
+         as.integer(isample1),
+         as.integer(nguess),
+         double(nsi),
+         double(nsi*(maxcomp+3)),
+         siind=integer((maxcomp+2)*nvoxel),
+         krit=double(nvoxel),
+         as.integer(maxcomp+2),
+         as.logical(mask&landir),
+         as.double(dgradi),
+         as.double(maxc),
+         PACKAGE="dti")[c("siind","krit")]
+dim(z$siind) <- c(maxcomp+2,nvoxel)
+siind[,landir] <- z$siind[,landir]
+krit[landir] <- z$krit[landir]
+}
+failed <- (krit^2/ngrad) > (sigma2-1e-10)
+if(any(failed[mask])){
+#print((krit[mask])[failed[mask]])
+#print(((1:prod(dim(si)[1:3]))[mask])[failed[mask]])
+#print(sum(failed[mask]))
 }
 list(siind=array(siind,c(maxcomp+2,dim(si)[-4])),
      krit=array(krit,dim(si)[-4]))
@@ -551,7 +668,7 @@ dwiMixtensor <- function(object, ...) cat("No dwiMixtensor calculation defined f
 
 setGeneric("dwiMixtensor", function(object,  ...) standardGeneric("dwiMixtensor"))
 
-setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mixtensor", reltol=1e-6, maxit=5000,ngc=1000, optmethod="BFGS", nguess=100*maxcomp^2,msc="BIC",pen=NULL,rth=NULL){
+setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mixtensor", reltol=1e-6, maxit=5000,ngc=1000, optmethod="BFGS", nguess=100*maxcomp^2,msc="BIC",pen=NULL){
 #
 #  uses  S(g)/s_0 = w_0 exp(-l_1) +\sum_{i} w_i exp(-l_2-(l_1-l_2)(g^T d_i)^2)
 #
@@ -690,7 +807,7 @@ cat("using th:::",th,"\n")
 #
 #  compute initial estimates (EV from grid and orientations from icosa3$vertices)
 #
-  siind <- getsiind3(siq,mask,sigma2,grad,t(vert),th,indth,ev,fa,andir,maxcomp,maxc=maxc,nguess=nguess)
+  siind <- if(method=="mixtensor")  getsiind3(siq,mask,sigma2,grad,t(vert),th,indth,ev,fa,andir,maxcomp,maxc=maxc,nguess=nguess) else getsiind3iso(siq,mask,sigma2,grad,t(vert),th,indth,ev,fa,andir,maxcomp,maxc=maxc,nguess=nguess)
   krit <- siind$krit # sqrt(sum of squared residuals) for initial estimates
   siind <- siind$siind # components 1: model order 2: 
                        # grid index for EV 2+(1:m) index of orientations
