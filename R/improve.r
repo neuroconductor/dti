@@ -73,10 +73,15 @@ setMethod("dwiMtImprove",c("dwiMixtensor","dtiData"), function(mtobj, dwiobj, ma
   rm(z)
   gc()
   gc()
-  npar <- if(method=="mixtensor") 1+3*(0:maxcomp) else c(1,2+3*(1:maxcomp))
+  npar0 <- 1+3*(0:maxcomp)
+  npar <- if(method=="mixtensor") npar0 else c(1,2+3*(1:maxcomp))
 #
 #   compute penalty for model selection, default BIC
 #
+  penIC0 <- switch(msc,"AIC"=2*npar/ngrad0,"BIC"=log(ngrad0)*npar0/ngrad0,
+                  "AICC"=(1+npar0/ngrad0)/(1-(npar+2)/ngrad0),
+                  log(ngrad0)*npar0/ngrad0)
+# used to destinguish between initial estimates with qnd without isotropic part
   penIC <- switch(msc,"AIC"=2*npar/ngrad0,"BIC"=log(ngrad0)*npar/ngrad0,
                   "AICC"=(1+npar/ngrad0)/(1-(npar+2)/ngrad0),
                   log(ngrad0)*npar/ngrad0)
@@ -102,7 +107,9 @@ setMethod("dwiMtImprove",c("dwiMixtensor","dtiData"), function(mtobj, dwiobj, ma
 #
   for(i3 in 2:(n3-1)) for(i2 in 2:(n2-1)) for(i1 in 2:(n1-1)){ # begin loop
      ordi <- order[i1,i2,i3]
-     krit <- log(sigma2[i1,i2,i3])+penIC[ordi+1]
+     smix <- sum(mix[,i1,i2,i3])
+# used to destinguish between initial estimates with qnd without isotropic part
+     krit <- log(sigma2[i1,i2,i3])+ if(smix>1-1e-8) penIC0[ordi+1] else penIC[ordi+1]
      if(where[i1,i2,i3]&((ordi<maxcomp)||method=="mixtensoriso")){ # begin mask
 #   only analyze voxel within mask
      mc0 <- maxcomp
