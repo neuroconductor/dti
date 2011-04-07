@@ -98,30 +98,30 @@ setMethod("dwiMtImprove",c("dwiMixtensor","dtiData"), function(mtobj, dwiobj, ma
   n3 <- ddim[3]
   igc <- 0
   ingc <- 0
-  ind3 <- -1:1
+  if(method=="mixtensor") where <- where & order<maxcomp
   prt0 <- Sys.time()
 #
 #   loop over voxel in volume
 #  exclude indices at the sides of the cube (just to save index operations,
 #  usually they are outside the mask anyway
 #
-  for(i3 in 2:(n3-1)) for(i2 in 2:(n2-1)) for(i1 in 2:(n1-1)){ # begin loop
+  for(i3 in 1:n3) for(i2 in 1:n2) for(i1 in 1:n1){ # begin loop
      ordi <- order[i1,i2,i3]
      smix <- sum(mix[,i1,i2,i3])
 # used to destinguish between initial estimates with qnd without isotropic part
      krit <- log(sigma2[i1,i2,i3])+ if(smix>1-1e-8) penIC0[ordi+1] else penIC[ordi+1]
-     if(where[i1,i2,i3]&((ordi<maxcomp)||method=="mixtensoriso")){ # begin mask
+     if(where[i1,i2,i3]){ 
 #   only analyze voxel within mask
      mc0 <- maxcomp
      ord <- mc0+1
      z <- .Fortran("imprparb",
                      as.integer(maxcomp),
                      as.integer(maxorder),
-                     as.integer(order[i1+ind3,i2+ind3,i3+ind3]),
-                     as.double(mix[,i1+ind3,i2+ind3,i3+ind3]),
-                     as.double(andir[,,i1+ind3,i2+ind3,i3+ind3]),
-                     as.double(orient[,,i1+ind3,i2+ind3,i3+ind3]),
-                     as.double(lev[,i1+ind3,i2+ind3,i3+ind3]),
+                     as.integer(getcube3(order,i1,i2,i3)),
+                     as.double(getcube3(mix,i1,i2,i3)),
+                     as.double(getcube3(andir,i1,i2,i3)),
+                     as.double(getcube3(orient,i1,i2,i3)),
+                     as.double(getcube3(lev,i1,i2,i3)),
                      as.double(vext),
                      param=numeric(2*maxcomp+1),
                      as.integer(2*maxcomp+1),
@@ -365,3 +365,16 @@ setMethod("dwiMtCombine",c("dwiMixtensor","dwiMixtensor"), function(mtobj1,mtobj
             )
    }
 )
+getcube3 <- function(aobj,i1,i2,i3){
+ddim <- dim(aobj)
+ndim <- length(ddim)
+subcube <- array(0,c(switch(ndim-2,NULL,ddim[1],ddim[1:2]),3,3,3))
+ind3 <- (-1):1
+indz <- ind3[(i3+ind3 > 0) & (i3+ind3 <= ddim[ndim])]
+indy <- ind3[(i2+ind3 > 0) & (i2+ind3 <= ddim[ndim-1])]
+indx <- ind3[(i1+ind3 > 0) & (i1+ind3 <= ddim[ndim-2])]
+switch(ndim-2, subcube[indx+2,indy+2,indz+2] <- aobj[i1+indx,i2+indy,i3+indz], 
+               subcube[,indx+2,indy+2,indz+2] <- aobj[,i1+indx,i2+indy,i3+indz], 
+               subcube[,,indx+2,indy+2,indz+2] <- aobj[,,i1+indx,i2+indy,i3+indz])
+subcube
+}

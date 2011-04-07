@@ -44,12 +44,6 @@ th[1,,,] <- 4
 th[2,,,] <- .8
 alpha[1,,,] <- 0
 beta[1,,,] <- 0
-#for(i in 1:n) alpha[1,i,,] <- pi*(i-1)/(n-1)
-#for(i in 1:n) beta[1,i,,] <- pi*(i-1)/(n-1)
-#for(i in 1:n) alpha[2,,i,] <- pi/2/(n-1)*(i-1)
-#for(i in 1:n) beta[2,,i,] <- 0
-#for(i in 1:n) alpha[3,,,i] <- pi/2/(n-1)*(i-1)
-#for(i in 1:n) beta[3,,,i] <- pi/2
 # first component in x -direction
 for(i in 1:n) alpha[1,i,,] <- pi/2
 for(i in 1:n) beta[1,i,,] <- 0
@@ -109,7 +103,8 @@ if(is.na(maxcomp)) maxcomp <- 3 else maxcomp <- min(5,max(1,maxcomp))
 z0 <- truemixtens(mix,th,alpha,beta,grad,sigma,ns0)
 z <- tdatamixtens(mix,th,alpha,beta,grad,sigma,ns0)
 zt <- dtiTensor(z)
-zmix <- dwiMixtensor(z,optmethod="BFGS",maxcomp=maxcomp,reltol=1e-6)
+zmix <- dwiMixtensor(z,maxcomp=maxcomp)
+zmix <- dwiMtImprove(zmix,z,maxcomp=maxcomp)
 gslexists <- "gsl" %in% .packages(TRUE)
 if(gslexists) zqball <- dwiQball(z,order=8,lambda=2e-2)
 

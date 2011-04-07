@@ -5,16 +5,17 @@
      1       vext(2),wght(n)
       integer ih1,ih2,ih3,i,j1,j2,j3,j4,i4
       real*8 e2,e3,g1,g2,g3,f1,f2,f3,hk,hk2,v1a,v2a,v3a,w1a,w2a,w3a,
-     1       v1b,v2b,v3b,w1b,w2b,w3b,w12,w13,d2a,d2b,d3a,d3b
-      real*8 h2,d2,d3,x1,x2,x3,dist1,dist2,dist3,n12,n13,nx1
+     1       v1b,v2b,v3b,w1b,w2b,w3b,d2a,d2b,d3a,d3b,d1,d2,d3
+      real*8 h2,vd2,vd3,x1,x2,x3,kofd1,kofd2,kofd3,n12,n13,nx1,twoh2
       ih1 = h
       ih2 = h/vext(1)
       ih3 = h/vext(2)
       h2 = h*h
+      twoh2 = 2.d0*h2
       hk = h2*kappa
       hk2 = hk*kappa
-      d2 = vext(1)
-      d3 = vext(2)
+      vd2 = vext(1)
+      vd3 = vext(2)
       DO i4=1,ngrad
          g1=grad(1,i4)
          g2=grad(2,i4)
@@ -47,42 +48,47 @@ C grad contains only non-zero components, first component is 0
       DO j1 = 0,ih1
          x1 = j1
          DO j2 = -ih2,ih2
-            x2 = d2*j2
+            x2 = vd2*j2
             DO j3 = -ih3,ih3
-               x3 = d3*j3
+               x3 = vd3*j3
                DO j4 = 1,ngrad
                   nx1 = x1*grad(1,j4)+x2*grad(2,j4)+x3*grad(3,j4)
-                  dist2 = max(0.d0,1.d0-nx1*nx1/2.d0/h2)
-                  if(dist2.le.0.d0) CYCLE  
+                  d2 = nx1*nx1
+                  if(d2.ge.twoh2) CYCLE  
+                  kofd2 = 1.d0-d2/twoh2
                   DO i4 = 1,ngrad
-                     n12 = grad(1,i4)*grad2(1,j4)+
-     1                   grad(2,i4)*grad2(2,j4)+grad(3,i4)*grad2(3,j4)
                      n13 = grad(2,i4)*grad3(1,j4)+grad(3,i4)*grad3(2,j4)
-                     dist1 = max(0.d0,1.d0-(n12*n12+n13*n13)/hk2)
-                     if(dist1.le.0.d0) CYCLE  
-                     w12 = 0.25d0*w12
-                     v1a=grad2(1,j4)-w12*grad(1,j4)
-                     v2a=grad2(2,j4)-w12*grad(2,j4)
-                     v3a=grad2(3,j4)-w12*grad(3,j4)
-                     v1b=grad2(1,j4)+w12*grad(1,j4)
-                     v2b=grad2(2,j4)+w12*grad(2,j4)
-                     v3b=grad2(3,j4)+w12*grad(3,j4)
-                     w13=0.25d0*w13
-                     w1a=-w13*grad(1,j4)
-                     w2a=grad3(1,j4)-w13*grad(2,j4)
-                     w3a=grad3(2,j4)-w13*grad(3,j4)
-                     w1b=w13*grad(1,j4)
-                     w2b=grad3(1,j4)+w13*grad(2,j4)
-                     w3b=grad3(2,j4)+w13*grad(3,j4)
-                     d2a=abs(x1*v1a+x2*v2a+x3*v3a)
-                     d2b=abs(x1*v1b+x2*v2b+x3*v3b)
+                     d1 = n13*n13
+                     if(d1.ge.hk2) CYCLE  
+                     n12 = grad(1,i4)*grad2(1,j4)+
+     1                     grad(2,i4)*grad2(2,j4)+grad(3,i4)*grad2(3,j4)
+                     d1 = d1+n12*n12
+                     if(d1.ge.hk2) CYCLE                       
+                     kofd1 = 1.d0-d1/hk2
+                     if(kofd1.le.0.d0) CYCLE  
+                     w1a=-0.25d0*grad(1,j4)
+                     w2a=grad3(1,j4)-0.25d0*grad(2,j4)
+                     w3a=grad3(2,j4)-0.25d0*grad(3,j4)
+                     w1b=0.25d0*grad(1,j4)
+                     w2b=grad3(1,j4)+0.25d0*grad(2,j4)
+                     w3b=grad3(2,j4)+0.25d0*grad(3,j4)
                      d3a=abs(x1*w1a+x2*w2a+x3*w3a)
                      d3b=abs(x1*w1b+x2*w2b+x3*w3b)
-                     dist3=min(d2a,d2b)+min(d3a,d3b)
+                     d3=min(d3a,d3b)
+                     if(d3.ge.hk) CYCLE                       
+                     v1a=grad2(1,j4)-0.25d0*grad(1,j4)
+                     v2a=grad2(2,j4)-0.25d0*grad(2,j4)
+                     v3a=grad2(3,j4)-0.25d0*grad(3,j4)
+                     v1b=grad2(1,j4)+0.25d0*grad(1,j4)
+                     v2b=grad2(2,j4)+0.25d0*grad(2,j4)
+                     v3b=grad2(3,j4)+0.25d0*grad(3,j4)
+                     d2a=abs(x1*v1a+x2*v2a+x3*v3a)
+                     d2b=abs(x1*v1b+x2*v2b+x3*v3b)
+                     d3=d3+min(d2a,d2b)
 C  this differs from definition 2.3     
-                     dist3 = max(0.d0,1.d0-dist3/hk)
-                     if(dist3.le.0.d0) CYCLE  
-                     wght(i)=dist1*dist2*dist3
+                     if(d3.ge.hk) CYCLE  
+                     kofd3 = 1.d0-d3/hk
+                     wght(i)=kofd1*kofd2*kofd3
                      ind(1,i) = j1
                      ind(2,i) = j2
                      ind(3,i) = j3
@@ -221,6 +227,7 @@ C
                   j4=ind(5,i)
                   z=th(i1,i2,i3,i4)-th(j1,j2,j3,j4)
                   z=z*z*ni(i1,i2,i3,i4)/lambda
+C    ni(i1,i2,i3,i4) contains normalization by siinv
                   if(z.ge.1.d0) CYCLE
                   z=w(i)*min(1.d0,2.d0-2.d0*z)
                   z=z*s2inv(j1,j2,j3,j4)

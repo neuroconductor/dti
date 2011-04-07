@@ -81,13 +81,13 @@ setMethod("dwiQball","dtiData",function(object,what="wODF",order=4,lambda=0){
      si[is.na(si)] <- 0
 # Regularization following Aganj et al. (2010) delta=1e-3
      ind1 <- si<0
-     ind2 <- si<1e-3&&!ind1
+     ind2 <- (si<1e-3)&(!ind1)
      ind3 <- si>1 
-     ind4 <- si>1-1e3&&!ind3
+     ind4 <- (si>1-1e-3)&(!ind3)
      si[ind1] <- 5e-4
      si[ind2] <- 5e-4+5e2*si[ind2]^2
      si[ind3] <- 1 - 5e-4
-     si[ind4] <- 1 - 5e-4+5e2*(1-si[ind2])^2
+     si[ind4] <- 1 - 5e-4 - 5e2*(1-si[ind4])^2
 #     si[si>=1] <- 1-.Machine$double.neg.eps
      si <- log( -log(si))
      si[is.na(si)] <- 0

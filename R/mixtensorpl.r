@@ -721,10 +721,8 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,  p=40, method="mi
   gc()
   nth <- 11
   th <- ev[1,,,] - (ev[2,,,]+ev[3,,,])/2
-  if(is.null(rth)) {
-     falevel <- min(quantile(fa[fa>0],.75),.3)
-     rth <- quantile(th[fa>=falevel],c(.1,.99))
-  }
+  falevel <- min(quantile(fa[fa>0],.75),.3)
+  rth <- quantile(th[fa>=falevel],c(.1,.99))
   if(diff(rth)>0){
      indth <- trunc((nth-1)*(th-rth[1])/diff(rth)+1)
      th <- seq(rth[1],rth[2],length=nth)

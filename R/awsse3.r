@@ -10,7 +10,7 @@ dwi.smooth <- function(object, ...) cat("No DTI smoothing defined for this class
 
 setGeneric("dwi.smooth", function(object, ...) standardGeneric("dwi.smooth"))
 
-setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,dist="SE3",minsb=5){
+setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,sigma2=NULL,dist="SE3",minsb=5,kappa=NULL,coils=0,verbose=FALSE){
   args <- sys.call(-1)
   args <- c(object@call,args)
   ngrad <- object@ngrad
@@ -24,14 +24,20 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,dist="SE3",mi
   mask <- meansb > minsb
   masksb <- array(mask,c(ddim,ngrad))
   vext <- object@voxelext[2:3]/object@voxelext[1]
-  hseq <- gethseqse3(kstar,grad,vext=vext,dist=dist)
+  hseq <- gethseqse3(kstar,grad,kappa,vext=vext,dist=dist,verbose=verbose)
   th <- sb
-  s2inv <- array(1e-10,dim(sb))
+  if(is.null(sigma2)){
+     s2inv <- array(1,dim(sb))
+  } else {
+     s2inv <- array(1/sigma2,dim(sb))  
+  }
 # make it nonrestrictive for the first step
   ni <- s2inv
+  if(is.null(kappa))
   kappa <- if(dist=="SE3") 1/sqrt(.25+.17*ngrad) else .28+.17*ngrad
 #  kappa <- getkappa(grad)
   prt0 <- Sys.time()
+  cat("adaptive smoothing in SE3, kstar=",kstar,if(verbose)"\n" else " ")
   for(k in 1:kstar){
     hakt <- hseq[k]
     kappa0 <- if(dist=="SE3") kappa else kappa/hakt
@@ -60,27 +66,34 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,dist="SE3",mi
     ni <- z$ni
     th <- z$thn
     r <- z$r
-cat("k:",k,"h_k:",hakt,"quartiles of ni",signif(quantile(z$ni/s2inv),3),
+    ind <- masksb&!is.na(r)&ni>s2inv&r<1e4
+if(verbose){
+   cat("k:",k,"h_k:",hakt,"quartiles of ni",signif(quantile(z$ni/s2inv),3),
   "mean of ni",signif(mean(z$ni/s2inv),3),
   "time elapsed:",format(difftime(Sys.time(),prt0),digits=3),"\n")
-    ind <- masksb&!is.na(r)&ni>s2inv&r<1e4
     cat("quartiles of r",signif(quantile(r[ind]),3),"length of ind",length(ind),"\n")
-    z <- sum(th[ind]/r[ind]*(ni[ind]-s2inv[ind]))/sum(ni[ind]-s2inv[ind])
-    s2inv <- array(1/z/z,dim(sb))
-#    yy <- th[ind]/r[ind]
-#    xx <- th[ind]
-#    ww <- ni[ind]-s2inv[ind]
-#    print(lm(yy~xx,weights=ww))
-#    rall <- sum(r[ind]*(ni[ind]-s2inv[ind]))/sum(ni[ind]-s2inv[ind])
+    } else {
+      cat(".")
+    }
+#    z <- sum(th[ind]/r[ind]*(ni[ind]-s2inv[ind]))/sum(ni[ind]-s2inv[ind])
+#    s2inv <- array(1/z/z,dim(sb))
+    yy <- th[ind]/r[ind]
+     if(is.null(sigma2)){
+        xx <- th[ind]
+        ww <- ni[ind]-s2inv[ind]
+       if(verbose) print(lm(yy~xx,weights=ww))
+        rall <- sum(r[ind]*(ni[ind]-s2inv[ind]))/sum(ni[ind]-s2inv[ind])
 #    cat("rall",rall,"\n")
-#    rall <- max(1.92,rall)
-#    theta <- koayinv(rall,1)
-#    th2 <- theta^2
-#    s2inv[masksb] <- pi/2*((1+th2/2)*
-#         besselI(th2/4,0,TRUE)+th2/2*besselI(th2/4,1,TRUE))/pmax(1,th)
-#    s2inv[s2inv>0.1] <- 0.1
-    cat("quartiles of s2inv",signif(quantile(s2inv),3),"\n")
+        rall <- max(1.92,rall)
+        theta <- koayinv(rall,1)
+        th2 <- theta^2   
+        s2inv[masksb] <- pi/2*((1+th2/2)*
+        besselI(th2/4,0,TRUE)+th2/2*besselI(th2/4,1,TRUE))/pmax(1,th)
+        s2inv[s2inv>0.1] <- 0.1
+#    cat("quartiles of s2inv",signif(quantile(s2inv),3),"\n")
+     }
   }
+if(!verbose) cat("\n")
   object@si[,,,-s0ind] <- th
   object@call <- args
   object
