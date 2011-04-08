@@ -19,7 +19,7 @@ setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="r
   s0ind <- object@s0ind
   ns0 <- length(s0ind)
   sdcoef <- object@sdcoef
-  if(all(sdcoef==0)) {
+  if(all(sdcoef[1:4]==0)) {
     cat("No parameters for model of error standard deviation found\n estimating these parameters\n You may prefer to run sdpar before calling dtiTensor")
     sdcoef <- sdpar(object,interactive=FALSE)@sdcoef
   }

@@ -9,6 +9,7 @@ exportMethods("show","plot","print","summary","dti.smooth","dtiTensor","dtiIndic
 exportMethods("extract","show3d","tracking","selectFibers","reduceFibers")
 export(dtiData,readDWIdata)
 export(tensor2medinria,medinria2tensor)
-exportMethods("sdpar")
+exportMethods("sdpar","getsdofsb")
 exportMethods("dwi.smooth")
+export(awslinsd)
 #export(mfunpl0,mfunpl1,gmfunpl0,gmfunpl1,mfunplwghts0,mfunplwghts1,lkernse3,smoothdwi)
