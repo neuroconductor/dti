@@ -68,7 +68,7 @@ setMethod("sdpar","dtiData",function(object,level=NULL,sdmethod="sd",interactive
         cutpoint <-  readline("Provide value for cut off point:")
         cutpoint <- if(!is.null(cutpoint)) as.numeric(cutpoint) else A0
         if(!is.na(cutpoint)) {
-          level <-A0 <- cutpoint
+          level0 <-A0 <- cutpoint
         }
       } else {
         accept <- TRUE
@@ -90,7 +90,7 @@ setMethod("sdpar","dtiData",function(object,level=NULL,sdmethod="sd",interactive
     A0b <- quantile(if(ls0ind>1) s0mean[indx1,indy1,indz1] else s0[indx1,indy1,indz1],.99)
 #  A0a provides a guess for a threshold based on upper quantiles of intensities
 #  in cubes located at the edges (probably only containing noise
-    level <- A0 <- min(A0a,A0b)*threshfactor
+    level0 <- A0 <- min(A0a,A0b)*threshfactor
   } 
   }
   # determine parameters for linear relation between standard deviation and mean
@@ -115,9 +115,9 @@ setMethod("sdpar","dtiData",function(object,level=NULL,sdmethod="sd",interactive
   } else {
     sdcoef0 <- awslinsd(s0,hmax=5,mask=NULL,A0=A0,A1=A1)$vcoef
   }
-  object@level <- level
+  object@level <- level0
   object@sdcoef[1:4] <- c(sdcoef0,A0,A1)
-  cat("Estimated parameters:",signif(sdcoef[1:2],3),"Interval of linearity",signif(A0,3),"-",signif(A1,3),"\n")
+  cat("Estimated parameters:",signif(sdcoef0[1:2],3),"Interval of linearity",signif(A0,3),"-",signif(A1,3),"\n")
   object
 })
 

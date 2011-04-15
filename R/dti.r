@@ -120,7 +120,6 @@ setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="r
                 rss=double(prod(ddim)),
                 double(ngrad),
                 PACKAGE="dti",DUP=FALSE)[c("th0","D","res","rss")]
-     cat("successfully completed nonlinear regression ",format(Sys.time()),"\n")
      dim(z$th0) <- ddim
      dim(z$D) <- c(6,ddim)
      dim(z$res) <- c(ngrad,ddim)
@@ -130,6 +129,23 @@ setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="r
      D <- z$D
      rss <- z$rss
      th0 <- z$th0
+#  handle points where estimation failed
+     n <- prod(ddim)
+     indD <- (1:n)[D[2,,,]==0&D[3,,,]==0&D[5,,,]==0&mask]
+     dim(si) <- c(n,ngrad)
+     dim(D) <- c(6,n)
+     dim(res) <- c(ngrad,n)
+     for(i in indD){
+        zz <- optim(c(1,0,0,1,0,1),opttensD,method="BFGS",si=si[i,-s0ind],s0=s0[i],grad=grad[,-s0ind],sdcoef=sdcoef)
+        D[,i] <- rho2D(zz$par)
+        th0[i] <- s0[i]
+        rss[i] <- zz$value
+        res[s0ind,i] <- 0
+        res[-s0ind,i] <- tensDres(zz$par,si[i,-s0ind],s0[i],grad[,-s0ind])
+     }
+     dim(D) <- c(6,ddim)
+     dim(res) <- c(ngrad,ddim)
+     cat("successfully completed nonlinear regression ",format(Sys.time()),"\n")
      sigma2 <- array(0,c(1,1,1))
      rm(z)
      gc()
@@ -201,6 +217,34 @@ setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="r
             )
 })
 
+opttensD <- function(par,si,s0,grad,sdcoef){
+      .Fortran("opttensD",
+               as.double(par),
+               as.double(si),
+               as.double(s0),
+               as.double(grad),
+               as.double(sdcoef),
+               erg=double(1),
+               DUP=FALSE,
+               PACKAGE="dti")$erg
+}
+tensDres <- function(par,si,s0,grad){
+      .Fortran("tensDres",
+               as.double(par),
+               as.double(si),
+               as.double(s0),
+               as.double(grad),
+               res=double(length(si)),
+               DUP=FALSE,
+               PACKAGE="dti")$res
+}
+rho2D <- function(par){
+      .Fortran("rho2D",
+               as.double(par),
+               D=double(6),
+               DUP=FALSE,
+               PACKAGE="dti")$D
+}
 #############
 
 dtiIndices <- function(object, ...) cat("No DTI indices calculation defined for this class:",class(object),"\n")
