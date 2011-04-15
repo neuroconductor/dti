@@ -15,6 +15,7 @@ setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="r
   args <- sys.call(-1)
   args <- c(object@call,args)
   ngrad <- object@ngrad
+  grad <- object@gradient
   ddim <- object@ddim
   s0ind <- object@s0ind
   ns0 <- length(s0ind)
@@ -217,30 +218,32 @@ setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="r
             )
 })
 
-opttensD <- function(par,si,s0,grad,sdcoef){
+opttensD <- function(param,si,s0,grad,sdcoef){
       .Fortran("opttensD",
-               as.double(par),
+               as.double(param),
                as.double(si),
                as.double(s0),
                as.double(grad),
+               as.integer(length(si)),
                as.double(sdcoef),
                erg=double(1),
                DUP=FALSE,
                PACKAGE="dti")$erg
 }
-tensDres <- function(par,si,s0,grad){
+tensDres <- function(param,si,s0,grad){
       .Fortran("tensDres",
-               as.double(par),
+               as.double(param),
                as.double(si),
                as.double(s0),
                as.double(grad),
+               as.integer(length(si)),
                res=double(length(si)),
                DUP=FALSE,
                PACKAGE="dti")$res
 }
-rho2D <- function(par){
+rho2D <- function(param){
       .Fortran("rho2D",
-               as.double(par),
+               as.double(param),
                D=double(6),
                DUP=FALSE,
                PACKAGE="dti")$D
