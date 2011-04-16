@@ -339,20 +339,42 @@ C  decrease gamma and try new regularization
       call regD0(D,negdefin)
       RETURN
       END
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+C
+C     get D from rho without regularization
+C
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+      subroutine rho2D0(rho,D)
+      implicit logical(a-z)
+      real*8 D(6),rho(6),r1,r2,r3,r4,r5,r6
+      r1=rho(1)
+      r2=rho(2)
+      r3=rho(3)
+      r4=rho(4)
+      r5=rho(5)
+      r6=rho(6)
+      D(1)=r1*r1
+      D(2)=r1*r2
+      D(3)=r1*r3
+      D(4)=r2*r2+r4*r4
+      D(5)=r2*r3+r4*r5
+      D(6)=r3*r3+r5*r5+r6*r6
+      RETURN
+      END
 C
 C
 C   compute Least Squares Criterion based on positive definit tensor parametrization D = R^T R
 C
 C     
-      subroutine opttensD(par,si,s0,grad,ngrad,sdcoef,erg)
+      subroutine opttensR(par,si,s0,grad,ngrad,sdcoef,erg)
       implicit logical (a-z)
       integer ngrad
-      real*8 par(6),si(ngrad),s0,grad(3,ngrad),sdcoef(4)
+      real*8 par(6),si(ngrad),s0,grad(3,ngrad),sdcoef(4),erg
       integer i
-      real*8 low,up,g1,g2,g3,s,D(6),erg,z,w
+      real*8 low,up,g1,g2,g3,s,D(6),z,w
       low=sdcoef(1)+sdcoef(3)*sdcoef(2)
       up=sdcoef(1)+sdcoef(4)*sdcoef(2)
-      call rho2D(par,D)
+      call rho2D0(par,D)
       s=0.d0
       DO i = 1,ngrad
          g1 = grad(1,i)
@@ -372,9 +394,8 @@ C
       integer ngrad
       real*8 par(6),si(ngrad),s0,grad(3,ngrad)
       integer i
-      real*8 g1,g2,g3,s,D(6),res(ngrad),z
-      call rho2D(par,D)
-      s=0.d0
+      real*8 g1,g2,g3,D(6),res(ngrad),z
+      call rho2D0(par,D)
       DO i = 1,ngrad
          g1 = grad(1,i)
          g2 = grad(2,i)
