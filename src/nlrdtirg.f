@@ -100,12 +100,12 @@ C includes regularization of D
          relrss = (oldrss-rss)/rss
          IF(maxabsdg.lt.eps.or.relrss.lt.1d-6) THEN
 C  prepare things for return if gradient is close to 0
-            call regD0(D,negdefin)
+            call regularD(D,negdefin)
             RETURN
          END IF
          IF(iter.gt.1.and.abs(rho(1)*rho(4)*rho(6)).lt.1.d-10) THEN
 C  prepare things for return if gradient is close to 0
-            call regD0(D,negdefin)
+            call regularD(D,negdefin)
             RETURN
          END IF
          gamma=min(gamma/alpha,1.d0)
@@ -149,7 +149,7 @@ C  next iteration
                END DO
                th0n=th0-gamma*pk(7)
                nrss=0.d0
-               call rho2D(rhon,Dn)
+               call rho2D0(rhon,Dn)
                DO i=1,nb
                   z=b(1,i)*Dn(1)
                   DO j=2,6
@@ -182,7 +182,7 @@ C  decrease gamma and try new regularization
          rss=nrss
          call rchkusr()
       END DO
-      call regD0(D,negdefin)
+      call regularD(D,negdefin)
       RETURN
       END
       subroutine dslvdtir(s,nb,b,varinv,th0,D,F,niter,eps,rss)
@@ -255,12 +255,12 @@ C
          relrss = (oldrss-rss)/rss
          IF(maxabsdg.lt.eps.or.relrss.lt.1d-6) THEN
 C  prepare things for return if gradient is close to 0
-            call regD0(D,negdefin)
+            call regularD(D,negdefin)
             RETURN
          END IF
          IF(iter.gt.1.and.abs(rho(1)*rho(4)*rho(6)).lt.1.d-10) THEN
 C  prepare things for return if gradient is close to 0
-            call regD0(D,negdefin)
+            call regularD(D,negdefin)
             RETURN
          END IF
          gamma=min(gamma/alpha,1.d0)
@@ -303,7 +303,7 @@ C  next iteration
                END DO
                th0n=th0-gamma*pk(7)
                nrss=0.d0
-               call rho2D(rhon,Dn)
+               call rho2D0(rhon,Dn)
                DO i=1,nb
                   z=b(1,i)*Dn(1)
                   DO j=2,6
@@ -336,7 +336,7 @@ C  decrease gamma and try new regularization
          rss=nrss
          call rchkusr()
       END DO
-      call regD0(D,negdefin)
+      call regularD(D,negdefin)
       RETURN
       END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
@@ -389,7 +389,7 @@ C
       erg = s
       RETURN
       END      
-      subroutine tensDres(par,si,s0,grad,ngrad,res)
+      subroutine tensRres(par,si,s0,grad,ngrad,res)
       implicit logical (a-z)
       integer ngrad
       real*8 par(6),si(ngrad),s0,grad(3,ngrad)

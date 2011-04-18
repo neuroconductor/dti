@@ -133,19 +133,22 @@ setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="r
 #  handle points where estimation failed
      n <- prod(ddim)
      indD <- (1:n)[D[2,,,]==0&D[3,,,]==0&D[5,,,]==0&mask]
+     if(length(indD)>0){
      dim(si) <- c(ngrad,n)
      dim(D) <- c(6,n)
      dim(res) <- c(ngrad,n)
+     cat("length of IndD",length(indD),"\n")
      for(i in indD){
         zz <- optim(c(1,0,0,1,0,1),opttensR,method="BFGS",si=si[-s0ind,i],s0=s0[i],grad=grad[,-s0ind],sdcoef=sdcoef)
         D[,i] <- rho2D(zz$par)
         th0[i] <- s0[i]
         rss[i] <- zz$value
         res[s0ind,i] <- 0
-        res[-s0ind,i] <- tensDres(zz$par,si[-s0ind,i],s0[i],grad[,-s0ind])
+        res[-s0ind,i] <- tensRres(zz$par,si[-s0ind,i],s0[i],grad[,-s0ind])
      }
      dim(D) <- c(6,ddim)
      dim(res) <- c(ngrad,ddim)
+     }
      cat("successfully completed nonlinear regression ",format(Sys.time()),"\n")
      sigma2 <- array(0,c(1,1,1))
      rm(z)
@@ -230,8 +233,8 @@ opttensR <- function(param,si,s0,grad,sdcoef){
                DUP=FALSE,
                PACKAGE="dti")$erg
 }
-tensDres <- function(param,si,s0,grad){
-      .Fortran("tensDres",
+tensRres <- function(param,si,s0,grad){
+      .Fortran("tensRres",
                as.double(param),
                as.double(si),
                as.double(s0),
@@ -247,6 +250,13 @@ rho2D <- function(param){
                D=double(6),
                DUP=FALSE,
                PACKAGE="dti")$D
+}
+D2rho <- function(D){
+      .Fortran("D2rho0",
+               as.double(D),
+               rho=double(6),
+               DUP=FALSE,
+               PACKAGE="dti")$rho
 }
 #############
 
