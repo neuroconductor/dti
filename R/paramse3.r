@@ -33,18 +33,21 @@ hakt <- 1.0
 prt0 <- Sys.time()
 if(!verbose) cat("get sequence of bw, kstar=",kstar," ")
 for(k in 1:kstar){
-w<-lkernse3(hakt,kappa,grad,vext,dist=dist)$w
+z <- lkernse3(hakt,kappa,grad,vext,dist=dist)
+w <- c(z$w,z$w[z$ind[1,]>0])
 vred <- sum(w)^2/sum(w^2)/ngrad/1.25^k
 while(vred<1){
-hakt <- hakt*1.025
-w<-lkernse3(hakt,kappa,grad,vext,dist=dist)$w
+hakt <- hakt*1.0125
+z <- lkernse3(hakt,kappa,grad,vext,dist=dist)
+w <- c(z$w,z$w[z$ind[1,]>0])
 vred <- sum(w)^2/sum(w^2)/ngrad/1.25^k
 }
-while(vred>1.01){
+while(vred>1.0025){
 vred0 <- vred
 hakt0 <- hakt
-hakt <- hakt/1.004
-w<-lkernse3(hakt,kappa,grad,vext,dist=dist)$w
+hakt <- hakt/1.001
+z <- lkernse3(hakt,kappa,grad,vext,dist=dist)
+w <- c(z$w,z$w[z$ind[1,]>0])
 vred <- sum(w)^2/sum(w^2)/ngrad/1.25^k
 }
 if(vred<1){

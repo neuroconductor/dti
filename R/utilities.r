@@ -154,17 +154,20 @@ setMethod("getsdofsb","dtiData", function(object,qA0=.1,qA1=.98,nsb=NULL,level=N
   cat(dim(sb),"\n")
    cat(sort(snsb),"\n")
    cat(nsb,"\n")
- A0 <- quantile(sb,qA0)
+  A0 <- quantile(sb,qA0)
   A1 <- quantile(sb,qA1)
-  sdcoef1 <- numeric(nsb)
+  sdcoef1 <- coef1 <- coef2 <- numeric(nsb)
   for(i in 1:nsb) {     
      z <- awslinsd(sb[,,,i],hmax=5,mask=mask,A0=A0,A1=A1)$vcoef
      cat("standard deviation parameters trial i",z,"\n")
+     coef1[i] <- z[1]
+     coef2[i] <- z[2]
      sdcoef1[i] <- z[1]+z[2]*mean(sb[,,,i][mask])
   }
   # determine parameters for linear relation between standard deviation and mean
-  object@sdcoef[5:8] <- c(median(sdcoef1),A0,A1,nsb)
-  cat("Estimated parameters:",signif(mean(sdcoef1),3),"Interval used",signif(A0,3),"-",signif(A1,3),"\n")
+#  object@sdcoef[5:8] <- c(median(sdcoef1),A0,A1,nsb)
+  object@sdcoef[5:8] <- c(median(coef1),median(coef2),A0,A1)
+cat("Estimated parameters:",object@sdcoef[5:6],signif(mean(sdcoef1),3),"Interval used",signif(A0,3),"-",signif(A1,3),"\n")
   object
 })
 ############### [

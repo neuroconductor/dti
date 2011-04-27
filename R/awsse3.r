@@ -31,7 +31,8 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,sigma2=NULL,d
   hseq <- gethseqse3(kstar,grad,kappa,vext=vext,dist=dist,verbose=verbose)
   th <- sb
   if(is.null(sigma2)){
-     s2inv <- array(1/object@sdcoef[5]^2,dim(sb))
+#
+  s2inv <- array((object@sdcoef[5]+object@sdcoef[6]*sb)^{-2},dim(sb))
   } else {
      s2inv <- array(1/sigma2,dim(sb))  
   }
@@ -65,6 +66,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,sigma2=NULL,d
                 double(ngrad),
                 double(ngrad),
                 double(ngrad),
+                as.integer(coils),
                 DUPL=FALSE,
                 PACKAGE="dti")[c("ni","thn","r")]
     ni <- z$ni
@@ -127,9 +129,10 @@ th1
 }
 lkernse3 <- function(h,kappa,grad,vext,dist="SE3"){
       ngrad <- dim(grad)[2]
-      n <- min(1000000,prod(1+2*as.integer(h/c(1,vext)))*ngrad^2)
+#      n <- min(1000000,prod(1+2*as.integer(h/c(1,vext)))*ngrad^2)
+      n <- 100000
       if(dist=="SE3"){
-      z <- .Fortran("lkse3",
+      z <- .Fortran("lkse3n",
                     as.double(h),
                     as.double(kappa),
                     as.double(grad),
