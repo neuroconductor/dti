@@ -1,69 +1,46 @@
-getkappa <- function(grad,dist){
-kappa <- 1.25
-ngrad <- dim(grad)[2]
-w<-lkernse3(.9999,kappa,grad,c(1,1),dist)$w
-vr <- sum(w)^2/sum(w^2)/ngrad
-cat("kappa",kappa,"vr",vr,"\n")
-while(vr>1+1e-4){
-if(dist=="SE3") kappa <- kappa/1.25 else kappa <- kappa*1.25
-w<-lkernse3(.9999,kappa,grad,c(1,1),dist)$w
-vr <- sum(w)^2/sum(w^2)/ngrad
-cat("kappa",kappa,"vr",vr,"\n")
-}
-while(vr<1+1e-4){
-if(dist=="SE3") kappa <- kappa*1.01 else kappa <- kappa/1.01
-w<-lkernse3(.9999,kappa,grad,c(1,1),dist)$w
-vr <- sum(w)^2/sum(w^2)/ngrad
-cat("kappa",kappa,"vr",vr,"\n")
-}
-kappa
+gethseqse3<-
+function (kstar, grad, kappa=NULL, kexp=.1, vext = c(1, 1), dist = "SE3", 
+    verbose = FALSE) 
+{
+    ngrad <- dim(grad)[2]
+    h <- kappa <- vr <- vr0 <- matrix(0,ngrad,kstar)
+    prt0 <- Sys.time()
+    cat("get sequences of bw, kappa up to kstar=", kstar, " ")
+    n <- 0
+    for(i in 1:ngrad){
+       z <- .Fortran("gethse3i",
+                     as.integer(i),
+                     as.integer(kstar),
+                     as.double(grad),
+                     double(3*ngrad),
+                     double(2*ngrad),
+                     as.integer(ngrad),
+                     as.double(kexp),
+                     as.double(vext),
+                     h=double(kstar),
+                     kappa=double(kstar),
+                     vr=double(kstar),
+                     vr0=double(kstar),
+                     n=integer(1),
+                     DUPL=FALSE,
+                     PACKAGE="dti")[c("h","kappa","vr","vr0","n")]
+       h[i,] <- z$h
+       kappa[i,] <- z$kappa
+       vr[i,] <- z$vr
+       vr0[i,] <- z$vr0 
+       n <- n+z$n
+        if (verbose) {
+            cat("i",i,"h[i,.]:", signif(h[i,],3), "\n kappa[i,.]:", signif(kappa[i,],3), "time elapsed:", 
+                format(difftime(Sys.time(), prt0), digits = 3), 
+                "\n")
+        }
+        else {
+            cat(".")
+        }
+        gc()
+    }
+        cat("number of positive weights:",n,"\n")
+    list(h=h,kappa=kappa,vred=vr,vred0=vr0,n=n)
 }
 
-gethseqse3 <- function(kstar,grad,kappa,vext=c(1,1),dist="SE3",verbose=FALSE){
-h <- numeric(kstar)
-ngrad <- dim(grad)[2]
-#if(dist=="SE3"){
-#kappa <- 1/sqrt(.25+.17*ngrad)
-#} else {
-#kappa <- .28+.17*ngrad
-#}
-#kappa <- getkappa(grad)
-# thats korrect for optimized gradients
-hakt <- 1.0
-prt0 <- Sys.time()
-if(!verbose) cat("get sequence of bw, kstar=",kstar," ")
-for(k in 1:kstar){
-z <- lkernse3(hakt,kappa,grad,vext,dist=dist)
-w <- c(z$w,z$w[z$ind[1,]>0])
-vred <- sum(w)^2/sum(w^2)/ngrad/1.25^k
-while(vred<1){
-hakt <- hakt*1.0125
-z <- lkernse3(hakt,kappa,grad,vext,dist=dist)
-w <- c(z$w,z$w[z$ind[1,]>0])
-vred <- sum(w)^2/sum(w^2)/ngrad/1.25^k
-}
-while(vred>1.0025){
-vred0 <- vred
-hakt0 <- hakt
-hakt <- hakt/1.001
-z <- lkernse3(hakt,kappa,grad,vext,dist=dist)
-w <- c(z$w,z$w[z$ind[1,]>0])
-vred <- sum(w)^2/sum(w^2)/ngrad/1.25^k
-}
-if(vred<1){
-vred <- vred0
-hakt <- hakt0
-}
-h[k]<-hakt
-if(verbose){
-cat("k:",k,"vred:",vred*1.25^k,"(",signif(1.25^k,3),") h_k:",h[k],"sum(w)",
-  signif(sum(w)/ngrad,3),"#w",signif(length(w)/ngrad,3),
-  "time elapsed:",format(difftime(Sys.time(),prt0),digits=3),"\n")
-} else {
-  cat(".")
-}
-}
-if(!verbose) cat("\n")
-h
-}
 

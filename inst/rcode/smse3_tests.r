@@ -30,10 +30,12 @@ mix[2,,,1:n1] <- mix1
 mix[3:4,,,1:n1] <- (1-mix1)/2
 mix[2,,,-(1:n1)] <- 0
 mix[3:4,,,-(1:n1)] <- 1/2
-fa <- .8 
-l1 <- (1+sqrt(3*fa^2-2*fa^4))/(1-fa^2)
-th[2,,,] <- (2/l1)^(1/3)
-th[1,,,] <- l1*th[2,,,]
+fa <- .8
+cfa <- fa*fa/(1-fa*fa)
+l1 <- cfa+sqrt(cfa^2+3*cfa)
+l2 <- (3.2/(1+l1))^(1/3)
+th[2,,,] <- l2
+th[1,,,] <- l1*l2
 }
 z0 <- truemixtens(mix,th,alpha,beta,grad,sigma,ns0)
 z <- tdatamixtens(mix,th,alpha,beta,grad,sigma,ns0)

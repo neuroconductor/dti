@@ -90,9 +90,11 @@ if(is.na(fa)) fa <- .8 else fa <- min(.9,max(.2,fa))
 } else {
 fa <- seq(.5,.9,length=n^3)
 }
-l1 <- (1+sqrt(3*fa^2-2*fa^4))/(1-fa^2)
-th[2,,,] <- (2/l1)^(1/3)
-th[1,,,] <- l1*th[2,,,]
+cfa <- fa*fa/(1-fa*fa)
+l1 <- cfa+sqrt(cfa^2+3*cfa)
+l2 <- (3.2/(1+l1))^(1/3)
+th[2,,,] <- l2
+th[1,,,] <- l1*l2
 
 
 maxcomp <- readline("maximal order of mix-tensor model (default 3)") 
