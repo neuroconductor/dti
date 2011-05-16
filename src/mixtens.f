@@ -1,6 +1,259 @@
 C
 C __________________________________________________________________
 C
+      subroutine mfunpl(par,w,siq,g,m,lpar,n,z,erg)
+C
+C   model without isotropic compartment 
+C   with explicit parametrization of weights
+C
+C   code is restricted to m<=6
+C
+      implicit logical (a-z)
+      integer m,lpar,n
+      real*8 par(lpar),w(m),siq(n),g(3,n),z(n,m),erg
+      integer i,j,i3
+      real*8 th,sw,sth,z1,p0,p1,d1,d2,d3
+      th = par(1)
+      th = max(th,-5.d0)
+      DO i = 1,m
+         i3=2*i
+         p0=par(i3)
+         p1=par(i3+1)
+         sth = sin(p0)
+         d1 = sth*cos(p1)
+         d2 = sth*sin(p1)
+         d3 = cos(p0)
+         DO j = 1,n
+            z1 = d1*g(1,j)+d2*g(2,j)+d3*g(3,j)
+            z(j,i) = exp(-th*z1*z1)
+         END DO
+      END DO
+      sw=0.d0
+      DO j=1,n
+         z1 = siq(j)
+         DO i=1,m
+            z1=z1-w(i)*z(j,i)
+         END DO
+         sw=sw+z1*z1
+      END DO
+      erg=sw
+      call rchkusr()
+      RETURN
+      END 
+C
+C __________________________________________________________________
+C
+      subroutine gmfunpl(par,w,siq,g,m,lpar,n,z,res,resd,dkgj,dkgj2,
+     1                 ddkdphig,ddkdetag,dzdpars,work1,work2,dfdparw)
+C
+C   analytical gradients for c(par,w)
+C   model without isotropic compartment 
+C   with explicit parametrization of weights
+C
+C   code is restricted to m<=6
+C
+      implicit logical (a-z)
+      integer m,lpar,n
+      real*8 par(lpar),w(m),siq(n),g(3,n),z(n,m),res(n),resd(n),
+     1       dkgj(n,m),dkgj2(n,m),ddkdphig(n,m),ddkdetag(n,m),
+     2       dzdpars(n,m,3),work1(n,m),work2(n,m),dfdparw(1)
+      integer i,j,i3
+      real*8 th,m2th,sphi,cphi,seta,ceta,z1,z2,p0,p1,d1,d2,d3,
+     1       dphi1,dphi2,dphi3,deta1,deta2
+      real*8 ddot
+      external ddot
+      th = par(1)
+      th = max(th,-5.d0)
+      m2th = -2.d0*th
+      DO i = 1,m
+         i3=2*i
+         p0=par(i3)
+         p1=par(i3+1)
+         sphi = sin(p0)
+         cphi = cos(p0)
+         seta = sin(p1)
+         ceta = cos(p1)
+         d1 = sphi*ceta
+         d2 = sphi*seta
+         d3 = cphi
+         dphi1 = cphi*ceta
+         dphi2 = cphi*seta
+         dphi3 = -sphi
+         deta1 = -sphi*seta
+         deta2 = sphi*ceta
+         DO j = 1,n
+            z1 = d1*g(1,j)+d2*g(2,j)+d3*g(3,j)
+            dkgj(j,i) = z1
+            z2 = z1*z1
+            dkgj2(j,i) = z2
+            z(j,i) = exp(-th*z2)
+            ddkdphig(j,i) = dphi1*g(1,j)+dphi2*g(2,j)+dphi3*g(3,j)
+            ddkdetag(j,i) = deta1*g(1,j)+deta2*g(2,j)
+         END DO
+      END DO
+      call dcprod0(dkgj,ddkdphig,n*m,work1)
+      call dcprod0(dkgj,ddkdetag,n*m,work2)
+C initialize unneeded elements
+      call zerofill(dzdpars,m*3*n)
+C compute componentswise -dkgj2*z
+      call dcprod(dkgj2,z,-1.d0,n*m,dzdpars(1,1,1))
+C compute componentswise m2th*work1*z
+      call dcprod(work1,z,m2th,n*m,dzdpars(1,1,2))
+C compute componentswise m2th*work2*z
+      call dcprod(work2,z,m2th,n*m,dzdpars(1,1,3))
+C   Compute residuals
+      DO j=1,n
+         z1 = siq(j)
+         z2 = 0.d0
+         DO i=1,m
+            z1 = z1 - w(i)*z(j,i)
+            z2 = z2 + w(i)*dzdpars(j,i,1)
+         END DO
+         res(j)=z1
+C         resd(j)=ddot(m,w,n,dzdpars(j,1,1),n)
+         resd(j)=z2
+      END DO
+C Now compute gradient
+      dfdparw(1)=-2.d0*ddot(n,res,1,resd,1)
+      DO i=1,m
+         dfdparw(2*i)=-2.d0*w(i)*ddot(n,res,1,dzdpars(1,i,2),1)
+         dfdparw(2*i+1)=-2.d0*w(i)*ddot(n,res,1,dzdpars(1,i,3),1)
+         dfdparw(2*m+1+i)=-2.d0*ddot(n,res,1,z(1,i),1)
+      END DO
+      call rchkusr()
+      RETURN
+      END 
+C
+C __________________________________________________________________
+C
+      subroutine mfunpli(par,w,siq,g,m,lpar,n,z,erg)
+C
+C   model with isotropic compartment 
+C   with explicit parametrization of weights in w(m+1)
+C
+C   code is restricted to m<=6
+C
+      implicit logical (a-z)
+      integer m,lpar,n
+      real*8 par(lpar),w(1),siq(n),g(3,n),z(n,m),erg
+      integer i,j,i3
+      real*8 th,sw,sth,z1,p0,p1,d1,d2,d3
+      th = par(1)
+      th = max(th,-5.d0)
+      DO i = 1,m
+         i3=2*i
+         p0=par(i3)
+         p1=par(i3+1)
+         sth = sin(p0)
+         d1 = sth*cos(p1)
+         d2 = sth*sin(p1)
+         d3 = cos(p0)
+         DO j = 1,n
+            z1 = d1*g(1,j)+d2*g(2,j)+d3*g(3,j)
+            z(j,i) = exp(-th*z1*z1)
+         END DO
+      END DO
+      sw=0.d0
+      DO j=1,n
+         z1 = siq(j)-w(1)
+         DO i=1,m
+            z1=z1-w(i+1)*z(j,i)
+         END DO
+         sw=sw+z1*z1
+      END DO
+      erg=sw
+      call rchkusr()
+      RETURN
+      END 
+C
+C __________________________________________________________________
+C
+      subroutine gmfunpli(par,w,siq,g,m,lpar,n,z,res,resd,dkgj,
+     1           dkgj2,ddkdphig,ddkdetag,dzdpars,work1,work2,dfdparw)
+C
+C   analytical gradients for c(par,w)
+C   model with isotropic compartment 
+C   with explicit parametrization of weights
+C
+C   code is restricted to m<=6
+C
+      implicit logical (a-z)
+      integer m,lpar,n
+      real*8 par(lpar),w(m+1),siq(n),g(3,n),z(n,m),res(n),
+     1       resd(n),dkgj(n,m),dkgj2(n,m),ddkdphig(n,m),ddkdetag(n,m),
+     3       dzdpars(n,m,3),work1(n,m),work2(n,m),dfdparw(1)
+      integer i,j,i3
+      real*8 th,m2th,sphi,cphi,seta,ceta,z1,z2,p0,p1,sres,d1,d2,d3,
+     1       dphi1,dphi2,dphi3,deta1,deta2
+      real*8 ddot
+      external ddot
+      th = par(1)
+      th = max(th,-5.d0)
+      m2th = -2.d0*th
+      DO i = 1,m
+         i3=2*i
+         p0=par(i3)
+         p1=par(i3+1)
+         sphi = sin(p0)
+         cphi = cos(p0)
+         seta = sin(p1)
+         ceta = cos(p1)
+         d1 = sphi*ceta
+         d2 = sphi*seta
+         d3 = cphi
+         dphi1 = cphi*ceta
+         dphi2 = cphi*seta
+         dphi3 = -sphi
+         deta1 = -sphi*seta
+         deta2 = sphi*ceta
+         DO j = 1,n
+            z1 = d1*g(1,j)+d2*g(2,j)+d3*g(3,j)
+            dkgj(j,i) = z1
+            z2 = z1*z1
+            dkgj2(j,i) = z2
+            z(j,i) = exp(-th*z2)
+            ddkdphig(j,i) = dphi1*g(1,j)+dphi2*g(2,j)+dphi3*g(3,j)
+            ddkdetag(j,i) = deta1*g(1,j)+deta2*g(2,j)
+         END DO
+      END DO
+      call dcprod0(dkgj,ddkdphig,n*m,work1)
+      call dcprod0(dkgj,ddkdetag,n*m,work2)
+C initialize unneeded elements
+      call zerofill(dzdpars,m*3*n)
+C compute componentswise -dkgj2*z
+      call dcprod(dkgj2,z,-1.d0,n*m,dzdpars(1,1,1))
+C compute componentswise m2th*work1*z
+      call dcprod(work1,z,m2th,n*m,dzdpars(1,1,2))
+C compute componentswise m2th*work2*z
+      call dcprod(work2,z,m2th,n*m,dzdpars(1,1,3))
+C   Compute residuals
+      sres=0.d0
+      DO j=1,n
+         z1 = siq(j)-w(1)
+         z2 = 0.d0
+         DO i=1,m
+            z1 = z1 - w(i+1)*z(j,i)
+            z2 = z2 + w(i+1)*dzdpars(j,i,1)
+         END DO
+         res(j) = z1
+         resd(j) = z2
+         sres=sres+z1
+C         resd(j)=ddot(m,w(2),1,dzdpars(j,1,1),n)
+      END DO
+C Now compute gradient
+      dfdparw(1)=-2.d0*ddot(n,res,1,resd,1)
+      dfdparw(2*m+2)=-2.d0*sres
+      DO i=1,m
+         dfdparw(2*i)=-2.d0*w(i+1)*ddot(n,res,1,dzdpars(1,i,2),1)
+         dfdparw(2*i+1)=-2.d0*w(i+1)*ddot(n,res,1,dzdpars(1,i,3),1)
+         dfdparw(2*m+2+i)=-2.d0*ddot(n,res,1,z(1,i),1)
+      END DO
+      call rchkusr()
+      RETURN
+      END 
+C
+C __________________________________________________________________
+C
       subroutine mfunpl0(par,siq,grad,m,lpar,ngrad,pen,z,w,erg)
 C
 C   model without isotropic compartment 
@@ -33,7 +286,7 @@ C
 C    siq will be replaced, need to copy it if C-version of optim is used
 C
       call dcopy(ngrad,siq,1,w,1)
-      call dgelsy(ngrad,m,1,z,ngrad,w,ngrad,jpvt,1d-6,rank,work,25,
+      call dgelsy(ngrad,m,1,z,ngrad,w,ngrad,jpvt,1d-8,rank,work,25,
      1            mode)
 C  1d-6  is a limit for condition number 
       IF(mode.ne.0) THEN
@@ -93,6 +346,7 @@ C
       call dcopy(ngrad,siq,1,b,1)
       call nnls(z,ngrad,ngrad,m,b,w,erg,work2,work1,ind,mode)
       IF(mode.eq.2) erg = 1d10
+      if(th.lt.0.d0) erg=erg-1.d2*th
       call rchkusr()
       RETURN
       END 
@@ -138,9 +392,9 @@ C
          jpvt(i)=0
       END DO
       call dcopy(ngrad,siq,1,w,1)
-      call dgelsy(ngrad,mp1,1,z,ngrad,w,ngrad,jpvt,1d-6,rank,work,36,
+      call dgelsy(ngrad,mp1,1,z,ngrad,w,ngrad,jpvt,1d-8,rank,work,36,
      1            mode)
-C  1d-6  is a limit for condition number 
+C  1d-8  is a limit for condition number 
       IF(mode.ne.0) THEN
          call intpr("mode",4,mode,1)
       ELSE
@@ -157,6 +411,49 @@ C penalize for negative weights
          END DO
          erg=sw
       END IF
+      call rchkusr()
+      RETURN
+      END 
+      subroutine mfunpl1h(par,siq,grad,mp1,lpar,ngrad,z,w,b,
+     1                    work1,erg)
+C
+C   model with isotropic compartment 
+C
+C   code is restricted to m<=6
+C
+      implicit logical (a-z)
+      integer m,mp1,lpar,ngrad
+      real*8 par(lpar),siq(ngrad),grad(3,ngrad),z(ngrad,mp1),erg,
+     1       b(ngrad),work1(ngrad)
+      integer i,j,i3,mode,ind(1000)
+      real*8 th,w(ngrad),sth,z1,p0,p1,d1,d2,d3,eth,work2(20)
+      m = mp1-1
+      th = par(1)
+      th = max(th,-5.d0)
+      eth = exp(-th)
+      DO j = 1,ngrad
+         z(j,1) = eth
+      END DO
+      DO i = 1,m
+C maximal m-1 components
+         i3=2*i
+         p0=par(i3)
+         p1=par(i3+1)
+         sth = sin(p0)
+         d1 = sth*cos(p1)
+         d2 = sth*sin(p1)
+         d3 = cos(p0)
+         DO j = 1,ngrad
+            z1 = d1*grad(1,j)+d2*grad(2,j)+d3*grad(3,j)
+            z(j,i+1) = exp(-th*z1*z1)
+         END DO
+      END DO
+C  
+C    siq will be replaced, need to copy it if C-version of optim is used
+C
+      call dcopy(ngrad,siq,1,b,1)
+      call nnls(z,ngrad,ngrad,mp1,b,w,erg,work2,work1,ind,mode)
+      IF(mode.eq.2) erg = 1d10
       call rchkusr()
       RETURN
       END 
@@ -319,6 +616,39 @@ C
 C
 C __________________________________________________________________
 C
+      subroutine mfpl1gh(par,siq,grad,mp1,lpar,ngrad,eps,z,w,b,
+     1                    work1,para,parb,dfdpar)
+C
+C   model without isotropic compartment 
+C   same as mfunpl but with unconstrained least squares for weights
+C
+C   code is restricted to m<=6
+C
+      implicit logical (a-z)
+      integer mp1,lpar,ngrad
+      real*8 par(lpar),siq(ngrad),grad(3,ngrad),z(ngrad,mp1),b(lpar),
+     1       dfdpar(lpar),para(lpar),parb(lpar),eps,work1(ngrad)
+      real*8 erga,ergb,deltai
+      integer i
+      deltai=0.5d0/eps
+      DO i=1,lpar
+         call dcopy(lpar,par,1,para,1)
+         call dcopy(lpar,par,1,parb,1)
+         para(i)=para(i)-eps
+         parb(i)=parb(i)+eps
+         call mfunpl1h(para,siq,grad,mp1,lpar,ngrad,z,w,b,work1,erga)
+         call mfunpl1h(parb,siq,grad,mp1,lpar,ngrad,z,w,b,work1,ergb)
+         if(max(ergb,erga).lt.1d10) THEN
+            dfdpar(i)=(ergb-erga)*deltai
+         ELSE
+            dfdpar(i)=0.d0
+         ENDIF
+      END DO
+      RETURN
+      END
+C
+C __________________________________________________________________
+C
       subroutine mfunpl0g(par,s,g,m,lpar,n,d,z,v,w,dkgj,dkgj2,
      1                    ddkdphig,ddkdetag,dddphi,
      2                    dddeta,dvdth,dvdphi,dvdeta,dzdpars,
@@ -332,7 +662,7 @@ C
      3       dzdpars(n,m,3),dwdpars(m,lpar),dwdpars2(m,lpar),
      4       zs(n,m),dfdpar(lpar),pen,rcond,ferr(11),berr(11)
       integer i,j,k,l,i3,ind(5),mode,jpvt(5),rank
-      real*8 th,sw,sphi,cphi,seta,ceta,z1,z2,p0,p1,
+      real*8 th,sphi,cphi,seta,ceta,z1,z2,p0,p1,
      1       work(250),work1(n,m),work2(n,m),scopy(n),m2th,af(25)
 C  length of work needs to be larger or equal max(m*m,ngrad)
       real*8 ddot
@@ -340,7 +670,6 @@ C  length of work needs to be larger or equal max(m*m,ngrad)
       th = par(1)
       th = max(-5.d0,th)
       m2th = -2.d0*th
-      sw = 0
 C
 C  get d, dkgj, dkgj2, dddphi, dddeta, z, ddkdphig, ddkdetag
 C
@@ -381,7 +710,7 @@ C   next w
 C
       call dcopy(n,s,1,w,1)
       call dcopy(n*m,z,1,work1,1)
-      call dgelsy(n,m,1,work1,n,w,n,jpvt,1d-6,rank,work,25,mode)
+      call dgelsy(n,m,1,work1,n,w,n,jpvt,1d-8,rank,work,25,mode)
 C  1d-6  is a limit for condition number 
       IF(mode.gt.1) THEN
          call intpr("mode",4,mode,1)
@@ -449,7 +778,7 @@ C
       IF(mode.ne.0.or.rcond.lt.1d-8) THEN
 C   solving the linear system fails due to renk deficiency of v
 C compute numerical gradients instead
-        call mfpl0gn(par,s,g,m,lpar,n,pen,1d-6,z,w,work1,work2,dfdpar)
+        call mfpl0gn(par,s,g,m,lpar,n,pen,1d-8,z,w,work1,work2,dfdpar)
          RETURN
       END IF
 C
@@ -559,7 +888,7 @@ C
      3       dvdeta(mp1,mp1,m),dzdpars(n,mp1,3),dwdpars(mp1,lpar),
      4       dwdpars2(mp1,lpar),zs(n,mp1),dfdpar(lpar),pen
       integer i,j,k,l,i3,ind(6),mode,ip1,kp1,lp1,jpvt(6),rank
-      real*8 th,sw,sphi,cphi,seta,ceta,z1,z2,p0,p1,work(250),rcond,
+      real*8 th,sphi,cphi,seta,ceta,z1,z2,p0,p1,work(250),rcond,
      1       work1(n,mp1),work2(n,mp1),scopy(n),zji,m2th,eth,af(36),
      2       ferr(12),berr(12)
       real*8 ddot
@@ -568,7 +897,6 @@ C
       th = max(-5.d0,th)
       eth=exp(-th)
       m2th = -2.d0*th
-      sw = 0
 C
 C  get d, dkgj, dkgj2, dddphi, dddeta, z, ddkdphig, ddkdetag
 C
@@ -613,10 +941,16 @@ C   next w
 C
       call dcopy(n,s,1,w,1)
       call dcopy(n*mp1,z,1,work1,1)
-      call dgelsy(n,mp1,1,work1,n,w,n,jpvt,1d-6,rank,work,36,mode)
+      call dgelsy(n,mp1,1,work1,n,w,n,jpvt,1d-8,rank,work,36,mode)
       IF(mode.gt.1) THEN
          call intpr("mode",4,mode,1)
       END IF
+      DO k=1,mp1
+         if(w(k).le.0.d0) THEN
+      call mfpl1gn(par,s,g,mp1,lpar,n,pen,1d-8,z,w,work1,work2,dfdpar)
+         RETURN
+         END IF
+      END DO
 C
 C   thats weights in w now V, dVdth, dVdphi, dVdeta, dzdpars
 C
@@ -664,14 +998,13 @@ C  derivatives of v with respect to theta
       call zerofill(dVdeta,m*mp1*mp1)
       DO k=1,m
          kp1=k+1
-         DO i=1,m
-            ip1=i+1
-            z2 = ddot(n,dzdpars(1,kp1,2),1,z(1,ip1),1)
-            dVdphi(ip1,kp1,k) = dVdphi(ip1,kp1,k)+ z2
-            dVdphi(kp1,ip1,k) = dVdphi(kp1,ip1,k)+ z2
-            z2 = ddot(n,dzdpars(1,kp1,3),1,z(1,ip1),1)
-            dVdeta(ip1,kp1,k) = dVdeta(ip1,kp1,k)+ z2
-            dVdeta(kp1,ip1,k) = dVdeta(kp1,ip1,k)+ z2
+         DO i=1,mp1
+            z2 = ddot(n,dzdpars(1,kp1,2),1,z(1,i),1)
+            dVdphi(i,kp1,k) = dVdphi(i,kp1,k)+ z2
+            dVdphi(kp1,i,k) = dVdphi(kp1,i,k)+ z2
+            z2 = ddot(n,dzdpars(1,kp1,3),1,z(1,i),1)
+            dVdeta(i,kp1,k) = dVdeta(i,kp1,k)+ z2
+            dVdeta(kp1,i,k) = dVdeta(kp1,i,k)+ z2
          END DO
       END DO
 C
@@ -699,7 +1032,7 @@ C
       call dcopy(mp1*lpar,dwdpars,1,dwdpars2,1)
       call dsysvx("N","U",mp1,lpar,v,mp1,af,mp1,ind,dwdpars2,mp1,
      1            dwdpars,mp1,rcond,ferr,berr,work,36,jpvt,mode)
-      IF(mode.ne.0.or.rcond.lt.1d-8) THEN
+      IF(mode.ne.0.or.rcond.lt.1d-6) THEN
 C   solving the linear system fails due to renk deficiency of v
 C compute numerical gradients instead
       call mfpl1gn(par,s,g,mp1,lpar,n,pen,1d-6,z,w,work1,work2,dfdpar)

@@ -174,12 +174,12 @@ C grad contains only non-zero components, first component is 0
          d1 = n12*n12
          pD4 = pD4 + d1*d1/kap4
          if(pD4.ge.h4) CYCLE  
-         w1a=0.5d0*n12*gj1
-         w2a=grad3(1,j4)+0.5d0*n12*gj2
-         w3a=grad3(2,j4)+0.5d0*n12*gj3
-         v1a=grad2(1,j4)+0.5d0*n13*gj1
-         v2a=grad2(2,j4)+0.5d0*n13*gj2
-         v3a=grad2(3,j4)+0.5d0*n13*gj3
+         w1a=0.5d0*n13*gj1
+         w2a=grad3(1,j4)+0.5d0*n13*gj2
+         w3a=grad3(2,j4)+0.5d0*n13*gj3
+         v1a=grad2(1,j4)+0.5d0*n12*gj1
+         v2a=grad2(2,j4)+0.5d0*n12*gj2
+         v3a=grad2(3,j4)+0.5d0*n12*gj3
          DO j1 = 0,ih1
             x1 = j1
             DO j2 = -ih2,ih2
@@ -264,12 +264,12 @@ C   if j1>0  (-j1,-j2,-j3) gets the same weight, so count it twice
          d1 = n12*n12
          pD4 = pD4 + d1*d1/kap4
          if(pD4.ge.h4) CYCLE  
-         w1a=0.5d0*n12*gj1
-         w2a=grad3(1,j4)+0.5d0*n12*gj2
-         w3a=grad3(2,j4)+0.5d0*n12*gj3
-         v1a=grad2(1,j4)+0.5d0*n13*gj1
-         v2a=grad2(2,j4)+0.5d0*n13*gj2
-         v3a=grad2(3,j4)+0.5d0*n13*gj3
+         w1a=0.5d0*n13*gj1
+         w2a=grad3(1,j4)+0.5d0*n13*gj2
+         w3a=grad3(2,j4)+0.5d0*n13*gj3
+         v1a=grad2(1,j4)+0.5d0*n12*gj1
+         v2a=grad2(2,j4)+0.5d0*n12*gj2
+         v3a=grad2(3,j4)+0.5d0*n12*gj3
          DO j1 = 0,ih1
             x1 = j1
             DO j2 = -ih2,ih2
@@ -399,8 +399,10 @@ C
                   if(.not.mask(j1,j2,j3)) CYCLE          
                   i4=ind(4,i)
                   j4=ind(5,i)
-                  z=th(i1,i2,i3,i4)-th(j1,j2,j3,j4)
-                  z=z*z*ni(i1,i2,i3,i4)/lambda
+C                  z=th(i1,i2,i3,i4)-th(j1,j2,j3,j4)
+                  call spenalty(th(i1,i2,i3,i4),th(j1,j2,j3,j4),
+     1                          s2inv(i1,i2,i3,i4),ncoil,z)
+                  z=z*ni(i1,i2,i3,i4)/lambda
 C    ni(i1,i2,i3,i4) contains normalization by siinv
                   if(z.ge.1.d0) CYCLE
                   z=w(i)*min(1.d0,2.d0-2.d0*z)
