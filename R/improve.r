@@ -2,7 +2,7 @@ dwiMtImprove <- function( mtobj,dwiobj, ...) cat("No dwiMixtensor calculation de
 
 setGeneric("dwiMtImprove", function( mtobj,dwiobj, ...) standardGeneric("dwiMtImprove"))
 
-setMethod("dwiMtImprove",c("dwiMixtensor","dtiData"), function(mtobj, dwiobj, maxcomp=3,  p=40, method="mixtensor", reltol=1e-6, maxit=5000,ngc=1000, optmethod="BFGS", nguess=100*maxcomp^2,msc="BIC",pen=NULL,where=NULL,new=FALSE){
+setMethod("dwiMtImprove",c("dwiMixtensor","dtiData"), function(mtobj, dwiobj, maxcomp=3, method="mixtensor", reltol=1e-6, maxit=5000,ngc=1000, optmethod="BFGS", nguess=100*maxcomp^2,msc="BIC",pen=NULL,where=NULL,new=FALSE){
 #
 #  uses  S(g)/s_0 = w_0 exp(-l_1) +\sum_{i} w_i exp(-l_2-(l_1-l_2)(g^T d_i)^2)
 #
@@ -14,6 +14,7 @@ setMethod("dwiMtImprove",c("dwiMixtensor","dtiData"), function(mtobj, dwiobj, ma
   args <- sys.call(-1)
   args <- c(mtobj@call,args)
   if(is.null(pen)) pen <- 100
+  if(method=="mixtensoriso") optmethod <- "L-BFGS-B"
   ngrad <- mtobj@ngrad
   ddim <- mtobj@ddim
   mask <- mtobj@mask
@@ -132,6 +133,10 @@ setMethod("dwiMtImprove",c("dwiMixtensor","dtiData"), function(mtobj, dwiobj, ma
                      DUPL=TRUE,
                      PACKAGE="dti")[c("param","npar")]   
      npar <- z$npar
+     if(any(is.na(z$param))||any(is.infinite(z$param))){
+         cat("voxel",i1,i2,i3,"param",z$param,"npar",npar,"\n")
+         npar <- length(!is.na(cumsum(z$param)))
+     }
      param <- z$param[1:npar]
      if(optmethod=="L-BFGS-B") param <- c(param,switch(method,
                                         "mixtensor"=rep(1/npar,npar),
@@ -143,7 +148,7 @@ setMethod("dwiMtImprove",c("dwiMixtensor","dtiData"), function(mtobj, dwiobj, ma
 #  use AIC/ngrad0, BIC/ngrad0 or AICC/ngrad0 respectively
 #
 #        cat("i",i1,i2,i3,"par",par[1:z$npar],"npar",z$npar,"\n")
-     mc0 <- (npar+1)/2
+     mc0 <- (npar-1)/2
 
      for(k in mc0:1){ # begin model order
         if(k<ord) {
@@ -152,7 +157,7 @@ setMethod("dwiMtImprove",c("dwiMixtensor","dtiData"), function(mtobj, dwiobj, ma
 #
         if(optmethod=="L-BFGS-B"){
         param <- if(method=="mixtensor") param[1:(3*k+1)] else param[1:(3*k+2)]
-        param[-(1:(2*k+1))] <- if(method=="mixtensor") rep(1/k,k) else rep(1/k,k+1)
+        param[-(1:(2*k+1))] <- if(method=="mixtensor") rep(1/k,k) else rep(1/(k+1),k+1)
         }
         if(method=="mixtensor"){
 #
@@ -169,12 +174,13 @@ setMethod("dwiMtImprove",c("dwiMixtensor","dtiData"), function(mtobj, dwiobj, ma
                     "L-BFGS-B"=optim(param[1:(3*k+1)],mfunpl,gmfunpl,
                            siq=siq[i1,i2,i3,],grad=grad,method="L-BFGS-B",
                            lower=c(0,rep(-Inf,2*k),rep(0,k)),
-                           control=list(maxit=maxit,facrt=reltol)))
+                           control=list(maxit=maxit,factr=reltol/.Machine$double.eps)))
         } else { # method=="mixtensoriso"
+#           cat("voxel",i1,i2,i3,"param",param[1:(3*k+2)],"\n")
            z <- optim(param[1:(3*k+2)],mfunpli,gmfunpli,
                            siq=siq[i1,i2,i3,],grad=grad,method="L-BFGS-B",
                            lower=c(0,rep(-Inf,2*k),rep(0,k+1)),
-                           control=list(maxit=maxit,factr=reltol))
+                           control=list(maxit=maxit,factr=reltol/.Machine$double.eps))
 #
 #  other methods seem less numerically stable in this situation
 #
@@ -207,7 +213,7 @@ setMethod("dwiMtImprove",c("dwiMixtensor","dtiData"), function(mtobj, dwiobj, ma
 #
 #     use directions corresponding to largest weights as initial directions
 #
-        if(ttt < krit) {
+        if(ttt < krit & ord>0) {
            krit <- ttt
            norder[i1,i2,i3] <- ord
            nlev[,i1,i2,i3] <- zz$lev
