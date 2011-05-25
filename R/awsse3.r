@@ -137,5 +137,27 @@ lkernse3 <- function(h,kappa,grad,vext,n,dist="SE3"){
       dim(z$ind) <- c(5,n)
 list(h=h,kappa=kappa,grad=grad,ind=z$ind[,1:z$n],w=z$w[1:z$n],nind=z$n)
 }
+lkfullse3 <- function(h,kappa,grad,k456,vext,n,dist="SE3"){
+      ngrad <- dim(grad)[2]
+      if(length(h)<ngrad) h <- rep(h[1],ngrad)
+      if(length(kappa)<ngrad) kappa <- rep(kappa[1],ngrad)
+      z <- .Fortran("lkfulse3",
+                    as.double(h),
+                    as.double(kappa),
+                    as.double(k456),
+                    as.double(grad),
+                    double(3*ngrad),
+                    double(2*ngrad),
+                    as.integer(ngrad),
+                    as.double(vext),
+                    ind=integer(5*n),
+                    w=double(n),
+                    n=as.integer(n),
+                    DUPL=FALSE,
+                    PACKAGE="dti")[c("ind","w","n")]
+#      } 
+      dim(z$ind) <- c(5,n)
+list(h=h,kappa=kappa,grad=grad,ind=z$ind[,1:z$n],w=z$w[1:z$n],nind=z$n)
+}
 
 

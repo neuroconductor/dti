@@ -1,3 +1,72 @@
+      subroutine ghfse3i(i4,kstar,k456,bg,bghat,nbg,nbghat,ng,kexp,
+     1                    kappa0,vext,h,kappa,varred,varred0,n)
+      implicit logical (a-z)
+      integer ng,i4,kstar,n
+      real*8 k456(3,ng,ng),bg(2,ng),bghat(2,ng,ng),
+     1       nbg(3,3,ng),nbghat(3,3,ng,ng),vext(2),
+     1       kexp,h(kstar),kappa(kstar),varred(kstar),varred0(kstar)
+      logical getkappa
+      integer k,n0
+      real*8 kappa0,hakt,hakt0,vr,vr0,ch,lch,chk,vred,v0r0,v0r
+      ch=1.25d0
+      lch=-log(ch)
+      chk=ch
+      getkappa=.FALSE.
+      hakt=1.d0
+C   initialize kappa
+C   loop over steps
+      DO k=1,kstar
+         call lkfse3i0(hakt,kappa0,i4,k456,bg,bghat,nbg,nbghat,ng,
+     1                   vext,vr,vr0,n)
+         if(k.gt.1.and.log(vr0/vr).lt.lch*kexp*k) getkappa=.TRUE.
+C  search for new kappa0 if needed
+         DO WHILE (getkappa)
+            kappa0=kappa0*0.98d0
+            call lkfse3i0(hakt,kappa0,i4,k456,bg,bghat,nbg,nbghat,ng,
+     1                   vext,vr,vr0,n)
+            if(log(vr0/vr).ge.lch*kexp*k) getkappa=.FALSE.
+         END DO
+C  search for new hakt   
+         vred=vr/chk
+         DO WHILE (vred.lt.1) 
+            hakt=hakt*1.05
+            call lkfse3i0(hakt,kappa0,i4,k456,bg,bghat,nbg,nbghat,ng,
+     1                   vext,vr,vr0,n)
+            if(log(vr0/vr).lt.lch*kexp*k) getkappa=.TRUE.
+C  search for new kappa0 if needed
+            DO WHILE (getkappa)
+               kappa0=kappa0*0.98d0
+            call lkfse3i0(hakt,kappa0,i4,k456,bg,bghat,nbg,nbghat,ng,
+     1                   vext,vr,vr0,n)
+               if(log(vr0/vr).ge.lch*kexp*k) getkappa=.FALSE.
+            END DO
+            vred=vr/chk
+         END DO
+         DO WHILE (vred.gt.1.01) 
+            hakt0=hakt
+            v0r=vr
+            v0r0=vr0
+            n0=n
+            hakt=hakt/1.005
+            call lkfse3i0(hakt,kappa0,i4,k456,bg,bghat,nbg,nbghat,ng,
+     1                   vext,vr,vr0,n)
+            vred=vr/chk
+            If (vred.lt.1) THEN
+               hakt=hakt0
+               vr=v0r
+               vr0=v0r0
+               n=n0
+            END IF
+         END DO
+         h(k) = hakt
+         kappa(k) = kappa0
+         varred(k) = vr
+         varred0(k) = vr0
+         chk=chk*ch
+C  number of positive weights for last step in n
+      END DO
+      RETURN
+      END
       subroutine gethse3i(i4,kstar,grad,gr2,gr3,ngrad,kexp,vext,
      1                    h,kappa,varred,varred0,n)
       implicit logical (a-z)
@@ -131,6 +200,172 @@ C grad contains only non-zero components, first component is 0
       END DO
       RETURN
       END
+      subroutine ng123(beta,gamma,g123)
+      implicit logical (a-z)
+      real*8 beta,gamma,g123(3,3)
+      real*8 cb,sb,cg,sg
+      sb = sin(beta)
+      sg = sin(gamma)
+      cb = cos(beta)
+      cg = cos(gamma)
+      g123(1,1) = sb
+      g123(2,1) = -cb*sg
+      g123(3,1) = cb*cg
+      g123(1,2) = cb
+      g123(2,2) = sb*sg
+      g123(3,2) = -sb*cg
+      g123(1,3) = 0.d0
+      g123(2,3) = cg
+      g123(3,3) = sg
+      RETURN
+      END
+      subroutine expm3(m,ex)
+C
+C   Compute matrix exponential of 
+C
+      implicit logical (a-z)
+      real*8 m(3,3),ex(3,3)
+      integer i1,i2,j
+      real*8 mpot(3,3),mpotn(3,3),maxmpot,jfac,z
+      DO i1=1,3
+         mpot(i1,i1) = 1.d0
+         ex(i1,i1)   = 1.d0
+         IF(i1.eq.3) CYCLE
+         DO i2=i1+1,3
+            mpot(i1,i2) = 0.d0
+            ex(i1,i2)   = 0.d0
+            mpot(i2,i1) = 0.d0
+            ex(i2,i1)   = 0.d0
+         END DO
+      END DO
+      maxmpot = 1.d0
+      j = 1
+      jfac = 1.d0
+      DO While (maxmpot.gt.1.d-12)
+         jfac = jfac*j
+         DO i1=1,3
+            DO i2=1,3
+               mpotn(i1,i2)=mpot(i1,1)*m(1,i2)+mpot(i1,2)*m(2,i2)+
+     1                      mpot(i1,3)*m(3,i2)
+            END DO
+         END DO
+         maxmpot=0.d0
+         DO i1=1,3
+            DO i2=1,3
+               mpot(i1,i2)=mpotn(i1,i2)
+               z = mpot(i1,i2)/jfac
+               ex(i1,i2)=ex(i1,i2)+z
+               z = abs(z)
+               IF(z.gt.1d10) EXIT
+               maxmpot = max(maxmpot,z)
+            END DO
+         END DO
+         j = j+1
+         IF(j.gt.50) EXIT
+      END DO
+      RETURN
+      END
+      subroutine k456krit(par,matm,m4,m5,m6,erg)
+      implicit logical (a-z)
+      real*8 par(3),matm(3,3),m4(3,3),m5(3,3),m6(3,3),erg
+      integer i1,i2
+      real*8 s,z,am4(3,3),am5(3,3),am6(3,3),em4(3,3),em5(3,3),em6(3,3)
+      DO i1=1,3
+         DO i2=1,3
+            am4(i1,i2)=par(1)*m4(i1,i2)
+            am5(i1,i2)=par(2)*m5(i1,i2)
+            am6(i1,i2)=par(3)*m6(i1,i2)
+         END DO
+      END DO
+      call expm3(am4,em4)
+      call expm3(am5,em5)
+      call expm3(am6,em6)
+      DO i1=1,3
+         DO i2=1,3
+            am5(i1,i2)=em5(i1,1)*em6(1,i2)+em5(i1,2)*em6(2,i2)+
+     1                                     em5(i1,3)*em6(3,i2)
+            END DO
+         END DO
+      DO i1=1,3
+         DO i2=1,3
+            am4(i1,i2)=em4(i1,1)*am5(1,i2)+em4(i1,2)*am5(2,i2)+
+     1                                     em4(i1,3)*am5(3,i2)
+         END DO
+      END DO
+      s=0.d0
+      DO i1=1,3
+         DO i2=1,3
+            z=matm(i1,i2)-am4(i1,i2)
+            s=s+z*z
+         END DO
+      END DO
+      erg=s
+      RETURN
+      END
+      subroutine abofg(g,n,bg)
+      implicit logical (a-z)
+      integer n
+      real*8 g(3,n),bg(2,n)
+      integer i
+      real*8 z,g1,g2,g3,beta,gamma
+      DO i=1,n
+         g1=g(1,i)
+         g2=g(2,i)
+         g3=g(3,i)
+         z=g1*g1+g2*g2+g3*g3
+         z=sqrt(z)
+         g1=g1/z
+         g2=g2/z
+         g3=g3/z
+         beta=asin(g1)
+         if(abs(g1).gt.1d-7) THEN
+            z=g3/cos(beta)
+            if(abs(z).lt.1.d0-1.d-10) THEN
+               gamma=asin(z)
+            ELSE
+               gamma=sign(1.570796327d0,z)
+            END IF
+         ELSE 
+            gamma=0.d0
+         END IF
+         bg(1,i)=beta
+         bg(2,i)=gamma
+      END DO
+      RETURN
+      END
+      subroutine bgstats(g,n,bg,bghat,nbg,nbghat)
+      implicit logical (a-z)
+      integer n
+      real*8 g(3,n),bg(2,n),bghat(2,n,n),nbg(3,3,n),nbghat(3,3,n,n)
+      integer i1,i2
+      real*8 dgamma,cb1,sb1,cb2,sb2,betah,cbh,z,gammah
+C   first get sperical coordinates in bg
+      call abofg(g,n,bg)
+      DO i1=1,n
+         sb1=sin(bg(1,i1))
+         cb1=cos(bg(1,i1))
+         call ng123(bg(1,i1),bg(2,i1),nbg(1,1,i1))
+         DO i2=1,n
+            sb2=sin(bg(1,i2))
+            cb2=cos(bg(1,i2))
+            dgamma=bg(2,i1)-bg(2,i2)
+            z=sb1*cb2-cb1*sb2*cos(dgamma)
+            betah=asin(z)
+            cbh=cos(betah)
+            IF(abs(cbh).gt.1d-8) THEN
+               z=cb1*sin(dgamma)/cbh
+               z=sign(min(1.d0,abs(z)),z)
+               gammah=asin(z)
+            ELSE
+               gammah=1.570796327d0
+            END IF
+            bghat(1,i1,i2)=betah
+            bghat(2,i1,i2)=gammah
+            call ng123(betah,gammah,nbghat(1,1,i1,i2))
+         END DO
+      END DO  
+      RETURN
+      END
       subroutine lkse3i0(h,kappa,i4,grad,grad2,grad3,ngrad,vext,
      1                   vred,vred0,n)
       implicit logical (a-z)
@@ -215,6 +450,9 @@ C   if j1>0  (-j1,-j2,-j3) gets the same weight, so count it twice
                   sw2=sw2+anz*wght
                   if(j4.eq.i4) sw20=sw20+anz*wght
                   n=n+1
+                  mj1=max(j1,mj1)
+                  mj2=max(abs(j2),mj2)
+                  mj3=max(abs(j3),mj3)
                END DO
                call rchkusr()
             END DO
@@ -315,6 +553,179 @@ C   third term  <\delta_x,n_2(2)+1/2 n13 n_1(2)> to large for remainder
       n = i-1
       RETURN
       END
+      subroutine lkfse3i(h,kappa,i4,k456,bghat,nbg,nbghat,ng,
+     1                   vext,ind,wght,n)
+      implicit logical (a-z)
+      integer ng,n,ind(5,n),i4
+      real*8 h,kappa,k456(3,ng,ng),bghat(2,ng,ng),
+     1       nbg(3,3,ng),nbghat(3,3,ng,ng),vext(2),wght(n)
+      integer ih1,ih2,ih3,i,j1,j2,j3,j4
+      real*8 h2,kap2,x1,x2,x3,xh1,xh2,xh3,k1,k2,k3,k4,k5,k6,z,z1,
+     1       vd2,vd3
+      ih1 = 2.0d0*h
+      ih2 = 2.0d0*h/vext(1)
+      ih3 = 2.0d0*h/vext(2)
+      h2 = h*h
+      kap2 = kappa*kappa
+      vd2 = vext(1)
+      vd3 = vext(2)
+      i = 1
+      DO j4 = 1,ng
+         k4 = k456(1,i4,j4)
+         k5 = k456(2,i4,j4)
+         k6 = k456(3,i4,j4)
+         z = kap2*(k4*k4+k5*k5+k6*k6)
+         if(z.gt.h2) CYCLE
+C   last three komponents already to large
+         DO j1 = 0,ih1
+            x1 = j1
+            DO j2 = -ih2,ih2
+               x2 = vd2*j2
+               DO j3 = -ih3,ih3
+                  x3 = vd3*j3
+                  xh1=x1*nbg(1,2,j4)+x2*nbg(2,2,j4)+x3*nbg(3,2,j4)
+                  xh2=x1*nbg(1,3,j4)+x2*nbg(2,3,j4)+x3*nbg(3,3,j4)
+                  xh3=x1*nbg(1,1,j4)+x2*nbg(2,1,j4)+x3*nbg(3,1,j4)
+C thats xhat
+C now k1       
+                  k1=xh1*nbghat(1,2,i4,j4)+xh2*nbghat(2,2,i4,j4)+
+     1               xh3*nbghat(3,2,i4,j4)
+                  z1=z+k1*k1
+                  if(z1.gt.h2) CYCLE
+C   last three komponents + first already to large
+                  k2=xh1*nbghat(1,3,i4,j4)+xh2*nbghat(2,3,i4,j4)+
+     1               xh3*nbghat(3,3,i4,j4)
+                  z1=z1+k2*k2
+                  if(z1.gt.h2) CYCLE
+C   last three komponents + first two already to large
+                  k3=xh1*nbghat(1,1,i4,j4)+xh2*nbghat(2,1,i4,j4)+
+     1               xh3*nbghat(3,1,i4,j4)
+                  z1=z1+k3*k3
+                  if(z1.gt.h2) CYCLE
+                  if(i.gt.n) THEN
+                     call intpr("Exceeded max i",14,i,1)
+                     call intpr("for i4",6,i4,1)
+                     n = i-1
+                     return
+                  END IF
+                  wght(i)= (1.d0-z1/h2)*cos(bghat(1,i4,j4))
+                  ind(1,i) = j1
+                  ind(2,i) = j2
+                  ind(3,i) = j3
+                  ind(4,i) = i4
+                  ind(5,i) = j4
+                  i = i+1
+               END DO
+               call rchkusr()
+            END DO
+         END DO
+      END DO
+      n = i-1
+      RETURN
+      END
+      subroutine lkfse3i0(h,kappa,i4,k456,bghat,nbg,nbghat,ng,
+     1                   vext,vred,vred0,n)
+      implicit logical (a-z)
+      integer ng,n,i4
+      real*8 h,kappa,k456(3,ng,ng),bghat(2,ng,ng),
+     1       nbg(3,3,ng),nbghat(3,3,ng,ng),vext(2),vred,vred0
+      integer ih1,ih2,ih3,j1,j2,j3,j4,mj1,mj2,mj3
+      real*8 x1,x2,x3,xh1,xh2,xh3,k1,k2,k3,k4,k5,k6,z,z1,
+     1       sw,sw2,sw0,sw20,wght,anz,rad,h2,kap2,vd2,vd3
+      ih1 = 2.0d0*h
+      ih2 = 2.0d0*h/vext(1)
+      ih3 = 2.0d0*h/vext(2)
+      sw=0.d0
+      sw0=0.d0
+      sw2=0.d0
+      sw20=0.d0
+      mj1=0
+      mj2=0
+      mj3=0
+      h2 = h*h
+      kap2 = kappa*kappa
+      vd2 = vext(1)
+      vd3 = vext(2)
+      n = 1
+      DO j4 = 1,ng
+         k4 = k456(1,i4,j4)
+         k5 = k456(2,i4,j4)
+         k6 = k456(3,i4,j4)
+         z = kap2*(k4*k4+k5*k5+k6*k6)
+         if(z.gt.h2) CYCLE
+C   last three komponents already to large
+         DO j1 = 0,ih1
+            x1 = j1
+            DO j2 = -ih2,ih2
+               x2 = vd2*j2
+               DO j3 = -ih3,ih3
+                  x3 = vd3*j3
+                  xh1=x1*nbg(1,2,j4)+x2*nbg(2,2,j4)+x3*nbg(3,2,j4)
+                  xh2=x1*nbg(1,3,j4)+x2*nbg(2,3,j4)+x3*nbg(3,3,j4)
+                  xh3=x1*nbg(1,1,j4)+x2*nbg(2,1,j4)+x3*nbg(3,1,j4)
+C thats xhat
+C now k1       
+                  k1=xh1*nbghat(1,2,i4,j4)+xh2*nbghat(2,2,i4,j4)+
+     1               xh3*nbghat(3,2,i4,j4)
+                  z1=z+k1*k1
+                  if(z1.gt.h2) CYCLE
+C   last three komponents + first already to large
+                  k2=xh1*nbghat(1,3,i4,j4)+xh2*nbghat(2,3,i4,j4)+
+     1               xh3*nbghat(3,3,i4,j4)
+                  z1=z1+k2*k2
+                  if(z1.gt.h2) CYCLE
+C   last three komponents + first two already to large
+                  k3=xh1*nbghat(1,1,i4,j4)+xh2*nbghat(2,1,i4,j4)+
+     1               xh3*nbghat(3,1,i4,j4)
+                  z1=z1+k3*k3
+                  if(z1.gt.h2) CYCLE
+                  wght= (1.d0-z1/h2)*cos(bghat(1,i4,j4))
+C   if j1>0  (-j1,-j2,-j3) gets the same weight, so count it twice
+                  if(j1.eq.0) THEN
+                     anz=1.d0
+                  ELSE
+                     anz=2.d0
+                  ENDIF
+                  sw=sw+anz*wght
+                  if(j4.eq.i4) sw0=sw0+anz*wght
+                  wght=wght*wght
+                  sw2=sw2+anz*wght
+                  if(j4.eq.i4) sw20=sw20+anz*wght
+                  n=n+1
+                  mj1=max(j1,mj1)
+                  mj2=max(abs(j2),mj2)
+                  mj3=max(abs(j3),mj3)
+               END DO
+               call rchkusr()
+            END DO
+         END DO
+      END DO
+      vred = sw*sw/sw2
+      vred0 = sw0*sw0/sw20
+      rad = max(mj1,max(mj2,mj3))
+      if(rad.gt.h) THEN
+         call dblepr("h",1,h,1)
+         call intpr("radius",6,rad,1)
+      END IF
+      RETURN
+      END
+      subroutine lkfulse3(h,kappa,k456,bghat,nbg,nbghat,ng,
+     1                   vext,ind,wght,n)
+      implicit logical (a-z)
+      integer ng,n,ind(5,n)
+      real*8 h,kappa,k456(3,ng,ng),bghat(2,ng,ng),
+     1       nbg(3,3,ng),nbghat(3,3,ng,ng),vext(2),wght(n)
+      integer ns,ni,i
+      ns = 0
+      DO i = 1,ng
+         ni = n-ns
+         call lkfse3i(h(i),kappa(i),i,k456,bghat,nbg,nbghat,ng,
+     1                vext,ind(1,ns+1),wght(ns+1),ni)
+         ns = ns+ni
+      END DO
+      n = ns
+      RETURN
+      END      
       subroutine lkse3(h,kappa,grad,grad2,grad3,ngrad,vext,ind,wght,n)
       implicit logical (a-z)
       integer ngrad,n,ind(5,n)

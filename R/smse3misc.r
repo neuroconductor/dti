@@ -4,7 +4,7 @@ mpot <- diag(n)
 ex <- diag(n)
 jfac <- 1
 j <- 1
-while(max(abs(mpot/jfac/j))>eps){
+while(max(abs(mpot/jfac/j))>eps&&j<36){
 jfac <- jfac*j
 mpot <- mpot%*%m
 ex <- ex +mpot/jfac
@@ -28,45 +28,107 @@ gamma <- 0
 }
 c(beta,gamma)
 }
+abofg <- function(g){
+dg <- dim(g)
+ngrad <- if(!is.null(dg)) dg[2] else 1
+bg <- .Fortran("abofg",as.double(g),
+                    as.integer(ngrad),
+                    bg=double(2*n),
+                    DUPL=FALSE,
+                    PACKAGE="dti")$bg
+dim(bg) <- c(2,ngrad)
+bg
+}
+
 betagamma <- function(g1,g2){
 bg1 <- abofg(g1)
 bg2 <- abofg(g2)
-cat("bg1",bg1,"bg2",bg2,"\n")
+#cat("bg1",bg1,"bg2",bg2,"\n")
 b1 <- bg1[1]
 b2 <- bg2[1]
 dg <- bg1[2]-bg2[2]
 z1 <- cos(b2)*sin(b1)-sin(b2)*cos(b1)*cos(dg)
 bhat <- asin(z1)
 z2 <- cos(b1)*sin(dg)/cos(bhat)
-if(any(is.nan(asin(z2)))){
+z2 <- sign(z2)*pmin(1,abs(z2))
+ghat <- asin(z2)
+if(any(is.nan(ghat))){
 cat("b2",b2,"dg",dg,"\n")
 print(rbind(b1,bhat,cos(b1)*sin(dg),cos(bhat),z2)[,is.na(asin(z2))])
-z2[is.nan(z2)] <- pi/2
+ghat[is.nan(ghat)] <- pi/2
 }
-ghat <- asin(z2)
 c(bhat,ghat)
+}
+betagamma <- function(g){
+dg <- dim(g)
+ngrad <- if(!is.null(dg)) dg[2] else 1
+z <- .Fortran("bgstats",as.double(g),
+                   as.integer(ngrad),
+                   bg=double(2*ngrad),
+                   bghat=double(2*ngrad*ngrad),
+                   nbg=double(9*ngrad),
+                   nbghat=double(9*ngrad*ngrad),
+                   DUPL=FALSE,
+                   PACKAGE="dti")[c("bg","bghat","nbg","nbghat")]
+dim(z$bg) <- c(2,ngrad)
+# sphaerische Coordinaten fuer Gradienten
+dim(z$bghat) <- c(2,ngrad,ngrad)
+# sphaerische Coordinaten fuer Gradienten-Paare
+dim(z$nbg) <- c(3,3,ngrad)
+# normalen-vektoren n1,n2,n3 Gradienten
+dim(z$nbghat) <- c(3,3,ngrad,ngrad)
+# normalen-vektoren n1,n2,n3 Gradienten-Paare
+z
 }
 matrm <- function(b,g){
 matrix(c(cos(b), 0, sin(b), sin(b)*sin(g), 
   cos(g), -cos(b) *sin(g), -cos(g)*sin(b), sin(g), cos(b)*cos(g)),3,3)
 }
-matrn4 <- function(b,g){
+matrn4 <- function(b){
 matrix(c(0,tan(b),0,-tan(b),0,-1/cos(b),0,1/cos(b),0),3,3)
 }
-getk456 <- function(g1,g2,trace=0){
+getkappas <- function(grad,trace=0){
+krit <- function(par,matm,m4,m5,m6){
+#sum((matm-expm(par[1]*m4)%*%expm(par[2]*m5)%*%expm(par[3]*m6))^2)
+.Fortran("k456krit",as.double(par),
+                    as.double(matm),
+                    as.double(m4),
+                    as.double(m5),
+                    as.double(m6),
+                    erg=double(1),
+                    DUPL=FALSE,
+                    PACKAGE="dti")$erg
+}
+prta <- Sys.time()
+cat("Start computing spherical distances",format(Sys.time()),"\n")
+ngrad <- dim(grad)[2]
 m5 <- matrix(c(0,0,1,0,0,0,-1,0,0),3,3)
 m6 <- matrix(c(0,-1,0,1,0,0,0,0,0),3,3)
-bg <- betagamma(g1,g2)
-m4 <- matrn4(bg[1],bg[2])
-matm <- matrm(bg[1],bg[2]) 
-cat("bg",bg,"\n")
-k456 <- rep(0,3)
-krit <- function(par,matm,m4,m5,m6){
-sum((matm-expm(par[1]*m4)%*%expm(par[2]*m5)%*%expm(par[3]*m6))^2)
-}
+kappa456 <- array(0,c(3,ngrad,ngrad))
+zbg <- betagamma(grad)
+for(i in 1:ngrad) for(j in 1:ngrad) {
+bg <- zbg$bghat[,i,j]
+m4 <- matrn4(bg[1])
+matm <- matrm(bg[1],bg[2])
+k456 <- runif(3,-.01,.01)
+z <-  optim(k456,krit,method="BFGS",matm=matm,m4=m4,m5=m5,m6=m6,control=list(trace=trace,reltol=1e-12,abstol=1e-12))
+while(z$value>1e-8) {
+cat("i",i,"j",j,"value",z$value,"par",z$par,"\n")
+k456 <- runif(3,-.01,.01)
 z <- optim(k456,krit,method="BFGS",matm=matm,m4=m4,m5=m5,m6=m6,control=list(trace=trace,reltol=1e-12,abstol=1e-12))
-z
+cat(" new value",z$value,"par",z$par,"\n")
 }
+kappa456[,i,j] <- z$par
+}
+while(any(abs(kappa456[2:3,,])>pi)){
+kappa456[2:3,,][kappa456[2:3,,]< -pi] <- kappa456[2:3,,][kappa456[2:3,,]< -pi]+2*pi
+kappa456[2:3,,][kappa456[2:3,,]> pi] <- kappa456[2:3,,][kappa456[2:3,,]> pi]-2*pi
+}
+prtb <- Sys.time()
+cat("End computing spherical distances",format(Sys.time()),"\n")
+kappa456
+}
+
 
 
 
