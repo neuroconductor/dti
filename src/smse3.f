@@ -1,8 +1,8 @@
-      subroutine ghfse3i(i4,kstar,k456,bg,bghat,nbg,nbghat,ng,kexp,
+      subroutine ghfse3i(i4,kstar,k456,bghat,nbg,nbghat,ng,kexp,
      1                    kappa0,vext,h,kappa,varred,varred0,n)
       implicit logical (a-z)
       integer ng,i4,kstar,n
-      real*8 k456(3,ng,ng),bg(2,ng),bghat(2,ng,ng),
+      real*8 k456(3,ng,ng),bghat(2,ng,ng),
      1       nbg(3,3,ng),nbghat(3,3,ng,ng),vext(2),
      1       kexp,h(kstar),kappa(kstar),varred(kstar),varred0(kstar)
       logical getkappa
@@ -16,13 +16,13 @@
 C   initialize kappa
 C   loop over steps
       DO k=1,kstar
-         call lkfse3i0(hakt,kappa0,i4,k456,bg,bghat,nbg,nbghat,ng,
+         call lkfse3i0(hakt,kappa0,i4,k456,bghat,nbg,nbghat,ng,
      1                   vext,vr,vr0,n)
          if(k.gt.1.and.log(vr0/vr).lt.lch*kexp*k) getkappa=.TRUE.
 C  search for new kappa0 if needed
          DO WHILE (getkappa)
             kappa0=kappa0*0.98d0
-            call lkfse3i0(hakt,kappa0,i4,k456,bg,bghat,nbg,nbghat,ng,
+            call lkfse3i0(hakt,kappa0,i4,k456,bghat,nbg,nbghat,ng,
      1                   vext,vr,vr0,n)
             if(log(vr0/vr).ge.lch*kexp*k) getkappa=.FALSE.
          END DO
@@ -30,13 +30,13 @@ C  search for new hakt
          vred=vr/chk
          DO WHILE (vred.lt.1) 
             hakt=hakt*1.05
-            call lkfse3i0(hakt,kappa0,i4,k456,bg,bghat,nbg,nbghat,ng,
+            call lkfse3i0(hakt,kappa0,i4,k456,bghat,nbg,nbghat,ng,
      1                   vext,vr,vr0,n)
             if(log(vr0/vr).lt.lch*kexp*k) getkappa=.TRUE.
 C  search for new kappa0 if needed
             DO WHILE (getkappa)
                kappa0=kappa0*0.98d0
-            call lkfse3i0(hakt,kappa0,i4,k456,bg,bghat,nbg,nbghat,ng,
+            call lkfse3i0(hakt,kappa0,i4,k456,bghat,nbg,nbghat,ng,
      1                   vext,vr,vr0,n)
                if(log(vr0/vr).ge.lch*kexp*k) getkappa=.FALSE.
             END DO
@@ -48,7 +48,7 @@ C  search for new kappa0 if needed
             v0r0=vr0
             n0=n
             hakt=hakt/1.005
-            call lkfse3i0(hakt,kappa0,i4,k456,bg,bghat,nbg,nbghat,ng,
+            call lkfse3i0(hakt,kappa0,i4,k456,bghat,nbg,nbghat,ng,
      1                   vext,vr,vr0,n)
             vred=vr/chk
             If (vred.lt.1) THEN
@@ -307,7 +307,8 @@ C
       integer n
       real*8 g(3,n),bg(2,n)
       integer i
-      real*8 z,g1,g2,g3,beta,gamma
+      real*8 z,g1,g2,g3,beta,gamma,onemeps
+      onemeps=1.d0-1d-10
       DO i=1,n
          g1=g(1,i)
          g2=g(2,i)
@@ -318,16 +319,17 @@ C
          g2=g2/z
          g3=g3/z
          beta=asin(g1)
-         if(abs(g1).gt.1d-7) THEN
+         if(abs(g1).lt.onemeps) THEN
             z=g3/cos(beta)
-            if(abs(z).lt.1.d0-1.d-10) THEN
-               gamma=asin(z)
+            if(abs(z).lt.onemeps) THEN
+               gamma=acos(z)
             ELSE
-               gamma=sign(1.570796327d0,z)
+               gamma=1.570796327d0-sign(1.570796327d0,z)
             END IF
          ELSE 
             gamma=0.d0
          END IF
+         if(g2.gt.0.d0) gamma = -gamma
          bg(1,i)=beta
          bg(2,i)=gamma
       END DO
@@ -561,20 +563,24 @@ C   third term  <\delta_x,n_2(2)+1/2 n13 n_1(2)> to large for remainder
      1       nbg(3,3,ng),nbghat(3,3,ng,ng),vext(2),wght(n)
       integer ih1,ih2,ih3,i,j1,j2,j3,j4
       real*8 h2,kap2,x1,x2,x3,xh1,xh2,xh3,k1,k2,k3,k4,k5,k6,z,z1,
-     1       vd2,vd3
-      ih1 = 2.0d0*h
-      ih2 = 2.0d0*h/vext(1)
-      ih3 = 2.0d0*h/vext(2)
+     1       vd2,vd3,gi1,gi2,gi3,cb
+      ih1 = max(1.d0,5.0d0*h)
+      ih2 = max(1.d0,5.0d0*h/vext(1))
+      ih3 = max(1.d0,5.0d0*h/vext(2))
       h2 = h*h
       kap2 = kappa*kappa
       vd2 = vext(1)
       vd3 = vext(2)
       i = 1
+      gi1 = nbg(1,1,i4)
+      gi2 = nbg(2,1,i4)
+      gi3 = nbg(3,1,i4)
       DO j4 = 1,ng
+         cb = abs(gi1*nbg(1,1,j4)+gi2*nbg(2,1,j4)+gi3*nbg(3,1,j4))
          k4 = k456(1,i4,j4)
          k5 = k456(2,i4,j4)
          k6 = k456(3,i4,j4)
-         z = kap2*(k4*k4+k5*k5+k6*k6)
+         z = (k4*k4+k5*k5+k6*k6)/kap2
          if(z.gt.h2) CYCLE
 C   last three komponents already to large
          DO j1 = 0,ih1
@@ -608,7 +614,8 @@ C   last three komponents + first two already to large
                      n = i-1
                      return
                   END IF
-                  wght(i)= (1.d0-z1/h2)*cos(bghat(1,i4,j4))
+                  wght(i)= (1.d0-z1/h2)
+C   *cb
                   ind(1,i) = j1
                   ind(2,i) = j2
                   ind(3,i) = j3
@@ -629,12 +636,13 @@ C   last three komponents + first two already to large
       integer ng,n,i4
       real*8 h,kappa,k456(3,ng,ng),bghat(2,ng,ng),
      1       nbg(3,3,ng),nbghat(3,3,ng,ng),vext(2),vred,vred0
-      integer ih1,ih2,ih3,j1,j2,j3,j4,mj1,mj2,mj3
+      integer ih1,ih2,ih3,j1,j2,j3,j4,mj1,mj2,mj3,rad
       real*8 x1,x2,x3,xh1,xh2,xh3,k1,k2,k3,k4,k5,k6,z,z1,
-     1       sw,sw2,sw0,sw20,wght,anz,rad,h2,kap2,vd2,vd3
-      ih1 = 2.0d0*h
-      ih2 = 2.0d0*h/vext(1)
-      ih3 = 2.0d0*h/vext(2)
+     1       sw,sw2,sw0,sw20,wght,anz,h2,kap2,vd2,vd3,
+     2       gi1,gi2,gi3,cb
+      ih1 = 5.0d0*h
+      ih2 = 5.0d0*h/vext(1)
+      ih3 = 5.0d0*h/vext(2)
       sw=0.d0
       sw0=0.d0
       sw2=0.d0
@@ -647,11 +655,15 @@ C   last three komponents + first two already to large
       vd2 = vext(1)
       vd3 = vext(2)
       n = 1
+      gi1 = nbg(1,1,i4)
+      gi2 = nbg(2,1,i4)
+      gi3 = nbg(3,1,i4)
       DO j4 = 1,ng
+         cb = abs(gi1*nbg(1,1,j4)+gi2*nbg(2,1,j4)+gi3*nbg(3,1,j4))
          k4 = k456(1,i4,j4)
          k5 = k456(2,i4,j4)
          k6 = k456(3,i4,j4)
-         z = kap2*(k4*k4+k5*k5+k6*k6)
+         z = (k4*k4+k5*k5+k6*k6)/kap2
          if(z.gt.h2) CYCLE
 C   last three komponents already to large
          DO j1 = 0,ih1
@@ -679,7 +691,8 @@ C   last three komponents + first two already to large
      1               xh3*nbghat(3,1,i4,j4)
                   z1=z1+k3*k3
                   if(z1.gt.h2) CYCLE
-                  wght= (1.d0-z1/h2)*cos(bghat(1,i4,j4))
+                  wght= (1.d0-z1/h2)
+C        *cb
 C   if j1>0  (-j1,-j2,-j3) gets the same weight, so count it twice
                   if(j1.eq.0) THEN
                      anz=1.d0
@@ -713,7 +726,7 @@ C   if j1>0  (-j1,-j2,-j3) gets the same weight, so count it twice
      1                   vext,ind,wght,n)
       implicit logical (a-z)
       integer ng,n,ind(5,n)
-      real*8 h,kappa,k456(3,ng,ng),bghat(2,ng,ng),
+      real*8 h(ng),kappa(ng),k456(3,ng,ng),bghat(2,ng,ng),
      1       nbg(3,3,ng),nbghat(3,3,ng,ng),vext(2),wght(n)
       integer ns,ni,i
       ns = 0
@@ -738,10 +751,7 @@ C   if j1>0  (-j1,-j2,-j3) gets the same weight, so count it twice
          ni = n-ns
          call lkse3i(h(i),kappa(i),i,grad,grad2,grad3,ngrad,vext,
      1               ind(1,ns+1),wght(ns+1),ni)
-C         call intpr("i4",2,i,1)
-C         call intpr("ni",2,ni,1)         
          ns = ns+ni
-C         call intpr("ns",2,ns,1)
       END DO
       n = ns
       RETURN
@@ -782,11 +792,11 @@ C
                   if(.not.mask(j1,j2,j3)) CYCLE          
                   i4=ind(4,i)
                   j4=ind(5,i)
-C                  z=th(i1,i2,i3,i4)-th(j1,j2,j3,j4)
-C                  z=z*z*ni(i1,i2,i3,i4)/lambda
-                  call spenalty(th(i1,i2,i3,i4),th(j1,j2,j3,j4),
-     1                          s2inv(i1,i2,i3,i4),ncoil,z)
-                  z=z*ni(i1,i2,i3,i4)/lambda
+                  z=th(i1,i2,i3,i4)-th(j1,j2,j3,j4)
+                  z=z*z*ni(i1,i2,i3,i4)/lambda
+C                  call spenalty(th(i1,i2,i3,i4),th(j1,j2,j3,j4),
+C     1                          s2inv(i1,i2,i3,i4),ncoil,z)
+C                  z=z*ni(i1,i2,i3,i4)/lambda
                   if(z.ge.1.d0) CYCLE
                   z=w(i)*min(1.d0,2.d0-2.d0*z)
                   z=z*s2inv(j1,j2,j3,j4)
@@ -810,10 +820,11 @@ C
                   if(.not.mask(j1,j2,j3)) CYCLE          
                   i4=ind(4,i)
                   j4=ind(5,i)
-C                  z=th(i1,i2,i3,i4)-th(j1,j2,j3,j4)
-                  call spenalty(th(i1,i2,i3,i4),th(j1,j2,j3,j4),
-     1                          s2inv(i1,i2,i3,i4),ncoil,z)
-                  z=z*ni(i1,i2,i3,i4)/lambda
+                  z=th(i1,i2,i3,i4)-th(j1,j2,j3,j4)
+                  z=z*z*ni(i1,i2,i3,i4)/lambda
+C                  call spenalty(th(i1,i2,i3,i4),th(j1,j2,j3,j4),
+C     1                          s2inv(i1,i2,i3,i4),ncoil,z)
+C                  z=z*ni(i1,i2,i3,i4)/lambda
 C    ni(i1,i2,i3,i4) contains normalization by siinv
                   if(z.ge.1.d0) CYCLE
                   z=w(i)*min(1.d0,2.d0-2.d0*z)

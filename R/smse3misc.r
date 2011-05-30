@@ -12,6 +12,11 @@ j <- j+1
 }
 ex
 }
+expm <- function(m){
+matrix(.Fortran("expm3", as.double(m),ex=double(9),
+                    DUPL=FALSE,
+                    PACKAGE="dti")$ex,3,3)
+}
 abofg <- function(g,eps=1e-7){
 g <- g/sqrt(sum(g^2))
 beta <- asin(g[1])
@@ -43,7 +48,6 @@ bg
 betagamma <- function(g1,g2){
 bg1 <- abofg(g1)
 bg2 <- abofg(g2)
-#cat("bg1",bg1,"bg2",bg2,"\n")
 b1 <- bg1[1]
 b2 <- bg2[1]
 dg <- bg1[2]-bg2[2]
@@ -113,10 +117,10 @@ matm <- matrm(bg[1],bg[2])
 k456 <- runif(3,-.01,.01)
 z <-  optim(k456,krit,method="BFGS",matm=matm,m4=m4,m5=m5,m6=m6,control=list(trace=trace,reltol=1e-12,abstol=1e-12))
 while(z$value>1e-8) {
-cat("i",i,"j",j,"value",z$value,"par",z$par,"\n")
+#cat("i",i,"j",j,"value",z$value,"par",z$par,"\n")
 k456 <- runif(3,-.01,.01)
 z <- optim(k456,krit,method="BFGS",matm=matm,m4=m4,m5=m5,m6=m6,control=list(trace=trace,reltol=1e-12,abstol=1e-12))
-cat(" new value",z$value,"par",z$par,"\n")
+#cat(" new value",z$value,"par",z$par,"\n")
 }
 kappa456[,i,j] <- z$par
 }
@@ -126,7 +130,7 @@ kappa456[2:3,,][kappa456[2:3,,]> pi] <- kappa456[2:3,,][kappa456[2:3,,]> pi]-2*p
 }
 prtb <- Sys.time()
 cat("End computing spherical distances",format(Sys.time()),"\n")
-kappa456
+list(k456=kappa456,bg=zbg$bg,bghat=zbg$bghat,nbg=zbg$nbg,nbghat=zbg$nbghat)
 }
 
 

@@ -10,7 +10,7 @@ dwi.smooth <- function(object, ...) cat("No DTI smoothing defined for this class
 
 setGeneric("dwi.smooth", function(object, ...) standardGeneric("dwi.smooth"))
 
-setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,sigma2=NULL,dist="SE3",minsb=5,kexp=.4,coils=0,verbose=FALSE){
+setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,sigma2=NULL,dist="SE3full",minsb=5,kexp=.4,coils=0,verbose=FALSE){
   args <- sys.call(-1)
   args <- c(object@call,args)
   sdcoef <- object@sdcoef
@@ -29,7 +29,12 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,sigma2=NULL,d
   mask <- meansb > minsb
   masksb <- array(mask,c(ddim,ngrad))
   vext <- object@voxelext[2:3]/object@voxelext[1]
-  hseq <- gethseqse3(kstar,grad,kappa,kexp=kexp,vext,dist=dist,verbose=verbose)
+  if(dist=="SE3full"){
+  gradstats <- getkappas(grad)
+  hseq <- gethseqfullse3(kstar,gradstats,kappa0,kexp=kexp,vext,verbose=verbose)
+  } else {
+  hseq <- gethseqse3(kstar,grad,kexp=kexp,vext,verbose=verbose)
+  }
   kappa <- hseq$kappa
   nind <- hseq$n
   hseq <- hseq$h
@@ -42,15 +47,14 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,sigma2=NULL,d
   }
 # make it nonrestrictive for the first step
   ni <- s2inv
-  if(is.null(kappa))
-  kappa <- if(dist=="SE3") 1/sqrt(.25+.17*ngrad) else .28+.17*ngrad
-#  kappa <- getkappa(grad)
   prt0 <- Sys.time()
   cat("adaptive smoothing in SE3, kstar=",kstar,if(verbose)"\n" else " ")
   for(k in 1:kstar){
     hakt <- hseq[,k]
     kappa0 <- kappa[,k] 
-    param <- lkernse3(hakt,kappa0,grad,vext,nind,dist)
+    param <-   if(dist=="SE3full")
+       lkfullse3(hakt,kappa0,gradstats,vext,nind) else 
+       lkernse3(hakt,kappa0,grad,vext,nind) 
     z <- .Fortran("adasmse3",
                 as.double(sb),
                 as.double(th),
@@ -114,7 +118,7 @@ th1 <- r*0.9999953
 }
 th1
 }
-lkernse3 <- function(h,kappa,grad,vext,n,dist="SE3"){
+lkernse3 <- function(h,kappa,grad,vext,n){
       ngrad <- dim(grad)[2]
 #      n <- min(1000000,prod(1+2*as.integer(h/c(1,vext)))*ngrad^2)
 #      if(dist=="SE3"){ nothing else implemented
@@ -137,17 +141,17 @@ lkernse3 <- function(h,kappa,grad,vext,n,dist="SE3"){
       dim(z$ind) <- c(5,n)
 list(h=h,kappa=kappa,grad=grad,ind=z$ind[,1:z$n],w=z$w[1:z$n],nind=z$n)
 }
-lkfullse3 <- function(h,kappa,grad,k456,vext,n,dist="SE3"){
-      ngrad <- dim(grad)[2]
+lkfullse3 <- function(h,kappa,gradstats,vext,n){
+      ngrad <- dim(gradstats$bg)[2]
       if(length(h)<ngrad) h <- rep(h[1],ngrad)
       if(length(kappa)<ngrad) kappa <- rep(kappa[1],ngrad)
       z <- .Fortran("lkfulse3",
                     as.double(h),
                     as.double(kappa),
-                    as.double(k456),
-                    as.double(grad),
-                    double(3*ngrad),
-                    double(2*ngrad),
+                    as.double(gradstats$k456),
+                    as.double(gradstats$bghat),
+                    as.double(gradstats$nbg),
+                    as.double(gradstats$nbghat),
                     as.integer(ngrad),
                     as.double(vext),
                     ind=integer(5*n),
@@ -157,7 +161,7 @@ lkfullse3 <- function(h,kappa,grad,k456,vext,n,dist="SE3"){
                     PACKAGE="dti")[c("ind","w","n")]
 #      } 
       dim(z$ind) <- c(5,n)
-list(h=h,kappa=kappa,grad=grad,ind=z$ind[,1:z$n],w=z$w[1:z$n],nind=z$n)
+list(h=h,kappa=kappa,ind=z$ind[,1:z$n],w=z$w[1:z$n],nind=z$n)
 }
 
 
