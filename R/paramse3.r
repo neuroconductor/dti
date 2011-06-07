@@ -57,7 +57,6 @@ function (kstar, gradstats, kappa0=NULL, kexp=.1, vext = c(1, 1), dist = "SE3",
                      as.integer(i),#i4
                      as.integer(kstar),#kstar
                      as.double(gradstats$k456),
-                     as.double(gradstats$bghat),
                      as.double(gradstats$nbg),
                      as.double(gradstats$nbghat),
                      as.integer(ngrad),

@@ -38,7 +38,7 @@ dg <- dim(g)
 ngrad <- if(!is.null(dg)) dg[2] else 1
 bg <- .Fortran("abofg",as.double(g),
                     as.integer(ngrad),
-                    bg=double(2*n),
+                    bg=double(2*ngrad),
                     DUPL=FALSE,
                     PACKAGE="dti")$bg
 dim(bg) <- c(2,ngrad)

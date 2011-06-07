@@ -19,9 +19,9 @@
 }
 \usage{
 \S4method{dwiMixtensor}{dtiData}(object, maxcomp=3, method="mixtensor", reltol=1e-6,
-          maxit=5000, ngc=1000, optmethod="BFGS",nguess=100*maxcomp^2,
-          msc="BIC",pen=NULL)
-\S4method{dwiMtImprove}{dwiMixtensor,dtiData}(mtobj, dwiobj, maxcomp=3, method="mixtensor", reltol=1e-6, maxit=5000,ngc=1000, optmethod="BFGS", nguess=100*maxcomp^2,msc="BIC",pen=NULL,where=NULL)
+          maxit=5000, ngc=1000, optmethod="BFGS", nguess=100*maxcomp^2,
+          msc="BIC", pen=NULL)
+\S4method{dwiMtImprove}{dwiMixtensor,dtiData}(mtobj, dwiobj, maxcomp=3, method="mixtensor", reltol=1e-6, maxit=5000, ngc=1000, optmethod="BFGS", nguess= 100*maxcomp^2, msc="BIC", pen=NULL, where=NULL, new=FALSE)
 \S4method{dwiMtCombine}{dwiMixtensor,dwiMixtensor}(mtobj1,mtobj2, msc="BIC", where=NULL)
 }
 %- maybe also 'usage' for other objects documented here.
@@ -51,7 +51,10 @@
    \item{where}{Mask of voxel for which  \code{"dwiMtImprove"} or \code{"dwiMtCombine"} 
    should be performed.}
    \item{mtobj2}{For method \code{"dwiMtCombine"} an \code{"dwiMixtensor"}-object obtained from the same \code{"dwiData"} object. The maximum number of components in \code{mtobj2} should preferably  be less or equal to the maximum number of components in \code{mtobj1}.}
-   
+   \item{new}{if \code{new=TRUE} the original fit supplied to function \code{dwiMtImprove}
+             in argument \code{mtobj} will be discarded. Defaults to \code{new=FALSE}, i.e. 
+             the original fit will be kept if it performs better with respect to the specified
+             criterion in \code{msc}.}
    }
 \details{
   The method \code{"dwiMixtensor"} estimates, in each voxel, a mixture of radial symmetric tensors from the DWI data contained in an object of class \code{"dtiData"}. The number of mixture components is selected depending on the data, with a maximum number of components specified by \code{maxcomp}. 

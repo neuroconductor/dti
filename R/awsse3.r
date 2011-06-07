@@ -74,7 +74,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,s
                 double(ngrad),
                 double(ngrad),
                 double(ngrad),
-                as.integer(coils),
+#                as.integer(coils),
                 DUPL=FALSE,
                 PACKAGE="dti")[c("ni","thn","r")]
     ni <- z$ni
@@ -149,7 +149,6 @@ lkfullse3 <- function(h,kappa,gradstats,vext,n){
                     as.double(h),
                     as.double(kappa),
                     as.double(gradstats$k456),
-                    as.double(gradstats$bghat),
                     as.double(gradstats$nbg),
                     as.double(gradstats$nbghat),
                     as.integer(ngrad),

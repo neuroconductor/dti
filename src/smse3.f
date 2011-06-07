@@ -1,9 +1,8 @@
-      subroutine ghfse3i(i4,kstar,k456,bghat,nbg,nbghat,ng,kexp,
+      subroutine ghfse3i(i4,kstar,k456,nbg,nbghat,ng,kexp,
      1                    kappa0,vext,h,kappa,varred,varred0,n)
       implicit logical (a-z)
       integer ng,i4,kstar,n
-      real*8 k456(3,ng,ng),bghat(2,ng,ng),
-     1       nbg(3,3,ng),nbghat(3,3,ng,ng),vext(2),
+      real*8 k456(3,ng,ng),nbg(3,3,ng),nbghat(3,3,ng,ng),vext(2),
      1       kexp,h(kstar),kappa(kstar),varred(kstar),varred0(kstar)
       logical getkappa
       integer k,n0
@@ -16,13 +15,13 @@
 C   initialize kappa
 C   loop over steps
       DO k=1,kstar
-         call lkfse3i0(hakt,kappa0,i4,k456,bghat,nbg,nbghat,ng,
+         call lkfse3i0(hakt,kappa0,i4,k456,nbg,nbghat,ng,
      1                   vext,vr,vr0,n)
          if(k.gt.1.and.log(vr0/vr).lt.lch*kexp*k) getkappa=.TRUE.
 C  search for new kappa0 if needed
          DO WHILE (getkappa)
             kappa0=kappa0*0.98d0
-            call lkfse3i0(hakt,kappa0,i4,k456,bghat,nbg,nbghat,ng,
+            call lkfse3i0(hakt,kappa0,i4,k456,nbg,nbghat,ng,
      1                   vext,vr,vr0,n)
             if(log(vr0/vr).ge.lch*kexp*k) getkappa=.FALSE.
          END DO
@@ -30,13 +29,13 @@ C  search for new hakt
          vred=vr/chk
          DO WHILE (vred.lt.1) 
             hakt=hakt*1.05
-            call lkfse3i0(hakt,kappa0,i4,k456,bghat,nbg,nbghat,ng,
+            call lkfse3i0(hakt,kappa0,i4,k456,nbg,nbghat,ng,
      1                   vext,vr,vr0,n)
             if(log(vr0/vr).lt.lch*kexp*k) getkappa=.TRUE.
 C  search for new kappa0 if needed
             DO WHILE (getkappa)
                kappa0=kappa0*0.98d0
-            call lkfse3i0(hakt,kappa0,i4,k456,bghat,nbg,nbghat,ng,
+            call lkfse3i0(hakt,kappa0,i4,k456,nbg,nbghat,ng,
      1                   vext,vr,vr0,n)
                if(log(vr0/vr).ge.lch*kexp*k) getkappa=.FALSE.
             END DO
@@ -48,7 +47,7 @@ C  search for new kappa0 if needed
             v0r0=vr0
             n0=n
             hakt=hakt/1.005
-            call lkfse3i0(hakt,kappa0,i4,k456,bghat,nbg,nbghat,ng,
+            call lkfse3i0(hakt,kappa0,i4,k456,nbg,nbghat,ng,
      1                   vext,vr,vr0,n)
             vred=vr/chk
             If (vred.lt.1) THEN
@@ -555,11 +554,11 @@ C   third term  <\delta_x,n_2(2)+1/2 n13 n_1(2)> to large for remainder
       n = i-1
       RETURN
       END
-      subroutine lkfse3i(h,kappa,i4,k456,bghat,nbg,nbghat,ng,
+      subroutine lkfse3i(h,kappa,i4,k456,nbg,nbghat,ng,
      1                   vext,ind,wght,n)
       implicit logical (a-z)
       integer ng,n,ind(5,n),i4
-      real*8 h,kappa,k456(3,ng,ng),bghat(2,ng,ng),
+      real*8 h,kappa,k456(3,ng,ng),
      1       nbg(3,3,ng),nbghat(3,3,ng,ng),vext(2),wght(n)
       integer ih1,ih2,ih3,i,j1,j2,j3,j4
       real*8 h2,kap2,x1,x2,x3,xh1,xh2,xh3,k1,k2,k3,k4,k5,k6,z,z1,
@@ -630,11 +629,11 @@ C   *cb
       n = i-1
       RETURN
       END
-      subroutine lkfse3i0(h,kappa,i4,k456,bghat,nbg,nbghat,ng,
+      subroutine lkfse3i0(h,kappa,i4,k456,nbg,nbghat,ng,
      1                   vext,vred,vred0,n)
       implicit logical (a-z)
       integer ng,n,i4
-      real*8 h,kappa,k456(3,ng,ng),bghat(2,ng,ng),
+      real*8 h,kappa,k456(3,ng,ng),
      1       nbg(3,3,ng),nbghat(3,3,ng,ng),vext(2),vred,vred0
       integer ih1,ih2,ih3,j1,j2,j3,j4,mj1,mj2,mj3,rad
       real*8 x1,x2,x3,xh1,xh2,xh3,k1,k2,k3,k4,k5,k6,z,z1,
@@ -722,17 +721,17 @@ C   if j1>0  (-j1,-j2,-j3) gets the same weight, so count it twice
       END IF
       RETURN
       END
-      subroutine lkfulse3(h,kappa,k456,bghat,nbg,nbghat,ng,
+      subroutine lkfulse3(h,kappa,k456,nbg,nbghat,ng,
      1                   vext,ind,wght,n)
       implicit logical (a-z)
       integer ng,n,ind(5,n)
-      real*8 h(ng),kappa(ng),k456(3,ng,ng),bghat(2,ng,ng),
+      real*8 h(ng),kappa(ng),k456(3,ng,ng),
      1       nbg(3,3,ng),nbghat(3,3,ng,ng),vext(2),wght(n)
       integer ns,ni,i
       ns = 0
       DO i = 1,ng
          ni = n-ns
-         call lkfse3i(h(i),kappa(i),i,k456,bghat,nbg,nbghat,ng,
+         call lkfse3i(h(i),kappa(i),i,k456,nbg,nbghat,ng,
      1                vext,ind(1,ns+1),wght(ns+1),ni)
          ns = ns+ni
       END DO
@@ -757,7 +756,7 @@ C   if j1>0  (-j1,-j2,-j3) gets the same weight, so count it twice
       RETURN
       END      
       subroutine adasmse3(y,th,ni,mask,n1,n2,n3,ngrad,lambda,ind,w,n,
-     1                    thn,r,s2inv,sw,swy,swy2,ncoil)
+     1                    thn,r,s2inv,sw,swy,swy2)
 C
 C   perform adaptive smoothing on SE(3) 
 C   ind(.,i) contains coordinate indormation corresponding to positive
@@ -766,7 +765,7 @@ C   ind(.,i)[1:5] are j1-i1,j2-i2,j3-i3, i4 and j4 respectively
 C   s2inv containes the inverses of estimated variances
 C
       implicit logical (a-z)
-      integer n1,n2,n3,ngrad,n,ind(5,n),ncoil
+      integer n1,n2,n3,ngrad,n,ind(5,n)
       logical mask(n1,n2,n3)
       real*8 y(n1,n2,n3,ngrad),th(n1,n2,n3,ngrad),ni(n1,n2,n3,ngrad),
      1       lambda,w(n),thn(n1,n2,n3,ngrad),sw(ngrad),swy(ngrad),
@@ -853,14 +852,15 @@ C    ni(i1,i2,i3,i4) contains normalization by siinv
       END
       subroutine spenalty(thi,thj,s2inv,ncoil,pen)
       implicit logical (a-z)
+C currently not used 
+C will be insertet later to handle "Rician" errors
       integer ncoil
       real*8 thi,thj,s2inv,pen
       real*8 z
       if(ncoil.eq.0) THEN
          z=thi-thj
-         pen=z*z
+         pen=z*z*s2inv
          RETURN
       END IF
       RETURN
       END
-      
