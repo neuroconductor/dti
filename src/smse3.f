@@ -771,7 +771,7 @@ C
      1       lambda,w(n),thn(n1,n2,n3,ngrad),sw(ngrad),swy(ngrad),
      2       swy2(ngrad),s2inv(n1,n2,n3,ngrad),r(n1,n2,n3,ngrad)
       integer i,i1,i2,i3,i4,j1,j2,j3,j4
-      real*8 z,yj,swyi,nii
+      real*8 z,yj,swyi,nii,thi
       DO i1=1,n1
          DO i2=1,n2
             DO i3=1,n3
@@ -781,7 +781,14 @@ C
                   swy(i4)=0.d0
                   swy2(i4)=0.d0
                END DO
+               i4=0
                DO i=1,n
+                  if(ind(4,i).ne.i4) THEN
+C   by construction ind(4,.) should have same values consequtively
+                     i4 = ind(4,i)
+                     thi = th(i1,i2,i3,i4)
+                     nii = ni(i1,i2,i3,i4)/lambda
+                  END IF
                   j1=i1+ind(1,i)
                   j2=i2+ind(2,i)
                   j3=i3+ind(3,i)
@@ -789,10 +796,12 @@ C
                   if(j2.le.0.or.j2.gt.n2) CYCLE
                   if(j3.le.0.or.j3.gt.n3) CYCLE
                   if(.not.mask(j1,j2,j3)) CYCLE          
-                  i4=ind(4,i)
+C                  i4=ind(4,i)
                   j4=ind(5,i)
-                  z=th(i1,i2,i3,i4)-th(j1,j2,j3,j4)
-                  z=z*z*ni(i1,i2,i3,i4)/lambda
+                  z=thi-th(j1,j2,j3,j4)
+                  z=z*z*nii
+C                  z=th(i1,i2,i3,i4)-th(j1,j2,j3,j4)
+C                  z=z*z*ni(i1,i2,i3,i4)/lambda
 C                  call spenalty(th(i1,i2,i3,i4),th(j1,j2,j3,j4),
 C     1                          s2inv(i1,i2,i3,i4),ncoil,z)
 C                  z=z*ni(i1,i2,i3,i4)/lambda
@@ -806,6 +815,12 @@ C                  z=z*ni(i1,i2,i3,i4)/lambda
                END DO
                DO i=1,n
                   if(ind(1,i).eq.0) CYCLE
+                  if(ind(4,i).ne.i4) THEN
+C   by construction ind(4,.) should have same values consequtively
+                     i4 = ind(4,i)
+                     thi = th(i1,i2,i3,i4)
+                     nii = ni(i1,i2,i3,i4)/lambda
+                  END IF
 C
 C   handle case j1-i1 < 0 which is not contained in ind 
 C   using axial symmetry
@@ -817,10 +832,12 @@ C
                   if(j2.le.0.or.j2.gt.n2) CYCLE
                   if(j3.le.0.or.j3.gt.n3) CYCLE
                   if(.not.mask(j1,j2,j3)) CYCLE          
-                  i4=ind(4,i)
+C                  i4=ind(4,i)
                   j4=ind(5,i)
-                  z=th(i1,i2,i3,i4)-th(j1,j2,j3,j4)
-                  z=z*z*ni(i1,i2,i3,i4)/lambda
+                  z=thi-th(j1,j2,j3,j4)
+                  z=z*z*nii
+C                  z=th(i1,i2,i3,i4)-th(j1,j2,j3,j4)
+C                  z=z*z*ni(i1,i2,i3,i4)/lambda
 C                  call spenalty(th(i1,i2,i3,i4),th(j1,j2,j3,j4),
 C     1                          s2inv(i1,i2,i3,i4),ncoil,z)
 C                  z=z*ni(i1,i2,i3,i4)/lambda

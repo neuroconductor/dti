@@ -581,7 +581,7 @@ setMethod("extract","dwiMixtensor",function(x, what="andir", xind=TRUE, yind=TRU
      andir[3,] <- cos(orient[1,])
      z$andir <- array(andir,c(3,dim(x@orient)[-1]))
      }
-  if("s0" %in% what) z$s0 <- x@S0
+  if("s0" %in% what) z$s0 <- x@th0
   if("mask" %in% what) z$mask <- x@mask
   if("fa" %in% what){
       fa <- x@ev[1,,,]/sqrt((x@ev[1,,,]+x@ev[2,,,])^2+2*x@ev[2,,,]^2)
