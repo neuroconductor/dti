@@ -2,7 +2,7 @@
 #                                                              #
 # Section for Utility functions                                #
 #                                                              #
-################################################################
+################################################################ 
 
 sdpar <- function(object,  ...) cat("No method defined for class:",class(object),"\n")
 
@@ -21,7 +21,7 @@ setMethod("sdpar","dtiData",function(object,level=NULL,sdmethod="sd",interactive
   sdcoef <- object@sdcoef
   level0 <- if(is.null(level)) object@level else max(0,level)
   s0ind<-object@s0ind
-  s0 <- object@si[,,,s0ind]
+  s0 <- object@si[,,,s0ind,drop=FALSE]
   ls0ind <- length(s0ind)
   A0 <- level0
   if(ls0ind>1) {
@@ -35,17 +35,18 @@ setMethod("sdpar","dtiData",function(object,level=NULL,sdmethod="sd",interactive
   if(interactive) {
     accept <- FALSE
     ddim <- object@ddim
+    ddm1 <- ddim-1
     bw <- min(bw.nrd(if(ls0ind>1) s0mean[s0mean>0] else s0[s0>0]),diff(range(if(ls0ind>1) s0mean else s0))/256)
     z <- density(if(ls0ind>1) s0mean[s0mean>0&s0mean<A1] else s0[s0>0&s0<A1],bw = max(bw,.01),,n=1024)
-    indx1 <- trunc(0.05*ddim[1]):trunc(0.95*ddim[1])
-    indx2 <- trunc(0.1*ddim[1]):trunc(0.9*ddim[1])
-    indx3 <- trunc(0.15*ddim[1]):trunc(0.85*ddim[1])
-    indy1 <- trunc(0.05*ddim[2]):trunc(0.95*ddim[2])
-    indy2 <- trunc(0.1*ddim[2]):trunc(0.9*ddim[2])
-    indy3 <- trunc(0.15*ddim[2]):trunc(0.85*ddim[2])
-    indz1 <- trunc(0.05*ddim[3]):trunc(0.95*ddim[3])
-    indz2 <- trunc(0.1*ddim[3]):trunc(0.9*ddim[3])
-    indz3 <- trunc(0.15*ddim[3]):trunc(0.85*ddim[3])
+    indx1 <- trunc(0.05*ddm1[1]):trunc(0.95*ddm1[1])+1
+    indx2 <- trunc(0.1*ddm1[1]):trunc(0.9*ddm1[1])+1
+    indx3 <- trunc(0.15*ddm1[1]):trunc(0.85*ddm1[1])+1
+    indy1 <- trunc(0.05*ddm1[2]):trunc(0.95*ddm1[2])+1
+    indy2 <- trunc(0.1*ddm1[2]):trunc(0.9*ddm1[2])+1
+    indy3 <- trunc(0.15*ddm1[2]):trunc(0.85*ddm1[2])+1
+    indz1 <- trunc(0.05*ddm1[3]):trunc(0.95*ddm1[3])+1
+    indz2 <- trunc(0.1*ddm1[3]):trunc(0.9*ddm1[3])+1
+    indz3 <- trunc(0.15*ddm1[3]):trunc(0.85*ddm1[3])+1
     z1 <- density(if(ls0ind>1) s0mean[indx1,indy1,indz1][s0mean[indx1,indy1,indz1]>0] else s0[indx1,indy1,indz1][s0[indx1,indy1,indz1]>0],bw=bw,n=1024)
     z2 <- density(if(ls0ind>1) s0mean[indx2,indy2,indz2][s0mean[indx2,indy2,indz2]>0] else s0[indx2,indy2,indz2][s0[indx2,indy2,indz2]>0],bw=bw,n=1024)
     z3 <- density(if(ls0ind>1) s0mean[indx3,indy3,indz3][s0mean[indx3,indy3,indz3]>0] else s0[indx3,indy3,indz3][s0[indx3,indy3,indz3]>0],bw=bw,n=1024)
