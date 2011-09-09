@@ -10,12 +10,18 @@ dwi.smooth <- function(object, ...) cat("No DTI smoothing defined for this class
 
 setGeneric("dwi.smooth", function(object, ...) standardGeneric("dwi.smooth"))
 
-setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,sigma2=NULL,dist="SE3full",minsb=5,kexp=.4,coils=0,verbose=FALSE){
+setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,sigma2=NULL,dist="SE3full",minsb=5,kexp=.4,coils=0,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE){
   args <- sys.call(-1)
   args <- c(object@call,args)
   sdcoef <- object@sdcoef
   if(length(sdcoef)==4||all(sdcoef[5:8]==0)){
   object <- getsdofsb(object,qA0=.1,qA1=.95,nsb=1,level=NULL)
+  }
+  if(!(is.null(xind)&is.null(yind)&is.null(zind))){
+  if(is.null(xind)) xind <- 1:object@ddim[1]
+  if(is.null(yind)) yind <- 1:object@ddim[2]
+  if(is.null(zind)) zind <- 1:object@ddim[3]
+  object <- object[xind,yind,zind]
   }
   kappa <- NULL
   ngrad <- object@ngrad
