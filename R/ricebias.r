@@ -37,7 +37,11 @@ ricebiascorr <- function(x,s=1,method=1){
 Lhalf <- function(x){
 (1-x)*besselI(-x/2,0,TRUE) - x*besselI(-x/2,1,TRUE)
 }
-fofx <- function(x) sqrt(pi/2)*Lhalf(-x^2/2)
+fofx <- function(x) {
+      ind <- x<50
+      x[ind] <- sqrt(pi/2)*Lhalf(-x[ind]^2/2)
+      x
+}
 xt <- x/s
 y <- xt
 if(method==1){

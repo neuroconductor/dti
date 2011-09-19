@@ -10,7 +10,7 @@ dwi.smooth <- function(object, ...) cat("No DTI smoothing defined for this class
 
 setGeneric("dwi.smooth", function(object, ...) standardGeneric("dwi.smooth"))
 
-setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,sigma2=NULL,dist="SE3full",minsb=5,kexp=.4,coils=0,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE){
+setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,sigma=NULL,sigma2=NULL,dist="SE3full",minsb=5,kexp=.4,coils=0,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE){
   args <- sys.call(-1)
   args <- c(object@call,args)
   sdcoef <- object@sdcoef
@@ -61,6 +61,32 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,s
     param <-   if(dist=="SE3full")
        lkfullse3(hakt,kappa0,gradstats,vext,nind) else 
        lkernse3(hakt,kappa0,grad,vext,nind) 
+       cat(length(sigma),"\n")
+    if(length(sigma)==1) {
+    cat("using true variance")
+    z <- .Fortran("adrsmse3",
+                as.double(sb),
+                as.double(th),
+                ni=as.double(ni),
+                as.logical(mask),
+                as.integer(ddim[1]),
+                as.integer(ddim[2]),
+                as.integer(ddim[3]),
+                as.integer(ngrad),
+                as.double(lambda),
+                as.integer(param$ind),
+                as.double(param$w),
+                as.integer(param$n),
+                thn=double(prod(ddim)*ngrad),
+                r=double(prod(ddim)*ngrad),
+                as.double(sigma),
+                double(ngrad),
+                double(ngrad),
+                double(ngrad),
+#                as.integer(coils),
+                DUPL=FALSE,
+                PACKAGE="dti")[c("ni","thn","r")]
+    } else {
     z <- .Fortran("adasmse3",
                 as.double(sb),
                 as.double(th),
@@ -83,14 +109,22 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,s
 #                as.integer(coils),
                 DUPL=FALSE,
                 PACKAGE="dti")[c("ni","thn","r")]
+    }
     ni <- z$ni
     th <- z$thn
     r <- z$r
     ind <- masksb&!is.na(r)&ni>s2inv&r<1e4
 if(verbose){
+       if(length(sigma)==1) {
+       cat("first try\n")
+   cat("k:",k,"h_k:",hakt,"quartiles of ni",signif(quantile(ni),3),
+  "mean of ni",signif(mean(ni),3),
+  "time elapsed:",format(difftime(Sys.time(),prt0),digits=3),"\n")
+  } else {
    cat("k:",k,"h_k:",hakt,"quartiles of ni",signif(quantile(z$ni/s2inv),3),
   "mean of ni",signif(mean(z$ni/s2inv),3),
   "time elapsed:",format(difftime(Sys.time(),prt0),digits=3),"\n")
+  }
     cat("quartiles of r",signif(quantile(r[ind]),3),"length of ind",length(ind),"\n")
     } else {
       cat(".")
