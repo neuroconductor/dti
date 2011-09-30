@@ -37,9 +37,9 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,s
   vext <- object@voxelext[2:3]/object@voxelext[1]
   if(dist=="SE3full"){
   gradstats <- getkappas(grad)
-  hseq <- gethseqfullse3(kstar,gradstats,kappa0,kexp=kexp,vext,verbose=verbose)
+  hseq <- gethseqfullse3(kstar,gradstats,kappa0,vext=vext,verbose=verbose)
   } else {
-  hseq <- gethseqse3(kstar,grad,kexp=kexp,vext,verbose=verbose)
+  hseq <- gethseqse3(kstar,grad,vext,verbose=verbose)
   }
   kappa <- hseq$kappa
   nind <- hseq$n
@@ -53,21 +53,22 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,s
   }
 # make it nonrestrictive for the first step
   ni <- s2inv
+  z <- list(th=th, ni = if(length(sigma)==1) array(1,dim(sb)) else s2inv)
+  rm(s2inv, th)
   prt0 <- Sys.time()
   cat("adaptive smoothing in SE3, kstar=",kstar,if(verbose)"\n" else " ")
   for(k in 1:kstar){
+    gc()
     hakt <- hseq[,k]
-    kappa0 <- kappa[,k] 
     param <-   if(dist=="SE3full")
-       lkfullse3(hakt,kappa0,gradstats,vext,nind) else 
-       lkernse3(hakt,kappa0,grad,vext,nind) 
-       cat(length(sigma),"\n")
+       lkfullse3(hakt,kappa[k],gradstats,vext,nind) else 
+       lkernse3(hakt,kappa[k],grad,vext,nind) 
     if(length(sigma)==1) {
     cat("using true variance")
     z <- .Fortran("adrsmse3",
                 as.double(sb),
-                as.double(th),
-                ni=as.double(ni),
+                as.double(z$th),
+                ni=as.double(z$ni),
                 as.logical(mask),
                 as.integer(ddim[1]),
                 as.integer(ddim[2]),
@@ -77,20 +78,18 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,s
                 as.integer(param$ind),
                 as.double(param$w),
                 as.integer(param$n),
-                thn=double(prod(ddim)*ngrad),
-                r=double(prod(ddim)*ngrad),
+                th=double(prod(ddim)*ngrad),
                 as.double(sigma),
-                double(ngrad),
                 double(ngrad),
                 double(ngrad),
 #                as.integer(coils),
                 DUPL=FALSE,
-                PACKAGE="dti")[c("ni","thn","r")]
+                PACKAGE="dti")[c("ni","th")]
     } else {
     z <- .Fortran("adasmse3",
                 as.double(sb),
-                as.double(th),
-                ni=as.double(ni),
+                as.double(z$th),
+                ni=as.double(z$ni),
                 as.logical(mask),
                 as.integer(ddim[1]),
                 as.integer(ddim[2]),
@@ -100,7 +99,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,s
                 as.integer(param$ind),
                 as.double(param$w),
                 as.integer(param$n),
-                thn=double(prod(ddim)*ngrad),
+                th=double(prod(ddim)*ngrad),
                 r=double(prod(ddim)*ngrad),
                 as.double(s2inv),
                 double(ngrad),
@@ -108,30 +107,27 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,s
                 double(ngrad),
 #                as.integer(coils),
                 DUPL=FALSE,
-                PACKAGE="dti")[c("ni","thn","r")]
+                PACKAGE="dti")[c("ni","th","r")]
+    ind <- masksb&!is.na(z$r)&z$ni>s2inv&z$r<1e4
+    cat("quartiles of r",signif(quantile(z$r[ind]),3),"length of ind",length(ind),"\n")
     }
-    ni <- z$ni
-    th <- z$thn
-    r <- z$r
-    ind <- masksb&!is.na(r)&ni>s2inv&r<1e4
 if(verbose){
        if(length(sigma)==1) {
        cat("first try\n")
-   cat("k:",k,"h_k:",hakt,"quartiles of ni",signif(quantile(ni),3),
-  "mean of ni",signif(mean(ni),3),
-  "time elapsed:",format(difftime(Sys.time(),prt0),digits=3),"\n")
+   cat("k:",k,"h_k:",signif(hakt,3),"\n quartiles of ni",signif(quantile(z$ni),3),
+  "mean of ni",signif(mean(z$ni),3),
+  "\n time elapsed:",format(difftime(Sys.time(),prt0),digits=3),"\n")
   } else {
-   cat("k:",k,"h_k:",hakt,"quartiles of ni",signif(quantile(z$ni/s2inv),3),
+   cat("k:",k,"h_k:",signif(hakt,3),"\n quartiles of ni",signif(quantile(z$ni/s2inv),3),
   "mean of ni",signif(mean(z$ni/s2inv),3),
-  "time elapsed:",format(difftime(Sys.time(),prt0),digits=3),"\n")
+  "\n time elapsed:",format(difftime(Sys.time(),prt0),digits=3),"\n")
   }
-    cat("quartiles of r",signif(quantile(r[ind]),3),"length of ind",length(ind),"\n")
     } else {
       cat(".")
     }
   }
 if(!verbose) cat("\n")
-  object@si[,,,-s0ind] <- th
+  object@si[,,,-s0ind] <- z$th
   object@call <- args
   object
 }
@@ -151,7 +147,6 @@ thsq <- th0*th0
 db <-(2+thsq)*besselI(thsq/4,0,TRUE)+thsq*besselI(thsq/4,1,TRUE)
 ksi <- 2+thsq-pi/8*db*db
 th1 <- sqrt(ksi*(1+r*r)-2)
-#cat(ksi,r,th0,th1,"\n")
 }
 } else {
 th1 <- r*0.9999953
@@ -160,10 +155,7 @@ th1
 }
 lkernse3 <- function(h,kappa,grad,vext,n){
       ngrad <- dim(grad)[2]
-#      n <- min(1000000,prod(1+2*as.integer(h/c(1,vext)))*ngrad^2)
-#      if(dist=="SE3"){ nothing else implemented
       if(length(h)<ngrad) h <- rep(h[1],ngrad)
-      if(length(kappa)<ngrad) kappa <- rep(kappa[1],ngrad)
       z <- .Fortran("lkse3",
                     as.double(h),
                     as.double(kappa),
@@ -177,14 +169,12 @@ lkernse3 <- function(h,kappa,grad,vext,n){
                     n=as.integer(n),
                     DUPL=FALSE,
                     PACKAGE="dti")[c("ind","w","n")]
-#      } 
       dim(z$ind) <- c(5,n)
 list(h=h,kappa=kappa,grad=grad,ind=z$ind[,1:z$n],w=z$w[1:z$n],nind=z$n)
 }
 lkfullse3 <- function(h,kappa,gradstats,vext,n){
       ngrad <- dim(gradstats$bg)[2]
       if(length(h)<ngrad) h <- rep(h[1],ngrad)
-      if(length(kappa)<ngrad) kappa <- rep(kappa[1],ngrad)
       z <- .Fortran("lkfulse3",
                     as.double(h),
                     as.double(kappa),
@@ -198,7 +188,6 @@ lkfullse3 <- function(h,kappa,gradstats,vext,n){
                     n=as.integer(n),
                     DUPL=FALSE,
                     PACKAGE="dti")[c("ind","w","n")]
-#      } 
       dim(z$ind) <- c(5,n)
 list(h=h,kappa=kappa,ind=z$ind[,1:z$n],w=z$w[1:z$n],nind=z$n)
 }

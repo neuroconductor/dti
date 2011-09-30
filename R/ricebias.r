@@ -43,16 +43,20 @@ fofx <- function(x) {
       x
 }
 xt <- x/s
-y <- xt
 if(method==1){
-xta <- 0
-ind <- abs(xt-xta)>1e-6
-while(sum(ind)>0){
-xta <- xt
-xt[ind] <- pmax(0,xt[ind]+y[ind]-fofx(xt[ind]))
-ind <- abs(xt-xta)>1e-6
-}
+xt <- .Fortran("rcstep",xt=as.double(xt),
+               as.integer(length(xt)),
+               DUPL=TRUE,
+               PACKAGE="dti")$xt
+#xta <- 0
+#ind <- abs(xt-xta)>1e-6
+#while(sum(ind)>0){
+#xta <- xt
+#xt[ind] <- pmax(0,xt[ind]+y[ind]-fofx(xt[ind]))
+#ind <- abs(xt-xta)>1e-6
+#}
 } else {
+y <- xt
 xt <- sqrt(pmax(0,y^2-2))
 }
 xt*s

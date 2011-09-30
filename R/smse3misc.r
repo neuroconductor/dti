@@ -133,6 +133,38 @@ cat("End computing spherical distances",format(Sys.time()),"\n")
 list(k456=kappa456,bg=zbg$bg,bghat=zbg$bghat,nbg=zbg$nbg,nbghat=zbg$nbghat)
 }
 
+mthomogen <- function(object,minw=.1,maxangle=30){
+andir <- extract(object,"andir")$andir
+mix <- extract(object,"mix")$mix
+order <- extract(object,"order")$order
+mask <- extract(object,"mask")$mask
+ddim <- object@ddim
+z <- .Fortran("mthomog",
+              as.double(andir),
+              mix=as.double(mix),
+              order=as.integer(order),
+              as.integer(ddim[1]),
+              as.integer(ddim[2]),
+              as.integer(ddim[3]),
+              as.integer(dim(mix)[1]),
+              as.logical(mask),
+              as.double(minw),
+              as.double(maxangle/180*pi),
+              as.double(object@voxelext),
+              andir=as.double(andir),
+              DUPL=TRUE,
+              PACKAGE="dti")[c("andir","order","mix")]
+object@orient <- array(.Fortran("parofor",
+                                as.double(z$andir),
+                                as.integer(prod(dim(mix))),
+                                orient=double(2*prod(dim(mix))),
+                                DUPL=FALSE,
+                                PACKAGE="dti")$orient,c(2,dim(mix)))
+object@mix <- array(z$mix,dim(mix))
+object@order <- array(z$order,ddim)
+object
+}
+
 
 
 

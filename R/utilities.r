@@ -30,6 +30,7 @@ setMethod("sdpar","dtiData",function(object,level=NULL,sdmethod="sd",interactive
     A1 <- quantile(s0mean[s0mean>0],.98)
     dim(s0mean) <- object@ddim
   } else {
+    dim(s0) <- object@ddim
     A1 <- quantile(s0[s0>0],.98)
   }
   if(interactive) {
@@ -152,9 +153,6 @@ setMethod("getsdofsb","dtiData", function(object,qA0=.1,qA1=.98,nsb=NULL,level=N
   set.seed(1)
   snsb <- sample(ngrad0,nsb)
   sb <- extract(object,what="sb")$sb[,,,snsb,drop=FALSE]
-  cat(dim(sb),"\n")
-   cat(sort(snsb),"\n")
-   cat(nsb,"\n")
   A0 <- quantile(sb,qA0)
   A1 <- quantile(sb,qA1)
   sdcoef1 <- coef1 <- coef2 <- numeric(nsb)

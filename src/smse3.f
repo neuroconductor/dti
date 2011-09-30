@@ -1,132 +1,92 @@
-      subroutine ghfse3i(i4,kstar,k456,nbg,nbghat,ng,kexp,
-     1                    kappa0,vext,h,kappa,varred,varred0,n)
+      subroutine ghfse3i(i4,kstar,k456,nbg,nbghat,ng,
+     1                    kappa,vext,h,varred,n)
       implicit logical (a-z)
       integer ng,i4,kstar,n
       real*8 k456(3,ng,ng),nbg(3,3,ng),nbghat(3,3,ng,ng),vext(2),
-     1       kexp,h(kstar),kappa(kstar),varred(kstar),varred0(kstar)
+     1       kappa(kstar),h(kstar),varred(kstar)
       logical getkappa
       integer k,n0
-      real*8 kappa0,hakt,hakt0,vr,vr0,ch,lch,chk,vred,v0r0,v0r
+      real*8 hakt,hakt0,vr,ch,chk,vred,v0r
       ch=1.25d0
-      lch=-log(ch)
       chk=ch
       getkappa=.FALSE.
       hakt=1.d0
 C   initialize kappa
 C   loop over steps
       DO k=1,kstar
-         call lkfse3i0(hakt,kappa0,i4,k456,nbg,nbghat,ng,
-     1                   vext,vr,vr0,n)
-         if(k.gt.1.and.log(vr0/vr).lt.lch*kexp*k) getkappa=.TRUE.
-C  search for new kappa0 if needed
-         DO WHILE (getkappa)
-            kappa0=kappa0*0.98d0
-            call lkfse3i0(hakt,kappa0,i4,k456,nbg,nbghat,ng,
-     1                   vext,vr,vr0,n)
-            if(log(vr0/vr).ge.lch*kexp*k) getkappa=.FALSE.
-         END DO
+         call lkfse3i0(hakt,kappa(k),i4,k456,nbg,nbghat,ng,
+     1                   vext,vr,n)
 C  search for new hakt   
          vred=vr/chk
          DO WHILE (vred.lt.1) 
             hakt=hakt*1.05
-            call lkfse3i0(hakt,kappa0,i4,k456,nbg,nbghat,ng,
-     1                   vext,vr,vr0,n)
-            if(log(vr0/vr).lt.lch*kexp*k) getkappa=.TRUE.
-C  search for new kappa0 if needed
-            DO WHILE (getkappa)
-               kappa0=kappa0*0.98d0
-            call lkfse3i0(hakt,kappa0,i4,k456,nbg,nbghat,ng,
-     1                   vext,vr,vr0,n)
-               if(log(vr0/vr).ge.lch*kexp*k) getkappa=.FALSE.
-            END DO
+            call lkfse3i0(hakt,kappa(k),i4,k456,nbg,nbghat,ng,
+     1                   vext,vr,n)
             vred=vr/chk
          END DO
          DO WHILE (vred.gt.1.01) 
             hakt0=hakt
             v0r=vr
-            v0r0=vr0
             n0=n
             hakt=hakt/1.005
-            call lkfse3i0(hakt,kappa0,i4,k456,nbg,nbghat,ng,
-     1                   vext,vr,vr0,n)
+            call lkfse3i0(hakt,kappa(k),i4,k456,nbg,nbghat,ng,
+     1                   vext,vr,n)
             vred=vr/chk
             If (vred.lt.1) THEN
                hakt=hakt0
                vr=v0r
-               vr0=v0r0
                n=n0
             END IF
          END DO
          h(k) = hakt
-         kappa(k) = kappa0
          varred(k) = vr
-         varred0(k) = vr0
          chk=chk*ch
 C  number of positive weights for last step in n
       END DO
       RETURN
       END
-      subroutine gethse3i(i4,kstar,grad,gr2,gr3,ngrad,kexp,vext,
-     1                    h,kappa,varred,varred0,n)
+      subroutine gethse3i(i4,kstar,grad,kappa,gr2,gr3,ngrad,vext,
+     1                    h,varred,n)
       implicit logical (a-z)
       integer ngrad,i4,kstar,n
       real*8 grad(3,ngrad),gr2(3,ngrad),gr3(2,ngrad),vext(2),
-     1       kexp,h(kstar),kappa(kstar),varred(kstar),varred0(kstar)
+     1       h(kstar),varred(kstar),kappa
       logical getkappa
       integer k,n0
-      real*8 kappa0,hakt,hakt0,vr,vr0,ch,lch,chk,vred,v0r0,v0r
+      real*8 hakt,hakt0,vr,v0r,ch,chk,vred
       ch=1.25d0
-      lch=-log(ch)
       chk=ch
       getkappa=.FALSE.
       hakt=1.d0
 C   initialize kappa
-      call minang(i4,grad,ngrad,kappa0)
-      kappa0 = max(12.57d0/ngrad,kappa0)
+      call minang(i4,grad,ngrad,kappa)
+      kappa = max(12.57d0/ngrad,kappa)
       call grad23(grad,ngrad,gr2,gr3)
 C   loop over steps
       DO k=1,kstar
-         call lkse3i0(hakt,kappa0,i4,grad,gr2,gr3,ngrad,vext,vr,vr0,n)
-         if(k.gt.1.and.log(vr0/vr).lt.lch*kexp*k) getkappa=.TRUE.
-C  search for new kappa0 if needed
-         DO WHILE (getkappa)
-            kappa0=kappa0*0.98d0
-         call lkse3i0(hakt,kappa0,i4,grad,gr2,gr3,ngrad,vext,vr,vr0,n)
-            if(log(vr0/vr).ge.lch*kexp*k) getkappa=.FALSE.
-         END DO
+         call lkse3i0(hakt,kappa,i4,grad,gr2,gr3,ngrad,vext,vr,n)
 C  search for new hakt   
          vred=vr/chk
          DO WHILE (vred.lt.1) 
             hakt=hakt*1.05
-         call lkse3i0(hakt,kappa0,i4,grad,gr2,gr3,ngrad,vext,vr,vr0,n)
-            if(log(vr0/vr).lt.lch*kexp*k) getkappa=.TRUE.
-C  search for new kappa0 if needed
-            DO WHILE (getkappa)
-               kappa0=kappa0*0.98d0
-         call lkse3i0(hakt,kappa0,i4,grad,gr2,gr3,ngrad,vext,vr,vr0,n)
-               if(log(vr0/vr).ge.lch*kexp*k) getkappa=.FALSE.
-            END DO
+         call lkse3i0(hakt,kappa,i4,grad,gr2,gr3,ngrad,vext,vr,n)
             vred=vr/chk
          END DO
          DO WHILE (vred.gt.1.01) 
             hakt0=hakt
             v0r=vr
-            v0r0=vr0
             n0=n
             hakt=hakt/1.005
-         call lkse3i0(hakt,kappa0,i4,grad,gr2,gr3,ngrad,vext,vr,vr0,n)
+         call lkse3i0(hakt,kappa,i4,grad,gr2,gr3,ngrad,vext,vr,n)
             vred=vr/chk
             If (vred.lt.1) THEN
                hakt=hakt0
                vr=v0r
-               vr0=v0r0
                n=n0
             END IF
          END DO
          h(k) = hakt
-         kappa(k) = kappa0
          varred(k) = vr
-         varred0(k) = vr0
          chk=chk*ch
 C  number of positive weights for last step in n
       END DO
@@ -368,15 +328,15 @@ C   first get sperical coordinates in bg
       RETURN
       END
       subroutine lkse3i0(h,kappa,i4,grad,grad2,grad3,ngrad,vext,
-     1                   vred,vred0,n)
+     1                   vred,n)
       implicit logical (a-z)
       integer ngrad,i4
       real*8 h,kappa,grad(3,ngrad),grad2(3,ngrad),grad3(2,ngrad),
-     1       vext(2),vred,vred0
+     1       vext(2),vred
       integer ih1,ih2,ih3,i,j1,j2,j3,j4,mj1,mj2,mj3,n
       real*8 v1a,v2a,v3a,w1a,w2a,w3a,d2a,d3a,
      1       d1,d2,pD4,pD4a,kap4,kap2,h2,vd2,vd3,x1,x2,x3,n12,n13,nx1,
-     2       h4,gi1,gi2,gi3,gj1,gj2,gj3,sw,sw2,sw0,sw20,wght,anz,rad
+     2       h4,gi1,gi2,gi3,gj1,gj2,gj3,sw,sw2,wght,anz,rad
       ih1 = 2.0d0*h
       ih2 = 2.0d0*h/vext(1)
       ih3 = 2.0d0*h/vext(2)
@@ -387,9 +347,7 @@ C   first get sperical coordinates in bg
       vd2 = vext(1)
       vd3 = vext(2)
       sw=0.d0
-      sw0=0.d0
       sw2=0.d0
-      sw20=0.d0
       i = 1
       mj1=0
       mj2=0
@@ -446,10 +404,8 @@ C   if j1>0  (-j1,-j2,-j3) gets the same weight, so count it twice
                      anz=2.d0
                   ENDIF
                   sw=sw+anz*wght
-                  if(j4.eq.i4) sw0=sw0+anz*wght
                   wght=wght*wght
                   sw2=sw2+anz*wght
-                  if(j4.eq.i4) sw20=sw20+anz*wght
                   n=n+1
                   mj1=max(j1,mj1)
                   mj2=max(abs(j2),mj2)
@@ -460,11 +416,10 @@ C   if j1>0  (-j1,-j2,-j3) gets the same weight, so count it twice
          END DO
       END DO
       vred = sw*sw/sw2
-      vred0 = sw0*sw0/sw20
       rad = max(mj1,max(mj2,mj3))
       if(rad.gt.h) THEN
       call dblepr("h",1,h,1)
-      call intpr("radius",6,rad,1)
+      call dblepr("radius",6,rad,1)
       END IF
       RETURN
       END
@@ -630,22 +585,19 @@ C   *cb
       RETURN
       END
       subroutine lkfse3i0(h,kappa,i4,k456,nbg,nbghat,ng,
-     1                   vext,vred,vred0,n)
+     1                   vext,vred,n)
       implicit logical (a-z)
       integer ng,n,i4
       real*8 h,kappa,k456(3,ng,ng),
-     1       nbg(3,3,ng),nbghat(3,3,ng,ng),vext(2),vred,vred0
+     1       nbg(3,3,ng),nbghat(3,3,ng,ng),vext(2),vred
       integer ih1,ih2,ih3,j1,j2,j3,j4,mj1,mj2,mj3,rad
       real*8 x1,x2,x3,xh1,xh2,xh3,k1,k2,k3,k4,k5,k6,z,z1,
-     1       sw,sw2,sw0,sw20,wght,anz,h2,kap2,vd2,vd3,
-     2       gi1,gi2,gi3,cb
+     1       sw,sw2,wght,anz,h2,kap2,vd2,vd3,gi1,gi2,gi3,cb
       ih1 = 5.0d0*h
       ih2 = 5.0d0*h/vext(1)
       ih3 = 5.0d0*h/vext(2)
       sw=0.d0
-      sw0=0.d0
       sw2=0.d0
-      sw20=0.d0
       mj1=0
       mj2=0
       mj3=0
@@ -699,10 +651,8 @@ C   if j1>0  (-j1,-j2,-j3) gets the same weight, so count it twice
                      anz=2.d0
                   ENDIF
                   sw=sw+anz*wght
-                  if(j4.eq.i4) sw0=sw0+anz*wght
                   wght=wght*wght
                   sw2=sw2+anz*wght
-                  if(j4.eq.i4) sw20=sw20+anz*wght
                   n=n+1
                   mj1=max(j1,mj1)
                   mj2=max(abs(j2),mj2)
@@ -713,7 +663,6 @@ C   if j1>0  (-j1,-j2,-j3) gets the same weight, so count it twice
          END DO
       END DO
       vred = sw*sw/sw2
-      vred0 = sw0*sw0/sw20
       rad = max(mj1,max(mj2,mj3))
       if(rad.gt.h) THEN
          call dblepr("h",1,h,1)
@@ -725,13 +674,13 @@ C   if j1>0  (-j1,-j2,-j3) gets the same weight, so count it twice
      1                   vext,ind,wght,n)
       implicit logical (a-z)
       integer ng,n,ind(5,n)
-      real*8 h(ng),kappa(ng),k456(3,ng,ng),
+      real*8 h(ng),kappa,k456(3,ng,ng),
      1       nbg(3,3,ng),nbghat(3,3,ng,ng),vext(2),wght(n)
       integer ns,ni,i
       ns = 0
       DO i = 1,ng
          ni = n-ns
-         call lkfse3i(h(i),kappa(i),i,k456,nbg,nbghat,ng,
+         call lkfse3i(h(i),kappa,i,k456,nbg,nbghat,ng,
      1                vext,ind(1,ns+1),wght(ns+1),ni)
          ns = ns+ni
       END DO
@@ -741,14 +690,14 @@ C   if j1>0  (-j1,-j2,-j3) gets the same weight, so count it twice
       subroutine lkse3(h,kappa,grad,grad2,grad3,ngrad,vext,ind,wght,n)
       implicit logical (a-z)
       integer ngrad,n,ind(5,n)
-      real*8 h(ngrad),kappa(ngrad),grad(3,ngrad),grad2(3,ngrad),
+      real*8 h(ngrad),kappa,grad(3,ngrad),grad2(3,ngrad),
      1       grad3(2,ngrad),vext(2),wght(n)
       integer ns,ni,i
       ns = 0
       call grad23(grad,ngrad,grad2,grad3)
       DO i = 1,ngrad
          ni = n-ns
-         call lkse3i(h(i),kappa(i),i,grad,grad2,grad3,ngrad,vext,
+         call lkse3i(h(i),kappa,i,grad,grad2,grad3,ngrad,vext,
      1               ind(1,ns+1),wght(ns+1),ni)
          ns = ns+ni
       END DO
@@ -868,7 +817,7 @@ C    ni(i1,i2,i3,i4) contains normalization by siinv
       RETURN
       END
       subroutine adrsmse3(y,th,ni,mask,n1,n2,n3,ngrad,lambda,ind,w,n,
-     1                    thn,r,sigma,sw,swy,swy2)
+     1                    thn,sigma,sw,swy)
 C
 C   perform adaptive smoothing on SE(3) 
 C   ind(.,i) contains coordinate indormation corresponding to positive
@@ -880,9 +829,9 @@ C
       logical mask(n1,n2,n3)
       real*8 y(n1,n2,n3,ngrad),th(n1,n2,n3,ngrad),ni(n1,n2,n3,ngrad),
      1       lambda,w(n),thn(n1,n2,n3,ngrad),sw(ngrad),swy(ngrad),
-     2       swy2(ngrad),sigma,r(n1,n2,n3,ngrad)
+     2       sigma
       integer i,i1,i2,i3,i4,j1,j2,j3,j4
-      real*8 z,yj,swyi,nii,thi
+      real*8 z,thi,nii
       real*8 kldrice
       external kldrice
       DO i1=1,n1
@@ -892,7 +841,6 @@ C
                DO i4=1,ngrad
                   sw(i4)=0.d0
                   swy(i4)=0.d0
-                  swy2(i4)=0.d0
                END DO
                i4=0
                DO i=1,n
@@ -915,9 +863,7 @@ C                  i4=ind(4,i)
                   if(z.ge.1.d0) CYCLE
                   z=w(i)*min(1.d0,2.d0-2.d0*z)
                   sw(i4)=sw(i4)+z
-                  yj=y(j1,j2,j3,j4)
-                  swy(i4)=swy(i4)+z*yj
-                  swy2(i4)=swy2(i4)+z*yj*yj
+                  swy(i4)=swy(i4)+z*y(j1,j2,j3,j4)
                END DO
                DO i=1,n
                   if(ind(1,i).eq.0) CYCLE
@@ -943,20 +889,11 @@ C
                   if(z.ge.1.d0) CYCLE
                   z=w(i)*min(1.d0,2.d0-2.d0*z)
                   sw(i4)=sw(i4)+z
-                  yj=y(j1,j2,j3,j4)
-                  swy(i4)=swy(i4)+z*yj
-                  swy2(i4)=swy2(i4)+z*yj*yj
+                  swy(i4)=swy(i4)+z*y(j1,j2,j3,j4)
                END DO
                DO i4=1,ngrad
-                  swyi = swy(i4)
-                  nii=sw(i4)
-                  thn(i1,i2,i3,i4) = swyi/nii
-                  ni(i1,i2,i3,i4) = nii
-                  if(nii.gt.1.d0) THEN
-                     r(i1,i2,i3,i4)=swyi/sqrt(nii*swy2(i4)-swyi*swyi)
-                  ELSE
-                     r(i1,i2,i3,i4)=0.d0
-                  END IF
+                  thn(i1,i2,i3,i4) = swy(i4)/sw(i4)
+                  ni(i1,i2,i3,i4) = sw(i4)
                END DO
                call rchkusr()
             END DO
@@ -1004,22 +941,7 @@ C very large ...
      -            6.988761d0*alab  + 7.10324d0 *blab + 
      +            0.066667d0*aab2  + 0.591248d0*bab2 + 
      +            0.090564d0*b2ab2 - 0.092317d0*blab2 - 
-     -           10.11165d0*al2ab2 - 1.352277d0*bl2ab2
+     -           10.11165d0*al2ab2 - 1.352277d0*bl2ab2 +kldrice
       ENDIF
-      kldrice = kldrice
-      RETURN
-      END
-      subroutine spenalty(thi,thj,s2inv,ncoil,pen)
-      implicit logical (a-z)
-C currently not used 
-C will be insertet later to handle "Rician" errors
-      integer ncoil
-      real*8 thi,thj,s2inv,pen
-      real*8 z
-      if(ncoil.eq.0) THEN
-         z=thi-thj
-         pen=z*z*s2inv
-         RETURN
-      END IF
       RETURN
       END
