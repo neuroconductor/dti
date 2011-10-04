@@ -713,9 +713,9 @@ list(siind=array(siind,c(maxcomp+2,dim(si)[-4])),
 
 dwiMixtensor <- function(object, ...) cat("No dwiMixtensor calculation defined for this class:",class(object),"\n")
 
-setGeneric("dwiMixtensor2", function(object,  ...) standardGeneric("dwiMixtensor2"))
+setGeneric("dwiMixtensor", function(object,  ...) standardGeneric("dwiMixtensor"))
 
-setMethod("dwiMixtensor2","dtiData",function(object, maxcomp=3, method="mixtensor", reltol=1e-6, maxit=5000,ngc=1000, optmethod="BFGS", nguess=100*maxcomp^2,msc="BIC",pen=NULL){
+setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3, method="mixtensor", reltol=1e-6, maxit=5000,ngc=1000, optmethod="BFGS", nguess=100*maxcomp^2,msc="BIC",pen=NULL,code="C"){
 #
 #  uses  S(g)/s_0 = w_0 exp(-l_1) +\sum_{i} w_i exp(-l_2-(l_1-l_2)(g^T d_i)^2)
 #
@@ -729,6 +729,10 @@ setMethod("dwiMixtensor2","dtiData",function(object, maxcomp=3, method="mixtenso
 #     BFGS for tensor mixture models without isotropic compartment
 #     L-BFGS-B for tensor mixture models with isotropic compartment
 #
+  if(method!="mixtensor"||optmethod!="BFGS") {
+     cat("Using R-code")
+     code <- "R"
+  }
   set.seed(1)
   if(is.null(pen)) pen <- 100
   if(method=="mixtensoriso") optmethod <- "L-BFGS-B"
@@ -879,6 +883,54 @@ cat("using th:::",th,"\n")
 #
 #   loop over voxel in volume
 #
+  if(code=="C"){  
+#
+#     C-Code
+#
+  if(method=="mixtensor") meth = 1 else meth = 2
+  optmeth <- switch(optmethod, "BFGS" = 1,
+                    "CG" = 2, "Nelder-Mead" = 3, "L-BFGS-B" = 4)
+
+
+  cat("Startind C-code",format(Sys.time()),"\n")
+  z <- .C("mixture2", 
+          as.integer(meth),
+          as.integer(optmeth), 
+          as.integer(n1), 
+          as.integer(n2), 
+          as.integer(n3),
+          as.integer(mask), 
+          as.integer(siind), 
+          as.integer(ngrad), 
+          as.integer(ngrad0),
+          as.integer(maxcomp),
+          as.integer(maxit),
+          as.double(pen),
+          as.double(t(grad)),
+          as.double(reltol),
+          as.double(th),
+          as.double(penIC),
+          as.double(sigma2),
+          as.double(vert),
+          as.double(orient),
+          as.double(siq),
+          sigma2  = double(prod(ddim)),# error variance 
+          orient  = double(2*maxcomp*prod(ddim)), # phi/theta for all mixture tensors
+          order   = integer(prod(ddim)),   # selected order of mixture
+          lev     = double(2*prod(ddim)),         # logarithmic eigenvalues
+          mix     = double(maxcomp*prod(ddim)),   # mixture weights
+          DUPL=FALSE, PACKAGE="dti")[c("sigma2","vert","orient","order","lev","mix")]
+  cat("End C-code",format(Sys.time()),"\n")
+sigma2 <-  array(z$sigma2,ddim[1:3])
+orient <- array(z$orient, c(2, maxcomp, ddim[1:3]))
+order <- array(z$order, ddim[1:3])
+lev <- array(z$lev, c(2,ddim[1:3]))
+mix <- array(z$mix, c(maxcomp, ddim[1:3]))
+method <- "mixtensor"
+  } else {
+#
+#     R/Fortran-Code 
+#
   for(i1 in 1:n1) for(i2 in 1:n2) for(i3 in 1:n3){ # begin loop
      if(mask[i1,i2,i3]){ # begin mask
 #   only analyze voxel within mask
@@ -1006,6 +1058,7 @@ cat("using th:::",th,"\n")
     }
   }# end mask
   }# end loop
+  } # end Code-verzweigung 
   invisible(new("dwiMixtensor",
                 model = "homogeneous_prolate",
                 call   = args,

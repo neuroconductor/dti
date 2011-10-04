@@ -21,7 +21,7 @@
 \S4method{dwiMixtensor}{dtiData}(object, maxcomp=3, method="mixtensor", reltol=1e-6,
           maxit=5000, ngc=1000, optmethod="BFGS", nguess=100*maxcomp^2,
           msc="BIC", pen=NULL)
-\S4method{dwiMtImprove}{dwiMixtensor,dtiData}(mtobj, dwiobj, maxcomp=3, method="mixtensor", reltol=1e-6, maxit=5000, ngc=1000, optmethod="BFGS", nguess= 100*maxcomp^2, msc="BIC", pen=NULL, where=NULL, new=FALSE)
+\S4method{dwiMtImprove}{dwiMixtensor,dtiData}(mtobj, dwiobj, maxcomp=3, method="mixtensor", reltol=1e-6, maxit=5000, ngc=1000, optmethod="BFGS", nguess= 100*maxcomp^2, msc="BIC", pen=NULL, where=NULL, new=FALSE, code = "C")
 \S4method{dwiMtCombine}{dwiMixtensor,dwiMixtensor}(mtobj1,mtobj2, msc="BIC", where=NULL)
 }
 %- maybe also 'usage' for other objects documented here.
@@ -45,6 +45,9 @@
    \code{BIC} (Bayes Information Criterion) \code{AIC} (Akaike Information Criterion) or \code{AICC} ((Bias-)Corrected Akaike Information Criterion).
    \code{None} may be specified to only correct for under-estimation of variances.}
    \item{pen}{Penalty used in optimization criterion for negative mixture components (weights).}
+   \item{code}{If \code{code="C"}, \code{method="mixtensor"} and
+               \code{optmethod="BFGS"} a much faster C/FORTRAN-code 
+               is used}
    \item{mtobj}{For method \code{"dwiMtImprove"} an initial \code{"dwiMixtensor"}-object.}
    \item{dwiobj}{For method \code{"dwiMtImprove"} the \code{"dwiData"} object corresponding to \code{mtobj}}
    \item{mtobj1}{For method \code{"dwiMtCombine"} an \code{"dwiMixtensor"}-object.}

@@ -52,9 +52,9 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,s
      s2inv <- array(1/sigma2,dim(sb))  
   }
 # make it nonrestrictive for the first step
-  ni <- s2inv
-  z <- list(th=th, ni = if(length(sigma)==1) array(1,dim(sb)) else s2inv)
-  rm(s2inv, th)
+  ni <- if(length(sigma)==1) array(1,dim(sb)) else s2inv
+  z <- list(th=th, ni = ni)
+  rm(th)
   prt0 <- Sys.time()
   cat("adaptive smoothing in SE3, kstar=",kstar,if(verbose)"\n" else " ")
   for(k in 1:kstar){

@@ -1,8 +1,8 @@
-dwiMixtensor <- function(object, ...) cat("No dwiMixtensor calculation defined for this class:",class(object),"\n")
+dwiMixtensor2 <- function(object, ...) cat("No dwiMixtensor calculation defined for this class:",class(object),"\n")
 
-setGeneric("dwiMixtensor", function(object,  ...) standardGeneric("dwiMixtensor"))
+setGeneric("dwiMixtensor2", function(object,  ...) standardGeneric("dwiMixtensor2"))
 
-setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3, method="mixtensor", reltol=1e-6, maxit=5000,ngc=1000, optmethod="BFGS", nguess=100*maxcomp^2,msc="BIC",pen=NULL){
+setMethod("dwiMixtensor2","dtiData",function(object, maxcomp=3, method="mixtensor", reltol=1e-6, maxit=5000,ngc=1000, optmethod="BFGS", nguess=100*maxcomp^2,msc="BIC",pen=NULL){
 #
 #  uses  S(g)/s_0 = w_0 exp(-l_1) +\sum_{i} w_i exp(-l_2-(l_1-l_2)(g^T d_i)^2)
 #
@@ -182,90 +182,6 @@ cat("using th:::",th,"\n")
 			    "Nelder-Mead" = 3,
 			    "L-BFGS-B" = 4)
 
-#
-#   loop over voxel in volume
-#
-#   start of c part
-#
-
-
-#browser();
-#  print("1,1;1,2;1,3...1,5;2,1...")
-#for(xt in 1:3) for (xtx in 1:5){
-#  test=vert[xt,xtx]
-
-#  print(test)
-#}
-
-
-  
-#  r <- n1*n2*n3
-#  tmp=sigma2[1:10,1:10,1:10]
-#  print(tmp)
-#  print("change")
-#  browser()
-#  tmp=sigma2[20:30,20:30,10:20]
- 
-
-#  print(tmp)
-#  print(r)
-#  print(ngrad)
-#  print(maxcomp)
-#  print(mask)
-#  print(sigma2)
-#  print(siind)
-#  print("printing mix R before C")
-#  mix2=array(0, c(5,5,5))
-#  print(mix2[1:100])
-
-#  print(ngrad)
-#browser()
-#
-
-x=5
-y=6
-z=7
-  
-print("testing")
-test2d = array(1:27, c(5,5))
-test3d = array(1:27, c(x,y,z))
-test4d = array(1:27, c(x,y,z,5))
-test5d = array(1:27, c(x,y,z,3,5))
-testimgback = array(1:27, c(4,x,y,z))
-
-print("test2d")
-print(test2d[4,5])
-print(test2d[3,1])
-print(test2d[5,5])
-
-print("test3d")
-print(test3d[4,2,3])
-print(test3d[3,3,5])
-print(test3d[3,1,3])
-
-print("test4d")
-print(test4d[5,5,5,5])
-print(test4d[2,3,7,4])
-print(test4d[5,6,7,4])
-
-print("test5d")
-print(test5d[3,5,6,3,5])
-print(test5d[4,6,7,3,3])
-print(test5d[3,4,7,2,3])
-
-print("testimgback")
-print(testimgback[4,5,5,5])
-print(testimgback[2,3,6,7])
-print(testimgback[4,5,6,7])
-
-
-
-#z=.C("mixturetest", as.double(test2d), as.double(test3d), as.double(test4d), 
-#		    as.double(test5d), as.double(testimgback), as.integer(x), as.integer(y),
-#		    as.integer(z))
-
-
-#browser()
 
   cat("initial parameters: ", n1,n2,n3,ngrad,ngrad0, "\n")
   print("starting C code...")
@@ -274,72 +190,40 @@ print(testimgback[4,5,6,7])
 
 
   z <- .C("mixture2", 
-	    as.integer(meth),
-	    as.integer(optmeth), 
-	    as.integer(n1), 
-	    as.integer(n2), 
-	    as.integer(n3),
-	    as.integer(mask), 
-	    as.integer(siind), 
-	    as.integer(ngrad), 
-	    as.integer(ngrad0),
-	    as.integer(maxcomp),
-	    as.integer(maxit),
-	    as.double(pen),
-	    as.double(t(grad)),
-	    as.double(reltol),
-	    as.double(th),
-	    as.double(penIC),
-	    as.double(sigma2),
-	    as.double(vert),
-	    as.double(orient),
-	    as.double(siq),
-	    sigma2  = double(prod(ddim)),           # parameter variance ???
-	    orient  = double(2*maxcomp*prod(ddim)), # phi/theta for all mixture tensors
-	    order   = integer(prod(ddim)),   # selected order of mixture
-	    lev     = double(2*prod(ddim)),         # logarithmic eigenvalues
-	    mix     = double(maxcomp*prod(ddim)),   # mixture weights
-	    DUPL=FALSE, package="dti")[c("sigma2","vert","orient","order","lev","mix")]
+          as.integer(meth),
+          as.integer(optmeth), 
+          as.integer(n1), 
+          as.integer(n2), 
+          as.integer(n3),
+          as.integer(mask), 
+          as.integer(siind), 
+          as.integer(ngrad), 
+          as.integer(ngrad0),
+          as.integer(maxcomp),
+          as.integer(maxit),
+          as.double(pen),
+          as.double(t(grad)),
+          as.double(reltol),
+          as.double(th),
+          as.double(penIC),
+          as.double(sigma2),
+          as.double(vert),
+          as.double(orient),
+          as.double(siq),
+          sigma2  = double(prod(ddim)),           # parameter variance ???
+          orient  = double(2*maxcomp*prod(ddim)), # phi/theta for all mixture tensors
+          order   = integer(prod(ddim)),   # selected order of mixture
+          lev     = double(2*prod(ddim)),         # logarithmic eigenvalues
+          mix     = double(maxcomp*prod(ddim)),   # mixture weights
+          DUPL=FALSE, PACKAGE="dti")[c("sigma2","vert","orient","order","lev","mix")]
 
-sigma2 =  array(z$sigma2,ddim[1:3])
-orient = array(z$orient, c(2, maxcomp, ddim[1:3]))
-order = array(z$order, ddim[1:3])
-lev = array(z$lev, c(2,ddim[1:3]))
-mix = array(z$mix, c(maxcomp, ddim[1:3]))
-method = "mixtensor"
+sigma2 <-  array(z$sigma2,ddim[1:3])
+orient <- array(z$orient, c(2, maxcomp, ddim[1:3]))
+order <- array(z$order, ddim[1:3])
+lev <- array(z$lev, c(2,ddim[1:3]))
+mix <- array(z$mix, c(maxcomp, ddim[1:3]))
+method <- "mixtensor"
 
-#print("sigma2")
-#plot(density(sigma2))
-#range(sigma2)
-#browser()
-#print("orient")
-#plot(density(orient))
-#range(orient)
-#browser()
-#print("order")
-#plot(density(order))
-#range(order)
-#browser()
-#print("lev")
-#plot(density(lev))
-#range(lev)
-#browser()
-#print("mix")
-#plot(density(mix))
-#range(lev)
-
-#  z <-.C("mixturetest", mask, sigma2, siind,
-#    as.integer(length(sigma2)), DUPL=FALSE)
-
-
-#  print("printing mix R after C")
-#  mix2=array(z$mix2, ddim[1:3])
-#  tmp=mix2[1:10]
-#  print(mix2[1:100])
-
-#  z <- .C("mixture2", r, siind, ngrad, maxcomp, sigma2)
-  
-  print("ending C code...")
 
   invisible(new("dwiMixtensor",
                 model = "homogeneous_prolate",
