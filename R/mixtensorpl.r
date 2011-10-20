@@ -482,6 +482,7 @@ getsiind3 <- function(si,mask,sigma2,grad,vico,th,indth,ev,fa,andir,maxcomp=3,ma
 ngrad <- dim(grad)[1]
 nvico <- dim(vico)[1]
 ddim <- dim(fa)
+cat("RS1",.Random.seed[1:6],"\n")
 nsi <- dim(si)[4]
 dgrad <- matrix(abs(grad%*%t(vico)),ngrad,nvico)
 dgrad <- dgrad/max(dgrad)
@@ -715,7 +716,7 @@ dwiMixtensor <- function(object, ...) cat("No dwiMixtensor calculation defined f
 
 setGeneric("dwiMixtensor", function(object,  ...) standardGeneric("dwiMixtensor"))
 
-setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3, method="mixtensor", reltol=1e-6, maxit=5000,ngc=1000, optmethod="BFGS", nguess=100*maxcomp^2,msc="BIC",pen=NULL,code="C"){
+setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3, method="mixtensor", reltol=1e-6, maxit=5000,ngc=1000, optmethod="BFGS", nguess=100*maxcomp^2,msc="BIC",pen=NULL,code="C",thinit=NULL){
 #
 #  uses  S(g)/s_0 = w_0 exp(-l_1) +\sum_{i} w_i exp(-l_2-(l_1-l_2)(g^T d_i)^2)
 #
@@ -775,16 +776,29 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3, method="mixtensor
   andir <- array(z$andir,c(3,2,ddim))
   rm(z)
   gc()
-  nth <- 11
+#  nth <- 11
+  if(is.null(thinit)){
+  nth <- 5
   th <- ev[1,,,] - (ev[2,,,]+ev[3,,,])/2
-  falevel <- min(quantile(fa[fa>0],.75),.3)
-  rth <- quantile(th[fa>=falevel],c(.1,.99))
-  if(diff(rth)>0){
-     indth <- trunc((nth-1)*(th-rth[1])/diff(rth)+1)
-     th <- seq(rth[1],rth[2],length=nth)
+  falevel <- min(quantile(fa[fa>0],.75),.4)
+  cat("falevel",falevel,"\n")
+#  rth <- quantile(th[fa>=falevel],c(.1,.99))
+#  if(diff(rth)>0){
+#     indth <- trunc((nth-1)*(th-rth[1])/diff(rth)+1)
+#     th <- seq(rth[1],rth[2],length=nth)
+#  } else {
+#     th <- rep(max(th),nth)
+#     indth <- rep(1,length(th))
+#  }
+  qth <- quantile(th[fa>=falevel&fa<.95],seq(.8,.99,length=nth))
+  indth <- cut(th,qth,labels=FALSE)
+  indth[th<qth[1]] <- 1
+  indth[th>qth[nth]] <- nth
+  th <- qth
   } else {
-     th <- rep(max(th),nth)
-     indth <- rep(1,length(th))
+    nth <- 1
+    indth <- rep(1,prod(ddim))
+    th <- thinit
   }
 cat("using th:::",th,"\n")
   cat("Start search outlier detection at",format(Sys.time()),"\n")
@@ -866,7 +880,7 @@ cat("using th:::",th,"\n")
   krit <- siind$krit # sqrt(sum of squared residuals) for initial estimates
   siind <- siind$siind # components 1: model order 2: 
                        # grid index for EV 2+(1:m) index of orientations
-  cat("Model orders for initial estimates", dim(siind))
+  cat("Model orders for initial estimates")
   print(table(siind[1,,,]))
   cat("End search for initial values at",format(Sys.time()),"\n")
   order <- array(0,ddim)
@@ -919,7 +933,7 @@ cat("using th:::",th,"\n")
           order   = integer(prod(ddim)),   # selected order of mixture
           lev     = double(2*prod(ddim)),         # logarithmic eigenvalues
           mix     = double(maxcomp*prod(ddim)),   # mixture weights
-          DUPL=FALSE, PACKAGE="dti")[c("sigma2","vert","orient","order","lev","mix")]
+          DUPL=FALSE, PACKAGE="dti")[c("sigma2","orient","order","lev","mix")]
   cat("End C-code",format(Sys.time()),"\n")
 sigma2 <-  array(z$sigma2,ddim[1:3])
 orient <- array(z$orient, c(2, maxcomp, ddim[1:3]))

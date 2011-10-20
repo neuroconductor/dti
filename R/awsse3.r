@@ -39,7 +39,8 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,s
   gradstats <- getkappas(grad)
   hseq <- gethseqfullse3(kstar,gradstats,kappa0,vext=vext,verbose=verbose)
   } else {
-  hseq <- gethseqse3(kstar,grad,vext,verbose=verbose)
+     warning("only SE3full implemented, returning original object")
+     return(object)
   }
   kappa <- hseq$kappa
   nind <- hseq$n
@@ -60,11 +61,8 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,s
   for(k in 1:kstar){
     gc()
     hakt <- hseq[,k]
-    param <-   if(dist=="SE3full")
-       lkfullse3(hakt,kappa[k],gradstats,vext,nind) else 
-       lkernse3(hakt,kappa[k],grad,vext,nind) 
+    param <- lkfullse3(hakt,kappa/hakt,gradstats,vext,nind) 
     if(length(sigma)==1) {
-    cat("using true variance")
     z <- .Fortran("adrsmse3",
                 as.double(sb),
                 as.double(z$th),
@@ -153,27 +151,8 @@ th1 <- r*0.9999953
 }
 th1
 }
-lkernse3 <- function(h,kappa,grad,vext,n){
-      ngrad <- dim(grad)[2]
-      if(length(h)<ngrad) h <- rep(h[1],ngrad)
-      z <- .Fortran("lkse3",
-                    as.double(h),
-                    as.double(kappa),
-                    as.double(grad),
-                    double(3*ngrad),
-                    double(2*ngrad),
-                    as.integer(ngrad),
-                    as.double(vext),
-                    ind=integer(5*n),
-                    w=double(n),
-                    n=as.integer(n),
-                    DUPL=FALSE,
-                    PACKAGE="dti")[c("ind","w","n")]
-      dim(z$ind) <- c(5,n)
-list(h=h,kappa=kappa,grad=grad,ind=z$ind[,1:z$n],w=z$w[1:z$n],nind=z$n)
-}
 lkfullse3 <- function(h,kappa,gradstats,vext,n){
-      ngrad <- dim(gradstats$bg)[2]
+      ngrad <- dim(gradstats$bghat)[2]
       if(length(h)<ngrad) h <- rep(h[1],ngrad)
       z <- .Fortran("lkfulse3",
                     as.double(h),
