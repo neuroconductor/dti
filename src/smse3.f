@@ -465,13 +465,8 @@ C   by construction ind(4,.) should have same values consequtively
                   if(.not.mask(j1,j2,j3)) CYCLE          
 C                  i4=ind(4,i)
                   j4=ind(5,i)
-                  z=thi-th(j1,j2,j3,j4)
+                  z=thi-th(j1,j2,j3,i4)
                   z=z*z*nii
-C                  z=th(i1,i2,i3,i4)-th(j1,j2,j3,j4)
-C                  z=z*z*ni(i1,i2,i3,i4)/lambda
-C                  call spenalty(th(i1,i2,i3,i4),th(j1,j2,j3,j4),
-C     1                          s2inv(i1,i2,i3,i4),ncoil,z)
-C                  z=z*ni(i1,i2,i3,i4)/lambda
                   if(z.ge.1.d0) CYCLE
                   z=w(i)*min(1.d0,2.d0-2.d0*z)
                   z=z*s2inv(j1,j2,j3,j4)
@@ -501,7 +496,7 @@ C
                   if(.not.mask(j1,j2,j3)) CYCLE          
 C                  i4=ind(4,i)
                   j4=ind(5,i)
-                  z=thi-th(j1,j2,j3,j4)
+                  z=thi-th(j1,j2,j3,i4)
                   z=z*z*nii
 C                  z=th(i1,i2,i3,i4)-th(j1,j2,j3,j4)
 C                  z=z*z*ni(i1,i2,i3,i4)/lambda
@@ -577,7 +572,12 @@ C   by construction ind(4,.) should have same values consequtively
                   if(.not.mask(j1,j2,j3)) CYCLE          
 C                  i4=ind(4,i)
                   j4=ind(5,i)
-                  z=nii*kldrice(thi,th(j1,j2,j3,j4),sigma)
+                  if(lambda.lt.1d10) THEN
+                     z=nii*kldrice(thi,th(j1,j2,j3,i4),sigma)
+C  do not adapt on the sphere !!! 
+                  ELSE
+                     z=0.d0
+                  END IF
                   if(z.ge.1.d0) CYCLE
                   z=w(i)*min(1.d0,2.d0-2.d0*z)
                   sw(i4)=sw(i4)+z
@@ -603,9 +603,12 @@ C
                   if(j3.le.0.or.j3.gt.n3) CYCLE
                   if(.not.mask(j1,j2,j3)) CYCLE          
                   j4=ind(5,i)
-C                  z=nii*kldrice(thi,th(j1,j2,j3,j4),sigma)
-                  z=nii*kldrice(thi,th(j1,j2,j3,i4),sigma)
+                  if(lambda.lt.1d10) THEN
+                     z=nii*kldrice(thi,th(j1,j2,j3,i4),sigma)
 C  do not adapt on the sphere !!! 
+                  ELSE
+                     z=0.d0
+                  END IF
                   if(z.ge.1.d0) CYCLE
                   z=w(i)*min(1.d0,2.d0-2.d0*z)
                   sw(i4)=sw(i4)+z
@@ -615,6 +618,108 @@ C  do not adapt on the sphere !!!
                   thn(i1,i2,i3,i4) = swy(i4)/sw(i4)
                   ni(i1,i2,i3,i4) = sw(i4)
                END DO
+               call rchkusr()
+            END DO
+         END DO
+      END DO
+      RETURN
+      END
+      subroutine asmse3s0(y0,th,th0,ni,ni0,mask,n1,n2,n3,ngrad,ns0,
+     1                    lambda,ind,w,n,starts,nstarts,thn0,sigma)
+C
+C   perform adaptive smoothing on SE(3) 
+C   ind(.,i) contains coordinate indormation corresponding to positive
+C   location weights in w(i)
+C   ind(.,i)[1:5] are j1-i1,j2-i2,j3-i3, i4 and j4 respectively 
+C
+      implicit logical (a-z)
+      integer n1,n2,n3,ngrad,n,ind(5,n),ns0,starts(1),nstarts
+      logical mask(n1,n2,n3)
+      real*8 y0(n1,n2,n3),th0(n1,n2,n3),th(n1,n2,n3,ngrad),
+     1       ni(n1,n2,n3,ngrad),ni0(n1,n2,n3),thn0(n1,n2,n3),
+     2       lambda,w(n),sw0,swy0,sigma
+      integer i,i0,i1,i2,i3,i4,j1,j2,j3,l1,l2,l3,k1,k2,k3
+      real*8 z,swi,ng,ng0
+      real*8 kldrice
+      external kldrice
+      k1=0
+      k2=0
+      k3=0
+      ng=ngrad
+      ng0=ngrad+ns0
+      DO i=1,nstarts
+         k1=max(k1,ind(1,starts(i)))
+         k2=max(k2,abs(ind(2,starts(i))))
+         k3=max(k3,abs(ind(3,starts(i))))
+      END DO
+      DO i1=1,n1
+         DO i2=1,n2
+            DO i3=1,n3
+               if(.not.mask(i1,i2,i3)) CYCLE
+               sw0=0.d0
+               swy0=0.d0
+               DO i0=1,nstarts
+                  l1=ind(1,1+starts(i0))
+                  l2=ind(2,1+starts(i0))
+                  l3=ind(3,1+starts(i0))
+                  z=0.d0
+                  swi=0d0
+                  j1=i1+l1
+                  if(j1.le.0.or.j1.gt.n1) CYCLE
+                  j2=i2+l2
+                  if(j2.le.0.or.j2.gt.n2) CYCLE
+                  j3=i3+l3
+                  if(j3.le.0.or.j3.gt.n3) CYCLE
+                  ng = starts(i0+1)-starts(i0)
+                  ng0=ng+ns0
+                  DO i=starts(i0)+1,starts(i0+1)
+                     i4=ind(4,i)
+                     z=z+ni(i1,i2,i3,i4)/lambda*
+     1                  kldrice(th(i1,i2,i3,i4),th(j1,j2,j3,i4),sigma)
+                     if(z.ge.ng0) EXIT
+                     swi=swi+w(i)
+                  END DO
+                  z=z+ns0*ni0(i1,i2,i3)*
+     1                kldrice(th0(i1,i2,i3),th0(j1,j2,j3),sigma)
+                  if(z.lt.ng0) THEN
+                     z=swi/ng*min(1.d0,2.d0-2.d0*z/ng0)
+                     sw0=sw0+z
+                     swy0=swy0+z*y0(j1,j2,j3)
+                  END IF
+               END DO
+               DO i0=1,nstarts
+                  l1=ind(1,1+starts(i0))
+                  if(l1.eq.0) CYCLE
+C  this part for negative l1 only (opposite directions)
+                  l2=ind(2,1+starts(i0))
+                  l3=ind(3,1+starts(i0))
+                  z=0.d0
+                  swi=0d0
+                  j1=i1-l1
+                  if(j1.le.0.or.j1.gt.n1) CYCLE
+                  j2=i2-l2
+                  if(j2.le.0.or.j2.gt.n2) CYCLE
+                  j3=i3-l3
+                  if(j3.le.0.or.j3.gt.n3) CYCLE
+                  ng = starts(i0+1)-starts(i0)
+                  ng0=ng+ns0
+                  DO i=starts(i0)+1,starts(i0+1)
+                     i4=ind(4,i)
+                     z=z+ni(i1,i2,i3,i4)/lambda*
+     1                  kldrice(th(i1,i2,i3,i4),th(j1,j2,j3,i4),sigma)
+                     if(z.ge.ng0) EXIT
+                     swi=swi+w(i)
+                  END DO
+                  z=z+ns0*ni0(i1,i2,i3)*
+     1                kldrice(th0(i1,i2,i3),th0(j1,j2,j3),sigma)
+                  if(z.lt.ng0) THEN
+                     z=swi/ng*min(1.d0,2.d0-2.d0*z/ng0)
+                     sw0=sw0+z
+                     swy0=swy0+z*y0(j1,j2,j3)
+                  END IF
+               END DO
+               thn0(i1,i2,i3) = swy0/sw0
+               ni0(i1,i2,i3) = sw0
                call rchkusr()
             END DO
          END DO
@@ -654,6 +759,7 @@ C very large ...
          aab2 = ab2*ai
          bab2 = ab2*bi
          b2ab2 = ab2*bi2
+         alab2 = ab2*la
          blab2 = ab2*lb
          al2ab2 = alab2*la*bi
          bl2ab2 = blab2*lb*ai
@@ -665,3 +771,14 @@ C very large ...
       ENDIF
       RETURN
       END
+      subroutine skldrice(th1,th2,n,sigma,dist)
+      implicit logical (a-z)
+      integer n
+      real*8 th1(n),th2(n),dist(n)
+      integer i
+      real*8 kldrice
+      DO i=1,n
+         dist(i)=kldrice(th1(i),th2(i),sigma)
+      END DO
+      RETURN 
+      END 

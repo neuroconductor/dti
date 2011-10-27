@@ -40,5 +40,20 @@ function (kstar, gradstats, kappa=NULL, vext = c(1, 1), dist = "SE3",
                 "\n")
     list(h=h,kappa=kappa,vred=vr,n=n)
 }
+reduceparam <- function(param){
+     ind <- param$ind[4,]==param$ind[5,]
+     param$ind <- param$ind[,ind]
+     param$w <- param$w[ind]
+     param$n <- sum(ind)
+     h <- max(param$h)
+     rind <- param$ind[1,]*h*2*h*2+param$ind[2,]*h*2+param$ind[3,]
+     oind <- order(rind)
+     param$ind <- param$ind[,oind]
+     param$w <- param$w[oind]
+     starts <- cumsum(rle(rind[oind])$lengths)
+     param$nstarts <- length(starts)
+     param$starts <- c(0,starts)
+     param
+}
 
 

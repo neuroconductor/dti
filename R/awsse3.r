@@ -10,12 +10,14 @@ dwi.smooth <- function(object, ...) cat("No DTI smoothing defined for this class
 
 setGeneric("dwi.smooth", function(object, ...) standardGeneric("dwi.smooth"))
 
-setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,sigma=NULL,sigma2=NULL,dist="SE3full",minsb=5,kexp=.4,coils=0,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE){
+setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,sigma=NULL,sigma2=NULL,dist="SE3full",minsb=5,kexp=.4,coils=0,smooths0=TRUE,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE){
   args <- sys.call(-1)
   args <- c(object@call,args)
   sdcoef <- object@sdcoef
-  if(length(sdcoef)==4||all(sdcoef[5:8]==0)){
-  object <- getsdofsb(object,qA0=.1,qA1=.95,nsb=1,level=NULL)
+  if(length(sigma)==1) {
+     cat("using true variance",sigma^2,"\n")
+  } else {
+  if(length(sdcoef)==4||all(sdcoef[5:8]==0)) object <- getsdofsb(object,qA0=.1,qA1=.95,nsb=1,level=NULL)
   }
   if(!(is.null(xind)&is.null(yind)&is.null(zind))){
   if(is.null(xind)) xind <- 1:object@ddim[1]
@@ -31,6 +33,16 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,s
   ngrad <- ngrad - ns0
   grad <- object@gradient[,-s0ind]
   sb <- object@si[,,,-s0ind]
+  s0 <- object@si[,,,s0ind]
+  if(ns0>1){
+     dim(s0) <- c(prod(ddim),ns0)
+     s0 <- s0%*%rep(1/ns0,ns0)
+     dim(s0) <- ddim
+  }
+  if(smooths0){
+     th0 <- s0
+     ni0 <- array(1,ddim)
+  }
   meansb <- apply(sb,1:3,mean)
   mask <- meansb > minsb
   masksb <- array(mask,c(ddim,ngrad))
@@ -58,7 +70,8 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,s
   rm(th)
   prt0 <- Sys.time()
   cat("adaptive smoothing in SE3, kstar=",kstar,if(verbose)"\n" else " ")
-  for(k in 1:kstar){
+  kinit <- if(lambda<1e10) 1 else kstar
+  for(k in kinit:kstar){
     gc()
     hakt <- hseq[,k]
     param <- lkfullse3(hakt,kappa/hakt,gradstats,vext,nind) 
@@ -111,21 +124,60 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,s
     }
 if(verbose){
        if(length(sigma)==1) {
-       cat("first try\n")
-   cat("k:",k,"h_k:",signif(hakt,3),"\n quartiles of ni",signif(quantile(z$ni),3),
-  "mean of ni",signif(mean(z$ni),3),
-  "\n time elapsed:",format(difftime(Sys.time(),prt0),digits=3),"\n")
+       dim(z$ni) <- c(prod(ddim),ngrad)
+   cat("k:",k,"h_k:",signif(max(hakt),3)," quartiles of ni",signif(quantile(z$ni[mask,]),3),
+  "mean of ni",signif(mean(z$ni[mask,]),3),
+  " time elapsed:",format(difftime(Sys.time(),prt0),digits=3),"\n")
   } else {
-   cat("k:",k,"h_k:",signif(hakt,3),"\n quartiles of ni",signif(quantile(z$ni/s2inv),3),
+   cat("k:",k,"max(h_k):",signif(max(hakt),3)," quartiles of ni",signif(quantile(z$ni/s2inv),3),
   "mean of ni",signif(mean(z$ni/s2inv),3),
   "\n time elapsed:",format(difftime(Sys.time(),prt0),digits=3),"\n")
   }
     } else {
       cat(".")
     }
+      if(smooths0){
+      param <- reduceparam(param)
+     z0 <- .Fortran("asmse3s0",
+                    as.double(s0),
+                    as.double(z$th),
+                    as.double(th0),
+                    as.double(z$ni),
+                    ni=as.double(ni0),
+                    as.logical(mask),
+                    as.integer(ddim[1]),
+                    as.integer(ddim[2]),
+                    as.integer(ddim[3]),
+                    as.integer(ngrad),
+                    as.integer(ns0),
+                    as.double(lambda),
+                    as.integer(param$ind),
+                    as.double(param$w),
+                    as.integer(param$n),
+                    as.integer(param$starts),
+                    as.integer(param$nstarts),
+                    th0=double(prod(ddim)),
+                    as.double(sigma),
+                    DUPL=FALSE,
+                    PACKAGE="dti")[c("ni","th0")]
+      th0 <- z0$th0
+      ni0 <- z0$ni
+   cat("End smoothing s0: quartiles of ni",signif(quantile(ni0[mask]),3),
+  "mean of ni",signif(mean(ni0[mask]),3),
+  " time elapsed:",format(difftime(Sys.time(),prt0),digits=3),"\n")
+  }
   }
 if(!verbose) cat("\n")
-  object@si[,,,-s0ind] <- z$th
+  ngrad <- ngrad+1
+  si <- array(0,c(ddim,ngrad))
+  si[,,,1] <- if(smooths0) th0 else s0
+  si[,,,-1] <- z$th
+  object@si <- si
+  object@gradient <- grad <- cbind(c(0,0,0),grad)
+  object@btb <- create.designmatrix.dti(grad)
+  object@s0ind <- as.integer(1)
+  object@replind <- as.integer(1:ngrad)
+  object@ngrad <- as.integer(ngrad)
   object@call <- args
   object
 }

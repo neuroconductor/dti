@@ -482,7 +482,6 @@ getsiind3 <- function(si,mask,sigma2,grad,vico,th,indth,ev,fa,andir,maxcomp=3,ma
 ngrad <- dim(grad)[1]
 nvico <- dim(vico)[1]
 ddim <- dim(fa)
-cat("RS1",.Random.seed[1:6],"\n")
 nsi <- dim(si)[4]
 dgrad <- matrix(abs(grad%*%t(vico)),ngrad,nvico)
 dgrad <- dgrad/max(dgrad)
