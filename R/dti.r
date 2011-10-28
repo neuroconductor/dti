@@ -141,7 +141,7 @@ setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="r
      dim(si) <- c(ngrad,n)
      dim(D) <- c(6,n)
      dim(res) <- c(ngrad,n)
-     cat("length of IndD",length(indD),"\n")
+#     cat("length of IndD",length(indD),"\n")
      for(i in indD){
         zz <- optim(c(1,0,0,1,0,1),opttensR,method="BFGS",si=si[-s0ind,i],s0=s0[i],grad=grad[,-s0ind],sdcoef=sdcoef)
         D[,i] <- rho2D(zz$par)

@@ -208,12 +208,48 @@ C standardize to length 1
       END DO
       RETURN
       END
+C      subroutine bgstats(g,n,bg,bghat,nbg,nbghat)
+C      implicit logical (a-z)
+C      integer n
+C      real*8 g(3,n),bg(2,n),bghat(2,n,n),nbg(3,3,n),nbghat(3,3,n,n)
+C      integer i1,i2
+C      real*8 dgamma,cb1,sb1,cb2,sb2,betah,cbh,z,gammah
+C   first get sperical coordinates in bg
+C      call abofg(g,n,bg)
+C      DO i1=1,n
+C         sb1=sin(bg(1,i1))
+C         cb1=cos(bg(1,i1))
+C         call ng123(bg(1,i1),bg(2,i1),nbg(1,1,i1))
+C    die normalen-vektoren der Gradienten
+C         DO i2=1,n
+C            sb2=sin(bg(1,i2))
+C            cb2=cos(bg(1,i2))
+C            dgamma=bg(2,i1)-bg(2,i2)
+C            z=sb1*cb2-cb1*sb2*cos(dgamma)
+C            betah=asin(z)
+C            cbh=cos(betah)
+C            IF(abs(cbh).gt.1d-8) THEN
+C               z=cb1*sin(dgamma)/cbh
+C               z=sign(min(1.d0,abs(z)),z)
+C               gammah=asin(z)
+C            ELSE
+C               gammah=1.570796327d0
+C            END IF
+C            bghat(1,i1,i2)=betah
+C            bghat(2,i1,i2)=gammah
+C    die spherischen Koordinaten der Gradientenpaare (Parameter der Rotationsmatix)
+C            call ng123(betah,gammah,nbghat(1,1,i1,i2))
+C    die normalen-vektoren der Gradientenpaare
+C         END DO
+C      END DO  
+C      RETURN
+C      END
       subroutine bgstats(g,n,bg,bghat,nbg,nbghat)
       implicit logical (a-z)
       integer n
       real*8 g(3,n),bg(2,n),bghat(2,n,n),nbg(3,3,n),nbghat(3,3,n,n)
       integer i1,i2
-      real*8 dgamma,cb1,sb1,cb2,sb2,betah,cbh,z,gammah
+      real*8 dgamma,cb1,sb1,cb2,sb2,betah,cbh,z,gammah,cdg
 C   first get sperical coordinates in bg
       call abofg(g,n,bg)
       DO i1=1,n
@@ -222,10 +258,18 @@ C   first get sperical coordinates in bg
          call ng123(bg(1,i1),bg(2,i1),nbg(1,1,i1))
 C    die normalen-vektoren der Gradienten
          DO i2=1,n
+            dgamma=bg(2,i1)-bg(2,i2)
+            cdg=cos(dgamma)
+            if(abs(cdg).gt.1-1d-8) THEN
+               bghat(1,i1,i2)=asin(sin(bg(1,i1)-
+     1                             sign(1.d0,cdg)*bg(1,i2)))
+               bghat(2,i1,i2)=0.d0
+               call ng123(betah,gammah,nbghat(1,1,i1,i2))
+               CYCLE
+            END IF
             sb2=sin(bg(1,i2))
             cb2=cos(bg(1,i2))
-            dgamma=bg(2,i1)-bg(2,i2)
-            z=sb1*cb2-cb1*sb2*cos(dgamma)
+            z=sb1*cb2-cb1*sb2*cdg
             betah=asin(z)
             cbh=cos(betah)
             IF(abs(cbh).gt.1d-8) THEN
@@ -233,7 +277,12 @@ C    die normalen-vektoren der Gradienten
                z=sign(min(1.d0,abs(z)),z)
                gammah=asin(z)
             ELSE
-               gammah=1.570796327d0
+               if(abs(cb1).gt.1d-6) THEN
+C   this should not happen
+                  call dblepr("cb1",3,cb1,1)
+                  call dblepr("cbh",3,cbh,1)
+               END IF
+               gammah = asin(dgamma*sign(1d0,cb1*cbh)) 
             END IF
             bghat(1,i1,i2)=betah
             bghat(2,i1,i2)=gammah

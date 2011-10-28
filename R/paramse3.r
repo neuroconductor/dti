@@ -28,14 +28,15 @@ function (kstar, gradstats, kappa=NULL, vext = c(1, 1), dist = "SE3",
        vr[i,] <- z$vr 
        n <- n+z$n
         if (verbose) {
-            cat("i",i,"h[i,.]:", signif(h[i,],3), "\n")
+#            cat("i",i,"h[i,.]:", signif(h[i,],3), "\n")
+           cat("Grad-nr.:",i," max(h): ", signif(max(h[i,]),3),"\n")
         }
         else {
             cat(".")
         }
         gc()
     }
-        cat("number of positive weights:",n,"time elapsed:", 
+        cat("\n number of positive weights:",n,"time elapsed:", 
                 format(difftime(Sys.time(), prt0), digits = 3), 
                 "\n")
     list(h=h,kappa=kappa,vred=vr,n=n)
