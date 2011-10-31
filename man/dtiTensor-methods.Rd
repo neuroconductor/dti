@@ -63,7 +63,6 @@
   \code{\link{dtiIndices-methods}},  
   \code{\link{medinria}}, 
   \code{\linkS4class{dtiData}}, 
-  \code{\linkS4class{dwiRiceBias}}, 
   \code{\linkS4class{dtiTensor}}
   \code{\linkS4class{dwiMixTensor}}
 }

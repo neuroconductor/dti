@@ -10,7 +10,7 @@ dwi.smooth <- function(object, ...) cat("No DTI smoothing defined for this class
 
 setGeneric("dwi.smooth", function(object, ...) standardGeneric("dwi.smooth"))
 
-setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,sigma=NULL,sigma2=NULL,dist="SE3full",minsb=5,kexp=.4,coils=0,smooths0=TRUE,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE){
+setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=10,kappa0=0.4,sigma=NULL,sigma2=NULL,minsb=5,smooths0=TRUE,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE){
   args <- sys.call(-1)
   args <- c(object@call,args)
   sdcoef <- object@sdcoef
@@ -47,13 +47,8 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,s
   mask <- meansb > minsb
   masksb <- array(mask,c(ddim,ngrad))
   vext <- object@voxelext[2:3]/object@voxelext[1]
-  if(dist=="SE3full"){
   gradstats <- getkappas(grad)
   hseq <- gethseqfullse3(kstar,gradstats,kappa0,vext=vext,verbose=verbose)
-  } else {
-     warning("only SE3full implemented, returning original object")
-     return(object)
-  }
   kappa <- hseq$kappa
   nind <- hseq$n
   hseq <- hseq$h
@@ -93,7 +88,6 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,s
                 as.double(sigma),
                 double(ngrad),
                 double(ngrad),
-#                as.integer(coils),
                 DUPL=FALSE,
                 PACKAGE="dti")[c("ni","th")]
     } else {
@@ -116,7 +110,6 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,s
                 double(ngrad),
                 double(ngrad),
                 double(ngrad),
-#                as.integer(coils),
                 DUPL=FALSE,
                 PACKAGE="dti")[c("ni","th","r")]
     ind <- masksb&!is.na(z$r)&z$ni>s2inv&z$r<1e4

@@ -20,7 +20,7 @@
 \usage{
 \S4method{dwiMixtensor}{dtiData}(object, maxcomp=3, method="mixtensor", reltol=1e-6,
           maxit=5000, ngc=1000, optmethod="BFGS", nguess=100*maxcomp^2,
-          msc="BIC", pen=NULL)
+          msc="BIC", pen=NULL, code = "C", thinit = NULL)
 \S4method{dwiMtImprove}{dwiMixtensor,dtiData}(mtobj, dwiobj, maxcomp=3, method="mixtensor", reltol=1e-6, maxit=5000, ngc=1000, optmethod="BFGS", nguess= 100*maxcomp^2, msc="BIC", pen=NULL, where=NULL, new=FALSE, code = "C")
 \S4method{dwiMtCombine}{dwiMixtensor,dwiMixtensor}(mtobj1,mtobj2, msc="BIC", where=NULL)
 }
@@ -48,6 +48,8 @@
    \item{code}{If \code{code="C"}, \code{method="mixtensor"} and
                \code{optmethod="BFGS"} a much faster C/FORTRAN-code 
                is used}
+   \item{thinit}{optional initial estimate for difference of eigenvalues. If not provided (default) an initial estimate
+                 is generated from results in using the tensor model}
    \item{mtobj}{For method \code{"dwiMtImprove"} an initial \code{"dwiMixtensor"}-object.}
    \item{dwiobj}{For method \code{"dwiMtImprove"} the \code{"dwiData"} object corresponding to \code{mtobj}}
    \item{mtobj1}{For method \code{"dwiMtCombine"} an \code{"dwiMixtensor"}-object.}
