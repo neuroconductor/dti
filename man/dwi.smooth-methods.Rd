@@ -14,11 +14,12 @@ geometrical distance ( in SE(3)). Structural adaptation is used in space only.}
   \item{object}{ Object of class \code{"dtiData"}}
   \item{kstar}{ Number of steps in structural adaptation}
   \item{lambda}{Scale parameter in adaptation }
-  \item{kappa}{determines amaount of smoothing on the sphere. Larger values correspond to stronger smoothing on the sphere. }
+  \item{kappa0}{determines amaount of smoothing on the sphere. Larger values correspond to stronger smoothing on the sphere. }
   \item{sigma}{Error standard deviation. Assumed to be known and homogeneous in the current implementation. A reasonable estimate may be defined 
   as the modal value of standard deviations obtained using method \code{getsdofsb}. }
   \item{sigma2}{estimated variances in each voxel (the corresponding code is not fully tested)}
   \item{minsb}{lower threshold used to define a mask. Voxel with mean intensity (over all diffusion weighted images) less then \code{minsb} are not used. }
+  \item{smooths0}{ also smooth unweighted images. }
   \item{xind}{index for x-coordinate}
   \item{yind}{index for y-coordinate}
   \item{zind}{index for z-coordinate}
