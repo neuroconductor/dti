@@ -1,5 +1,6 @@
 \name{dwi.smooth-methods}
 \docType{methods}
+\alias{dwi.smooth}
 \alias{dwi.smooth-methods}
 \alias{dwi.smooth,ANY-method}
 \alias{dwi.smooth,dtiData-method}
@@ -31,13 +32,21 @@ geometrical distance ( in SE(3)). Structural adaptation is used in space only.}
 \section{Methods}{
 \describe{
 
-\item{\code{signature(object = "ANY")}}{
+\item{\code{signature(object) = "ANY"}}{
 Returns a warning.
 }
 
-\item{\code{signature(object = "dtiData")}}{
+\item{\code{signature(object) = "dtiData"}}{
 Smoothing of DWI data 
 }
 }}
+\author{ 
+  Karsten Tabelow \email{tabelow@wias-berlin.de}\cr 
+  J\"org Polzehl \email{polzehl@wias-berlin.de}
+}
+\seealso{ 
+  \code{\link{dtiData}}, 
+  \code{\linkS4class{dtiData}}, 
+} 
 \keyword{methods}
 \keyword{smooth }

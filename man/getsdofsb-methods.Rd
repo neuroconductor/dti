@@ -1,5 +1,6 @@
 \name{getsdofsb-methods}
 \docType{methods}
+\alias{getsdofsb}
 \alias{getsdofsb-methods}
 \alias{getsdofsb,ANY-method}
 \alias{getsdofsb,dtiData-method}
@@ -26,14 +27,23 @@
 \section{Methods}{
 \describe{
 
-\item{\code{signature(object = "ANY")}}{
+\item{\code{signature(object) = "ANY"}}{
 Returns a warning.
 }
 
-\item{\code{signature(object = "dtiData")}}{
+\item{\code{signature(object) = "dtiData"}}{
 Returns a \code{dtiData} object with estimated standard deviation parameters in 
 slot \code{sdcoef}.
 }
 }}
+\author{ 
+  Karsten Tabelow \email{tabelow@wias-berlin.de}\cr 
+  J\"org Polzehl \email{polzehl@wias-berlin.de}
+}
+\seealso{ 
+  \code{\link{dtiData}}, 
+  \code{\link{dwi.smooth-methods}}, 
+  \code{\linkS4class{dtiData}}, 
+} 
 \keyword{methods}
 \keyword{ manip }

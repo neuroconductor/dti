@@ -64,7 +64,7 @@
   \code{\link{medinria}}, 
   \code{\linkS4class{dtiData}}, 
   \code{\linkS4class{dtiTensor}}
-  \code{\linkS4class{dwiMixTensor}}
+  \code{\linkS4class{dwiMixtensor}}
 }
 \examples{
   \dontrun{demo(dti_art)}

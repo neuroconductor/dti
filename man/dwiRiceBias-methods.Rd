@@ -1,5 +1,6 @@
 \name{dwiRiceBias-methods}
 \docType{methods}
+\alias{dwiRiceBias}
 \alias{dwiRiceBias-methods}
 \alias{dwiRiceBias,ANY-method}
 \alias{dwiRiceBias,dtiData-method}
@@ -21,12 +22,24 @@
 \section{Methods}{
 \describe{
 
-\item{\code{signature(object = "ANY")}}{ Returns a warning. 
+\item{object = "ANY"}{ Returns a warning. 
 }
 
-\item{\code{signature(object = "dtiData")}}{
+\item{object = "dtiData"}{
 Returns a \code{dtiData} object with bias-corrected image intensities.
 }
 }}
+\author{ 
+  Karsten Tabelow \email{tabelow@wias-berlin.de}\cr 
+  J\"org Polzehl \email{polzehl@wias-berlin.de}
+}
+\seealso{ 
+  \code{\link{dtiData}}, 
+  \code{\link{dtiTensor-methods}}, 
+  \code{\link{dwiMixtensor-methods}}, 
+  \code{\linkS4class{dtiData}}, 
+  \code{\linkS4class{dtiTensor}},
+  \code{\linkS4class{dwiMixtensor}},
+} 
 \keyword{methods}
 \keyword{ manip }

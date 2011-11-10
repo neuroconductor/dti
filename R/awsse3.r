@@ -10,7 +10,7 @@ dwi.smooth <- function(object, ...) cat("No DTI smoothing defined for this class
 
 setGeneric("dwi.smooth", function(object, ...) standardGeneric("dwi.smooth"))
 
-setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=10,kappa0=0.4,sigma=NULL,sigma2=NULL,minsb=5,smooths0=TRUE,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE){
+setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=10,kappa0=0.4,sigma=NULL,sigma2=NULL,minsb=5,smooths0=TRUE,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE,adsphere=FALSE){
   args <- sys.call(-1)
   args <- c(object@call,args)
   sdcoef <- object@sdcoef
@@ -43,8 +43,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=10,kappa0=0.4,si
      th0 <- s0
      ni0 <- array(1,ddim)
   }
-  meansb <- apply(sb,1:3,mean)
-  mask <- meansb > minsb
+  mask <- apply(sb,1:3,mean) > minsb
   masksb <- array(mask,c(ddim,ngrad))
   vext <- object@voxelext[2:3]/object@voxelext[1]
   gradstats <- getkappas(grad)
@@ -52,17 +51,18 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=10,kappa0=0.4,si
   kappa <- hseq$kappa
   nind <- hseq$n
   hseq <- hseq$h
-  th <- sb
+  if(length(sigma)!=1){
+# otherwise s2inv is not needed
   if(is.null(sigma2)){
 #
   s2inv <- array((object@sdcoef[5]+object@sdcoef[6]*sb)^{-2},dim(sb))
   } else {
      s2inv <- array(1/sigma2,dim(sb))  
   }
+  }
 # make it nonrestrictive for the first step
   ni <- if(length(sigma)==1) array(1,dim(sb)) else s2inv
-  z <- list(th=th, ni = ni)
-  rm(th)
+  z <- list(th=sb, ni = ni)
   prt0 <- Sys.time()
   cat("adaptive smoothing in SE3, kstar=",kstar,if(verbose)"\n" else " ")
   kinit <- if(lambda<1e10) 1 else kstar
@@ -88,6 +88,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=10,kappa0=0.4,si
                 as.double(sigma),
                 double(ngrad),
                 double(ngrad),
+                as.logical(adsphere),
                 DUPL=FALSE,
                 PACKAGE="dti")[c("ni","th")]
     } else {

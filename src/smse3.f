@@ -543,7 +543,7 @@ C    ni(i1,i2,i3,i4) contains normalization by siinv
       RETURN
       END
       subroutine adrsmse3(y,th,ni,mask,n1,n2,n3,ngrad,lambda,ind,w,n,
-     1                    thn,sigma,sw,swy)
+     1                    thn,sigma,sw,swy,adsphere)
 C
 C   perform adaptive smoothing on SE(3) 
 C   ind(.,i) contains coordinate indormation corresponding to positive
@@ -552,11 +552,11 @@ C   ind(.,i)[1:5] are j1-i1,j2-i2,j3-i3, i4 and j4 respectively
 C
       implicit logical (a-z)
       integer n1,n2,n3,ngrad,n,ind(5,n)
-      logical mask(n1,n2,n3)
+      logical mask(n1,n2,n3),adsphere
       real*8 y(n1,n2,n3,ngrad),th(n1,n2,n3,ngrad),ni(n1,n2,n3,ngrad),
      1       lambda,w(n),thn(n1,n2,n3,ngrad),sw(ngrad),swy(ngrad),
      2       sigma
-      integer i,i1,i2,i3,i4,j1,j2,j3,j4
+      integer i,i1,i2,i3,i4,j1,j2,j3,j4,ij4
       real*8 z,thi,nii
       real*8 kldrice
       external kldrice
@@ -569,10 +569,12 @@ C
                   swy(i4)=0.d0
                END DO
                i4=0
+               ij4 = i4
                DO i=1,n
                   if(ind(4,i).ne.i4) THEN
 C   by construction ind(4,.) should have same values consequtively
                      i4 = ind(4,i)
+                     ij4 = i4
                      thi = th(i1,i2,i3,i4)
                      nii = ni(i1,i2,i3,i4)/lambda
                   END IF
@@ -585,6 +587,8 @@ C   by construction ind(4,.) should have same values consequtively
                   if(.not.mask(j1,j2,j3)) CYCLE          
 C                  i4=ind(4,i)
                   j4=ind(5,i)
+                  if(adsphere) ij4=j4
+C adaptation on the phere depending on adsphere
                   if(lambda.lt.1d10) THEN
                      z=nii*kldrice(thi,th(j1,j2,j3,i4),sigma)
 C  do not adapt on the sphere !!! 
@@ -616,8 +620,10 @@ C
                   if(j3.le.0.or.j3.gt.n3) CYCLE
                   if(.not.mask(j1,j2,j3)) CYCLE          
                   j4=ind(5,i)
+                  if(adsphere) ij4=j4
+C adaptation on the phere depending on adsphere
                   if(lambda.lt.1d10) THEN
-                     z=nii*kldrice(thi,th(j1,j2,j3,i4),sigma)
+                     z=nii*kldrice(thi,th(j1,j2,j3,ij4),sigma)
 C  do not adapt on the sphere !!! 
                   ELSE
                      z=0.d0
