@@ -789,11 +789,17 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3, method="mixtensor
 #     th <- rep(max(th),nth)
 #     indth <- rep(1,length(th))
 #  }
-  qth <- quantile(th[fa>=falevel&fa<.95],seq(.8,.99,length=nth))
-  indth <- cut(th,qth,labels=FALSE)
-  indth[th<qth[1]] <- 1
-  indth[th>qth[nth]] <- nth
-  th <- qth
+  qth <- unique(quantile(th[fa>=falevel&fa<.95],seq(.8,.99,length=nth)))
+  nth <- length(qth)
+  if(nth>1){
+     indth <- cut(th,qth,labels=FALSE)
+     indth[th<=qth[1]] <- 1
+     indth[th>=qth[nth]] <- nth
+     th <- qth
+  } else {
+    indth <- rep(1,prod(ddim))
+    th <- qth
+  }
   } else {
     nth <- 1
     indth <- rep(1,prod(ddim))
@@ -905,7 +911,7 @@ cat("using th:::",th,"\n")
                     "CG" = 2, "Nelder-Mead" = 3, "L-BFGS-B" = 4)
 
 
-  cat("Startind C-code",format(Sys.time()),"\n")
+  cat("Starting parameter estimation and model selection (C-code)",format(Sys.time()),"\n")
   z <- .C("mixture2", 
           as.integer(meth),
           as.integer(optmeth), 
@@ -933,7 +939,7 @@ cat("using th:::",th,"\n")
           lev     = double(2*prod(ddim)),         # logarithmic eigenvalues
           mix     = double(maxcomp*prod(ddim)),   # mixture weights
           DUPL=FALSE, PACKAGE="dti")[c("sigma2","orient","order","lev","mix")]
-  cat("End C-code",format(Sys.time()),"\n")
+  cat("End parameter estimation and model selection (C-code)",format(Sys.time()),"\n")
 sigma2 <-  array(z$sigma2,ddim[1:3])
 orient <- array(z$orient, c(2, maxcomp, ddim[1:3]))
 order <- array(z$order, ddim[1:3])
@@ -941,6 +947,7 @@ lev <- array(z$lev, c(2,ddim[1:3]))
 mix <- array(z$mix, c(maxcomp, ddim[1:3]))
 method <- "mixtensor"
   } else {
+  cat("Starting parameter estimation and model selection (R-code)",format(Sys.time()),"\n")
 #
 #     R/Fortran-Code 
 #
@@ -1071,6 +1078,7 @@ method <- "mixtensor"
     }
   }# end mask
   }# end loop
+  cat("End parameter estimation and model selection (R-code)",format(Sys.time()),"\n")
   } # end Code-verzweigung 
   invisible(new("dwiMixtensor",
                 model = "homogeneous_prolate",

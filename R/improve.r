@@ -2,16 +2,12 @@ dwiMtImprove <- function( mtobj,dwiobj, ...) cat("No dwiMixtensor calculation de
 
 setGeneric("dwiMtImprove", function( mtobj,dwiobj, ...) standardGeneric("dwiMtImprove"))
 
-setMethod("dwiMtImprove",c("dwiMixtensor","dtiData"), function(mtobj, dwiobj, maxcomp=3, method="mixtensor", reltol=1e-6, maxit=5000,ngc=1000, optmethod="BFGS", nguess=100*maxcomp^2,msc="BIC",pen=NULL,where=NULL,new=FALSE, code="C"){
+setMethod("dwiMtImprove",c("dwiMixtensor","dtiData"), function(mtobj, dwiobj, maxcomp=3, method="mixtensor", reltol=1e-6, maxit=5000,ngc=1000, optmethod="BFGS", nguess=100*maxcomp^2,msc="BIC",pen=NULL,where=NULL,new=FALSE){
 #
 #  uses  S(g)/s_0 = w_0 exp(-l_1) +\sum_{i} w_i exp(-l_2-(l_1-l_2)(g^T d_i)^2)
 #
 #  
 #
-  if(method!="mixtensor"||optmethod!="BFGS") {
-     cat("Using R-code")
-     code <- "R"
-  }
   set.seed(1)
   theta <- .5
   maxc <- .866
@@ -112,39 +108,6 @@ setMethod("dwiMtImprove",c("dwiMixtensor","dtiData"), function(mtobj, dwiobj, ma
 #  exclude indices at the sides of the cube (just to save index operations,
 #  usually they are outside the mask anyway
 #
-  if(code=="C"){
-#    first prepare initial estimates 
-     cat("Startind C-code",format(Sys.time()),"\n")
-  z <- .C("mixtureimp", 
-          as.integer(meth),
-          as.integer(optmeth), 
-          as.integer(n1), 
-          as.integer(n2), 
-          as.integer(n3),
-          as.integer(mask), 
-          as.integer(siind), 
-          as.integer(ngrad), 
-          as.integer(ngrad0),
-          as.integer(maxcomp),
-          as.integer(maxit),
-          as.double(pen),
-          as.double(t(grad)),
-          as.double(reltol),
-          as.double(th),
-          as.double(penIC),
-          as.double(sigma2),
-          as.double(vert),
-          as.double(orient),
-          as.double(siq),
-          sigma2  = double(prod(ddim)),# error variance 
-          orient  = double(2*maxcomp*prod(ddim)), # phi/theta for all mixture tensors
-          order   = integer(prod(ddim)),   # selected order of mixture
-          lev     = double(2*prod(ddim)),         # logarithmic eigenvalues
-          mix     = double(maxcomp*prod(ddim)),   # mixture weights
-          DUPL=FALSE, PACKAGE="dti")[c("sigma2","orient","order","lev","mix")]
-  cat("End C-code",format(Sys.time()),"\n")
-
-  } else {
   for(i3 in 1:n3) for(i2 in 1:n2) for(i1 in 1:n1){ # begin loop
      ordi <- order[i1,i2,i3]
      smix <- sum(mix[,i1,i2,i3])
@@ -272,7 +235,6 @@ setMethod("dwiMtImprove",c("dwiMixtensor","dtiData"), function(mtobj, dwiobj, ma
     }
   }# end mask
   }# end loop
-  } # end C/R-code switch
   invisible(new("dwiMixtensor",
                 model = "homogeneous_prolate",
                 call   = args,

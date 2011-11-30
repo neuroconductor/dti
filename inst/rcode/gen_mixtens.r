@@ -84,7 +84,7 @@ orient[2,,,,] <- beta
                 model  = "homogeneous_prolate",
                 call   = args,
                 ev     = th,
-                mix    = w[-1,,,],
+                mix    = w[-1,,,,drop=FALSE],
                 orient = orient,
                 order  = array(m,ddim),
                 p      = 1,

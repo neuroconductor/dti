@@ -10,7 +10,7 @@ dwi.smooth <- function(object, ...) cat("No DTI smoothing defined for this class
 
 setGeneric("dwi.smooth", function(object, ...) standardGeneric("dwi.smooth"))
 
-setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=10,kappa0=0.4,sigma=NULL,sigma2=NULL,minsb=5,smooths0=TRUE,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE,adsphere=FALSE){
+setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=10,kappa0=0.4,sigma=NULL,sigma2=NULL,minsb=5,smooths0=TRUE,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE){
   args <- sys.call(-1)
   args <- c(object@call,args)
   sdcoef <- object@sdcoef
@@ -88,7 +88,6 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=10,kappa0=0.4,si
                 as.double(sigma),
                 double(ngrad),
                 double(ngrad),
-                as.logical(adsphere),
                 DUPL=FALSE,
                 PACKAGE="dti")[c("ni","th")]
     } else {
@@ -156,6 +155,8 @@ if(verbose){
                     PACKAGE="dti")[c("ni","th0")]
       th0 <- z0$th0
       ni0 <- z0$ni
+      rm(z0)
+      gc()
    cat("End smoothing s0: quartiles of ni",signif(quantile(ni0[mask]),3),
   "mean of ni",signif(mean(ni0[mask]),3),
   " time elapsed:",format(difftime(Sys.time(),prt0),digits=3),"\n")

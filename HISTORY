@@ -1,6 +1,11 @@
+2011-11-30 version 1.0-0
+
+  - added method dwi.smooth: adaptive smoothing for DWI data 
+  - additional parameters in dwiMixtensor for improved initial estimates 
+  
 2011-10-04 version 0.9-7.3
 
-  - C-code for dtiMixtensor
+  - C-code for dwiMixtensor
   
 2011-09-09 version 0.9-7.2
 
