@@ -17,6 +17,7 @@ setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="r
   ngrad <- object@ngrad
   grad <- object@gradient
   ddim <- object@ddim
+  nvox <- prod(ddim)
   s0ind <- object@s0ind
   ns0 <- length(s0ind)
   sdcoef <- object@sdcoef
@@ -74,9 +75,7 @@ setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="r
 #  replace non-tensors (with negative eigenvalues) by a small isotropic tensor 
       ind <- array(.Fortran("dti3Dev",
                            as.double(D),
-                           as.integer(ddim[1]),
-                           as.integer(ddim[2]),
-                           as.integer(ddim[3]),
+                           as.integer(nvox),
                            as.logical(mask),
                            ev=double(3*prod(ddim)),
                            DUP=FALSE,
@@ -107,18 +106,16 @@ setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="r
      z <- .Fortran("nlrdtirg",
                 as.integer(si),
                 as.integer(ngrad),
-                as.integer(ddim[1]),
-                as.integer(ddim[2]),
-                as.integer(ddim[3]),
+                as.integer(nvox),
                 as.logical(mask),
                 as.double(object@btb),
                 as.double(sdcoef),
                 th0=as.double(s0),
-                D=double(6*prod(ddim)),
+                D=double(6*nvox),
                 as.integer(200),
                 as.double(1e-6),
-                res=double(ngrad*prod(ddim)),
-                rss=double(prod(ddim)),
+                res=double(ngrad*nvox),
+                rss=double(nvox),
                 double(ngrad),
                 PACKAGE="dti",DUP=FALSE)[c("th0","D","res","rss")]
      dim(z$th0) <- ddim
@@ -186,11 +183,9 @@ setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="r
   cat("estimated corresponding bandwidths",format(Sys.time()),"\n")
   ev <- array(.Fortran("dti3Dev",
                        as.double(D),
-                       as.integer(ddim[1]),
-                       as.integer(ddim[2]),
-                       as.integer(ddim[3]),
+                       as.integer(nvox),
                        as.logical(mask),
-                       ev=double(3*prod(ddim)),
+                       ev=double(3*nvox),
                        DUP=FALSE,
                        PACKAGE="dti")$ev,c(3,ddim))
   scale <- quantile(ev[3,,,][mask],.95)
@@ -273,33 +268,31 @@ function(object, which) {
   args <- sys.call(-1)
   args <- c(object@call,args)
   ddim <- object@ddim
-
+  n <- prod(ddim)
   z <- .Fortran("dtiind3D",
                 as.double(object@D),
-                as.integer(object@ddim[1]),
-                as.integer(object@ddim[2]),
-                as.integer(object@ddim[3]),
+                as.integer(n),
                 as.logical(object@mask),
-                fa=double(prod(object@ddim)),
-                ga=double(prod(object@ddim)),
-                md=double(prod(object@ddim)),
-                andir=double(3*prod(object@ddim)),
-                bary=double(3*prod(object@ddim)),
+                fa=double(n),
+                ga=double(n),
+                md=double(n),
+                andir=double(3*n),
+                bary=double(3*n),
                 DUP=FALSE,
                 PACKAGE="dti")[c("fa","ga","md","andir","bary")]
 
   invisible(new("dtiIndices",
                 call = args,
-                fa = array(z$fa,object@ddim),
-                ga = array(z$ga,object@ddim),
-                md = array(z$md,object@ddim),
-                andir = array(z$andir,c(3,object@ddim)),
-                bary = array(z$bary,c(3,object@ddim)),
+                fa = array(z$fa,ddim),
+                ga = array(z$ga,ddim),
+                md = array(z$md,ddim),
+                andir = array(z$andir,c(3,ddim)),
+                bary = array(z$bary,c(3,ddim)),
                 gradient = object@gradient,
                 btb   = object@btb,
                 ngrad = object@ngrad, # = dim(btb)[2]
                 s0ind = object@s0ind,
-                ddim  = object@ddim,
+                ddim  = ddim,
                 ddim0 = object@ddim0,
                 voxelext = object@voxelext,
                 orientation = object@orientation,

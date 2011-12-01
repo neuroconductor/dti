@@ -742,6 +742,7 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3, method="mixtensor
   args <- c(object@call,args)
   ngrad <- object@ngrad
   ddim <- object@ddim
+  nvox <- prod(ddim)
   s0ind <- object@s0ind
   ns0 <- length(s0ind)
   ngrad0 <- ngrad - ns0
@@ -759,13 +760,11 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3, method="mixtensor
   cat("Start evaluation of eigenstructure at",format(Sys.time()),"\n")
   z <- .Fortran("dtieigen",
                 as.double(tensorobj@D),
-                as.integer(ddim[1]),
-                as.integer(ddim[2]),
-                as.integer(ddim[3]),
+                as.integer(nvox),
                 as.logical(tensorobj@mask),
-                fa=double(prod(ddim)),
-                ev=double(3*prod(ddim)),
-                andir=double(6*prod(ddim)),
+                fa=double(nvox),
+                ev=double(3*nvox),
+                andir=double(6*nvox),
                 DUP=FALSE,
                 PACKAGE="dti")[c("fa","ev","andir")]
   rm(tensorobj)
@@ -812,12 +811,12 @@ cat("using th:::",th,"\n")
 #
   z <- .Fortran("outlier",#misc.f 
                 as.double(object@si),
-                as.integer(prod(ddim)),
+                as.integer(nvox),
                 as.integer(ngrad),
                 as.logical((1:ngrad)%in%s0ind),
                 as.integer(ns0),
-                si=integer(prod(ddim)*ngrad),
-                index=integer(prod(ddim)),
+                si=integer(nvox*ngrad),
+                index=integer(nvox),
                 lindex=integer(1),
                 DUP=FALSE,
                 PACKAGE="dti")[c("si","index","lindex")]
@@ -830,19 +829,18 @@ cat("using th:::",th,"\n")
 #
 #  compute mean S_0, s_i/S_0 (siq), var(siq) and mask
 #
+  nvox <- prod(ddim[1:3])
   z <- .Fortran("sweeps0",# mixtens.f
                 as.integer(si[,,,-s0ind,drop=FALSE]),
                 as.integer(si[,,,s0ind,drop=FALSE]),
-                as.integer(ddim[1]),
-                as.integer(ddim[2]),
-                as.integer(ddim[3]),
+                as.integer(nvox),
                 as.integer(ns0),
                 as.integer(ngrad0),
                 as.integer(object@level),
-                siq=double(prod(ddim[1:3])*ngrad0),
-                s0=double(prod(ddim[1:3])),
-                vsi=double(prod(ddim[1:3])),
-                mask=logical(prod(ddim[1:3])),
+                siq=double(nvox*ngrad0),
+                s0=double(nvox),
+                vsi=double(nvox),
+                mask=logical(nvox),
                 DUPL=FALSE,
                 PACKAGE="dti")[c("siq","s0","vsi","mask")]
   rm(si)

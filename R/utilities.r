@@ -630,6 +630,7 @@ setMethod("extract","dtiTensor",function(x, what="tensor", xind=TRUE, yind=TRUE,
   n1 <- x@ddim[1]
   n2 <- x@ddim[2]
   n3 <- x@ddim[3]
+  nvox <- prod(x@ddim)
   needev <- ("fa" %in% what) || ("ga" %in% what) || ("md" %in% what) || ("evalues" %in% what)
   needall <- needev && ("andir" %in% what)
 
@@ -637,15 +638,13 @@ setMethod("extract","dtiTensor",function(x, what="tensor", xind=TRUE, yind=TRUE,
   if(needall){
     erg <- .Fortran("dti3Dall",
                     as.double(x@D),
-                    as.integer(n1),
-                    as.integer(n2),
-                    as.integer(n3),
+                    as.integer(nvox),
                     as.logical(x@mask),
-                    fa=double(n1*n2*n3),
-                    ga=double(n1*n2*n3),
-                    md=double(n1*n2*n3),
-                    andir=double(3*n1*n2*n3),
-                    ev=double(3*n1*n2*n3),
+                    fa=double(nvox),
+                    ga=double(nvox),
+                    md=double(nvox),
+                    andir=double(3*nvox),
+                    ev=double(3*nvox),
                     DUP=FALSE,
                     PACKAGE="dti")[c("fa","ga","md","andir","ev")]
     if("fa" %in% what) z$fa <- array(erg$fa,x@ddim)
@@ -657,11 +656,9 @@ setMethod("extract","dtiTensor",function(x, what="tensor", xind=TRUE, yind=TRUE,
     if(needev){
       ev <- array(.Fortran("dti3Dev",
                            as.double(x@D),
-                           as.integer(n1),
-                           as.integer(n2),
-                           as.integer(n3),
+                           as.integer(nvox),
                            as.logical(x@mask),
-                           ev=double(3*n1*n2*n3),
+                           ev=double(3*nvox),
                            DUP=FALSE,
                            PACKAGE="dti")$ev,c(3,n1,n2,n3))
       if("fa" %in% what) {
@@ -684,13 +681,11 @@ setMethod("extract","dtiTensor",function(x, what="tensor", xind=TRUE, yind=TRUE,
     if("andir" %in% what){
       z$andir <- array(.Fortran("dti3Dand",
                                 as.double(x@D),
-                                as.integer(n1),
-                                as.integer(n2),
-                                as.integer(n3),
+                                as.integer(nvox),
                                 as.logical(x@mask),
-                                andir=double(3*n1*n2*n3),
+                                andir=double(3*nvox),
                                 DUP=FALSE,
-                                PACKAGE="dti")$andir,c(3,n1,n2,n3))
+                                PACKAGE="dti")$andir,c(3,nvox))
     }
   }
   if("tensor" %in% what) z$tensor <- array(x@D,c(6,x@ddim))

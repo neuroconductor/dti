@@ -552,7 +552,7 @@ C   ind(.,i)[1:5] are j1-i1,j2-i2,j3-i3, i4 and j4 respectively
 C
       implicit logical (a-z)
       integer n1,n2,n3,ngrad,n,ind(5,n)
-      logical mask(n1,n2,n3),adsphere
+      logical mask(n1,n2,n3)
       real*8 y(n1,n2,n3,ngrad),th(n1,n2,n3,ngrad),ni(n1,n2,n3,ngrad),
      1       lambda,w(n),thn(n1,n2,n3,ngrad),sw(ngrad),swy(ngrad),
      2       sigma
@@ -586,7 +586,7 @@ C   by construction ind(4,.) should have same values consequtively
 C                  i4=ind(4,i)
                   j4=ind(5,i)
 
-C adaptation on the phere depending on adsphere
+C adaptation 
                   if(lambda.lt.1d10) THEN
                      z=nii*kldrice(thi,th(j1,j2,j3,j4),sigma)
 C  do not adapt on the sphere !!! 
@@ -618,7 +618,6 @@ C
                   if(j3.le.0.or.j3.gt.n3) CYCLE
                   if(.not.mask(j1,j2,j3)) CYCLE          
                   j4=ind(5,i)
-C adaptation on the phere depending on adsphere
                   if(lambda.lt.1d10) THEN
                      z=nii*kldrice(thi,th(j1,j2,j3,j4),sigma)
 C  do not adapt on the sphere !!! 

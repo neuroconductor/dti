@@ -1104,57 +1104,51 @@ C   nonactive directions
 C
 C __________________________________________________________________
 C
-      subroutine sweeps0(si,s0,n1,n2,n3,ng0,ng1,level,siq,ms0,vsi,
-     1                   mask)
+      subroutine sweeps0(si,s0,n,ng0,ng1,level,siq,ms0,vsi,mask)
 C
 C   calculate mean s0 value
 C   generate mask
 C   sweep s0 from si to generate  siq
 C   calculate variance of siq
 C
-      integer n1,n2,n3,ng0,ng1,si(n1,n2,n3,ng1),s0(n1,n2,n3,ng0),
-     1        level
-      real*8 siq(n1,n2,n3,ng1),ms0(n1,n2,n3),vsi(n1,n2,n3)
-      logical mask(n1,n2,n3),maskk
-      integer i1,i2,i3,k
+      integer n,ng0,ng1,si(n,ng1),s0(n,ng0),level
+      real*8 siq(n,ng1),ms0(n),vsi(n)
+      logical mask(n),maskk
+      integer i,k
       real*8 s,z,z2,thresh,cv,s0mean
       thresh = level*ng0
       cv=ng1*(ng1-1)
-      DO i1=1,n1
-         DO i2=1,n2
-            DO i3=1,n3
-               z=0.d0
-               DO k=1,ng0
-                  z=z+s0(i1,i2,i3,k)
-               END DO
-               s0mean = z/ng0
-               ms0(i1,i2,i3) = s0mean
-               maskk = z.ge.thresh
-               IF(maskk) THEN
-                  z=0.d0
-                  z2=0.d0
-                  DO k=1,ng1
-                     s=si(i1,i2,i3,k)/s0mean
-                     if(s.gt.0.99d0) s=0.99d0
-                     z=z+s
-                     z2=z2+s*s
-                     siq(i1,i2,i3,k)=s
-                  END DO
-                  vsi(i1,i2,i3)=(ng1*z2-z)/cv
-                  if(vsi(i1,i2,i3).lt.1d-8) THEN
-                     maskk = .FALSE.
-                     vsi(i1,i2,i3)=0.d0
-                  END IF
-               ELSE
-                  vsi(i1,i2,i3)=0.d0
-                  DO k=1,ng1
-                     siq(i1,i2,i3,k)=1.d0
-                  END DO
-               END IF
-               mask(i1,i2,i3) = maskk
-            END DO
+      DO i=1,n
+         z=0.d0
+         DO k=1,ng0
+            z=z+s0(i,k)
          END DO
-      call rchkusr()
+         s0mean = z/ng0
+         ms0(i) = s0mean
+         maskk = z.ge.thresh
+         IF(maskk) THEN
+            z=0.d0
+            z2=0.d0
+            DO k=1,ng1
+               s=si(i,k)/s0mean
+               if(s.gt.0.99d0) s=0.99d0
+               z=z+s
+               z2=z2+s*s
+               siq(i,k)=s
+            END DO
+            vsi(i)=(ng1*z2-z)/cv
+            if(vsi(i).lt.1d-8) THEN
+               maskk = .FALSE.
+               vsi(i)=0.d0
+            END IF
+         ELSE
+            vsi(i)=0.d0
+            DO k=1,ng1
+               siq(i,k)=1.d0
+            END DO
+         END IF
+         mask(i) = maskk
+         call rchkusr()
       END DO
       RETURN
       END

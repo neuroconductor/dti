@@ -1,3 +1,7 @@
+2011-12-01 version 1.0-1
+
+  - code polishing to avoid unnecessary loops in Fortran
+  
 2011-11-30 version 1.0-0
 
   - added method dwi.smooth: adaptive smoothing for DWI data 
