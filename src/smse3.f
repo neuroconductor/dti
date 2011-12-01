@@ -790,7 +790,7 @@ C very large ...
       subroutine skldrice(th1,th2,n,sigma,dist)
       implicit logical (a-z)
       integer n
-      real*8 th1(n),th2(n),dist(n)
+      real*8 th1(n),th2(n),dist(n),sigma
       integer i
       real*8 kldrice
       DO i=1,n
