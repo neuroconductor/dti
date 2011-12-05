@@ -1,3 +1,6 @@
+#
+#  this should better reside in package parallel
+#
 fwhm2bw <- function(hfwhm) hfwhm/sqrt(8*log(2))
 
 replind <- function(gradient){

@@ -23,6 +23,31 @@ C
       END DO
       RETURN
       END
+      subroutine nlrdtirp(s,nb,n,b,sdcoef,th0,niter,eps,res,npar,
+     1                    varinv)
+C
+C  this is based on a regularized tensor similar to Koay et.al. (2006)
+C  modified to use parallelization  with function pmatrix
+C  npar = 8+nb
+C  res(1,) used for th0
+C  res(2:7,) used for D
+C  res(8,) used for rss
+C  res(9:npar,) used for residuals
+      implicit logical (a-z)
+      integer nb,n,npar,s(nb,n),niter
+      real*8 b(6,nb),res(npar,n),th0(n),eps,sdcoef(4),varinv(nb)
+      integer i,j
+      DO i=1,n
+            res(1,i) = th0(i)
+            call islvdti(s(1,i),nb,b,sdcoef,varinv,res(1,i),res(2,i),
+     1                       res(9,i),niter,eps,res(8,i))
+      call rchkusr()         
+      END DO
+      RETURN
+      END
+C
+C
+C
       subroutine islvdtir(s,nb,b,varinv,th0,D,F,niter,eps,rss)
 C
 C  Implements the regularized Gauss-Newton Algortithm (10.2.8)

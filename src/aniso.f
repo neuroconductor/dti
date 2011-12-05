@@ -360,6 +360,53 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 C
+C    Compute DTI-Indices for a volume (version for parallelization code)
+C
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+      subroutine dtiind3p(D,n,ergs)
+      implicit logical (a-z)
+      integer n
+      real*8 D(6,n),ergs(9,n)
+      integer i,ierr
+      real*8 lambda(3),evec(3,3),trc,d1,d2,d3,a1,a2,a3,dd
+      DO i=1,n
+            call eigen3(D(1,i),lambda,evec,ierr)
+            a1=lambda(1)
+            a2=lambda(2)
+            a3=lambda(3)
+            trc=(a1+a2+a3)/3.d0
+            ergs(1,i)=evec(1,3)
+            ergs(2,i)=evec(2,3)
+            ergs(3,i)=evec(3,3)
+            ergs(6,i)=trc
+            d1=a1-trc
+            d2=a2-trc
+            d3=a3-trc
+            dd=a1*a1+a2*a2+a3*a3
+            IF(dd.gt.1.d-12) THEN
+               ergs(4,i)=sqrt(1.5d0*(d1*d1+d2*d2+d3*d3)/dd)
+               ergs(7,i)=(a3-a2)/trc/3.d0
+               ergs(8,i)=2.d0*(a2-a1)/trc/3.d0
+               ergs(9,i)=a1/trc
+            ELSE
+               ergs(4,i)=0.d0
+               ergs(7,i)=0.d0
+               ergs(8,i)=0.d0
+               ergs(9,i)=1.d0
+            ENDIF
+            d1=log(a1)
+            d2=log(a2)
+            d3=log(a3)
+            dd=(d1+d2+d3)/3.d0
+            d1=d1-dd
+            d2=d2-dd
+            d3=d3-dd
+            ergs(5,i)=sqrt(d1*d1+d2*d2+d3*d3)
+      END DO
+      RETURN
+      END
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+C
 C    Compute subset of DTI-Indices for a volume
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC

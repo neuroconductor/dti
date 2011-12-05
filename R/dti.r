@@ -8,10 +8,12 @@ dtiTensor <- function(object,  ...) cat("No DTI tensor calculation defined for t
 
 setGeneric("dtiTensor", function(object,  ...) standardGeneric("dtiTensor"))
 
-setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="replicates",varmodel="local") {
+setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="replicates",varmodel="local",mc.cores=getOption("mc.cores", 2L)) {
 #  available methods are 
 #  "linear" - use linearized model (log-transformed)
 #  "nonlinear" - use nonlinear model with parametrization according to Koay et.al. (2006)
+  if(is.null(mc.cores)) mc.cores <- 1
+  mc.cores <- min(mc.cores,detectCores())
   args <- sys.call(-1)
   args <- c(object@call,args)
   ngrad <- object@ngrad
@@ -21,6 +23,7 @@ setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="r
   s0ind <- object@s0ind
   ns0 <- length(s0ind)
   sdcoef <- object@sdcoef
+  require(parallel)
   if(all(sdcoef[1:4]==0)) {
     cat("No parameters for model of error standard deviation found\n estimating these parameters\n You may prefer to run sdpar before calling dtiTensor")
     sdcoef <- sdpar(object,interactive=FALSE)@sdcoef
@@ -96,13 +99,15 @@ setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="r
      si <- aperm(si,c(4,1:3))
      s0 <- si[s0ind,,,]
      if(ns0>1) {
-         dim(s0) <- c(ns0,prod(ddim))
+         dim(s0) <- c(ns0,nvox)
          s0 <- rep(1/ns0,ns0)%*%s0
          dim(s0) <- ddim
      }
      mask <- s0 > object@level
      mask <- connect.mask(mask)
+     df <- sum(table(object@replind)-1)
      cat("start nonlinear regression",format(Sys.time()),"\n")
+     if(mc.cores==1){
      z <- .Fortran("nlrdtirg",
                 as.integer(si),
                 as.integer(ngrad),
@@ -118,15 +123,35 @@ setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="r
                 rss=double(nvox),
                 double(ngrad),
                 PACKAGE="dti",DUP=FALSE)[c("th0","D","res","rss")]
-     dim(z$th0) <- ddim
-     dim(z$D) <- c(6,ddim)
-     dim(z$res) <- c(ngrad,ddim)
-     dim(z$rss) <- ddim
-     df <- sum(table(object@replind)-1)
      res <- z$res
      D <- z$D
      rss <- z$rss
      th0 <- z$th0
+     } else {
+        dim(si) <- c(dim(si)[1],nvox)
+        z <- matrix(0,8+ngrad,nvox)
+        z[,mask] <- pmatrix(si[,mask],pnlrdtirg,btb=object@btb,sdcoef=sdcoef,s0ind=s0ind,
+                     mc.cores=mc.cores,mc.silent = TRUE)
+        th0 <- z[1,]
+        D <- z[2:7,]
+        rss <- z[8,]
+        res <- z[8+(1:ngrad),]
+#        z <- pmatrix(si[,mask],pnlrdtirg,btb=object@btb,sdcoef=sdcoef,s0ind=s0ind,
+#                     mc.cores=mc.cores,mc.silent = TRUE)
+#        dim(z) <- c(8+ngrad,sum(mask))
+#        th0 <- numeric(nvox)
+#        th0[mask] <- z[1,]
+#        D <- matrix(0,6,nvox)
+#        D[,mask] <- z[2:7,]
+#        rss <- numeric(nvox)
+#        rss[mask] <- z[8,]
+#        res <- matrix(0,ngrad,nvox)
+#        res[,mask] <- z[8+(1:ngrad),]
+     }
+     dim(th0) <- ddim
+     dim(D) <- c(6,ddim)
+     dim(res) <- c(ngrad,ddim)
+     dim(rss) <- ddim
 #  handle points where estimation failed
      n <- prod(ddim)
      dim(mask) <- c(1, ddim)
@@ -181,13 +206,19 @@ setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="r
   upper=c(3,3,3),lag=lags,data=scorr)$par
   bw[bw <= .25] <- 0
   cat("estimated corresponding bandwidths",format(Sys.time()),"\n")
-  ev <- array(.Fortran("dti3Dev",
+  ev <- if(mc.cores==1) .Fortran("dti3Dev",
                        as.double(D),
                        as.integer(nvox),
                        as.logical(mask),
                        ev=double(3*nvox),
                        DUP=FALSE,
-                       PACKAGE="dti")$ev,c(3,ddim))
+                       PACKAGE="dti")$ev
+         else {
+            ev <- matrix(0,3,prod(ddim))
+            dim(D) <- c(6,prod(ddim))
+            ev[,mask] <- pmatrix(D[,mask],pdti3Dev,mc.cores=mc.cores,mc.silent = TRUE)
+         }
+  dim(ev) <- c(3,ddim)   
   scale <- quantile(ev[3,,,][mask],.95)
   cat("estimated scale information",format(Sys.time()),"\n")  
   invisible(new("dtiTensor",
@@ -264,12 +295,12 @@ dtiIndices <- function(object, ...) cat("No DTI indices calculation defined for 
 setGeneric("dtiIndices", function(object, ...) standardGeneric("dtiIndices"))
 
 setMethod("dtiIndices","dtiTensor",
-function(object, which) {
+function(object, which, mc.cores=getOption("mc.cores", 2L)) {
   args <- sys.call(-1)
   args <- c(object@call,args)
   ddim <- object@ddim
   n <- prod(ddim)
-  z <- .Fortran("dtiind3D",
+  z <- if(mc.cores==1) .Fortran("dtiind3D",
                 as.double(object@D),
                 as.integer(n),
                 as.logical(object@mask),
@@ -279,7 +310,16 @@ function(object, which) {
                 andir=double(3*n),
                 bary=double(3*n),
                 DUP=FALSE,
-                PACKAGE="dti")[c("fa","ga","md","andir","bary")]
+                PACKAGE="dti")[c("fa","ga","md","andir","bary")] else {
+                D <- matrix(object@D,6,prod(ddim))[,object@mask]
+                res <- matrix(0,9,prod(ddim))
+                res[,mask] <- pmatrix(D,pdtiind3D,mc.cores=mc.cores,mc.silent = TRUE)
+                list(andir=res[1:3,],
+                     fa=res[4,],
+                     ga=res[5,],
+                     md=res[6,],
+                     bary=res[7:9,])
+                }
 
   invisible(new("dtiIndices",
                 call = args,
