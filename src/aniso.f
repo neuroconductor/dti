@@ -513,6 +513,69 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 C
+C    Compute DTI-Indices for a volume (parallelized version)
+C
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+      subroutine dti3Dalp(D,n,ergs)
+C
+C  components of ergs: 1:fa 2:ga 3:md, 4:6 adir, 7:9 ev
+C
+      implicit logical (a-z)
+      integer n
+      real*8 D(6,n),ergs(9,n)
+      integer i,ierr
+      real*8 evec(3,3),trc,d1,d2,d3,a1,a2,a3,dd
+      DO i=1,n
+         call eigen3(D(1,i),ergs(7,i),evec,ierr)
+         a1=ergs(7,i)
+         a2=ergs(8,i)
+         a3=ergs(9,i)
+         trc=(a1+a2+a3)/3.d0
+         ergs(4,i)=evec(1,3)
+         ergs(5,i)=evec(2,3)
+         ergs(6,i)=evec(3,3)
+         ergs(3,i)=trc
+         d1=a1-trc
+         d2=a2-trc
+         d3=a3-trc
+         dd=a1*a1+a2*a2+a3*a3
+         IF(dd.gt.1.d-12) THEN
+            ergs(1,i)=sqrt(1.5d0*(d1*d1+d2*d2+d3*d3)/dd)
+         ELSE
+            ergs(1,i)=0.d0
+            ergs(4,i)=0.d0
+            ergs(5,i)=0.d0
+            ergs(6,i)=0.d0
+         ENDIF
+         d1=log(a1)
+         d2=log(a2)
+         d3=log(a3)
+         dd=(d1+d2+d3)/3.d0
+         d1=d1-dd
+         d2=d2-dd
+         d3=d3-dd
+         ergs(2,i)=sqrt(d1*d1+d2*d2+d3*d3)
+      END DO
+      RETURN
+      END
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+C
+C    Compute DTI-eigenvalues for a volume (parallel version)
+C
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+      subroutine dti3Devp(D,n,ev)
+      implicit logical (a-z)
+      integer n
+      logical mask(n)
+      real*8 D(6,n),ev(3,n)
+      integer i,ierr
+      DO i=1,n
+         call eigen30(D(1,i),ev(1,i),ierr)
+      END DO
+      RETURN
+      END
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+C
 C    Compute DTI-eigenvalues for a volume
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
@@ -530,6 +593,25 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
             ev(2,i)=0.d0
             ev(3,i)=0.d0
          END IF
+      END DO
+      RETURN
+      END
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+C
+C    Compute DTI-eigenvectors for a volume (parallel version)
+C
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+      subroutine dti3Danp(D,n,andir)
+      implicit logical (a-z)
+      integer n
+      real*8 D(6,n),andir(3,n)
+      integer i,ierr
+      real*8 lambda(3),evec(3,3)
+      DO i=1,n
+         call eigen3(D(1,i),lambda,evec,ierr)
+         andir(1,i)=evec(1,3)
+         andir(2,i)=evec(2,3)
+         andir(3,i)=evec(3,3)
       END DO
       RETURN
       END

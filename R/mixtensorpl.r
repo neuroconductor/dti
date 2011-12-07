@@ -475,7 +475,8 @@ paroforient <- function(dir){
   c(theta, phi)
 }
 
-getsiind3 <- function(si,mask,sigma2,grad,vico,th,indth,ev,fa,andir,maxcomp=3,maxc=.866,nguess=100){
+getsiind3 <- function(si,mask,sigma2,grad,vico,th,indth,ev,fa,andir,maxcomp=3,
+maxc=.866,nguess=100,mc.cores = getOption("mc.cores", 2L)){
 # assumes dim(grad) == c(ngrad,3)
 # assumes dim(si) == c(n1,n2,n3,ngrad)
 # SO removed
@@ -527,6 +528,7 @@ krit <- numeric(nvoxel)
 # first voxel with fa<.3
 cat(sum(mask&!landir),"voxel with small FA\n")
 nguess <- length(isample0)/maxcomp
+if(mc.cores<=1){
 z <- .Fortran("getsii30",
          as.double(aperm(si,c(4,1:3))),
          as.double(sigma2),
@@ -538,7 +540,7 @@ z <- .Fortran("getsii30",
          as.double(th),
          as.integer(nth),
          as.integer(indth),
-         double(ngrad*nvico),
+         double(nsi*nvico),
          as.integer(isample0),
          as.integer(nguess),
          double(nsi),
@@ -547,14 +549,27 @@ z <- .Fortran("getsii30",
          krit=double(nvoxel),
          as.integer(maxcomp+2),
          as.logical(mask&!landir),
+         DUP=FALSE,
          PACKAGE="dti")[c("siind","krit")]
 dim(z$siind) <- c(maxcomp+2,nvoxel)
 siind[,!landir] <- z$siind[,!landir]
 krit[!landir] <- z$krit[!landir]
+} else {
+   x <- matrix(0,nsi+2,sum(mask&!landir))
+   x[1:nsi,] <- t(matrix(si,nvoxel,nsi))[,mask&!landir]
+   x[nsi+1,] <- sigma2[mask&!landir]
+   x[nsi+2,] <- indth[mask&!landir]
+   z <- pmatrix(x,pgetsii30,maxcomp=maxcomp,dgrad=dgrad,th=th,isample0=isample0,
+                mc.cores=mc.cores,mc.silent = TRUE)
+   dim(z) <- c(maxcomp+3,sum(mask&!landir))
+   siind[,mask&!landir] <- z[-1,]
+   krit[mask&!landir] <- z[1,]
+}
 # now voxel where first tensor direction seems important
 if(maxcomp >0){
 cat(sum(mask&landir),"voxel with distinct first eigenvalue \n")
 nguess <- if(maxcomp>1) length(isample1)/(maxcomp-1) else length(isample1)
+if(mc.cores<=1){
 z <- .Fortran("getsii31",
          as.double(aperm(si,c(4,1:3))),
          as.double(sigma2),
@@ -567,7 +582,7 @@ z <- .Fortran("getsii31",
          as.double(th),
          as.integer(nth),
          as.integer(indth),
-         double(ngrad*nvico),
+         double(nsi*nvico),
          as.integer(isample1),
          as.integer(nguess),
          double(nsi),
@@ -578,10 +593,25 @@ z <- .Fortran("getsii31",
          as.logical(mask&landir),
          as.double(dgradi),
          as.double(maxc),
+         DUP=FALSE,
          PACKAGE="dti")[c("siind","krit")]
 dim(z$siind) <- c(maxcomp+2,nvoxel)
 siind[,landir] <- z$siind[,landir]
 krit[landir] <- z$krit[landir]
+} else {
+   x <- matrix(0,nsi+3,sum(mask&landir))
+   x[1:nsi,] <- t(matrix(si,nvoxel,nsi))[,mask&landir]
+   x[nsi+1,] <- sigma2[mask&landir]
+   x[nsi+2,] <- indth[mask&landir]
+   x[nsi+3,] <- iandir[1,mask&landir]
+   z <- pmatrix(x,pgetsii31,maxcomp=maxcomp,dgrad=dgrad,th=th,isample1=isample1,
+                dgradi=dgradi,maxc=maxc,mc.cores=mc.cores,mc.silent = TRUE)
+#   z <- pgetsii31(x,maxcomp=maxcomp,dgrad=dgrad,th=th,isample1=isample1,
+#               dgradi=dgradi,maxc=maxc)
+   dim(z) <- c(maxcomp+3,sum(mask&landir))
+   siind[,mask&landir] <- z[-1,]
+   krit[mask&landir] <- z[1,]
+}
 }
 failed <- (krit^2/ngrad) > (sigma2-1e-10)
 if(any(failed[mask])){
@@ -715,7 +745,8 @@ dwiMixtensor <- function(object, ...) cat("No dwiMixtensor calculation defined f
 
 setGeneric("dwiMixtensor", function(object,  ...) standardGeneric("dwiMixtensor"))
 
-setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3, method="mixtensor", reltol=1e-6, maxit=5000,ngc=1000, optmethod="BFGS", nguess=100*maxcomp^2,msc="BIC",pen=NULL,code="C",thinit=NULL){
+setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3, method="mixtensor", reltol=1e-6, maxit=5000,ngc=1000, optmethod="BFGS", nguess=100*maxcomp^2,msc="BIC",pen=NULL,code="C",thinit=NULL, 
+    mc.cores = getOption("mc.cores", 2L)){
 #
 #  uses  S(g)/s_0 = w_0 exp(-l_1) +\sum_{i} w_i exp(-l_2-(l_1-l_2)(g^T d_i)^2)
 #
@@ -756,7 +787,7 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3, method="mixtensor
 #
   prta <- Sys.time()
   cat("Start tensor estimation at",format(prta),"\n")
-  tensorobj <- dtiTensor(object)
+  tensorobj <- dtiTensor(object, mc.cores = mc.cores)
   cat("Start evaluation of eigenstructure at",format(Sys.time()),"\n")
   z <- .Fortran("dtieigen",
                 as.double(tensorobj@D),
@@ -796,12 +827,12 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3, method="mixtensor
      indth[th>=qth[nth]] <- nth
      th <- qth
   } else {
-    indth <- rep(1,prod(ddim))
+    indth <- rep(1,nvox)
     th <- qth
   }
   } else {
     nth <- 1
-    indth <- rep(1,prod(ddim))
+    indth <- rep(1,nvox)
     th <- thinit
   }
 cat("using th:::",th,"\n")
@@ -879,18 +910,15 @@ cat("using th:::",th,"\n")
 #
 #  compute initial estimates (EV from grid and orientations from icosa3$vertices)
 #
-  siind <- if(method=="mixtensor")  getsiind3(siq,mask,sigma2,grad,t(vert),th,indth,ev,fa,andir,maxcomp,maxc=maxc,nguess=nguess) else getsiind3iso(siq,mask,sigma2,grad,t(vert),th,indth,ev,fa,andir,maxcomp,maxc=maxc,nguess=nguess)
+  siind <- if(method=="mixtensor")  getsiind3(siq,mask,sigma2,grad,t(vert),th,indth,ev,fa,andir,maxcomp,maxc=maxc,nguess=nguess,mc.cores=mc.cores) else getsiind3iso(siq,mask,sigma2,grad,t(vert),th,indth,ev,fa,andir,maxcomp,maxc=maxc,nguess=nguess)
   krit <- siind$krit # sqrt(sum of squared residuals) for initial estimates
   siind <- siind$siind # components 1: model order 2: 
                        # grid index for EV 2+(1:m) index of orientations
   cat("Model orders for initial estimates")
   print(table(siind[1,,,]))
   cat("End search for initial values at",format(Sys.time()),"\n")
-  order <- array(0,ddim)
 #  logarithmic eigen values
-  mix <- array(0,c(maxcomp,ddim))
   orient <- array(0,c(2,maxcomp,ddim))
-  lev <- array(0,c(2,ddim))
   n1 <- ddim[1]
   n2 <- ddim[2]
   n3 <- ddim[3]
@@ -908,7 +936,7 @@ cat("using th:::",th,"\n")
   optmeth <- switch(optmethod, "BFGS" = 1,
                     "CG" = 2, "Nelder-Mead" = 3, "L-BFGS-B" = 4)
 
-
+if(mc.cores<=1){
   cat("Starting parameter estimation and model selection (C-code)",format(Sys.time()),"\n")
   z <- .C("mixture2", 
           as.integer(meth),
@@ -918,7 +946,6 @@ cat("using th:::",th,"\n")
           as.integer(n3),
           as.integer(mask), 
           as.integer(siind), 
-          as.integer(ngrad), 
           as.integer(ngrad0),
           as.integer(maxcomp),
           as.integer(maxit),
@@ -929,13 +956,13 @@ cat("using th:::",th,"\n")
           as.double(penIC),
           as.double(sigma2),
           as.double(vert),
-          as.double(orient),
+#          as.double(orient),
           as.double(siq),
-          sigma2  = double(prod(ddim)),# error variance 
-          orient  = double(2*maxcomp*prod(ddim)), # phi/theta for all mixture tensors
-          order   = integer(prod(ddim)),   # selected order of mixture
-          lev     = double(2*prod(ddim)),         # logarithmic eigenvalues
-          mix     = double(maxcomp*prod(ddim)),   # mixture weights
+          sigma2  = double(nvox),# error variance 
+          orient  = double(2*maxcomp*nvox), # phi/theta for all mixture tensors
+          order   = integer(nvox),   # selected order of mixture
+          lev     = double(2*nvox),         # logarithmic eigenvalues
+          mix     = double(maxcomp*nvox),   # mixture weights
           DUPL=FALSE, PACKAGE="dti")[c("sigma2","orient","order","lev","mix")]
   cat("End parameter estimation and model selection (C-code)",format(Sys.time()),"\n")
 sigma2 <-  array(z$sigma2,ddim[1:3])
@@ -943,8 +970,33 @@ orient <- array(z$orient, c(2, maxcomp, ddim[1:3]))
 order <- array(z$order, ddim[1:3])
 lev <- array(z$lev, c(2,ddim[1:3]))
 mix <- array(z$mix, c(maxcomp, ddim[1:3]))
+} else {
+  cat("Starting parameter estimation and model selection (C-code) on",mc.cores," cores",format(Sys.time()),"\n")
+x <- matrix(0,ngrad0+3+maxcomp,sum(mask))
+dim(siq) <- c(nvox,ngrad0)
+x[1:ngrad0,] <- t(siq[mask,])
+x[ngrad0+1,] <- sigma2[mask]
+dim(siind) <- c(2+maxcomp,nvox)
+x[ngrad0+2:(3+maxcomp),] <- siind[,mask] 
+res <- matrix(0,4+3*maxcomp,nvox)
+res[,mask] <- pmatrix(x,pmixtens,
+                      meth=meth,optmeth=optmeth,
+                      ngrad0=ngrad0,maxcomp=maxcomp,maxit=maxit,
+                      pen=pen,grad=grad,reltol=reltol,th=th,
+                      penIC=penIC,vert=vert,
+                      mc.cores=mc.cores,mc.silent = TRUE)
+  cat("End parameter estimation and model selection (C-code)",format(Sys.time()),"\n")
+sigma2 <-  array(res[2,],ddim)
+orient <- array(res[maxcomp+4+1:(2*maxcomp)], c(2, maxcomp, ddim))
+order <- array(as.integer(res[1,]), ddim)
+lev <- array(res[3:4,], c(2,ddim))
+mix <- array(res[4+(1:maxcomp),], c(maxcomp, ddim))
+}
 method <- "mixtensor"
   } else {
+  order <- array(0,ddim)
+  mix <- array(0,c(maxcomp,ddim))
+  lev <- array(0,c(2,ddim))
   cat("Starting parameter estimation and model selection (R-code)",format(Sys.time()),"\n")
 #
 #     R/Fortran-Code 

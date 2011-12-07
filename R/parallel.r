@@ -1,4 +1,4 @@
-set.mc.cores <- function(mc.cores=2){
+set.mc.cores <- function(mc.cores=2L){
    mc.cores <- min(mc.cores,detectCores())
    num_threads <- as.integer(Sys.getenv("OMP_NUM_THREADS", unset=0))
    if(num_threads <= 0) Sys.setenv("OMP_NUM_THREADS"=mc.cores)
@@ -109,13 +109,11 @@ pmatrix <- function (v, FUN, ..., mc.set.seed = TRUE, mc.silent = FALSE,
     res
 }
 
-
 pdti3Dev <- function(D){
 nvox <- dim(D)[2]
-.Fortran("dti3Dev",
+.Fortran("dti3Devp",
          as.double(D),
          as.integer(nvox),
-         as.logical(rep(TRUE,nvox)),
          ev=double(3*nvox),
          DUP=FALSE,
          PACKAGE="dti")$ev
@@ -131,6 +129,25 @@ nvox <- dim(D)[2]
          PACKAGE="dti")$res
 }
 
+pdti3Dand <- function(D){
+nvox <- dim(D)[2]
+.Fortran("dti3Danp",
+         as.double(D),
+         as.integer(nvox),
+         andir=double(9*nvox),
+         DUP=FALSE,
+         PACKAGE="dti")$andir
+}
+
+pdti3Dall <- function(D){
+nvox <- dim(D)[2]
+.Fortran("dti3Dalp",
+         as.double(D),
+         as.integer(nvox),
+         andir=double(9*nvox),
+         DUP=FALSE,
+         PACKAGE="dti")
+}
 
 pnlrdtirg <- function(si,btb,sdcoef,s0ind){
    ns0 <- length(s0ind)
@@ -153,3 +170,99 @@ pnlrdtirg <- function(si,btb,sdcoef,s0ind){
                  PACKAGE="dti")$res
 }
 
+pmixtens <- function(x,meth,optmeth,ngrad0,maxcomp,maxit,pen,grad,reltol,th,penIC,vert){
+nvox <- dim(x)[2]
+z <- .C("mixture2", 
+          as.integer(meth),
+          as.integer(optmeth), 
+          as.integer(1), # n1
+          as.integer(1), # n2
+          as.integer(nvox),
+          as.integer(rep(1L,nvox)), 
+          as.integer(x[(ngrad0+2):(ngrad0+3+maxcomp),]),  
+          as.integer(ngrad0),
+          as.integer(maxcomp),
+          as.integer(maxit),
+          as.double(pen),
+          as.double(t(grad)),
+          as.double(reltol),
+          as.double(th),
+          as.double(penIC),
+          as.double(x[ngrad0+1,]),
+          as.double(vert),
+#          as.double(orient),
+          as.double(t(x[1:ngrad0,])),
+          sigma2  = double(nvox),# error variance 
+          orient  = double(2*maxcomp*nvox), # phi/theta for all mixture tensors
+          order   = integer(nvox),   # selected order of mixture
+          lev     = double(2*nvox),         # logarithmic eigenvalues
+          mix     = double(maxcomp*nvox),   # mixture weights
+          DUPL=FALSE, PACKAGE="dti")[c("sigma2","orient","order","lev","mix")]
+          rbind(z$order,z$sigma2,matrix(z$lev,2,nvox),matrix(z$mix,maxcomp,nvox),matrix(z$orient,2*maxcomp,nvox))
+}
+
+pgetsii30 <- function(x,maxcomp,dgrad,th,isample0){
+         dx <- dim(x)
+         nsi <- dx[1]-2
+         nvox <- dx[2]
+         nth <- length(th)
+         nvico <- dim(dgrad)[2]
+         nguess <- if(maxcomp<=1) length(isample0) else dim(isample0)[2]
+z <- .Fortran("pgtsii30",
+#         as.double(aperm(si,c(4,1:3))),
+         as.double(x[1:nsi,]),
+         as.double(x[nsi+1,]),#sigma2
+         as.integer(nsi),
+         as.integer(nvox),
+         as.integer(maxcomp),
+         as.double(dgrad),
+         as.integer(nvico),
+         as.double(th),
+         as.integer(nth),
+         as.integer(x[nsi+2,]),#indth
+         double(nsi*nvico),
+         as.integer(isample0),
+         as.integer(nguess),
+         double(nsi),
+         double(nsi*(maxcomp+2)),
+         siind=integer((maxcomp+2)*nvox),
+         krit=double(nvox),
+         as.integer(maxcomp+2),
+         DUP=FALSE,
+         PACKAGE="dti")[c("siind","krit")]
+         rbind(z$krit,matrix(z$siind,maxcomp+2,nvox))
+}
+pgetsii31 <- function(x,maxcomp,dgrad,th,isample1,dgradi,maxc){
+         dx <- dim(x)
+         nsi <- dx[1]-3
+         nvox <- dx[2]
+         nth <- length(th)
+         nvico <- dim(dgrad)[2]
+         nguess <- if(maxcomp<=2) length(isample1) else dim(isample1)[2]
+z <- .Fortran("pgtsii31",
+#         as.double(aperm(si,c(4,1:3))),
+         as.double(x[1:nsi,]),
+         as.double(x[nsi+1,]),#sigma2
+         as.integer(nsi),
+         as.integer(nvox),
+         as.integer(maxcomp),
+         as.double(dgrad),
+         as.integer(nvico),
+         as.integer(x[nsi+3,]),#iandir
+         as.double(th),
+         as.integer(nth),
+         as.integer(x[nsi+2,]),#indth
+         double(nsi*nvico),
+         as.integer(isample1),
+         as.integer(nguess),
+         double(nsi),
+         double(nsi*(maxcomp+2)),
+         siind=integer((maxcomp+2)*nvox),
+         krit=double(nvox),
+         as.integer(maxcomp+2),
+         as.double(dgradi),
+         as.double(maxc),
+         DUP=FALSE,
+         PACKAGE="dti")[c("siind","krit")]
+         rbind(z$krit,matrix(z$siind,maxcomp+2,nvox))
+}

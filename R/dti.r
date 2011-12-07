@@ -206,19 +206,20 @@ setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="r
   upper=c(3,3,3),lag=lags,data=scorr)$par
   bw[bw <= .25] <- 0
   cat("estimated corresponding bandwidths",format(Sys.time()),"\n")
-  ev <- if(mc.cores==1) .Fortran("dti3Dev",
+  if(mc.cores<=1) ev <- .Fortran("dti3Dev",
                        as.double(D),
                        as.integer(nvox),
                        as.logical(mask),
                        ev=double(3*nvox),
                        DUP=FALSE,
                        PACKAGE="dti")$ev
-         else {
-            ev <- matrix(0,3,prod(ddim))
-            dim(D) <- c(6,prod(ddim))
-            ev[,mask] <- pmatrix(D[,mask],pdti3Dev,mc.cores=mc.cores,mc.silent = TRUE)
-         }
+   else {
+      ev <- matrix(0,3,prod(ddim))
+      dim(D) <- c(6,prod(ddim))
+      ev[,mask] <- pmatrix(D[,mask],pdti3Dev,mc.cores=mc.cores,mc.silent = TRUE)
+   }
   dim(ev) <- c(3,ddim)   
+  dim(D) <- c(6,ddim)   
   scale <- quantile(ev[3,,,][mask],.95)
   cat("estimated scale information",format(Sys.time()),"\n")  
   invisible(new("dtiTensor",

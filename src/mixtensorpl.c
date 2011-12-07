@@ -800,11 +800,12 @@ mfunplwghts0_ret mfunwghtsi(int param_length, double* param, double siq){
 }
 
 void mixture2( int* method, int* optmethod, int* n1, int* n2, int* n3, 
-	       int* mask, int* siind, int* ngrad, int* ngrad0, int* maxcomp,
+	       int* mask, int* siind, int* ngrad0, int* maxcomp,
 	       int* maxit, 
 	       double* pen, double* grad_in, double* reltol,
 	       double* th, double* penIC, double* sigma2, double* vert, 
-	       double* orient, double* siq_in,
+	     //  double* orient, 
+	       double* siq_in,
 	       double* sigma2_ret, double* orient_ret, 
 	       int* order_ret, double* lev_ret, double* mix_ret){
 	
