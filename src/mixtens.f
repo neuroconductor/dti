@@ -699,7 +699,7 @@ C   nonactive directions
                if(ibest.gt.0) THEN
                   siind(1,i)=iw
                   siind(2,i)=j
-                  IF (iw.gt.1) THEN
+                  IF (iw.ge.1) THEN
                      DO l=1,iw
                         siind(l+2,i)=isample(wind(l),ibest)
                      END DO
@@ -808,7 +808,7 @@ C   nonactive directions
             if(ibest.gt.0) THEN
                siind(1,i)=iw
                siind(2,i)=j
-               IF (iw.gt.1) THEN
+               IF (iw.ge.1) THEN
                   DO l=1,iw
                      siind(l+2,i)=isample(wind(l),ibest)
                   END DO
@@ -938,7 +938,7 @@ C   nonactive directions
                END DO
                siind(1,i)=iw
                siind(2,i)=j
-               IF (iw.gt.1) THEN
+               IF (iw.ge.1) THEN
                   DO l=1,iw
                      siind(l+2,i)=isbest(wind(l))
                   END DO
@@ -1062,7 +1062,7 @@ C   nonactive directions
             END DO
             siind(1,i)=iw
             siind(2,i)=j
-            IF (iw.gt.1) THEN
+            IF (iw.ge.1) THEN
                DO l=1,iw
                   siind(l+2,i)=isbest(wind(l))
                END DO
@@ -1179,7 +1179,7 @@ C   nonactive directions
                if(ibest.gt.0) THEN
                   siind(1,i)=iw
                   siind(2,i)=j
-                  IF (iw.gt.1) THEN
+                  IF (iw.ge.1) THEN
                      DO l=1,iw
                         siind(l+2,i)=isample(wind(l),ibest)
                      END DO
@@ -1315,7 +1315,7 @@ C   nonactive directions
                END DO
                siind(1,i)=iw
                siind(2,i)=j
-               IF (iw.gt.1) THEN
+               IF (iw.ge.1) THEN
                   DO l=1,iw
                      siind(l+2,i)=isbest(wind(l))
                   END DO

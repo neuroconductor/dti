@@ -5,6 +5,9 @@
 #include <R_ext/Utils.h>
 #include <stdlib.h>
 
+#include <sys/time.h>
+#include <omp.h>
+#include <time.h>
 
 int dim_x = 0, dim_y = 0, dim_z = 0, ngrad0c = 0;
 int i1 = 0, i2 = 0, i3 = 0;
@@ -332,8 +335,8 @@ mfunplwghts0_ret mfunplwghts0(int param_length, double* param, double* siq){
 		    &pen, tmp, w, &tmp2);
 			
   tmp2 = 0;
-  Free(tmp);
-  tmp = Calloc(ngrad0c*m, double);
+//  Free(tmp);
+//  tmp = Calloc(ngrad0c*m, double);
 
   for(i = 0; i < m; i++){
     if(w[i] > 0){
@@ -565,7 +568,16 @@ mfunplwghts0_ret mfunplwghts0h(int param_length, double* param, double* siq){
   ret_val.value = result;
   ret_val.orient = or;  
   ret_val.mix = mix;
-  
+// begin einfuegung 
+Free(param_work);
+Free(z);
+Free(w);
+Free(w_red);
+Free(w_red2);
+Free(b);
+Free(work1);
+Free(o);
+// end einfuegung 
   return ret_val; 
 }
 
@@ -768,6 +780,9 @@ mfunplwghts0_ret mfunwghtsi(int param_length, double* param, double siq){
 		param[2*i+2] = or[2*i+1];
 	}
 	
+// begin einfuegung 
+//        Free(w2)
+// end einfuegung 
 	w2 = (double*) R_alloc(c_ord+1, sizeof(double));
 
 	for(i = 0; i < c_ord; i++) w2[i+1] = w[i];

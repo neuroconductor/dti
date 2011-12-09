@@ -746,7 +746,7 @@ dwiMixtensor <- function(object, ...) cat("No dwiMixtensor calculation defined f
 setGeneric("dwiMixtensor", function(object,  ...) standardGeneric("dwiMixtensor"))
 
 setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3, method="mixtensor", reltol=1e-6, maxit=5000,ngc=1000, optmethod="BFGS", nguess=100*maxcomp^2,msc="BIC",pen=NULL,code="C",thinit=NULL, 
-    mc.cores = getOption("mc.cores", 2L)){
+    mc.cores = getOption("mc.cores", 2L),version=1){
 #
 #  uses  S(g)/s_0 = w_0 exp(-l_1) +\sum_{i} w_i exp(-l_2-(l_1-l_2)(g^T d_i)^2)
 #
@@ -938,6 +938,7 @@ cat("using th:::",th,"\n")
 
 if(mc.cores<=1){
   cat("Starting parameter estimation and model selection (C-code)",format(Sys.time()),"\n")
+if(version==0){
   z <- .C("mixture2", 
           as.integer(meth),
           as.integer(optmeth), 
@@ -946,6 +947,7 @@ if(mc.cores<=1){
           as.integer(n3),
           as.integer(mask), 
           as.integer(siind), 
+#          as.integer(ngrad), 
           as.integer(ngrad0),
           as.integer(maxcomp),
           as.integer(maxit),
@@ -958,11 +960,11 @@ if(mc.cores<=1){
           as.double(vert),
 #          as.double(orient),
           as.double(siq),
-          sigma2  = double(nvox),# error variance 
-          orient  = double(2*maxcomp*nvox), # phi/theta for all mixture tensors
-          order   = integer(nvox),   # selected order of mixture
-          lev     = double(2*nvox),         # logarithmic eigenvalues
-          mix     = double(maxcomp*nvox),   # mixture weights
+          sigma2  = double(prod(ddim)),# error variance 
+          orient  = double(2*maxcomp*prod(ddim)), # phi/theta for all mixture tensors
+          order   = integer(prod(ddim)),   # selected order of mixture
+          lev     = double(2*prod(ddim)),         # logarithmic eigenvalues
+          mix     = double(maxcomp*prod(ddim)),   # mixture weights
           DUPL=FALSE, PACKAGE="dti")[c("sigma2","orient","order","lev","mix")]
   cat("End parameter estimation and model selection (C-code)",format(Sys.time()),"\n")
 sigma2 <-  array(z$sigma2,ddim[1:3])
@@ -970,6 +972,53 @@ orient <- array(z$orient, c(2, maxcomp, ddim[1:3]))
 order <- array(z$order, ddim[1:3])
 lev <- array(z$lev, c(2,ddim[1:3]))
 mix <- array(z$mix, c(maxcomp, ddim[1:3]))
+} else {
+dim(siq) <- c(nvox,ngrad0)
+dim(siind) <- c(2+maxcomp,nvox)
+nvoxm <- sum(mask)
+#save(siinda <- siind[,mask], sigma2a <- sigma2[mask], ga <- t(grad), siqa <- 
+  z <- .C("mixture2", 
+          as.integer(meth),
+          as.integer(optmeth), 
+          as.integer(1), 
+          as.integer(1), 
+          as.integer(nvoxm),
+          as.integer(rep(1L,nvoxm)), 
+          as.integer(siind[,mask]), 
+#          as.integer(ngrad), 
+          as.integer(ngrad0),
+          as.integer(maxcomp),
+          as.integer(maxit),
+          as.double(pen),
+          as.double(t(grad)),
+          as.double(reltol),
+          as.double(th),
+          as.double(penIC),
+          as.double(sigma2[mask]),
+          as.double(vert),
+#          as.double(orient),
+          as.double(siq[mask,]),
+          sigma2  = double(nvoxm),# error variance 
+          orient  = double(2*maxcomp*nvoxm), # phi/theta for all mixture tensors
+          order   = integer(nvoxm),   # selected order of mixture
+          lev     = double(2*nvoxm),         # logarithmic eigenvalues
+          mix     = double(maxcomp*nvoxm),   # mixture weights
+          DUPL=FALSE, PACKAGE="dti")[c("sigma2","orient","order","lev","mix")]
+  cat("End parameter estimation and model selection (C-code)",format(Sys.time()),"\n")
+sigma2 <-  array(0,ddim)
+sigma2[mask] <- z$sigma2
+orient <- matrix(0,2*maxcomp,nvox)
+orient[,mask] <- z$orient
+dim(orient) <- c(2, maxcomp, ddim)
+order <- array(0, ddim)
+order[mask] <- z$order
+lev <- matrix(0,2,nvox)
+lev[,mask] <- z$lev
+dim(lev) <- c(2,ddim)
+mix <- matrix(0,maxcomp,nvox)
+mix[,mask] <- z$mix
+dim(mix) <- c(maxcomp, ddim)
+}
 } else {
   cat("Starting parameter estimation and model selection (C-code) on",mc.cores," cores",format(Sys.time()),"\n")
 x <- matrix(0,ngrad0+3+maxcomp,sum(mask))
@@ -984,8 +1033,10 @@ res[,mask] <- pmatrix(x,pmixtens,
                       ngrad0=ngrad0,maxcomp=maxcomp,maxit=maxit,
                       pen=pen,grad=grad,reltol=reltol,th=th,
                       penIC=penIC,vert=vert,
-                      mc.cores=mc.cores,mc.silent = TRUE)
+                      mc.cores=mc.cores,mc.silent = FALSE)
   cat("End parameter estimation and model selection (C-code)",format(Sys.time()),"\n")
+rm(x)
+gc()
 sigma2 <-  array(res[2,],ddim)
 orient <- array(res[maxcomp+4+1:(2*maxcomp)], c(2, maxcomp, ddim))
 order <- array(as.integer(res[1,]), ddim)
