@@ -18,6 +18,15 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=10,kappa0=0.4,si
      cat("using true variance",sigma^2,"\n")
   } else {
   if(length(sdcoef)==4||all(sdcoef[5:8]==0)) object <- getsdofsb(object,qA0=.1,qA1=.95,nsb=1,level=NULL)
+  sdcoef <- object@sdcoef
+#  get mode
+   ind <- object@si>sdcoef[7]&object@si<sdcoef[8]
+   dsi <- density(object@si[ind],n=512,bw=sum(ind)^(-1/5)*(sdcoef[8]-sdcoef[7]))
+#plot(dsi)
+   maxdsi <- (2:511)[dsi$y[2:511]>pmax(dsi$y[1:510],dsi$y[3:512])]
+#cat("maxdsi",maxdsi,"\n","values",dsi$x[max(maxdsi)],"\n")
+   sigma <- sdcoef[5]+sdcoef[6]*dsi$x[max(maxdsi)]
+   cat("sdcoef",sdcoef,"estimated sigma",sigma,"\n")
   }
   if(!(is.null(xind)&is.null(yind)&is.null(zind))){
   if(is.null(xind)) xind <- 1:object@ddim[1]
