@@ -76,17 +76,23 @@ setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="r
      D[c(1,4,6),!mask] <- 1e-6
      D[c(2,3,5),!mask] <- 0
 #  replace non-tensors (with negative eigenvalues) by a small isotropic tensor 
-      ind <- array(.Fortran("dti3Dev",
-                           as.double(D),
-                           as.integer(nvox),
-                           as.logical(mask),
-                           ev=double(3*prod(ddim)),
-                           DUP=FALSE,
-                           PACKAGE="dti")$ev,c(3,ddim))[1,,,]<1e-6
-       if(sum(ind&mask)>0){
-           D[c(1,4,6),ind&mask] <- 1e-6
-           D[c(2,3,5),ind&mask] <- 0
-       }
+#      ind <- array(.Fortran("dti3Dev",
+#                           as.double(D),
+#                           as.integer(nvox),
+#                           as.logical(mask),
+#                           ev=double(3*prod(ddim)),
+#                           DUP=FALSE,
+#                           PACKAGE="dti")$ev,c(3,ddim))[1,,,]<1e-6
+#       if(sum(ind&mask)>0){
+#           D[c(1,4,6),ind&mask] <- 1e-6
+#           D[c(2,3,5),ind&mask] <- 0
+#       }
+#  Replace tensors with negative eigenvalues
+     D <- .Fortran("dti3Dreg",
+                   D=as.double(D),
+                   as.integer(prod(ddim)),
+                   DUP=FALSE,
+                   PACKAGE="dti")$D                   
      dim(D) <- c(6,ddim)
      dim(res) <- c(ngrad0,ddim)
      cat("Variance estimates generated ",format(Sys.time()),"\n")
@@ -136,17 +142,6 @@ setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="r
         D <- z[2:7,]
         rss <- z[8,]
         res <- z[8+(1:ngrad),]
-#        z <- pmatrix(si[,mask],pnlrdtirg,btb=object@btb,sdcoef=sdcoef,s0ind=s0ind,
-#                     mc.cores=mc.cores,mc.silent = TRUE)
-#        dim(z) <- c(8+ngrad,sum(mask))
-#        th0 <- numeric(nvox)
-#        th0[mask] <- z[1,]
-#        D <- matrix(0,6,nvox)
-#        D[,mask] <- z[2:7,]
-#        rss <- numeric(nvox)
-#        rss[mask] <- z[8,]
-#        res <- matrix(0,ngrad,nvox)
-#        res[,mask] <- z[8+(1:ngrad),]
      }
      dim(th0) <- ddim
      dim(D) <- c(6,ddim)

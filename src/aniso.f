@@ -617,6 +617,36 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 C
+C    Regularize tensors bu setting eigenvalues to zero
+C
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+      subroutine dti3Dreg(D,n)
+      implicit logical (a-z)
+      integer n
+      real*8 D(6,n)
+      integer i,ierr
+      real*8 lam(3),evec(3,3)
+      DO i=1,n
+         call eigen3(D(1,i),lam,evec,ierr)
+         if(lam(1).lt.0.d0) lam(1)=0.d0
+         if(lam(2).lt.0.d0) lam(2)=0.d0
+         D(1,i) = lam(1)*evec(1,1)*evec(1,1)+
+     1          lam(2)*evec(1,2)*evec(1,2)+lam(3)*evec(1,3)*evec(1,3)
+         D(2,i) = lam(1)*evec(1,1)*evec(2,1)+
+     1          lam(2)*evec(1,2)*evec(2,2)+lam(3)*evec(1,3)*evec(2,3)
+         D(3,i) = lam(1)*evec(1,1)*evec(3,1)+
+     1          lam(2)*evec(1,2)*evec(3,2)+lam(3)*evec(1,3)*evec(3,3)
+         D(4,i) = lam(1)*evec(2,1)*evec(2,1)+
+     1          lam(2)*evec(2,2)*evec(2,2)+lam(3)*evec(2,3)*evec(2,3)
+         D(5,i) = lam(1)*evec(2,1)*evec(3,1)+
+     1          lam(2)*evec(2,2)*evec(3,2)+lam(3)*evec(2,3)*evec(3,3)
+         D(6,i) = lam(1)*evec(3,1)*evec(3,1)+
+     1          lam(2)*evec(3,2)*evec(3,2)+lam(3)*evec(3,3)*evec(3,3)
+      END DO
+      RETURN
+      END
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+C
 C    Compute DTI-eigenvectors for a volume
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
