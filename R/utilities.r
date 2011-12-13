@@ -615,7 +615,7 @@ setMethod("extract","dwiMixtensor",function(x, what="andir", xind=TRUE, yind=TRU
 
 
 
-setMethod("extract","dtiTensor",function(x, what="tensor", xind=TRUE, yind=TRUE, zind=TRUE){
+setMethod("extract","dtiTensor",function(x, what="tensor", xind=TRUE, yind=TRUE, zind=TRUE,mc.cores=getOption("mc.cores", 2L)){
   what <- tolower(what) 
   swap <- rep(FALSE,3)
   if(is.numeric(xind)) swap[1] <- xind[1]>xind[length(xind)]
