@@ -1,7 +1,10 @@
 useDynLib(dti)
 
+import("methods", "oro.nifti")
 importFrom(graphics,plot)
-importFrom(fmri,read.NIFTI,write.NIFTI)
+#importFrom(fmri,read.NIFTI,write.NIFTI)
+importFrom(oro.dicom, dicomInfo, extractHeader)
+#importFrom(oro.nifti, readNIfTI, readANALYZE, readAFNI)
 importFrom(adimpro,make.image,show.image)
 importFrom(rgl,rgl.lines,open3d,plot3d,rgl.bg)
 exportClasses("dwi","dtiData","dtiTensor","dtiIndices","dwiQball","dwiMixtensor","dwiFiber")
