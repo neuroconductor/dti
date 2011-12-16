@@ -193,6 +193,9 @@ readDWIdata <- function(gradient, dirlist,
       gradz <- dd$hdr[which((dd$hdr[, 1] == "0019") & (dd$hdr[, 2] == "10BD"))[1], 6]
       bvalue <- as.numeric(unlist(strsplit(dd$hdr[which((dd$hdr[, 1] == "0043") & (dd$hdr[, 2] == "1039"))[1], 6], " ")))[1]
       if (verbose) cat("diffusion gradient", gradx, grady, gradz, "b-value", bvalue, "\n")
+      ## WORKAROUND!!
+      dd$img <- aperm(dd$img, c(2, 1, 3))
+      ## END WORKAROUND!!
     } else if (format == "NIFTI") {
       dd <- readNIfTI(ff, reorient = FALSE)
       nslice <- dim(dd)[3]
