@@ -68,8 +68,30 @@ prtb <- Sys.time()
 cat("End computing spherical distances",format(Sys.time()),"\n")
 list(k456=kappa456,bghat=zbg$bghat,nbg=zbg$nbg,nbghat=zbg$nbghat)
 }
-
-
+#
+#  Correction for Rician Bias in variance estimates 
+#  see file ~polzehl/R/dti/SE3smooth/adjust_lambda.r 
+#  for parameter selection
+#
+Lhalf <- function(x) (1-x)*besselI(-x/2,0,TRUE)-x*besselI(-x/2,1,TRUE)
+ksiofx <- function(x) 2+x^2-pi/2*Lhalf(-x^2/2)^2
+improvex <- function(x,E,V,par){
+vcorr <- par[4]+par[3]*(pi/2+atan(pmax(0,par[1]*x+par[2])^par[5]))/pi
+sqrt(pmax(0,ksiofx(x)*(1+E^2/(V*vcorr))-2))
+}
+sigmaRicecorrected <- function(E,S,par=c(2.3547413, -2.2819829, -0.5873854,  1.5964876,  3.2652531)){
+xhat <- E/S
+xold <- 0
+count <- 100
+while(abs(xold-xhat)>1e-10){
+xold <- xhat
+xhat <- improvex(xhat,E,S^2,par)
+count <- count-1
+if(count<0) break
+}
+vcorr <- par[4]+par[3]*(pi/2+atan(pmax(0,par[1]*xhat+par[2])^par[5]))/pi
+S*sqrt(vcorr/ksiofx(xhat))
+}
 
 
 

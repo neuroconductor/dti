@@ -20,7 +20,8 @@
 \usage{
 \S4method{dwiMixtensor}{dtiData}(object, maxcomp=3, method="mixtensor", reltol=1e-6,
           maxit=5000, ngc=1000, optmethod="BFGS", nguess=100*maxcomp^2,
-          msc="BIC", pen=NULL, code = "C", thinit = NULL)
+          msc="BIC", pen=NULL, code = "C", thinit = NULL, mc.cores =
+          getOption("mc.cores", 2L))
 \S4method{dwiMtImprove}{dwiMixtensor,dtiData}(mtobj, dwiobj, maxcomp=3, method="mixtensor", reltol=1e-6, maxit=5000, ngc=1000, optmethod="BFGS", nguess= 100*maxcomp^2, msc="BIC", pen=NULL, where=NULL, new=FALSE)
 \S4method{dwiMtCombine}{dwiMixtensor,dwiMixtensor}(mtobj1,mtobj2, msc="BIC", where=NULL)
 }

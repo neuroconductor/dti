@@ -9,7 +9,7 @@
   The method creates estimates of the fractional anisotropy (FA) and relative anisotropy (RA) indices, the main directions of anisotropy and several statistics used for visualization.
 }
 \usage{
-  \S4method{dtiIndices}{dtiTensor}(object, which)
+  \S4method{dtiIndices}{dtiTensor}(object, which, mc.cores = getOption("mc.cores", 2L))
 }
 \arguments{
   \item{object}{ Object of class \code{"dtiTensor"} }

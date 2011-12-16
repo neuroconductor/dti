@@ -21,7 +21,7 @@
 }
 \usage{
   \S4method{extract}{dtiData}(x, what="data", xind=TRUE, yind=TRUE, zind=TRUE)
-  \S4method{extract}{dtiTensor}(x, what="tensor", xind=TRUE, yind=TRUE, zind=TRUE)
+  \S4method{extract}{dtiTensor}(x, what="tensor", xind=TRUE, yind=TRUE, zind=TRUE, mc.cores = getOption("mc.cores", 2L))
   \S4method{extract}{dwiMixtensor}(x, what="andir", xind=TRUE, yind=TRUE, zind=TRUE)
   \S4method{extract}{dtiIndices}(x, what=c("fa","andir"), xind=TRUE, yind=TRUE, zind=TRUE)
   \S4method{extract}{dwiQball}(x, what="sphcoef", xind=TRUE, yind=TRUE, zind=TRUE)

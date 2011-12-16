@@ -26,6 +26,8 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=10,kappa0=0.4,si
    maxdsi <- (2:511)[dsi$y[2:511]>pmax(dsi$y[1:510],dsi$y[3:512])]
 #cat("maxdsi",maxdsi,"\n","values",dsi$x[max(maxdsi)],"\n")
    sigma <- sdcoef[5]+sdcoef[6]*dsi$x[max(maxdsi)]
+   cat("mode at",dsi$x[max(maxdsi)],"sigma",sigma,"\n")
+   sigma <- sigmaRicecorrected(dsi$x[max(maxdsi)],sigma)
    cat("sdcoef",sdcoef,"estimated sigma",sigma,"\n")
   }
   if(!(is.null(xind)&is.null(yind)&is.null(zind))){
