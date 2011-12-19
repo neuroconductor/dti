@@ -194,7 +194,7 @@ readDWIdata <- function(gradient, dirlist,
       bvalue <- as.numeric(unlist(strsplit(dd$hdr[which((dd$hdr[, 1] == "0043") & (dd$hdr[, 2] == "1039"))[1], 6], " ")))[1]
       if (verbose) cat("diffusion gradient", gradx, grady, gradz, "b-value", bvalue, "\n")
       ## WORKAROUND!!
-      dd$img <- aperm(dd$img, c(2, 1, 3))
+      dd$img <- aperm(dd$img, c(2, 1))
       ## END WORKAROUND!!
     } else if (format == "NIFTI") {
       dd <- readNIfTI(ff, reorient = FALSE)
@@ -279,30 +279,30 @@ readDWIdata <- function(gradient, dirlist,
   if (verbose) cat("readDWIdata: Data successfully read", format(Sys.time()), "\n")
 
   # redefine orientation
-  #xyz <- (orientation)%/%2+1
-  #swap <- orientation%%2
-  #if(any(xyz!=1:3)) {
-  #    abc <- 1:3
-  #    abc[xyz] <- abc
-  #    si <- aperm(si,c(abc,4))
-  #    swap[xyz] <- swap
-  #    voxelext[xyz] <- voxelext
-  #    dimsi[xyz] <- dimsi[1:3]
-  #    ddim[xyz] <- ddim[1:3]
-  #    gradient[xyz,] <- gradient
-  #}
-  #if(swap[1]==1) {
-  #    si <- si[dimsi[1]:1,,,] 
-  #    gradient[1,] <- -gradient[1,]
-  #    }
-  #if(swap[2]==1) {
-  #    si <- si[,dimsi[2]:1,,]  
-  #    gradient[2,] <- -gradient[2,]
-  #    }
-  #if(swap[3]==0) {
-  #    si <- si[,,dimsi[3]:1,]    
-  #    gradient[3,] <- -gradient[3,]
-  #    }
+  xyz <- (orientation)%/%2+1
+  swap <- orientation%%2
+  if(any(xyz!=1:3)) {
+      abc <- 1:3
+      abc[xyz] <- abc
+      si <- aperm(si,c(abc,4))
+      swap[xyz] <- swap
+      voxelext[xyz] <- voxelext
+      dimsi[xyz] <- dimsi[1:3]
+      ddim[xyz] <- ddim[1:3]
+      gradient[xyz,] <- gradient
+  }
+  if(swap[1]==1) {
+      si <- si[dimsi[1]:1,,,] 
+      gradient[1,] <- -gradient[1,]
+      }
+  if(swap[2]==1) {
+      si <- si[,dimsi[2]:1,,]  
+      gradient[2,] <- -gradient[2,]
+      }
+  if(swap[3]==0) {
+      si <- si[,,dimsi[3]:1,]    
+      gradient[3,] <- -gradient[3,]
+      }
   # orientation set to radiological convention
 
   ## this replaces the content off all voxel with elements <=0 or >maxvalue by 0
