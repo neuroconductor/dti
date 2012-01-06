@@ -34,7 +34,7 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
   ngrad <- object@ngrad
   ddim0 <- object@ddim0
   ddim <- object@ddim
-  sdcoef <- object@sdcoef
+  sdcoef <- dtobject@sdcoef
   z <- .Fortran("outlier",
                 as.double(object@si),
                 as.integer(prod(ddim)),
