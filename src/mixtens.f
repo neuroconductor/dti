@@ -748,7 +748,6 @@ C
       real*8 si(ngrad,nvox),sms(ngrad),dgrad(ngrad,nv),
      1       th(nth),egrad(ngrad,nv),z(ngrad,ns),mval(nvox),
      2       vsi(nvox)
-      logical mask(nvox)
       integer i,k,ibest,mode,ind(10),l,j,ii,iw,wind(5),nwi(5)
       real*8 w(1000),krit,work1(1000),work2(10),erg,thj,msi,m2si,
      1       z1,dng
@@ -1347,7 +1346,7 @@ C
       logical mask(n),maskk
       integer i,k
       real*8 s,z,z2,thresh,cv,s0mean
-      thresh = level*ng0
+      thresh = max(1,level*ng0)
       cv=ng1*(ng1-1)
       DO i=1,n
          z=0.d0

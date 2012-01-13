@@ -566,7 +566,6 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine dti3Devp(D,n,ev)
       implicit logical (a-z)
       integer n
-      logical mask(n)
       real*8 D(6,n),ev(3,n)
       integer i,ierr
       DO i=1,n

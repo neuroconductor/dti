@@ -151,8 +151,8 @@ int contains_int(int* array, int length, int value){
   return 0;
 }
 
-
-double* transpose(double* matrix, int dim1, int dim2){
+// wird nicht aufgerufen
+/* double* transpose(double* matrix, int dim1, int dim2){
   int i, j;
   double* t_matrix = Calloc(dim1*dim2, double);
   for(i = 0; i < dim1; i++){
@@ -160,8 +160,9 @@ double* transpose(double* matrix, int dim1, int dim2){
       t_matrix[get_ind2d(i,j,dim1)] = matrix[get_ind2d(j,i,dim2)];
     }
   }
+
   return t_matrix;
-}
+} */
   
 
 void paroforient(double *dir, double *angles){
@@ -210,6 +211,7 @@ double mfunpl0(int param_length, double *param, void* ex){
   Free(z);
   Free(w);
   Free(siq);
+
   return result;
 }
 
@@ -845,7 +847,8 @@ void mixture2( int* method, int* optmethod, int* n1, int* n2, int* n3,
 	double ttt = 0, abstol = R_NegInf, intol = 1;
 	double alpha = 1, beta = 0.5, gamma = 2; //Optim parameters for Nelder Mead
 	double angles[2], dir[3];
-	double *param = 0, *param_red = 0, *param_ret = 0, *param_work = 0, *param_last = 0;
+	double *param = 0, *param_red = 0, *param_ret = 0, *param_work = 0, *param_last = 0,
+	*param_tmp = 0, *siq = 0;
 	
 	int fail;              // failure code for optim: zero is OK
 	double Fmin = 0.;          // minimal value of obj fct in optim 
@@ -855,7 +858,7 @@ void mixture2( int* method, int* optmethod, int* n1, int* n2, int* n3,
 	siq_init = siq_in; penc = pen; grad = grad_in, ngrad0c = *ngrad0;
 	
 	// not yet initialized
-	double* w = Calloc(maxcompc, double);
+	double* w = R_alloc(maxcompc, sizeof(double));
 	
 	//Gradient vectors corresponding to minima in spherical coordinates
 	
@@ -872,8 +875,14 @@ void mixture2( int* method, int* optmethod, int* n1, int* n2, int* n3,
 		}
 	}
 	
-	param =  (double *) Calloc(param_length_init, double);
-	param_ret = (double *) Calloc(param_length_init, double);
+	param = (double *) R_alloc(param_length_init, sizeof(double));
+	param_ret = (double *) R_alloc(param_length_init, sizeof(double));
+	param_work = (double *) R_alloc(param_length_init, sizeof(double));
+	param_last = (double *) R_alloc(param_length_init, sizeof(double));
+	param_red = (double *) R_alloc(param_length_init, sizeof(double));
+	param_tmp = (double *) R_alloc(param_length_init, sizeof(double));
+	
+	siq = (double *) R_alloc(ngrad0c, sizeof(double));
 	
 	//initialize param
 	for(i=0; i<param_length_init; i++){
@@ -918,9 +927,6 @@ void mixture2( int* method, int* optmethod, int* n1, int* n2, int* n3,
 			
 // 			Rprintf("param from orient:\n");
 			
-			// working param array
-			param_work = Calloc(param_length, double);
-			param_last = Calloc(param_length, double);
 			for(l = 0; l < param_length; l++){
 				param_work[l] = param[l];
 				param_last[l] = param[l];
@@ -933,7 +939,6 @@ void mixture2( int* method, int* optmethod, int* n1, int* n2, int* n3,
 			for(k = maxcompc; k > 0; k--){
 				if(k < ord){
 					if(k != maxcompc){
-						double* param_tmp = Calloc(param_length, double);
 						for (l = 0; l < param_length; l++){
 							param_tmp[l] = param_work[l];
 						}
@@ -950,20 +955,16 @@ void mixture2( int* method, int* optmethod, int* n1, int* n2, int* n3,
 							param_length=3*k+2;
 						}
 						
-						param_work = Calloc(param_length,double);
-						param_last = Calloc(param_length,double);
 						for(l= 0; l < param_length; l++){
 							param_work[l] = param_tmp[l];
 							param_last[l] = param_tmp[l];
 						}
 						
-						Free(param_tmp);
 					}
 					
 					if(optmethodc == 4){
 						int param_red_length;
 						if(methodc == 1){
-							param_red =  (double *) Calloc(3*k+1, double);
 							param_red_length = 3*k+1;
 							for(l = 0; l < param_red_length; l++){
 								param_red[l] = param_work[l];
@@ -979,7 +980,6 @@ void mixture2( int* method, int* optmethod, int* n1, int* n2, int* n3,
 								}
 							}
 						}else{
-							param_red =  (double *) Calloc(3*k+2, double);
 							param_red_length = 3*k+2;
 							for(l = 0; l < param_red_length; l++){
 								param_red[l] = param_work[l];
@@ -1014,7 +1014,6 @@ void mixture2( int* method, int* optmethod, int* n1, int* n2, int* n3,
 					ret_val.value = 0;
 					ret_val.w = NULL;
 					
-					double* siq = Calloc(ngrad0c, double);
 					for(l=0;l<ngrad0c;l++){
 						siq[l] = siq_init[get_ind4d_img(i1,i2,i3,l)];
 					}
@@ -1052,8 +1051,6 @@ void mixture2( int* method, int* optmethod, int* n1, int* n2, int* n3,
 						//call optim mixtensoriso method L-BFGS-B
 						//other methods seem less numerically stable in this situation
 					} 
-					
-					Free(siq);
 					
 					if(optmethodc != 4){
 						value = ret_val.value;
@@ -1112,12 +1109,6 @@ void mixture2( int* method, int* optmethod, int* n1, int* n2, int* n3,
 	      R_CheckUserInterrupt();
 	    } // end i2
 	} // end i1
-	
-	Free(w);
-	Free(param);
-	Free(param_ret);
-	Free(param_work);
-	Free(param_red);
 }
 
 void mixturetest(double* test2d, double *test3d, double *test4d, double* test5d,

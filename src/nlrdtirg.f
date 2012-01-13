@@ -36,7 +36,7 @@ C  res(9:npar,) used for residuals
       implicit logical (a-z)
       integer nb,n,npar,s(nb,n),niter
       real*8 b(6,nb),res(npar,n),th0(n),eps,sdcoef(4),varinv(nb)
-      integer i,j
+      integer i
       DO i=1,n
             res(1,i) = th0(i)
             call islvdti(s(1,i),nb,b,sdcoef,varinv,res(1,i),res(2,i),

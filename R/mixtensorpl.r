@@ -1038,7 +1038,7 @@ res[,mask] <- pmatrix(x,pmixtens,
 rm(x)
 gc()
 sigma2 <-  array(res[2,],ddim)
-orient <- array(res[maxcomp+4+1:(2*maxcomp)], c(2, maxcomp, ddim))
+orient <- array(res[maxcomp+4+1:(2*maxcomp),], c(2, maxcomp, ddim))
 order <- array(as.integer(res[1,]), ddim)
 lev <- array(res[3:4,], c(2,ddim))
 mix <- array(res[4+(1:maxcomp),], c(maxcomp, ddim))
