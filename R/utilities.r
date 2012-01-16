@@ -812,7 +812,7 @@ setMethod("extract","dwiQball",function(x, what="sphcoef", xind=TRUE, yind=TRUE,
 getmask <- function(object, level=NULL, prop=.4, size=3){
 if(is.null(level)) level <- object@level
 z <- .Fortran("getmask",
-              as.integer(object@s0[,,,object@s0ind]),
+              as.integer(object@si[,,,object@s0ind]),
               as.integer(object@ddim[1]),
               as.integer(object@ddim[2]),
               as.integer(object@ddim[3]),
@@ -823,9 +823,7 @@ z <- .Fortran("getmask",
               s0=double(prod(object@ddim)),
               mask=logical(prod(object@ddim)),
               DUP=FALSE,
-              PACKAGE="dti")["s0","mask"]
+              PACKAGE="dti")[c("s0","mask")]
 dim(z$s0) <- dim(z$mask) <- object@ddim
 z
-}
-              
 }

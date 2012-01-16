@@ -330,8 +330,8 @@ C     first find pixel close to (i1,i2) with segm(j1,j2)=0
       END
       subroutine getmask(s0,n1,n2,n3,ns,level,msize,prop,s0m,mask)
       implicit logical (a-z) 
-      integer n1,n2,n3,ns,msize,s0(n1,n2,n3,ns),work(n1,n2,n3)
-      real*8 s0m(n1,n2,n3),prop
+      integer n1,n2,n3,ns,msize,s0(n1,n2,n3,ns)
+      real*8 s0m(n1,n2,n3),prop,level
       logical mask(n1,n2,n3)
       integer i1,i2,i3,j,j1,j2,j3
       real*8 z,anz,anz1
@@ -355,8 +355,8 @@ C
                anz=0
                anz1=0
                DO j1=max(1,i1-msize),min(n1,i1+msize)
-                  DO j2=max(1,i2-msize),min(n1,i2+msize)
-                     DO j3=max(1,i3-msize),min(n1,i3+msize)
+                  DO j2=max(1,i2-msize),min(n2,i2+msize)
+                     DO j3=max(1,i3-msize),min(n3,i3+msize)
                         if(s0m(j1,j2,j3).gt.level) anz1=anz1+1
                         anz=anz+1
                      END DO
