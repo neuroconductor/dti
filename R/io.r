@@ -180,9 +180,10 @@ readDWIdata <- function(gradient, dirlist,
   ddim <- NULL
   first <- TRUE
   i <- 0
+  if (!verbose) pb <- txtProgressBar(0, nfiles, style = 3)
   for (ff in filelist) {
     i <- i+1
-    if (verbose) cat(".")
+    if (!verbose) setTxtProgressBar(pb, i)
     if (format == "DICOM") {
       dd <- dicomInfo(ff)
       delta <- c(as.numeric(unlist(strsplit(extractHeader(dd$hdr, "PixelSpacing", FALSE)[1], " "))), extractHeader(dd$hdr, "SliceThickness")[1])
@@ -273,7 +274,7 @@ readDWIdata <- function(gradient, dirlist,
       }
     }
   }
-  if (verbose) cat("\n")
+  if (!verbose) close(pb)
   dim(si) <- c(length(xind), length(yind), length(zind), ngrad)
   dimsi <- dim(si)
   if (verbose) cat("readDWIdata: Data successfully read", format(Sys.time()), "\n")

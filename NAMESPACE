@@ -1,5 +1,6 @@
 useDynLib(dti)
 
+import("methods", "oro.dicom")
 importFrom(graphics,plot)
 importFrom(fmri,read.NIFTI,write.NIFTI)
 importFrom(adimpro,make.image,show.image)
