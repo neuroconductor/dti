@@ -246,7 +246,8 @@ C   this should not happen
                   call dblepr("cb1",3,cb1,1)
                   call dblepr("cbh",3,cbh,1)
                END IF
-               gammah = asin(dgamma*sign(1d0,cb1*cbh)) 
+C               gammah = asin(dgamma*sign(1d0,cb1*cbh)) 
+               gammah = dgamma*sign(1d0,cb1*cbh)) 
             END IF
             bghat(1,i1,i2)=betah
             bghat(2,i1,i2)=gammah
