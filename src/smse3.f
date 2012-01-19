@@ -106,7 +106,7 @@ C
       maxmpot = 1.d0
       j = 1
       jfac = 1.d0
-      DO While (maxmpot.gt.1.d-12)
+      DO While (maxmpot.gt.1.d-14)
          jfac = jfac*j
          DO i1=1,3
             DO i2=1,3
@@ -121,12 +121,18 @@ C
                z = mpot(i1,i2)/jfac
                ex(i1,i2)=ex(i1,i2)+z
                z = abs(z)
-               IF(z.gt.1d10) EXIT
+               IF(z.gt.1d20) THEN
+C                  call dblepr("overflow in expm",16,z,1)
+                  EXIT
+               END IF
                maxmpot = max(maxmpot,z)
             END DO
          END DO
          j = j+1
-         IF(j.gt.50) EXIT
+         IF(j.gt.200) THEN
+C            call intpr("max iterations in expm",20,j,1)
+            EXIT
+         END IF
       END DO
       RETURN
       END
@@ -247,7 +253,7 @@ C   this should not happen
                   call dblepr("cbh",3,cbh,1)
                END IF
 C               gammah = asin(dgamma*sign(1d0,cb1*cbh)) 
-               gammah = dgamma*sign(1d0,cb1*cbh)) 
+               gammah = dgamma*sign(1d0,cb1*cbh)
             END IF
             bghat(1,i1,i2)=betah
             bghat(2,i1,i2)=gammah
