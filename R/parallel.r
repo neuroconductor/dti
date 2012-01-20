@@ -144,9 +144,9 @@ nvox <- dim(D)[2]
 .Fortran("dti3Dalp",
          as.double(D),
          as.integer(nvox),
-         andir=double(9*nvox),
+         ergs=double(9*nvox),
          DUP=FALSE,
-         PACKAGE="dti")
+         PACKAGE="dti")$ergs
 }
 
 pnlrdtirg <- function(si,btb,sdcoef,s0ind){

@@ -307,14 +307,14 @@ function(object, which, mc.cores=getOption("mc.cores", 2L)) {
                 bary=double(3*n),
                 DUP=FALSE,
                 PACKAGE="dti")[c("fa","ga","md","andir","bary")] else {
-                D <- matrix(object@D,6,prod(ddim))[,object@mask]
-                res <- matrix(0,9,prod(ddim))
-                res[,object@mask] <- pmatrix(D,pdtiind3D,mc.cores=mc.cores,mc.silent = TRUE)
-                list(andir=res[1:3,],
-                     fa=res[4,],
-                     ga=res[5,],
-                     md=res[6,],
-                     bary=res[7:9,])
+           D <- matrix(object@D,6,prod(ddim))[,object@mask]
+           res <- matrix(0,9,prod(ddim))
+           res[,object@mask] <- pmatrix(D,pdtiind3D,mc.cores=mc.cores,mc.silent = TRUE)
+           list(andir=res[1:3,],
+                   fa=res[4,],
+                   ga=res[5,],
+                   md=res[6,],
+                 bary=res[7:9,])
                 }
 
   invisible(new("dtiIndices",

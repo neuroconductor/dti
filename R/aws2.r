@@ -20,6 +20,12 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
   }
   args <- sys.call(-3)
   args <- c(object@call,args)
+  sdcoef <- object@sdcoef
+  if(all(sdcoef[1:4]==0)) {
+    cat("No parameters for model of error standard deviation found\n estimating these parameters\n You may prefer to run sdpar before calling dtiTensor")
+    sdcoef <- sdpar(object,interactive=FALSE)@sdcoef
+    object@sdcoef <- sdcoef
+  }
   dtobject <- dtiTensor(object,method="nonlinear",varmethod=varmethod,varmodel=varmodel)
   scale <- dtobject@scale
   mask <- dtobject@mask
@@ -27,7 +33,6 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
   D <- dtobject@D
   scorr <- dtobject@scorr
   h0 <- dtobject@bw
-  sdcoef <- dtobject@sdcoef
   rm(dtobject)
   gc()
   cat("Corresponding bandwiths for specified correlation:",h0,"\n")
