@@ -10,7 +10,7 @@ dwi.smooth <- function(object, ...) cat("No DTI smoothing defined for this class
 
 setGeneric("dwi.smooth", function(object, ...) standardGeneric("dwi.smooth"))
 
-setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=10,kappa0=0.4,sigma=NULL,sigma2=NULL,minsb=5,smooths0=TRUE,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE){
+setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=10,kappa0=0.4,sigma=NULL,sigma2=NULL,minsb=5,smooths0=TRUE,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE,dist=1){
   args <- sys.call(-1)
   args <- c(object@call,args)
   sdcoef <- object@sdcoef
@@ -57,7 +57,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=10,kappa0=0.4,si
   mask <- apply(sb,1:3,mean) > minsb
   masksb <- array(mask,c(ddim,ngrad))
   vext <- object@voxelext[2:3]/object@voxelext[1]
-  gradstats <- getkappas(grad)
+  gradstats <- getkappas(grad,dist=dist)
   hseq <- gethseqfullse3(kstar,gradstats,kappa0,vext=vext,verbose=verbose)
   kappa <- hseq$kappa
   nind <- hseq$n
@@ -223,6 +223,7 @@ lkfullse3 <- function(h,kappa,gradstats,vext,n){
                     ind=integer(5*n),
                     w=double(n),
                     n=as.integer(n),
+                    as.integer(gradstats$dist),
                     DUPL=FALSE,
                     PACKAGE="dti")[c("ind","w","n")]
       dim(z$ind) <- c(5,n)

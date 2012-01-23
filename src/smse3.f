@@ -1,12 +1,12 @@
       subroutine ghfse3i(i4,kstar,k456,nbg,nbghat,ng,
-     1                    kappa,vext,h,varred,n)
+     1                    kappa,vext,h,varred,n,dist)
 C
 C   compute bandwidth sequence for given kappa and gradients  
 C   lkfse3i0 computes weighting schemes and corresponding variance reduction
 C   k456,nbg,nbghat,ng (input) contain auxiliary statistics(gradients)
 C
       implicit logical (a-z)
-      integer ng,i4,kstar,n
+      integer ng,i4,kstar,n,dist
       real*8 k456(3,ng,ng),nbg(3,3,ng),nbghat(3,3,ng,ng),vext(2),
      1       kappa,h(kstar),varred(kstar)
       logical getkappa
@@ -18,18 +18,18 @@ C
 C   initialize kappa
 C   loop over steps
       call lkfse3i0(hakt,kappa/hakt,i4,k456,nbg,nbghat,ng,
-     1                   vext,vr,n)
+     1                   vext,vr,n,dist)
       chk=ch*vr
       maxn = 1
       DO k=1,kstar
          call lkfse3i0(hakt,kappa/hakt,i4,k456,nbg,nbghat,ng,
-     1                   vext,vr,n)
+     1                   vext,vr,n,dist)
 C  search for new hakt   
          vred=vr/chk
          DO WHILE (vred.lt.1) 
             hakt=hakt*1.05
             call lkfse3i0(hakt,kappa/hakt,i4,k456,nbg,nbghat,ng,
-     1                   vext,vr,n)
+     1                   vext,vr,n,dist)
             vred=vr/chk
          END DO
          DO WHILE (vred.gt.1.01) 
@@ -38,7 +38,7 @@ C  search for new hakt
             n0=n
             hakt=hakt/1.005
             call lkfse3i0(hakt,kappa/hakt,i4,k456,nbg,nbghat,ng,
-     1                   vext,vr,n)
+     1                   vext,vr,n,dist)
             vred=vr/chk
             If (vred.lt.1) THEN
                hakt=hakt0
@@ -52,7 +52,7 @@ C  search for new hakt
          maxn=max(maxn,n)
          if(k.eq.kstar) THEN
             call lkfse3i0(h(k),kappa/hakt,i4,k456,nbg,nbghat,ng,
-     1                   vext,vr,n)
+     1                   vext,vr,n,dist)
          END IF
 C  number of positive weights for last step in n
       END DO
@@ -265,9 +265,9 @@ C    die normalen-vektoren der Gradientenpaare
       RETURN
       END
       subroutine lkfse3i(h,kappa,i4,k456,nbg,nbghat,ng,
-     1                   vext,ind,wght,n)
+     1                   vext,ind,wght,n,dist)
       implicit logical (a-z)
-      integer ng,n,ind(5,n),i4
+      integer ng,n,ind(5,n),i4,dist
       real*8 h,kappa,k456(3,ng,ng),
      1       nbg(3,3,ng),nbghat(3,3,ng,ng),vext(2),wght(n)
       integer ih1,ih2,ih3,i,j1,j2,j3,j4
@@ -289,7 +289,9 @@ C         cb = abs(gi1*nbg(1,1,j4)+gi2*nbg(2,1,j4)+gi3*nbg(3,1,j4))
          k4 = k456(1,i4,j4)
          k5 = k456(2,i4,j4)
          k6 = k456(3,i4,j4)
-         z = (k4*k4+k5*k5+k6*k6)/kap2
+         if(dist.eq.1) z = (k4*k4+k5*k5+k6*k6)/kap2
+         if(dist.eq.2) z = (k4*k4+k5*k5+abs(k6))/kap2
+         if(dist.eq.3) z = (k4*k4+k5*k5)/kap2
          if(z.gt.h2) CYCLE
 C   last three komponents already to large
          DO j1 = 0,ih1
@@ -340,9 +342,9 @@ C   *cb
       RETURN
       END
       subroutine lkfse3i0(h,kappa,i4,k456,nbg,nbghat,ng,
-     1                   vext,vred,n)
+     1                   vext,vred,n,dist)
       implicit logical (a-z)
-      integer ng,n,i4
+      integer ng,n,i4,dist
       real*8 h,kappa,k456(3,ng,ng),
      1       nbg(3,3,ng),nbghat(3,3,ng,ng),vext(2),vred
       integer ih1,ih2,ih3,j1,j2,j3,j4,mj1,mj2,mj3,rad
@@ -369,7 +371,9 @@ C         cb = abs(gi1*nbg(1,1,j4)+gi2*nbg(2,1,j4)+gi3*nbg(3,1,j4))
          k4 = k456(1,i4,j4)
          k5 = k456(2,i4,j4)
          k6 = k456(3,i4,j4)
-         z = (k4*k4+k5*k5+k6*k6)/kap2
+         if(dist.eq.1) z = (k4*k4+k5*k5+k6*k6)/kap2
+         if(dist.eq.2) z = (k4*k4+k5*k5+abs(k6))/kap2
+         if(dist.eq.3) z = (k4*k4+k5*k5)/kap2
          if(z.gt.h2) CYCLE
 C   last three komponents already to large
          DO j1 = 0,ih1
@@ -426,9 +430,9 @@ C   if j1>0  (-j1,-j2,-j3) gets the same weight, so count it twice
       RETURN
       END
       subroutine lkfulse3(h,kappa,k456,nbg,nbghat,ng,
-     1                   vext,ind,wght,n)
+     1                   vext,ind,wght,n,dist)
       implicit logical (a-z)
-      integer ng,n,ind(5,n)
+      integer ng,n,ind(5,n),dist
       real*8 h(ng),kappa(ng),k456(3,ng,ng),
      1       nbg(3,3,ng),nbghat(3,3,ng,ng),vext(2),wght(n)
       integer ns,ni,i
@@ -436,7 +440,7 @@ C   if j1>0  (-j1,-j2,-j3) gets the same weight, so count it twice
       DO i = 1,ng
          ni = n-ns
          call lkfse3i(h(i),kappa(i),i,k456,nbg,nbghat,ng,
-     1                vext,ind(1,ns+1),wght(ns+1),ni)
+     1                vext,ind(1,ns+1),wght(ns+1),ni,dist)
          ns = ns+ni
       END DO
       n = ns
