@@ -40,6 +40,8 @@
   \item{zind}{ vector of z-coordinates, defaults to whole range. }
   \item{what}{ Statistic to extract. See Methods Section for details. }
   \item{drop}{ unused. }
+   \item{mc.cores}{Number of cores to use. Defaults to getOption("mc.cores", 2L). 
+   This may be larger than the optimal value. Our experience suggests to use 4-6 cores if available.}
 }
 \section{Methods}{
 \describe{

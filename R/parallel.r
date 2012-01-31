@@ -1,11 +1,3 @@
-set.mc.cores <- function(mc.cores=2L){
-   mc.cores <- min(mc.cores,detectCores())
-   num_threads <- as.integer(Sys.getenv("OMP_NUM_THREADS", unset=0))
-   if(num_threads <= 0) Sys.setenv("OMP_NUM_THREADS"=mc.cores)
-   options("mc.cores"=mc.cores)
-   invisible(mc.cores)
-}
-
 pdataframe <- function (v, FUN, ..., mc.set.seed = TRUE, mc.silent = FALSE, 
     mc.cores = getOption("mc.cores", 2L), mc.cleanup = TRUE) 
 {
@@ -36,14 +28,14 @@ pdataframe <- function (v, FUN, ..., mc.set.seed = TRUE, mc.silent = FALSE,
     jobs <- NULL
     cleanup <- function() {
         if (length(jobs) && mc.cleanup) {
-            mccollect(children(jobs), FALSE)
-            mckill(children(jobs), if (is.integer(mc.cleanup)) 
+            mccollect(parallel:::children(jobs), FALSE)
+            parallel:::mckill(parallel:::children(jobs), if (is.integer(mc.cleanup)) 
                 mc.cleanup
             else 15L)
-            mccollect(children(jobs))
+            mccollect(parallel:::children(jobs))
         }
         if (length(jobs)) {
-            mccollect(children(jobs), FALSE)
+            mccollect(parallel:::children(jobs), FALSE)
         }
     }
     on.exit(cleanup())

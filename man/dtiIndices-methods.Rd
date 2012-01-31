@@ -14,6 +14,8 @@
 \arguments{
   \item{object}{ Object of class \code{"dtiTensor"} }
   \item{which}{ Indices should be created, currently not implemented. }
+   \item{mc.cores}{Number of cores to use. Defaults to getOption("mc.cores", 2L). 
+   This may be larger than the optimal value. Our experience suggests to use 4-6 cores if available.}
 }
 \value{
   An object of class \code{"dtiIndices"}.

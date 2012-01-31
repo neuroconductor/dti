@@ -292,6 +292,7 @@ C         cb = abs(gi1*nbg(1,1,j4)+gi2*nbg(2,1,j4)+gi3*nbg(3,1,j4))
          if(dist.eq.1) z = (k4*k4+k5*k5+k6*k6)/kap2
          if(dist.eq.2) z = (k4*k4+k5*k5+abs(k6))/kap2
          if(dist.eq.3) z = (k4*k4+k5*k5)/kap2
+         if(dist.eq.4) z = k4*k4/kap2
          if(z.gt.h2) CYCLE
 C   last three komponents already to large
          DO j1 = 0,ih1
@@ -374,6 +375,7 @@ C         cb = abs(gi1*nbg(1,1,j4)+gi2*nbg(2,1,j4)+gi3*nbg(3,1,j4))
          if(dist.eq.1) z = (k4*k4+k5*k5+k6*k6)/kap2
          if(dist.eq.2) z = (k4*k4+k5*k5+abs(k6))/kap2
          if(dist.eq.3) z = (k4*k4+k5*k5)/kap2
+         if(dist.eq.4) z = k4*k4/kap2
          if(z.gt.h2) CYCLE
 C   last three komponents already to large
          DO j1 = 0,ih1
@@ -446,115 +448,8 @@ C   if j1>0  (-j1,-j2,-j3) gets the same weight, so count it twice
       n = ns
       RETURN
       END      
-      subroutine adasmse3(y,th,ni,mask,n1,n2,n3,ngrad,lambda,ind,w,n,
-     1                    thn,r,s2inv,sw,swy,swy2)
-C
-C   perform adaptive smoothing on SE(3) 
-C   ind(.,i) contains coordinate indormation corresponding to positive
-C   location weights in w(i)
-C   ind(.,i)[1:5] are j1-i1,j2-i2,j3-i3, i4 and j4 respectively 
-C   s2inv containes the inverses of estimated variances
-C
-      implicit logical (a-z)
-      integer n1,n2,n3,ngrad,n,ind(5,n)
-      logical mask(n1,n2,n3)
-      real*8 y(n1,n2,n3,ngrad),th(n1,n2,n3,ngrad),ni(n1,n2,n3,ngrad),
-     1       lambda,w(n),thn(n1,n2,n3,ngrad),sw(ngrad),swy(ngrad),
-     2       swy2(ngrad),s2inv(n1,n2,n3,ngrad),r(n1,n2,n3,ngrad)
-      integer i,i1,i2,i3,i4,j1,j2,j3,j4
-      real*8 z,yj,swyi,nii,thi
-      DO i1=1,n1
-         DO i2=1,n2
-            DO i3=1,n3
-               if(.not.mask(i1,i2,i3)) CYCLE
-               DO i4=1,ngrad
-                  sw(i4)=0.d0
-                  swy(i4)=0.d0
-                  swy2(i4)=0.d0
-               END DO
-               i4=0
-               DO i=1,n
-                  if(ind(4,i).ne.i4) THEN
-C   by construction ind(4,.) should have same values consequtively
-                     i4 = ind(4,i)
-                     thi = th(i1,i2,i3,i4)
-                     nii = ni(i1,i2,i3,i4)/lambda
-                  END IF
-                  j1=i1+ind(1,i)
-                  j2=i2+ind(2,i)
-                  j3=i3+ind(3,i)
-                  if(j1.le.0.or.j1.gt.n1) CYCLE
-                  if(j2.le.0.or.j2.gt.n2) CYCLE
-                  if(j3.le.0.or.j3.gt.n3) CYCLE
-                  if(.not.mask(j1,j2,j3)) CYCLE          
-C                  i4=ind(4,i)
-                  j4=ind(5,i)
-                  z=thi-th(j1,j2,j3,i4)
-                  z=z*z*nii
-                  if(z.ge.1.d0) CYCLE
-                  z=w(i)*min(1.d0,2.d0-2.d0*z)
-                  z=z*s2inv(j1,j2,j3,j4)
-                  sw(i4)=sw(i4)+z
-                  yj=y(j1,j2,j3,j4)
-                  swy(i4)=swy(i4)+z*yj
-                  swy2(i4)=swy2(i4)+z*yj*yj
-               END DO
-               DO i=1,n
-                  if(ind(1,i).eq.0) CYCLE
-                  if(ind(4,i).ne.i4) THEN
-C   by construction ind(4,.) should have same values consequtively
-                     i4 = ind(4,i)
-                     thi = th(i1,i2,i3,i4)
-                     nii = ni(i1,i2,i3,i4)/lambda
-                  END IF
-C
-C   handle case j1-i1 < 0 which is not contained in ind 
-C   using axial symmetry
-C
-                  j1=i1-ind(1,i)
-                  j2=i2-ind(2,i)
-                  j3=i3-ind(3,i)
-                  if(j1.le.0.or.j1.gt.n1) CYCLE
-                  if(j2.le.0.or.j2.gt.n2) CYCLE
-                  if(j3.le.0.or.j3.gt.n3) CYCLE
-                  if(.not.mask(j1,j2,j3)) CYCLE          
-C                  i4=ind(4,i)
-                  j4=ind(5,i)
-                  z=thi-th(j1,j2,j3,i4)
-                  z=z*z*nii
-C                  z=th(i1,i2,i3,i4)-th(j1,j2,j3,j4)
-C                  z=z*z*ni(i1,i2,i3,i4)/lambda
-C                  call spenalty(th(i1,i2,i3,i4),th(j1,j2,j3,j4),
-C     1                          s2inv(i1,i2,i3,i4),ncoil,z)
-C                  z=z*ni(i1,i2,i3,i4)/lambda
-C    ni(i1,i2,i3,i4) contains normalization by siinv
-                  if(z.ge.1.d0) CYCLE
-                  z=w(i)*min(1.d0,2.d0-2.d0*z)
-                  z=z*s2inv(j1,j2,j3,j4)
-                  sw(i4)=sw(i4)+z
-                  yj=y(j1,j2,j3,j4)
-                  swy(i4)=swy(i4)+z*yj
-                  swy2(i4)=swy2(i4)+z*yj*yj
-               END DO
-               DO i4=1,ngrad
-                  swyi = swy(i4)
-                  nii=sw(i4)
-                  thn(i1,i2,i3,i4) = swyi/nii
-                  ni(i1,i2,i3,i4) = nii
-                  if(nii.gt.s2inv(i1,i2,i3,i4)) THEN
-                     r(i1,i2,i3,i4)=swyi/sqrt(nii*swy2(i4)-swyi*swyi)
-                  ELSE
-                     r(i1,i2,i3,i4)=0.d0
-                  END IF
-               END DO
-               call rchkusr()
-            END DO
-         END DO
-      END DO
-      RETURN
-      END
-      subroutine adrsmse3(y,th,ni,mask,n1,n2,n3,ngrad,lambda,ind,w,n,
-     1                    thn,sigma,sw,swy)
+      subroutine adrsmse3(y,th,ni,mask,n1,n2,n3,ngrad,lambda,ncoils,
+     1                    ind,w,n,thn,sigma,sw,swy)
 C
 C   perform adaptive smoothing on SE(3) 
 C   ind(.,i) contains coordinate indormation corresponding to positive
@@ -562,15 +457,15 @@ C   location weights in w(i)
 C   ind(.,i)[1:5] are j1-i1,j2-i2,j3-i3, i4 and j4 respectively 
 C
       implicit logical (a-z)
-      integer n1,n2,n3,ngrad,n,ind(5,n)
+      integer n1,n2,n3,ngrad,n,ind(5,n),ncoils
       logical mask(n1,n2,n3)
       real*8 y(n1,n2,n3,ngrad),th(n1,n2,n3,ngrad),ni(n1,n2,n3,ngrad),
      1       lambda,w(n),thn(n1,n2,n3,ngrad),sw(ngrad),swy(ngrad),
      2       sigma
       integer i,i1,i2,i3,i4,j1,j2,j3,j4
       real*8 z,thi,nii
-      real*8 kldrice
-      external kldrice
+      real*8 kldistnc
+      external kldistnc
       DO i1=1,n1
          DO i2=1,n2
             DO i3=1,n3
@@ -599,7 +494,7 @@ C                  i4=ind(4,i)
 
 C adaptation 
                   if(lambda.lt.1d10) THEN
-                     z=nii*kldrice(thi,th(j1,j2,j3,j4),sigma)
+                     z=nii*kldistnc(thi,th(j1,j2,j3,j4),sigma,ncoils)
 C  do not adapt on the sphere !!! 
                   ELSE
                      z=0.d0
@@ -630,7 +525,8 @@ C
                   if(.not.mask(j1,j2,j3)) CYCLE          
                   j4=ind(5,i)
                   if(lambda.lt.1d10) THEN
-                     z=nii*kldrice(thi,th(j1,j2,j3,j4),sigma)
+C                     z=nii*kldrice(thi,th(j1,j2,j3,j4),sigma)
+                      z=nii*kldistnc(thi,th(j1,j2,j3,j4),sigma,ncoils)
 C  do not adapt on the sphere !!! 
                   ELSE
                      z=0.d0
@@ -651,7 +547,7 @@ C  do not adapt on the sphere !!!
       RETURN
       END
       subroutine asmse3s0(y0,th,th0,ni,ni0,mask,n1,n2,n3,ngrad,ns0,
-     1                    lambda,ind,w,n,starts,nstarts,thn0,sigma)
+     1              lambda,ncoils,ind,w,n,starts,nstarts,thn0,sigma)
 C
 C   perform adaptive smoothing on SE(3) 
 C   ind(.,i) contains coordinate indormation corresponding to positive
@@ -659,15 +555,15 @@ C   location weights in w(i)
 C   ind(.,i)[1:5] are j1-i1,j2-i2,j3-i3, i4 and j4 respectively 
 C
       implicit logical (a-z)
-      integer n1,n2,n3,ngrad,n,ind(5,n),ns0,starts(1),nstarts
+      integer n1,n2,n3,ngrad,n,ind(5,n),ns0,starts(1),nstarts,ncoils
       logical mask(n1,n2,n3)
       real*8 y0(n1,n2,n3),th0(n1,n2,n3),th(n1,n2,n3,ngrad),
      1       ni(n1,n2,n3,ngrad),ni0(n1,n2,n3),thn0(n1,n2,n3),
      2       lambda,w(n),sw0,swy0,sigma
       integer i,i0,i1,i2,i3,i4,j1,j2,j3,l1,l2,l3,k1,k2,k3
       real*8 z,swi,ng,ng0
-      real*8 kldrice
-      external kldrice
+      real*8 kldistnc
+      external kldistnc
       k1=0
       k2=0
       k3=0
@@ -701,12 +597,14 @@ C
                   DO i=starts(i0)+1,starts(i0+1)
                      i4=ind(4,i)
                      z=z+ni(i1,i2,i3,i4)/lambda*
-     1                  kldrice(th(i1,i2,i3,i4),th(j1,j2,j3,i4),sigma)
+C     1                  kldrice(th(i1,i2,i3,i4),th(j1,j2,j3,i4),sigma)
+     1          kldistnc(th(i1,i2,i3,i4),th(j1,j2,j3,i4),sigma,ncoils)
                      if(z.ge.ng0) EXIT
                      swi=swi+w(i)
                   END DO
                   z=z+ns0*ni0(i1,i2,i3)*
-     1                kldrice(th0(i1,i2,i3),th0(j1,j2,j3),sigma)
+C     1                kldrice(th0(i1,i2,i3),th0(j1,j2,j3),sigma)
+     1              kldistnc(th0(i1,i2,i3),th0(j1,j2,j3),sigma,ncoils)
                   if(z.lt.ng0) THEN
                      z=swi/ng*min(1.d0,2.d0-2.d0*z/ng0)
                      sw0=sw0+z
@@ -732,12 +630,14 @@ C  this part for negative l1 only (opposite directions)
                   DO i=starts(i0)+1,starts(i0+1)
                      i4=ind(4,i)
                      z=z+ni(i1,i2,i3,i4)/lambda*
-     1                  kldrice(th(i1,i2,i3,i4),th(j1,j2,j3,i4),sigma)
+C     1                  kldrice(th(i1,i2,i3,i4),th(j1,j2,j3,i4),sigma)
+     1          kldistnc(th(i1,i2,i3,i4),th(j1,j2,j3,i4),sigma,ncoils)
                      if(z.ge.ng0) EXIT
                      swi=swi+w(i)
                   END DO
                   z=z+ns0*ni0(i1,i2,i3)*
-     1                kldrice(th0(i1,i2,i3),th0(j1,j2,j3),sigma)
+C     1                kldrice(th0(i1,i2,i3),th0(j1,j2,j3),sigma)
+     1              kldistnc(th0(i1,i2,i3),th0(j1,j2,j3),sigma,ncoils)
                   if(z.lt.ng0) THEN
                      z=swi/ng*min(1.d0,2.d0-2.d0*z/ng0)
                      sw0=sw0+z
@@ -797,14 +697,39 @@ C very large ...
       ENDIF
       RETURN
       END
-      subroutine skldrice(th1,th2,n,sigma,dist)
+C
+C   Kullback-leibler distance for noncentral-Chi-distributions
+C   with parameters thi/sigma and thj/sigma and 2*nc degrees of freedom
+C
+      real*8 function kldistnc(thi,thj,sigma,nc)
+C    thi,thj  current estimates
+C    sigma    estimated scale parameter 
+C    nc number of coils
       implicit logical (a-z)
-      integer n
-      real*8 th1(n),th2(n),dist(n),sigma
-      integer i
-      real*8 kldrice
-      DO i=1,n
-         dist(i)=kldrice(th1(i),th2(i),sigma)
-      END DO
-      RETURN 
-      END 
+      integer nc
+      real*8 thi,thj,sigma
+      real*8 mu2i,mu2j,fi,fj,ci,cj,df,z1,z2
+      real*8 lgammaf,digammaf
+      external lgammaf, digammaf
+C  use Chi^2 instead of Chi for KL distance
+      mu2i = thi/sigma
+      mu2i = mu2i*mu2i
+      mu2j = thj/sigma
+      mu2j = mu2j*mu2j
+C  Approximation by Patnaik (1949)
+      df = 2.d0*nc
+      z1 = df + mu2i
+      z2 = z1 + mu2i
+      ci = z2/z1
+      fi = z1*z1/z2
+      z1 = df + mu2j
+      z2 = z1 + mu2j
+      cj = z2/z1
+      fj = z1*z1/z2
+      kldistnc = (fj-fi)*0.6931472d0+
+     1           lgammaf(fj/2.d0)-lgammaf(fi/2.d0)+
+     2           0.5d0*(fj*dlog(cj)-fi*dlog(ci)+
+     3           fi*(ci/cj-1)+
+     4           (fi-fj)*(dlog(2.d0*ci)+digammaf(0.5d0*fi)))
+      RETURN
+      END

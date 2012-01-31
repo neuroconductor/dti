@@ -9,13 +9,14 @@
  Adaptive smoothing of DWI data. Smoothing is performed both in space and on the sphere (e.g. between images  obtained for different gradient directions) employing a natural
 geometrical distance ( in SE(3)). Structural adaptation is used in space only.}
 \usage{
-  \S4method{dwi.smooth}{dtiData}(object,kstar,lambda=10,kappa0=0.4,sigma=NULL,sigma2=NULL,minsb=5,smooths0=TRUE,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE)
+  \S4method{dwi.smooth}{dtiData}(object,kstar,lambda=10,kappa0=0.4,ncoils=1,sigma=NULL,sigma2=NULL,minsb=5,smooths0=TRUE,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE,dist=1)
 }
 \arguments{
   \item{object}{ Object of class \code{"dtiData"}}
   \item{kstar}{ Number of steps in structural adaptation}
   \item{lambda}{Scale parameter in adaptation }
   \item{kappa0}{determines amaount of smoothing on the sphere. Larger values correspond to stronger smoothing on the sphere. }
+  \item{ncoils}{Number of coils in MR system }
   \item{sigma}{Error standard deviation. Assumed to be known and homogeneous in the current implementation. A reasonable estimate may be defined 
   as the modal value of standard deviations obtained using method \code{getsdofsb}. }
   \item{sigma2}{estimated variances in each voxel (the corresponding code is not fully tested)}
@@ -25,6 +26,7 @@ geometrical distance ( in SE(3)). Structural adaptation is used in space only.}
   \item{yind}{index for y-coordinate}
   \item{zind}{index for z-coordinate}
   \item{verbose}{If \code{verbose=TRUE} additional reports are given.}
+  \item{dist}{Distance in SE3. Reasonable values are 1 (default, see Becker et.al. 2012), 2 ( a slight modification of 1: with abs(k6) instead of k6^2) and 4 (using a 'naive' distance on the sphere)}
 }
 \value{ 
   An object of class \code{"dtiData"} with smoothed diffusion weighted images.

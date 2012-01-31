@@ -807,7 +807,11 @@ setMethod("extract","dwiQball",function(x, what="sphcoef", xind=TRUE, yind=TRUE,
   invisible(z)
 })
 
-getmask <- function(object, level=NULL, prop=.4, size=3){
+getmask <- function(object,  ...) cat("No method defined for class:",class(object),"\n")
+
+setGeneric("getmask", function(object,  ...) standardGeneric("getmask"))
+
+setMethod("getmask","dtiData",function(object, level=NULL, prop=.4, size=3){
 if(is.null(level)) level <- object@level
 z <- .Fortran("getmask",
               as.integer(object@si[,,,object@s0ind]),
@@ -825,3 +829,4 @@ z <- .Fortran("getmask",
 dim(z$s0) <- dim(z$mask) <- object@ddim
 z
 }
+)

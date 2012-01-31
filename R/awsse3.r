@@ -10,7 +10,7 @@ dwi.smooth <- function(object, ...) cat("No DTI smoothing defined for this class
 
 setGeneric("dwi.smooth", function(object, ...) standardGeneric("dwi.smooth"))
 
-setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=10,kappa0=0.4,sigma=NULL,sigma2=NULL,minsb=5,smooths0=TRUE,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE,dist=1){
+setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=10,kappa0=0.4,ncoils=1,sigma=NULL,sigma2=NULL,minsb=5,smooths0=TRUE,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE,dist=1){
   args <- sys.call(-1)
   args <- c(object@call,args)
   sdcoef <- object@sdcoef
@@ -92,6 +92,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=10,kappa0=0.4,si
                 as.integer(ddim[3]),
                 as.integer(ngrad),
                 as.double(lambda),
+                as.integer(ncoils),
                 as.integer(param$ind),
                 as.double(param$w),
                 as.integer(param$n),
@@ -102,42 +103,16 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=10,kappa0=0.4,si
                 DUPL=FALSE,
                 PACKAGE="dti")[c("ni","th")]
     } else {
-    z <- .Fortran("adasmse3",
-                as.double(sb),
-                as.double(z$th),
-                ni=as.double(z$ni),
-                as.logical(mask),
-                as.integer(ddim[1]),
-                as.integer(ddim[2]),
-                as.integer(ddim[3]),
-                as.integer(ngrad),
-                as.double(lambda),
-                as.integer(param$ind),
-                as.double(param$w),
-                as.integer(param$n),
-                th=double(prod(ddim)*ngrad),
-                r=double(prod(ddim)*ngrad),
-                as.double(s2inv),
-                double(ngrad),
-                double(ngrad),
-                double(ngrad),
-                DUPL=FALSE,
-                PACKAGE="dti")[c("ni","th","r")]
-    ind <- masksb&!is.na(z$r)&z$ni>s2inv&z$r<1e4
-    cat("quartiles of r",signif(quantile(z$r[ind]),3),"length of ind",length(ind),"\n")
+    warning("not yet implemented for heterogenious variances\n
+             returning original object")
+    return(object)
     }
 if(verbose){
-       if(length(sigma)==1) {
-       dim(z$ni) <- c(prod(ddim),ngrad)
+   dim(z$ni) <- c(prod(ddim),ngrad)
    cat("k:",k,"h_k:",signif(max(hakt),3)," quartiles of ni",signif(quantile(z$ni[mask,]),3),
   "mean of ni",signif(mean(z$ni[mask,]),3),
   " time elapsed:",format(difftime(Sys.time(),prt0),digits=3),"\n")
   } else {
-   cat("k:",k,"max(h_k):",signif(max(hakt),3)," quartiles of ni",signif(quantile(z$ni/s2inv),3),
-  "mean of ni",signif(mean(z$ni/s2inv),3),
-  "\n time elapsed:",format(difftime(Sys.time(),prt0),digits=3),"\n")
-  }
-    } else {
       cat(".")
     }
       if(smooths0){
@@ -155,6 +130,7 @@ if(verbose){
                     as.integer(ngrad),
                     as.integer(ns0),
                     as.double(lambda),
+                    as.integer(ncoils),
                     as.integer(param$ind),
                     as.double(param$w),
                     as.integer(param$n),
@@ -168,12 +144,13 @@ if(verbose){
       ni0 <- z0$ni
       rm(z0)
       gc()
+if(verbose){
    cat("End smoothing s0: quartiles of ni",signif(quantile(ni0[mask]),3),
   "mean of ni",signif(mean(ni0[mask]),3),
   " time elapsed:",format(difftime(Sys.time(),prt0),digits=3),"\n")
   }
   }
-if(!verbose) cat("\n")
+  }
   ngrad <- ngrad+1
   si <- array(0,c(ddim,ngrad))
   si[,,,1] <- if(smooths0) th0 else s0

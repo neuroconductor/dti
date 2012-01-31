@@ -41,6 +41,7 @@ getkappas <- function(grad, trace = 0, dist = 1){
 #  dist = 1: k4^2+k5^2+k6^2
 #  dist = 2: k4^2+k5^2+|k6|
 #  dist = 3: k4^2+k5^2
+#  dist = 4: sin^2(g_i,g_j)
 #
   krit <- function(par, matm, m4, m5, m6){
     ## sum((matm-expm(par[1]*m4)%*%expm(par[2]*m5)%*%expm(par[3]*m6))^2)
@@ -59,7 +60,7 @@ getkappas <- function(grad, trace = 0, dist = 1){
      p1 <- p+c(pk4/2,x,pi)
      krit(p1,matm,m4,m5,m6)
   }
-
+  if(dist<4){
   prta <- Sys.time()
   cat("Start computing spherical distances", format(Sys.time()), "\n")
   ngrad <- dim(grad)[2]
@@ -120,6 +121,11 @@ getkappas <- function(grad, trace = 0, dist = 1){
   dim(kappa456) <- c(3,ngrad,ngrad)
   prtb <- Sys.time()
   cat("End computing spherical distances", format(Sys.time()), "\n")
+  } else {
+      kappa456 <- array(0, c(3, ngrad, ngrad))
+      zbg <- betagamma(grad)
+      for(i in 1:ngrad) kappa456[1,i,] <- 1-(grad[,i]%*%grad)^2
+  }
   list(k456 = kappa456, bghat = zbg$bghat, nbg = zbg$nbg, nbghat = zbg$nbghat, dist=dist)
 }
 
