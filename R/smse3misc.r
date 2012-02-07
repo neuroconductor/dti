@@ -157,5 +157,57 @@ sigmaRicecorrected <- function(E, S, par = c(2.3547413, -2.2819829, -0.5873854, 
   S*sqrt(vcorr/ksiofx(xhat))
 }
 
+lvar <- function(a,mask,L,q=.9){
+da <- dim(a)
+ind1 <- 2:(da[1]-1)
+ind2 <- 2:(da[2]-1)
+ind3 <- 2:(da[3]-1)
+ma <- ma2 <- array(0,da-2)
+for(i in -1:1) for(j in -1:1) for(k in -1:1){
+ma <- ma + a[ind1+i,ind2+j,ind3+k]
+ma2 <- ma2 + a[ind1+i,ind2+j,ind3+k]^2
+}
+v <- 27/26*(ma2/27 - (ma/27)^2)
+to <- quantile(v[mask[ind1,ind2,ind3]],q)
+z <- density(v[mask[ind1,ind2,ind3]],to=to,n=1024)
+s <- z$x[z$y==max(z$y)]
+s2 <- 1/(2*L-2*gamma(L+.5)^2/gamma(L)^2)*s
+c(s0,s1,s2)
+}
+suggestkappa <- function(grad,vred=1,dist=1){
+#
+#  get a kappa value from variance reduction on the sphere
+#
+gstats <- getkappas(grad,dist=dist)
+ngrad <- dim(grad)[2]
+vred <- min(vred,ngrad-1)
+d <- switch(dist,apply(gstats$k456^2,2:3,sum),
+                 apply(gstats$k456[1:2,,]^2,2:3,sum)+abs(gstats$k456[3,,]),
+                 apply(gstats$k456[1:2,,]^2,2:3,sum),
+                 apply(gstats$k456^2,2:3,sum))
+kmin <- sqrt(min(d[d>1e-8]))# just to prevent from taking zero
+kappa <- kmin
+vredk <- 1
+while(vredk < vred){
+kappa <- kappa*1.005
+w <- matrix(pmax(1-d/kappa^2,0),ngrad,ngrad)
+vredk <- mean(apply(w,1,sum)^2/apply(w^2,1,sum))
+}
+list(kappa=kappa,vred=vredk)
+}
+vredsphere <- function(grad,kappa,dist=1){
+#
+#  compute initial variance reduction on the sphere 
+#  for given kappa
+#
+gstats <- getkappas(grad,dist=dist)
+ngrad <- dim(grad)[2]
+d <- switch(dist,apply(gstats$k456^2,2:3,sum),
+                 apply(gstats$k456[1:2,,]^2,2:3,sum)+abs(gstats$k456[3,,]),
+                 apply(gstats$k456[1:2,,]^2,2:3,sum),
+                 apply(gstats$k456^2,2:3,sum))
+w <- matrix(pmax(1-d/kappa^2,0),ngrad,ngrad)
+mean(apply(w,1,sum)^2/apply(w^2,1,sum))
+}
 
 

@@ -10,26 +10,35 @@ dwi.smooth <- function(object, ...) cat("No DTI smoothing defined for this class
 
 setGeneric("dwi.smooth", function(object, ...) standardGeneric("dwi.smooth"))
 
-setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=10,kappa0=0.4,ncoils=1,sigma=NULL,sigma2=NULL,minsb=5,smooths0=TRUE,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE,dist=1){
+setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=10,kappa0=0.4,ncoils=1,sigma=NULL,sigma2=NULL,minsb=5,smooths0=TRUE,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE,dist=1,model="Chi2"){
   args <- sys.call(-1)
   args <- c(object@call,args)
   sdcoef <- object@sdcoef
   if(length(sigma)==1) {
-     cat("using true variance",sigma^2,"\n")
+     cat("using supplied sigma",sigma,"\n")
   } else {
-  if(length(sdcoef)==4||all(sdcoef[5:8]==0)) object <- getsdofsb(object,qA0=.1,qA1=.95,nsb=1,level=NULL)
-  sdcoef <- object@sdcoef
-#  get mode
-   ind <- object@si>sdcoef[7]&object@si<sdcoef[8]
-   dsi <- density(object@si[ind],n=512,bw=sum(ind)^(-1/5)*(sdcoef[8]-sdcoef[7]))
-#plot(dsi)
-   maxdsi <- (2:511)[dsi$y[2:511]>pmax(dsi$y[1:510],dsi$y[3:512])]
-#cat("maxdsi",maxdsi,"\n","values",dsi$x[max(maxdsi)],"\n")
-   sigma <- sdcoef[5]+sdcoef[6]*dsi$x[max(maxdsi)]
-   cat("mode at",dsi$x[max(maxdsi)],"sigma",sigma,"\n")
-   sigma <- sigmaRicecorrected(dsi$x[max(maxdsi)],sigma)
-   cat("sdcoef",sdcoef,"estimated sigma",sigma,"\n")
+  mask <- getmask(object,level)$mask
+  sigma <- numeric(object@ngrad)
+  for(i in 1:object@ngrad){
+  sigma[i] <- sqrt(lvar(object@si[,,,i],!mask,ncoils))
   }
+ cat("quantiles of estimated sigma values",quantile(sigma),"\n")
+  sigma <- median(sigma)
+ cat("using median estimated sigma",sigma,"\n")
+#  if(length(sdcoef)==4||all(sdcoef[5:8]==0)) object <- getsdofsb(object,qA0=.1,qA1=.95,nsb=1,level=NULL)
+#  sdcoef <- object@sdcoef
+#  get mode
+#   ind <- object@si>sdcoef[7]&object@si<sdcoef[8]
+#   dsi <- density(object@si[ind],n=512,bw=sum(ind)^(-1/5)*(sdcoef[8]-sdcoef[7]))
+#plot(dsi)
+#   maxdsi <- (2:511)[dsi$y[2:511]>pmax(dsi$y[1:510],dsi$y[3:512])]
+#cat("maxdsi",maxdsi,"\n","values",dsi$x[max(maxdsi)],"\n")
+#   sigma <- sdcoef[5]+sdcoef[6]*dsi$x[max(maxdsi)]
+#   cat("mode at",dsi$x[max(maxdsi)],"sigma",sigma,"\n")
+#   sigma <- sigmaRicecorrected(dsi$x[max(maxdsi)],sigma)
+#   cat("sdcoef",sdcoef,"estimated sigma",sigma,"\n")
+  }
+  model <- if(model=="Chi2") 1 else 0 
   if(!(is.null(xind)&is.null(yind)&is.null(zind))){
   if(is.null(xind)) xind <- 1:object@ddim[1]
   if(is.null(yind)) yind <- 1:object@ddim[2]
@@ -45,6 +54,14 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=10,kappa0=0.4,nc
   grad <- object@gradient[,-s0ind]
   sb <- object@si[,,,-s0ind]
   s0 <- object@si[,,,s0ind]
+  if(model==1){
+#
+#   use squared values for Chi^2
+#
+     sb <- sb^2
+     s0 <- s0^2
+     sigma <- sigma^2
+  }
   if(ns0>1){
      dim(s0) <- c(prod(ddim),ns0)
      s0 <- s0%*%rep(1/ns0,ns0)
@@ -62,17 +79,8 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=10,kappa0=0.4,nc
   kappa <- hseq$kappa
   nind <- hseq$n
   hseq <- hseq$h
-  if(length(sigma)!=1){
-# otherwise s2inv is not needed
-  if(is.null(sigma2)){
-#
-  s2inv <- array((object@sdcoef[5]+object@sdcoef[6]*sb)^{-2},dim(sb))
-  } else {
-     s2inv <- array(1/sigma2,dim(sb))  
-  }
-  }
 # make it nonrestrictive for the first step
-  ni <- if(length(sigma)==1) array(1,dim(sb)) else s2inv
+  ni <- array(1,dim(sb))
   z <- list(th=sb, ni = ni)
   prt0 <- Sys.time()
   cat("adaptive smoothing in SE3, kstar=",kstar,if(verbose)"\n" else " ")
@@ -100,6 +108,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=10,kappa0=0.4,nc
                 as.double(sigma),
                 double(ngrad),
                 double(ngrad),
+                as.integer(model),
                 DUPL=FALSE,
                 PACKAGE="dti")[c("ni","th")]
     } else {
@@ -138,6 +147,10 @@ if(verbose){
                     as.integer(param$nstarts),
                     th0=double(prod(ddim)),
                     as.double(sigma),
+                    double(ngrad),
+                    double(ngrad),
+                    double(ngrad),
+                    as.integer(model),
                     DUPL=FALSE,
                     PACKAGE="dti")[c("ni","th0")]
       th0 <- z0$th0
@@ -155,7 +168,7 @@ if(verbose){
   si <- array(0,c(ddim,ngrad))
   si[,,,1] <- if(smooths0) th0 else s0
   si[,,,-1] <- z$th
-  object@si <- si
+  object@si <- if(model==1) sqrt(si) else si
   object@gradient <- grad <- cbind(c(0,0,0),grad)
   object@btb <- create.designmatrix.dti(grad)
   object@s0ind <- as.integer(1)
