@@ -130,7 +130,6 @@ if(verbose){
                     as.double(s0),
                     as.double(z$th),
                     as.double(th0),
-                    as.double(z$ni),
                     ni=as.double(ni0),
                     as.logical(mask),
                     as.integer(ddim[1]),

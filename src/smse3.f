@@ -284,6 +284,8 @@ C    die normalen-vektoren der Gradientenpaare
       gi1 = nbg(1,1,i4)
       gi2 = nbg(2,1,i4)
       gi3 = nbg(3,1,i4)
+      z = 0.d0
+C  just to prevent compiler warnings
       DO j4 = 1,ng
 C         cb = abs(gi1*nbg(1,1,j4)+gi2*nbg(2,1,j4)+gi3*nbg(3,1,j4))
          k4 = k456(1,i4,j4)
@@ -367,6 +369,8 @@ C   *cb
       gi1 = nbg(1,1,i4)
       gi2 = nbg(2,1,i4)
       gi3 = nbg(3,1,i4)
+      z = 0.d0
+C  just to prevent compiler warnings
       DO j4 = 1,ng
 C         cb = abs(gi1*nbg(1,1,j4)+gi2*nbg(2,1,j4)+gi3*nbg(3,1,j4))
          k4 = k456(1,i4,j4)
@@ -468,6 +472,8 @@ C
       real*8 z,thi,nii
       real*8 kldistnc0
       external kldistnc0
+      nii=1.d0
+C just to prevent a compiler warning
       DO i1=1,n1
          DO i2=1,n2
             DO i3=1,n3
@@ -558,7 +564,7 @@ C  do not adapt on the sphere !!!
       END DO
       RETURN
       END
-      subroutine asmse3s0(y0,th,th0,ni,ni0,mask,n1,n2,n3,ngrad,ns0,
+      subroutine asmse3s0(y0,th,th0,ni0,mask,n1,n2,n3,ngrad,ns0,
      1                    lambda,ncoils,ind,w,n,starts,nstarts,
      2                    thn0,sigma,lgf,dgf,fc,model)
 C   model=1 takes noncentral Chi-sq values in y0
@@ -573,11 +579,10 @@ C
      1        model
       logical mask(n1,n2,n3)
       real*8 y0(n1,n2,n3),th0(n1,n2,n3),th(n1,n2,n3,ngrad),
-     1       ni(n1,n2,n3,ngrad),ni0(n1,n2,n3),thn0(n1,n2,n3),
-     2       lambda,w(n),sw0,swy0,sigma,lgf(ngrad),dgf(ngrad),
-     3       fc(ngrad)
+     1       ni0(n1,n2,n3),thn0(n1,n2,n3),lambda,w(n),
+     2       sw0,swy0,sigma,lgf(ngrad),dgf(ngrad),fc(ngrad)
       integer i,i0,i1,i2,i3,i4,j1,j2,j3,l1,l2,l3,k1,k2,k3
-      real*8 z,swi,ng,ng0,nii0,thi0,lgfi,dgfi,fici
+      real*8 z,swi,ng,ng0,thi0,lgfi,dgfi,fici,ng0sc
       real*8 kldistnc0
       external kldistnc0
       k1=0
@@ -596,7 +601,7 @@ C
                if(.not.mask(i1,i2,i3)) CYCLE
                sw0=0.d0
                swy0=0.d0
-               nii0 = ni0(i1,i2,i3)
+               ng0sc = ng0*lambda/ni0(i1,i2,i3)
                thi0 = th0(i1,i2,i3)
                call ncstats(thi0,sigma,ncoils,model,lgfi,dgfi,fici)
                Do i4=1,ngrad
@@ -616,22 +621,20 @@ C
                   if(j3.le.0.or.j3.gt.n3) CYCLE
                   ng = starts(i0+1)-starts(i0)
                   ng0=ng+ns0
-                  z=ns0*nii0*
-C     1                kldrice(th0(i1,i2,i3),th0(j1,j2,j3),sigma)
-     1                  kldistnc0(lgfi,dgfi,fici,th0(j1,j2,j3),
-     2                           sigma,ncoils,model)
-                  if(z.ge.ng0) CYCLE
+                  z=ns0*kldistnc0(lgfi,dgfi,fici,th0(j1,j2,j3),
+     1                           sigma,ncoils,model)
+                  if(z.ge.ng0sc) CYCLE
                   DO i=starts(i0)+1,starts(i0+1)
                      i4=ind(4,i)
-                     z=z+ni(i1,i2,i3,i4)/lambda*
-C     1                  kldrice(th(i1,i2,i3,i4),th(j1,j2,j3,i4),sigma)
-     1                  kldistnc0(lgf(i4),dgf(i4),fc(i4),
-     2                            th(j1,j2,j3,i4),sigma,ncoils,model)
-                     if(z.ge.ng0) EXIT
+C                     z=z+sqrt(ni(i1,i2,i3,i4))/lambda*
+                     z=z+kldistnc0(lgf(i4),dgf(i4),fc(i4),
+     1                            th(j1,j2,j3,i4),sigma,ncoils,model)
+                     if(z.ge.ng0sc) EXIT
                      swi=swi+w(i)
+C   sum up location weights  swi/ng will be the mean weight for (j1,j2,j3) afterwards
                   END DO
-                  if(z.lt.ng0) THEN
-                     z=swi/ng*min(1.d0,2.d0-2.d0*z/ng0)
+                  if(z.lt.ng0sc) THEN
+                     z=swi/ng*min(1.d0,2.d0-2.d0*z/ng0sc)
                      sw0=sw0+z
                      swy0=swy0+z*y0(j1,j2,j3)
                   END IF
@@ -652,22 +655,20 @@ C  this part for negative l1 only (opposite directions)
                   if(j3.le.0.or.j3.gt.n3) CYCLE
                   ng = starts(i0+1)-starts(i0)
                   ng0=ng+ns0
-                  z=ns0*nii0*
-C     1                kldrice(th0(i1,i2,i3),th0(j1,j2,j3),sigma)
-     1                  kldistnc0(lgfi,dgfi,fici,th0(j1,j2,j3),
-     2                           sigma,ncoils,model)
-                  if(z.ge.ng0) CYCLE
+                  z=ns0*kldistnc0(lgfi,dgfi,fici,th0(j1,j2,j3),
+     1                           sigma,ncoils,model)
+                  if(z.ge.ng0sc) CYCLE
                   DO i=starts(i0)+1,starts(i0+1)
                      i4=ind(4,i)
-                     z=z+ni(i1,i2,i3,i4)/lambda*
-C     1                  kldrice(th(i1,i2,i3,i4),th(j1,j2,j3,i4),sigma)
-     1                  kldistnc0(lgf(i4),dgf(i4),fc(i4),
-     2                            th(j1,j2,j3,i4),sigma,ncoils,model)
-                     if(z.ge.ng0) EXIT
+C                     z=z+sqrt(ni(i1,i2,i3,i4))/lambda*
+                     z=z+kldistnc0(lgf(i4),dgf(i4),fc(i4),
+     1                            th(j1,j2,j3,i4),sigma,ncoils,model)
+                     if(z.ge.ng0sc) EXIT
                      swi=swi+w(i)
+C   sum up location weights  swi/ng will be the mean weight for (j1,j2,j3) afterwards
                   END DO
-                  if(z.lt.ng0) THEN
-                     z=swi/ng*min(1.d0,2.d0-2.d0*z/ng0)
+                  if(z.lt.ng0sc) THEN
+                     z=swi/ng*min(1.d0,2.d0-2.d0*z/ng0sc)
                      sw0=sw0+z
                      swy0=swy0+z*y0(j1,j2,j3)
                   END IF
