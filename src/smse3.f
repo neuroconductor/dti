@@ -499,13 +499,9 @@ C   by construction ind(4,.) should have same values consequtively
                   j3=i3+ind(3,i)
                   if(j3.le.0.or.j3.gt.n3) CYCLE
                   if(.not.mask(j1,j2,j3)) CYCLE          
-C                  i4=ind(4,i)
                   j4=ind(5,i)
-
 C adaptation 
                   if(lambda.lt.1d10) THEN
-C                     z=nii*kldistnc(thi,th(j1,j2,j3,j4),
-C     1                              sigma,ncoils,model)
                      z=nii*kldistnc0(lgfi,dgfi,fici,th(j1,j2,j3,j4),
      1                               sigma,ncoils,model)
 C  do not adapt on the sphere !!! 
@@ -540,11 +536,8 @@ C
                   if(.not.mask(j1,j2,j3)) CYCLE          
                   j4=ind(5,i)
                   if(lambda.lt.1d10) THEN
-C                     z=nii*kldrice(thi,th(j1,j2,j3,j4),sigma)
                      z=nii*kldistnc0(lgfi,dgfi,fici,th(j1,j2,j3,j4),
      1                               sigma,ncoils,model)
-C                     z=nii*kldistnc(thi,th(j1,j2,j3,j4),
-C     1                               sigma,ncoils,model)
 C  do not adapt on the sphere !!! 
                   ELSE
                      z=0.d0
@@ -564,36 +557,31 @@ C  do not adapt on the sphere !!!
       END DO
       RETURN
       END
-      subroutine asmse3s0(y0,th,th0,ni0,mask,n1,n2,n3,ngrad,ns0,
+      subroutine asmse3s0(y0,th0,ni0,mask,n1,n2,n3,ns0,
      1                    lambda,ncoils,ind,w,n,starts,nstarts,
-     2                    thn0,sigma,lgf,dgf,fc,model)
+     2                    thn0,sigma,swi,model)
 C   model=1 takes noncentral Chi-sq values in y0
 C   model=0 takes noncentral Chi values in y0
-C   perform adaptive smoothing on SE(3) 
+C   perform adaptive smoothing on R^3
 C   ind(.,i) contains coordinate indormation corresponding to positive
 C   location weights in w(i)
 C   ind(.,i)[1:5] are j1-i1,j2-i2,j3-i3, i4 and j4 respectively 
 C
       implicit logical (a-z)
-      integer n1,n2,n3,ngrad,n,ind(5,n),ns0,starts(1),nstarts,ncoils,
-     1        model
+      integer n1,n2,n3,n,ind(5,n),ns0,starts(1),nstarts,ncoils,model
       logical mask(n1,n2,n3)
-      real*8 y0(n1,n2,n3),th0(n1,n2,n3),th(n1,n2,n3,ngrad),
-     1       ni0(n1,n2,n3),thn0(n1,n2,n3),lambda,w(n),
-     2       sw0,swy0,sigma,lgf(ngrad),dgf(ngrad),fc(ngrad)
-      integer i,i0,i1,i2,i3,i4,j1,j2,j3,l1,l2,l3,k1,k2,k3
-      real*8 z,swi,ng,ng0,thi0,lgfi,dgfi,fici,ng0sc
+      real*8 y0(n1,n2,n3),th0(n1,n2,n3),ni0(n1,n2,n3),thn0(n1,n2,n3),
+     1       lambda,w(n),sw0,swy0,sigma,swi(nstarts)
+      integer i,i0,i1,i2,i3,j1,j2,j3,l1,l2,l3
+      real*8 z,lgfi,dgfi,fici,ns0sc
       real*8 kldistnc0
       external kldistnc0
-      k1=0
-      k2=0
-      k3=0
-      ng=ngrad
-      ng0=ngrad+ns0
-      DO i=1,nstarts
-         k1=max(k1,ind(1,starts(i)))
-         k2=max(k2,abs(ind(2,starts(i))))
-         k3=max(k3,abs(ind(3,starts(i))))
+      DO i0=1,nstarts
+         swi(i0)=0.d0
+         DO i=starts(i0)+1,starts(i0+1)
+            swi(i0)=swi(i0)+w(i)
+         END DO
+         swi(i0)=swi(i0)/(starts(i0+1)-starts(i0))
       END DO
       DO i1=1,n1
          DO i2=1,n2
@@ -601,40 +589,24 @@ C
                if(.not.mask(i1,i2,i3)) CYCLE
                sw0=0.d0
                swy0=0.d0
-               ng0sc = ng0*lambda/ni0(i1,i2,i3)
-               thi0 = th0(i1,i2,i3)
-               call ncstats(thi0,sigma,ncoils,model,lgfi,dgfi,fici)
-               Do i4=1,ngrad
-                  call ncstats(th(i1,i2,i3,i4),sigma,ncoils,model,
-     1                         lgf(i4),dgf(i4),fc(i4))
-               END DO
+               ns0sc = ns0*lambda/ni0(i1,i2,i3)
+               call ncstats(th0(i1,i2,i3),sigma,ncoils,model,
+     1                      lgfi,dgfi,fici)
                DO i0=1,nstarts
                   l1=ind(1,1+starts(i0))
-                  l2=ind(2,1+starts(i0))
-                  l3=ind(3,1+starts(i0))
-                  swi=0d0
                   j1=i1+l1
                   if(j1.le.0.or.j1.gt.n1) CYCLE
+                  l2=ind(2,1+starts(i0))
                   j2=i2+l2
                   if(j2.le.0.or.j2.gt.n2) CYCLE
+                  l3=ind(3,1+starts(i0))
                   j3=i3+l3
                   if(j3.le.0.or.j3.gt.n3) CYCLE
-                  ng = starts(i0+1)-starts(i0)
-                  ng0=ng+ns0
                   z=ns0*kldistnc0(lgfi,dgfi,fici,th0(j1,j2,j3),
-     1                           sigma,ncoils,model)
-                  if(z.ge.ng0sc) CYCLE
-                  DO i=starts(i0)+1,starts(i0+1)
-                     i4=ind(4,i)
-C                     z=z+sqrt(ni(i1,i2,i3,i4))/lambda*
-                     z=z+kldistnc0(lgf(i4),dgf(i4),fc(i4),
-     1                            th(j1,j2,j3,i4),sigma,ncoils,model)
-                     if(z.ge.ng0sc) EXIT
-                     swi=swi+w(i)
-C   sum up location weights  swi/ng will be the mean weight for (j1,j2,j3) afterwards
-                  END DO
-                  if(z.lt.ng0sc) THEN
-                     z=swi/ng*min(1.d0,2.d0-2.d0*z/ng0sc)
+     1                            sigma,ncoils,model)
+                  if(z.ge.ns0sc) CYCLE
+                  if(z.lt.ns0sc) THEN
+                     z=swi(i0)*min(1.d0,2.d0-2.d0*z/ns0sc)
                      sw0=sw0+z
                      swy0=swy0+z*y0(j1,j2,j3)
                   END IF
@@ -643,32 +615,19 @@ C   sum up location weights  swi/ng will be the mean weight for (j1,j2,j3) after
                   l1=ind(1,1+starts(i0))
                   if(l1.eq.0) CYCLE
 C  this part for negative l1 only (opposite directions)
-                  l2=ind(2,1+starts(i0))
-                  l3=ind(3,1+starts(i0))
-                  z=0.d0
-                  swi=0d0
                   j1=i1-l1
                   if(j1.le.0.or.j1.gt.n1) CYCLE
+                  l2=ind(2,1+starts(i0))
                   j2=i2-l2
                   if(j2.le.0.or.j2.gt.n2) CYCLE
+                  l3=ind(3,1+starts(i0))
                   j3=i3-l3
                   if(j3.le.0.or.j3.gt.n3) CYCLE
-                  ng = starts(i0+1)-starts(i0)
-                  ng0=ng+ns0
                   z=ns0*kldistnc0(lgfi,dgfi,fici,th0(j1,j2,j3),
-     1                           sigma,ncoils,model)
-                  if(z.ge.ng0sc) CYCLE
-                  DO i=starts(i0)+1,starts(i0+1)
-                     i4=ind(4,i)
-C                     z=z+sqrt(ni(i1,i2,i3,i4))/lambda*
-                     z=z+kldistnc0(lgf(i4),dgf(i4),fc(i4),
-     1                            th(j1,j2,j3,i4),sigma,ncoils,model)
-                     if(z.ge.ng0sc) EXIT
-                     swi=swi+w(i)
-C   sum up location weights  swi/ng will be the mean weight for (j1,j2,j3) afterwards
-                  END DO
-                  if(z.lt.ng0sc) THEN
-                     z=swi/ng*min(1.d0,2.d0-2.d0*z/ng0sc)
+     1                            sigma,ncoils,model)
+                  if(z.ge.ns0sc) CYCLE
+                  if(z.lt.ns0sc) THEN
+                     z=swi(i0)*min(1.d0,2.d0-2.d0*z/ns0sc)
                      sw0=sw0+z
                      swy0=swy0+z*y0(j1,j2,j3)
                   END IF
@@ -679,51 +638,6 @@ C   sum up location weights  swi/ng will be the mean weight for (j1,j2,j3) after
             END DO
          END DO
       END DO
-      RETURN
-      END
-      real*8 function kldrice(th1,th2,sigma)
-C Approximate Kullback Leibler distance for Rician distributions
-C Approximation with abs error less than 0.19 for th1 <10 or th2 <10
-C Approximation with abs error less than 0.08 for th2 >.2
-C Approximation with abs error less than 0.036 for th2 >1
-C Approximation with abs error less than 0.025 for th2 >1 and th1 >.1
-C values for th1 < 5 & th2>10 or th1>10 & th2 < 5 may be inaccurate but 
-C very large ... 
-      implicit logical (a-z)
-      real*8 th1,th2
-      real*8 sigma,a,b,la,lb,ai,bi,ai2,bi2,
-     1       ab,ab2,aab,bab,a2ab,alab,blab,aab2,
-     2       bab2,b2ab2,alab2,blab2,al2ab2,bl2ab2
-      a = th1/sigma
-      b = th2/sigma
-      ab = a-b
-      ab2 = ab*ab
-      kldrice = ab2/2.d0
-      if(max(th1,th2).lt.1d1.and.min(th1,th2).lt.5d0) THEN
-         la = 1.d0/dlog(th1+2.49d0)
-         lb = 1.d0/dlog(th2+1.82d0)
-         ai = 1.d0/(th1+0.54d0)
-         bi = 1.d0/(th2+1.27d0)
-         ai2 = ai*ai
-         bi2 = bi*bi
-         aab = ab*ai
-         bab = ab*bi
-         a2ab = ab*ai2
-         alab = ab*la
-         blab = ab*lb
-         aab2 = ab2*ai
-         bab2 = ab2*bi
-         b2ab2 = ab2*bi2
-         alab2 = ab2*la
-         blab2 = ab2*lb
-         al2ab2 = alab2*la*bi
-         bl2ab2 = blab2*lb*ai
-         kldrice=-5.235761d0*aab   + 4.398806d0*bab + 0.47777d0*a2ab -
-     -            6.988761d0*alab  + 7.10324d0 *blab + 
-     +            0.066667d0*aab2  + 0.591248d0*bab2 + 
-     +            0.090564d0*b2ab2 - 0.092317d0*blab2 - 
-     -           10.11165d0*al2ab2 - 1.352277d0*bl2ab2 +kldrice
-      ENDIF
       RETURN
       END
 C

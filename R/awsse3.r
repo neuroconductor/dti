@@ -128,14 +128,12 @@ if(verbose){
       param <- reduceparam(param)
      z0 <- .Fortran("asmse3s0",
                     as.double(s0),
-                    as.double(z$th),
                     as.double(th0),
                     ni=as.double(ni0),
                     as.logical(mask),
                     as.integer(ddim[1]),
                     as.integer(ddim[2]),
                     as.integer(ddim[3]),
-                    as.integer(ngrad),
                     as.integer(ns0),
                     as.double(lambda),
                     as.integer(ncoils),
@@ -146,9 +144,7 @@ if(verbose){
                     as.integer(param$nstarts),
                     th0=double(prod(ddim)),
                     as.double(sigma),
-                    double(ngrad),
-                    double(ngrad),
-                    double(ngrad),
+                    double(param$nstarts),#swi
                     as.integer(model),
                     DUPL=FALSE,
                     PACKAGE="dti")[c("ni","th0")]
