@@ -467,12 +467,13 @@ C
       logical mask(n1,n2,n3)
       real*8 y(n1,n2,n3,ngrad),th(n1,n2,n3,ngrad),ni(n1,n2,n3,ngrad),
      1       lambda,w(n),thn(n1,n2,n3,ngrad),sw(ngrad),swy(ngrad),
-     2       sigma,lgfi,dgfi,fici
+     2       sigma,lgfi,dgfi,fici,df
       integer i,i1,i2,i3,i4,j1,j2,j3,j4
       real*8 z,thi,nii
       real*8 kldistnc0
       external kldistnc0
       nii=1.d0
+      df=2.d0*ncoils
 C just to prevent a compiler warning
       DO i1=1,n1
          DO i2=1,n2
@@ -489,8 +490,7 @@ C   by construction ind(4,.) should have same values consequtively
                      i4 = ind(4,i)
                      thi = th(i1,i2,i3,i4)
                      nii = ni(i1,i2,i3,i4)/lambda
-                     call ncstats(thi,sigma,ncoils,model,
-     1                            lgfi,dgfi,fici)
+                     call ncstats(thi,sigma,df,model,lgfi,dgfi,fici)
                   END IF
                   j1=i1+ind(1,i)
                   if(j1.le.0.or.j1.gt.n1) CYCLE
@@ -503,7 +503,7 @@ C   by construction ind(4,.) should have same values consequtively
 C adaptation 
                   if(lambda.lt.1d10) THEN
                      z=nii*kldistnc0(lgfi,dgfi,fici,th(j1,j2,j3,j4),
-     1                               sigma,ncoils,model)
+     1                               sigma,df,model)
 C  do not adapt on the sphere !!! 
                   ELSE
                      z=0.d0
@@ -520,8 +520,7 @@ C   by construction ind(4,.) should have same values consequtively
                      i4 = ind(4,i)
                      thi = th(i1,i2,i3,i4)
                      nii = ni(i1,i2,i3,i4)/lambda
-                     call ncstats(thi,sigma,ncoils,model,
-     1                            lgfi,dgfi,fici)
+                     call ncstats(thi,sigma,df,model,lgfi,dgfi,fici)
                   END IF
 C
 C   handle case j1-i1 < 0 which is not contained in ind 
@@ -537,7 +536,7 @@ C
                   j4=ind(5,i)
                   if(lambda.lt.1d10) THEN
                      z=nii*kldistnc0(lgfi,dgfi,fici,th(j1,j2,j3,j4),
-     1                               sigma,ncoils,model)
+     1                               sigma,df,model)
 C  do not adapt on the sphere !!! 
                   ELSE
                      z=0.d0
@@ -573,9 +572,10 @@ C
       real*8 y0(n1,n2,n3),th0(n1,n2,n3),ni0(n1,n2,n3),thn0(n1,n2,n3),
      1       lambda,w(n),sw0,swy0,sigma,swi(nstarts)
       integer i,i0,i1,i2,i3,j1,j2,j3,l1,l2,l3
-      real*8 z,lgfi,dgfi,fici,ns0sc
+      real*8 z,lgfi,dgfi,fici,ns0sc,df
       real*8 kldistnc0
       external kldistnc0
+      df=2.d0*ncoils
       DO i0=1,nstarts
          swi(i0)=0.d0
          DO i=starts(i0)+1,starts(i0+1)
@@ -590,7 +590,7 @@ C
                sw0=0.d0
                swy0=0.d0
                ns0sc = ns0*lambda/ni0(i1,i2,i3)
-               call ncstats(th0(i1,i2,i3),sigma,ncoils,model,
+               call ncstats(th0(i1,i2,i3),sigma,df,model,
      1                      lgfi,dgfi,fici)
                DO i0=1,nstarts
                   l1=ind(1,1+starts(i0))
@@ -603,7 +603,7 @@ C
                   j3=i3+l3
                   if(j3.le.0.or.j3.gt.n3) CYCLE
                   z=ns0*kldistnc0(lgfi,dgfi,fici,th0(j1,j2,j3),
-     1                            sigma,ncoils,model)
+     1                            sigma,df,model)
                   if(z.ge.ns0sc) CYCLE
                   if(z.lt.ns0sc) THEN
                      z=swi(i0)*min(1.d0,2.d0-2.d0*z/ns0sc)
@@ -624,7 +624,7 @@ C  this part for negative l1 only (opposite directions)
                   j3=i3-l3
                   if(j3.le.0.or.j3.gt.n3) CYCLE
                   z=ns0*kldistnc0(lgfi,dgfi,fici,th0(j1,j2,j3),
-     1                            sigma,ncoils,model)
+     1                            sigma,df,model)
                   if(z.ge.ns0sc) CYCLE
                   if(z.lt.ns0sc) THEN
                      z=swi(i0)*min(1.d0,2.d0-2.d0*z/ns0sc)
@@ -683,46 +683,44 @@ C  Approximation by Patnaik (1949)
 C
 C   variant with precomputed quantities
 C
-      real*8 function kldistnc0(lgfi,dgfi,fici,thj,sigma,nc,model)
+      real*8 function kldistnc0(lgfi,dgfi,fici,thj,sigma,df,model)
 C    for smoothing noncentral Chi values
 C    thi,thj  current estimates
 C    sigma    estimated scale parameter 
-C    nc number of coils
+C    df= 2 * number of coils
 C    model = 0   smoothing of chi values
 C    model = 1   smoothing of chi^2 values
       implicit logical (a-z)
-      integer nc,model
-      real*8 lgfi,dgfi,fici,thj,sigma
-      real*8 mu2j,fj,cj,df,z1,z2
-      real*8 lgammaf,digammaf
-      external lgammaf, digammaf
+      integer model
+      real*8 lgfi,dgfi,fici,thj,sigma,df
+      real*8 mu2j,fj,cj,z1,z2
+      real*8 lgammaf
+      external lgammaf
 C  use Chi^2 instead of Chi for KL distance
       mu2j = thj/sigma
       if(model.eq.0) mu2j = mu2j*mu2j
 C  Approximation by Patnaik (1949)
-      df = 2.d0*nc
       z1 = df + mu2j
       z2 = z1 + mu2j
       cj = z2/z1
-      fj = z1*z1/z2
+      fj = z1/cj
       kldistnc0 = lgammaf(fj/2.d0)-lgfi+0.5d0*(fj*dlog(cj)+
      1           fici/cj-fj*dgfi)
       RETURN
       END
-      subroutine ncstats(thi,sigma,nc,model,lgfi,dgfi,fici)
+      subroutine ncstats(thi,sigma,df,model,lgfi,dgfi,fici)
       implicit logical (a-z)
-      integer nc,model
-      real*8 thi,sigma,lgfi,dgfi,fici
-      real*8 mu2i,df,z1,z2,dlci,fi,ci
+      integer model
+      real*8 thi,sigma,lgfi,dgfi,fici,df
+      real*8 mu2i,z1,z2,dlci,fi,ci
       real*8 lgammaf,digammaf
       external lgammaf, digammaf
       mu2i = thi/sigma
       if(model.eq.0) mu2i = mu2i*mu2i
-      df = 2.d0*nc
       z1 = df + mu2i
       z2 = z1 + mu2i
       ci = z2/z1
-      fi = z1*z1/z2
+      fi = z1/ci
       fici = fi*ci
       dlci = dlog(ci)
       dgfi = digammaf(0.5d0*fi)+dlci

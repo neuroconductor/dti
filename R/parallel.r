@@ -64,18 +64,14 @@ pmatrix <- function (v, FUN, ..., mc.set.seed = TRUE, mc.silent = FALSE,
     if (mc.set.seed) 
         mc.reset.stream()
     n <- dim(v)[2]
-    l <- if (n <= cores) 
-        as.list(data.frame(v))
-    else {
-        il <- as.integer(n/cores)
-        xc <- n - il * cores
-        sl <- rep(il, cores)
-        if (xc) 
-            sl[1:xc] <- il + 1L
-        si <- cumsum(c(1L, sl))
-        se <- si + c(sl, 0L) - 1L
-        lapply(seq_len(cores), function(ix) v[,si[ix]:se[ix]])
-    }
+    if (n <= cores)  return(FUN(v, ...))
+    il <- as.integer(n/cores)
+    xc <- n - il * cores
+    sl <- rep(il, cores)
+    if (xc) sl[1:xc] <- il + 1L
+    si <- cumsum(c(1L, sl))
+    se <- si + c(sl, 0L) - 1L
+    l <- lapply(seq_len(cores), function(ix) v[,si[ix]:se[ix],drop=FALSE])
     jobs <- NULL
     cleanup <- function() {
         if (length(jobs) && mc.cleanup) {
