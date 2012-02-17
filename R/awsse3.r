@@ -10,7 +10,7 @@ dwi.smooth <- function(object, ...) cat("No DTI smoothing defined for this class
 
 setGeneric("dwi.smooth", function(object, ...) standardGeneric("dwi.smooth"))
 
-setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=10,kappa0=0.4,ncoils=1,sigma=NULL,sigma2=NULL,minsb=5,smooths0=TRUE,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE,dist=1,model="Chi2"){
+setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,ncoils=1,sigma=NULL,sigma2=NULL,minsb=5,vred=4,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE,dist=1,model="Chi2"){
   args <- sys.call(-1)
   args <- c(object@call,args)
   sdcoef <- object@sdcoef
@@ -45,7 +45,6 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=10,kappa0=0.4,nc
   if(is.null(zind)) zind <- 1:object@ddim[3]
   object <- object[xind,yind,zind]
   }
-  kappa <- NULL
   ngrad <- object@ngrad
   ddim <- object@ddim
   s0ind <- object@s0ind
@@ -54,6 +53,18 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=10,kappa0=0.4,nc
   grad <- object@gradient[,-s0ind]
   sb <- object@si[,,,-s0ind]
   s0 <- object@si[,,,s0ind]
+  if(is.null(kappa)){
+#  select kappa based on variance reduction on the sphere
+   if(is.null(vred)) {
+     warning("You need to specify either kappa0 or vred\n returning unsmoothed object")
+     return(object)
+   }
+   if(!is.numeric(vred)|vred<1){
+     warning("vred needs to be >= 1\n returning unsmoothed object")
+     return(object)
+   }
+   kappa0 <- suggestkappa(grad,vred,dist)
+  }
   if(model==1){
 #
 #   use squared values for Chi^2
@@ -67,15 +78,13 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=10,kappa0=0.4,nc
      s0 <- s0%*%rep(1/ns0,ns0)
      dim(s0) <- ddim
   }
-  if(smooths0){
      th0 <- s0
      ni0 <- array(1,ddim)
-  }
   mask <- apply(sb,1:3,mean) > minsb
   masksb <- array(mask,c(ddim,ngrad))
   vext <- object@voxelext[2:3]/object@voxelext[1]
   gradstats <- getkappas(grad,dist=dist)
-  hseq <- gethseqfullse3(kstar,gradstats,kappa0,vext=vext,verbose=verbose)
+  hseq <- gethseqfullse3(kstar,gradstats,kappa0,vext=vext)
   kappa <- hseq$kappa
   nind <- hseq$n
   hseq <- hseq$h
@@ -124,7 +133,6 @@ if(verbose){
   } else {
       cat(".")
     }
-      if(smooths0){
       param <- reduceparam(param)
      z0 <- .Fortran("asmse3s0",
                     as.double(s0),
@@ -158,10 +166,9 @@ if(verbose){
   " time elapsed:",format(difftime(Sys.time(),prt0),digits=3),"\n")
   }
   }
-  }
   ngrad <- ngrad+1
   si <- array(0,c(ddim,ngrad))
-  si[,,,1] <- if(smooths0) th0 else s0
+  si[,,,1] <-  th0 
   si[,,,-1] <- z$th
   object@si <- if(model==1) sqrt(si) else si
   object@gradient <- grad <- cbind(c(0,0,0),grad)
@@ -202,7 +209,6 @@ lkfullse3 <- function(h,kappa,gradstats,vext,n){
                     as.double(kappa),
                     as.double(gradstats$k456),
                     as.double(gradstats$nbg),
-                    as.double(gradstats$nbghat),
                     as.integer(ngrad),
                     as.double(vext),
                     ind=integer(5*n),

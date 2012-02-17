@@ -1,13 +1,13 @@
-      subroutine ghfse3i(i4,kstar,k456,nbg,nbghat,ng,
+      subroutine ghfse3i(i4,kstar,k456,nbg,ng,
      1                    kappa,vext,h,varred,n,dist)
 C
 C   compute bandwidth sequence for given kappa and gradients  
 C   lkfse3i0 computes weighting schemes and corresponding variance reduction
-C   k456,nbg,nbghat,ng (input) contain auxiliary statistics(gradients)
+C   k456,nbg,ng (input) contain auxiliary statistics(gradients)
 C
       implicit logical (a-z)
       integer ng,i4,kstar,n,dist
-      real*8 k456(3,ng,ng),nbg(3,3,ng),nbghat(3,3,ng,ng),vext(2),
+      real*8 k456(3,ng,ng),nbg(3,3,ng),vext(2),
      1       kappa,h(kstar),varred(kstar)
       logical getkappa
       integer k,n0,maxn
@@ -17,18 +17,18 @@ C
       hakt=1.d0
 C   initialize kappa
 C   loop over steps
-      call lkfse3i0(hakt,kappa/hakt,i4,k456,nbg,nbghat,ng,
+      call lkfse3i0(hakt,kappa/hakt,i4,k456,nbg,ng,
      1                   vext,vr,n,dist)
       chk=ch*vr
       maxn = 1
       DO k=1,kstar
-         call lkfse3i0(hakt,kappa/hakt,i4,k456,nbg,nbghat,ng,
+         call lkfse3i0(hakt,kappa/hakt,i4,k456,nbg,ng,
      1                   vext,vr,n,dist)
 C  search for new hakt   
          vred=vr/chk
          DO WHILE (vred.lt.1) 
             hakt=hakt*1.05
-            call lkfse3i0(hakt,kappa/hakt,i4,k456,nbg,nbghat,ng,
+            call lkfse3i0(hakt,kappa/hakt,i4,k456,nbg,ng,
      1                   vext,vr,n,dist)
             vred=vr/chk
          END DO
@@ -37,7 +37,7 @@ C  search for new hakt
             v0r=vr
             n0=n
             hakt=hakt/1.005
-            call lkfse3i0(hakt,kappa/hakt,i4,k456,nbg,nbghat,ng,
+            call lkfse3i0(hakt,kappa/hakt,i4,k456,nbg,ng,
      1                   vext,vr,n,dist)
             vred=vr/chk
             If (vred.lt.1) THEN
@@ -51,7 +51,7 @@ C  search for new hakt
          chk=chk*ch
          maxn=max(maxn,n)
          if(k.eq.kstar) THEN
-            call lkfse3i0(h(k),kappa/hakt,i4,k456,nbg,nbghat,ng,
+            call lkfse3i0(h(k),kappa/hakt,i4,k456,nbg,ng,
      1                   vext,vr,n,dist)
          END IF
 C  number of positive weights for last step in n
@@ -214,10 +214,10 @@ C standardize to length 1
       END DO
       RETURN
       END
-      subroutine bgstats(g,n,bg,bghat,nbg,nbghat)
+      subroutine bgstats(g,n,bg,bghat,nbg)
       implicit logical (a-z)
       integer n
-      real*8 g(3,n),bg(2,n),bghat(2,n,n),nbg(3,3,n),nbghat(3,3,n,n)
+      real*8 g(3,n),bg(2,n),bghat(2,n,n),nbg(3,3,n)
       integer i1,i2
       real*8 dgamma,cb1,sb1,cb2,sb2,betah,cbh,z,gammah,cdg
 C   first get sperical coordinates in bg
@@ -234,7 +234,6 @@ C    die normalen-vektoren der Gradienten
                bghat(1,i1,i2)=asin(sin(bg(1,i1)-
      1                             sign(1.d0,cdg)*bg(1,i2)))
                bghat(2,i1,i2)=0.d0
-               call ng123(betah,gammah,nbghat(1,1,i1,i2))
                CYCLE
             END IF
             sb2=sin(bg(1,i2))
@@ -258,21 +257,20 @@ C               gammah = asin(dgamma*sign(1d0,cb1*cbh))
             bghat(1,i1,i2)=betah
             bghat(2,i1,i2)=gammah
 C    die spherischen Koordinaten der Gradientenpaare (Parameter der Rotationsmatix)
-            call ng123(betah,gammah,nbghat(1,1,i1,i2))
-C    die normalen-vektoren der Gradientenpaare
          END DO
       END DO  
       RETURN
       END
-      subroutine lkfse3i(h,kappa,i4,k456,nbg,nbghat,ng,
+      subroutine lkfse3i(h,kappa,i4,k456,nbg,ng,
      1                   vext,ind,wght,n,dist)
       implicit logical (a-z)
       integer ng,n,ind(5,n),i4,dist
       real*8 h,kappa,k456(3,ng,ng),
-     1       nbg(3,3,ng),nbghat(3,3,ng,ng),vext(2),wght(n)
+     1       nbg(3,3,ng),vext(2),wght(n)
       integer ih1,ih2,ih3,i,j1,j2,j3,j4
-      real*8 h2,kap2,x1,x2,x3,xh1,xh2,xh3,k1,k2,k3,k4,k5,k6,z,z1,
+      real*8 h2,kap2,x1,x2,x3,k4,k5,k6,z,z1,
      1       vd2,vd3,gi1,gi2,gi3
+C     real*8 k1,k2,k3,xh1,xh2,xh3,
       ih1 = max(1.d0,5.0d0*h)
       ih2 = max(1.d0,5.0d0*h/vext(1))
       ih3 = max(1.d0,5.0d0*h/vext(2))
@@ -303,24 +301,25 @@ C   last three komponents already to large
                x2 = vd2*j2
                DO j3 = -ih3,ih3
                   x3 = vd3*j3
-                  xh1=x1*nbg(1,2,j4)+x2*nbg(2,2,j4)+x3*nbg(3,2,j4)
-                  xh2=x1*nbg(1,3,j4)+x2*nbg(2,3,j4)+x3*nbg(3,3,j4)
-                  xh3=x1*nbg(1,1,j4)+x2*nbg(2,1,j4)+x3*nbg(3,1,j4)
+                  z1 = z+x1*x1+x2*x2+x3*x3
+C                  xh1=x1*nbg(1,2,j4)+x2*nbg(2,2,j4)+x3*nbg(3,2,j4)
+C                  xh2=x1*nbg(1,3,j4)+x2*nbg(2,3,j4)+x3*nbg(3,3,j4)
+C                  xh3=x1*nbg(1,1,j4)+x2*nbg(2,1,j4)+x3*nbg(3,1,j4)
 C thats xhat
 C now k1       
-                  k1=xh1*nbghat(1,2,i4,j4)+xh2*nbghat(2,2,i4,j4)+
-     1               xh3*nbghat(3,2,i4,j4)
-                  z1=z+k1*k1
-                  if(z1.gt.h2) CYCLE
+C                  k1=xh1*nbghat(1,2,i4,j4)+xh2*nbghat(2,2,i4,j4)+
+C     1               xh3*nbghat(3,2,i4,j4)
+C                  z1=z+k1*k1
+C                  if(z1.gt.h2) CYCLE
 C   last three komponents + first already to large
-                  k2=xh1*nbghat(1,3,i4,j4)+xh2*nbghat(2,3,i4,j4)+
-     1               xh3*nbghat(3,3,i4,j4)
-                  z1=z1+k2*k2
-                  if(z1.gt.h2) CYCLE
+C                  k2=xh1*nbghat(1,3,i4,j4)+xh2*nbghat(2,3,i4,j4)+
+C     1               xh3*nbghat(3,3,i4,j4)
+C                  z1=z1+k2*k2
+C                  if(z1.gt.h2) CYCLE
 C   last three komponents + first two already to large
-                  k3=xh1*nbghat(1,1,i4,j4)+xh2*nbghat(2,1,i4,j4)+
-     1               xh3*nbghat(3,1,i4,j4)
-                  z1=z1+k3*k3
+C                  k3=xh1*nbghat(1,1,i4,j4)+xh2*nbghat(2,1,i4,j4)+
+C     1               xh3*nbghat(3,1,i4,j4)
+C                  z1=z1+k3*k3
                   if(z1.gt.h2) CYCLE
                   if(i.gt.n) THEN
                      call intpr("Exceeded max i",14,i,1)
@@ -344,15 +343,16 @@ C   *cb
       n = i-1
       RETURN
       END
-      subroutine lkfse3i0(h,kappa,i4,k456,nbg,nbghat,ng,
+      subroutine lkfse3i0(h,kappa,i4,k456,nbg,ng,
      1                   vext,vred,n,dist)
       implicit logical (a-z)
       integer ng,n,i4,dist
       real*8 h,kappa,k456(3,ng,ng),
-     1       nbg(3,3,ng),nbghat(3,3,ng,ng),vext(2),vred
+     1       nbg(3,3,ng),vext(2),vred
       integer ih1,ih2,ih3,j1,j2,j3,j4,mj1,mj2,mj3,rad
-      real*8 x1,x2,x3,xh1,xh2,xh3,k1,k2,k3,k4,k5,k6,z,z1,
+      real*8 x1,x2,x3,k4,k5,k6,z,z1,
      1       sw,sw2,wght,anz,h2,kap2,vd2,vd3,gi1,gi2,gi3
+C     real*8 k1,k2,k3,xh1,xh2,xh3
       ih1 = max(1.d0,5.0d0*h)
       ih2 = max(1.d0,5.0d0*h/vext(1))
       ih3 = max(1.d0,5.0d0*h/vext(2))
@@ -388,24 +388,25 @@ C   last three komponents already to large
                x2 = vd2*j2
                DO j3 = -ih3,ih3
                   x3 = vd3*j3
-                  xh1=x1*nbg(1,2,j4)+x2*nbg(2,2,j4)+x3*nbg(3,2,j4)
-                  xh2=x1*nbg(1,3,j4)+x2*nbg(2,3,j4)+x3*nbg(3,3,j4)
-                  xh3=x1*nbg(1,1,j4)+x2*nbg(2,1,j4)+x3*nbg(3,1,j4)
+                  z1 = z+x1*x1+x2*x2+x3*x3
+C                  xh1=x1*nbg(1,2,j4)+x2*nbg(2,2,j4)+x3*nbg(3,2,j4)
+C                  xh2=x1*nbg(1,3,j4)+x2*nbg(2,3,j4)+x3*nbg(3,3,j4)
+C                  xh3=x1*nbg(1,1,j4)+x2*nbg(2,1,j4)+x3*nbg(3,1,j4)
 C thats xhat
 C now k1       
-                  k1=xh1*nbghat(1,2,i4,j4)+xh2*nbghat(2,2,i4,j4)+
-     1               xh3*nbghat(3,2,i4,j4)
-                  z1=z+k1*k1
-                  if(z1.gt.h2) CYCLE
+C                  k1=xh1*nbghat(1,2,i4,j4)+xh2*nbghat(2,2,i4,j4)+
+C     1               xh3*nbghat(3,2,i4,j4)
+C                  z1=z+k1*k1
+C                  if(z1.gt.h2) CYCLE
 C   last three komponents + first already to large
-                  k2=xh1*nbghat(1,3,i4,j4)+xh2*nbghat(2,3,i4,j4)+
-     1               xh3*nbghat(3,3,i4,j4)
-                  z1=z1+k2*k2
-                  if(z1.gt.h2) CYCLE
+C                  k2=xh1*nbghat(1,3,i4,j4)+xh2*nbghat(2,3,i4,j4)+
+C     1               xh3*nbghat(3,3,i4,j4)
+C                  z1=z1+k2*k2
+C                  if(z1.gt.h2) CYCLE
 C   last three komponents + first two already to large
-                  k3=xh1*nbghat(1,1,i4,j4)+xh2*nbghat(2,1,i4,j4)+
-     1               xh3*nbghat(3,1,i4,j4)
-                  z1=z1+k3*k3
+C                  k3=xh1*nbghat(1,1,i4,j4)+xh2*nbghat(2,1,i4,j4)+
+C     1               xh3*nbghat(3,1,i4,j4)
+C                  z1=z1+k3*k3
                   if(z1.gt.h2) CYCLE
                   wght= (1.d0-z1/h2)
 C        *cb
@@ -435,17 +436,15 @@ C   if j1>0  (-j1,-j2,-j3) gets the same weight, so count it twice
       END IF
       RETURN
       END
-      subroutine lkfulse3(h,kappa,k456,nbg,nbghat,ng,
-     1                   vext,ind,wght,n,dist)
+      subroutine lkfulse3(h,kappa,k456,nbg,ng,vext,ind,wght,n,dist)
       implicit logical (a-z)
       integer ng,n,ind(5,n),dist
-      real*8 h(ng),kappa(ng),k456(3,ng,ng),
-     1       nbg(3,3,ng),nbghat(3,3,ng,ng),vext(2),wght(n)
+      real*8 h(ng),kappa(ng),k456(3,ng,ng),nbg(3,3,ng),vext(2),wght(n)
       integer ns,ni,i
       ns = 0
       DO i = 1,ng
          ni = n-ns
-         call lkfse3i(h(i),kappa(i),i,k456,nbg,nbghat,ng,
+         call lkfse3i(h(i),kappa(i),i,k456,nbg,ng,
      1                vext,ind(1,ns+1),wght(ns+1),ni,dist)
          ns = ns+ni
       END DO
