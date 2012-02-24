@@ -161,15 +161,15 @@ ind2 <- 2:(da[2]-1)
 ind3 <- 2:(da[3]-1)
 ma <- ma2 <- array(0,da-2)
 for(i in -1:1) for(j in -1:1) for(k in -1:1){
-ma <- ma + a[ind1+i,ind2+j,ind3+k]
-ma2 <- ma2 + a[ind1+i,ind2+j,ind3+k]^2
+ma <- ma + a[ind1+i,ind2+j,ind3+k, drop = FALSE]
+ma2 <- ma2 + a[ind1+i,ind2+j,ind3+k, drop = FALSE]^2
 }
 v <- 27/26*(ma2/27 - (ma/27)^2)
 to <- quantile(v[mask[ind1,ind2,ind3]],q)
 z <- density(v[mask[ind1,ind2,ind3]],to=to,n=1024)
 s <- z$x[z$y==max(z$y)]
 s2 <- 1/(2*L-2*gamma(L+.5)^2/gamma(L)^2)*s
-c(s0,s1,s2)
+  s2
 }
 suggestkappa <- function(grad,vred=1,dist=1){
 #
