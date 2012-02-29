@@ -24,9 +24,13 @@ matrm <- function(b, g){
 }
 
 matrn4 <- function(b){
-  matrix(c(0, tan(b), 0,
-           -tan(b), 0, -1/cos(b),
-           0, 1/cos(b), 0),
+#  matrix(c(0, tan(b), 0,
+#           -tan(b), 0, -1/cos(b),
+#           0, 1/cos(b), 0),
+#         3, 3)
+  matrix(c(0, sin(b), 0,
+           -sin(b), 0, -1,
+           0, 1, 0),
          3, 3)
 }
 #
@@ -35,10 +39,9 @@ matrn4 <- function(b){
 
 getkappas <- function(grad, trace = 0, dist = 1){
 #
-#  dist = 1: k4^2+k5^2+k6^2
-#  dist = 2: k4^2+k5^2+|k6|
-#  dist = 3: k4^2+k5^2
-#  dist = 4: sin^2(g_i,g_j)
+#  dist = 1: k4^2+k5^2+|k6|
+#  dist = 2: k4^2+k5^2+k6^2
+#  dist = 3: sin^2(g_i,g_j)
 #
   krit <- function(par, matm, m4, m5, m6){
     ## sum((matm-expm(par[1]*m4)%*%expm(par[2]*m5)%*%expm(par[3]*m6))^2)
@@ -57,10 +60,10 @@ getkappas <- function(grad, trace = 0, dist = 1){
      p1 <- p+c(pk4/2,x,pi)
      krit(p1,matm,m4,m5,m6)
   }
-  if(dist<4){
+  ngrad <- dim(grad)[2]
+  if(dist<3){
   prta <- Sys.time()
   cat("Start computing spherical distances", format(Sys.time()), "\n")
-  ngrad <- dim(grad)[2]
   m5 <- matrix(c(0, 0, 1,
                  0, 0, 0,
                  -1, 0, 0),
@@ -73,28 +76,33 @@ getkappas <- function(grad, trace = 0, dist = 1){
   zbg <- betagamma(grad)
   for (i in 1:ngrad) for (j in 1:ngrad) {
     bg <- zbg$bghat[, i, j]
-#  preliminary fix
-    if(abs(cos(bg[1])) < 1.e-4) bg[1] = pi/2 - 1e-4*sign(cos(bg[1]))
-    if(abs(bg[1]-pi/2) <1e-8) bg[1] = pi/2 - 1e-4
-#  preliminary fix
+#   fix for discontinuity
+    if(abs(cos(bg[1])) < 1.e-7) bg[1] = pi/2 - 1e-7*sign(cos(bg[1]))
     m4 <- matrn4(bg[1])
     matm <- matrm(bg[1], bg[2])
-    k456 <- runif(3, -.01, .01)
+    cbg1 <- cos(bg[1])
+    k456 <- runif(3, -.1, .1)
     z <- optim(k456, krit, method = "BFGS", matm = matm, m4 = m4, m5 = m5, m6 = m6,
-               control = list(trace = trace, reltol = 1e-10, abstol = 1e-16))
-    while (z$value > 1e-15) {
+               control = list(trace = trace, maxit=50000, reltol = 1e-12, abstol = 1e-16))
+    count <- 10
+    while (z$value > 1e-14&count>0) {
       ## cat("i",i,"j",j,"value",z$value,"par",z$par,"\n")
-      k456 <- runif(3, -.01, .01)
+      k456 <- runif(3, -1, 1)
       z <- optim(k456, krit, method = "BFGS", matm = matm, m4 = m4, m5 = m5, m6 = m6,
-                 control = list(trace = trace, reltol = 1e-10, abstol = 1e-16))
+                 control = list(trace = trace, maxit=50000, reltol = 1e-12, abstol = 1e-16))
       ## cat(" new value",z$value,"par",z$par,"\n")
+      count <- count - 1
+      if(count==0)
+      cat("failed for bg:",bg,"value",z$value,"par",z$par,"\n")
     }
+    z$par[1] <- z$par[1]/cbg1
     kappa456[, i, j] <- z$par
     pk4 <- abs(2*pi*cos(bg[1])/(2-cos(bg[1])^2)^.5)
     while(kappa456[1,i,j] < -pk4/2) kappa456[1,i,j] <- kappa456[1,i,j] + pk4
     while(kappa456[1,i,j] >= pk4/2) kappa456[1,i,j] <- kappa456[1,i,j] - pk4
     kappa456a[,i,j] <- kappa456[,i,j]+c(pk4/2,0,pi)
-    kappa456a[2,i,j] <- optimize(krit5,c(-pi,pi),p=kappa456[,i,j],pk4=pk4,
+    kpar <- kappa456[,i,j]*c(cbg1,1,1)
+    kappa456a[2,i,j] <- optimize(krit5,c(-pi,pi),p=kpar,pk4=pk4,
                           matm=matm,m4=m4,m5=m5,m6=m6,maximum=FALSE)$minimum
     while(kappa456a[1,i,j] < -pk4/2) kappa456a[1,i,j] <- kappa456a[1,i,j] + pk4
     while(kappa456a[1,i,j] >= pk4/2) kappa456a[1,i,j] <- kappa456a[1,i,j] - pk4
@@ -107,12 +115,10 @@ getkappas <- function(grad, trace = 0, dist = 1){
     kappa456a[2:3, , ][kappa456a[2:3, , ] < -pi] <- kappa456a[2:3, , ][kappa456a[2:3, , ] < -pi] + 2*pi
     kappa456a[2:3, , ][kappa456a[2:3, , ] >  pi] <- kappa456a[2:3, , ][kappa456a[2:3, , ] > pi] - 2*pi
   }
-  dka <- switch(dist,kappa456[1,,]^2+kappa456[2,,]^2+kappa456[3,,]^2,
-                     kappa456[1,,]^2+kappa456[2,,]^2+abs(kappa456[3,,]),
-                     kappa456[1,,]^2+kappa456[2,,]^2)
-  dkb <- switch(dist,kappa456a[1,,]^2+kappa456a[2,,]^2+kappa456a[3,,]^2,
-                     kappa456a[1,,]^2+kappa456a[2,,]^2+abs(kappa456a[3,,]),
-                     kappa456a[1,,]^2+kappa456a[2,,]^2)
+  dka <- switch(dist,kappa456[1,,]^2+kappa456[2,,]^2+abs(kappa456[3,,]),
+                     kappa456[1,,]^2+kappa456[2,,]^2+kappa456[3,,]^2)
+  dkb <- switch(dist,kappa456a[1,,]^2+kappa456a[2,,]^2+abs(kappa456a[3,,]),
+                     kappa456a[1,,]^2+kappa456a[2,,]^2+kappa456a[3,,]^2)
   dim(kappa456) <- dim(kappa456a) <- c(3,ngrad*ngrad)
   kappa456[,dkb<dka] <- kappa456a[,dkb<dka]
   dim(kappa456) <- c(3,ngrad,ngrad)
@@ -155,6 +161,10 @@ sigmaRicecorrected <- function(E, S, par = c(2.3547413, -2.2819829, -0.5873854, 
 }
 
 lvar <- function(a,mask,L,q=.9){
+#
+#   variance estimates for central \chi^2 with 2L df
+#  Aja-Fernandez (2009) eqn. (32)
+#
 da <- dim(a)
 ind1 <- 2:(da[1]-1)
 ind2 <- 2:(da[2]-1)
@@ -169,8 +179,9 @@ to <- quantile(v[mask[ind1,ind2,ind3]],q)
 z <- density(v[mask[ind1,ind2,ind3]],to=to,n=1024)
 s <- z$x[z$y==max(z$y)]
 s2 <- 1/(2*L-2*gamma(L+.5)^2/gamma(L)^2)*s
-  s2
+s2
 }
+
 suggestkappa <- function(grad,vred=1,dist=1){
 #
 #  get a kappa value from variance reduction on the sphere
@@ -178,9 +189,8 @@ suggestkappa <- function(grad,vred=1,dist=1){
 gstats <- getkappas(grad,dist=dist)
 ngrad <- dim(grad)[2]
 vred <- min(vred,ngrad-1)
-d <- switch(dist,apply(gstats$k456^2,2:3,sum),
-                 apply(gstats$k456[1:2,,]^2,2:3,sum)+abs(gstats$k456[3,,]),
-                 apply(gstats$k456[1:2,,]^2,2:3,sum),
+d <- switch(dist,apply(gstats$k456[1:2,,]^2,2:3,sum)+abs(gstats$k456[3,,]),
+                 apply(gstats$k456^2,2:3,sum),
                  apply(gstats$k456^2,2:3,sum))
 kmin <- sqrt(min(d[d>1e-8]))# just to prevent from taking zero
 kappa <- kmin
@@ -199,9 +209,8 @@ vredsphere <- function(grad,kappa,dist=1){
 #
 gstats <- getkappas(grad,dist=dist)
 ngrad <- dim(grad)[2]
-d <- switch(dist,apply(gstats$k456^2,2:3,sum),
-                 apply(gstats$k456[1:2,,]^2,2:3,sum)+abs(gstats$k456[3,,]),
-                 apply(gstats$k456[1:2,,]^2,2:3,sum),
+d <- switch(dist,apply(gstats$k456[1:2,,]^2,2:3,sum)+abs(gstats$k456[3,,]),
+                 apply(gstats$k456^2,2:3,sum),
                  apply(gstats$k456^2,2:3,sum))
 w <- matrix(pmax(1-d/kappa^2,0),ngrad,ngrad)
 mean(apply(w,1,sum)^2/apply(w^2,1,sum))

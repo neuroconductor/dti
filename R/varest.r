@@ -1,4 +1,67 @@
 #
+#
+#      estimate variance parameter in a multicoil system
+#
+#
+awssigmc <- function(y,steps,mask,ncoils=1,vext=c(1,1),lambda=6,h0=2,method=1){
+   ddim <- dim(y)
+   n <- prod(ddim)
+   if(length(ddim)!=3) {
+      warning("first argument should be a 3-dimentional array")
+      stop()
+   }
+   if(length(mask)!=n) {
+      warning("dimensions of data array and mask should coincide")
+      stop()
+   }
+   sigma <- mean(y^2)
+   th <- array(2*ncoils+sigma,ddim)
+#  use chi-sq quantities
+   ni <- array(1,ddim)
+   for(i in 1:steps){
+   h <- h0*1.25^((i-1)/3)
+   z <- .Fortran("awsvchi2",
+                 as.double(y^2),
+                 as.double(th),
+                 ni=as.double(ni),
+                 as.logical(mask),
+                 as.integer(ddim[1]),
+                 as.integer(ddim[2]),
+                 as.integer(ddim[3]),
+                 as.double(lambda),
+                 as.integer(ncoils),
+                 th=double(n),
+                 th2=double(n),
+                 ni2=double(n),
+                 double(n),#array to precompute lgamma
+                 as.double(sigma),
+                 as.double(h),
+                 as.double(vext),
+                 DUPL=FALSE,
+                 PACKAGE="dti")[c("ni","th","th2","ni2")]
+     ni <- z$ni
+     th <- z$th
+     ind <- ni>mean(ni)
+     m1 <- th[ind]
+     cw <- z$ni2[ind]/ni[ind]^2
+     mu <- pmax(1/(1-cw)*(z$th2[ind]-m1^2),0)
+     p <- 2*ncoils
+#     D <- pmax(p,2*cw*m1^2/mu)
+     if(method==0){
+     D <- 2*m1^2/mu
+     l <- (D-p)+sqrt(pmax(0,D*(D-p)))
+     s2 <- m1/(p+l)
+     } else {
+     s2<-(m1-sqrt(pmax(0,m1^2-mu*ncoils)))/p
+     }
+     plot(density(sqrt(s2),to=min(max(sqrt(s2)),median(sqrt(s2))*5)))
+     cat("step",i,"h=",signif(h,3),"quantiles of ni",signif(quantile(ni),3),"mean",signif(mean(ni),3),"\n")
+     cat("quantiles of sigma",signif(sqrt(quantile(s2)),3),"mean",signif(sqrt(mean(s2)),3),"\n")
+     sigma <- median(s2)
+     }
+     sqrt(sigma)
+     }
+#
 #    R - function  aws  for likelihood  based  Adaptive Weights Smoothing (AWS)
 #    for local constant Gaussian, Bernoulli, Exponential, Poisson, Weibull and  
 #    Volatility models                                                         

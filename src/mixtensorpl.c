@@ -848,7 +848,7 @@ void mixture2( int* method, int* optmethod, int* n1, int* n2, int* n3,
 	double alpha = 1, beta = 0.5, gamma = 2; //Optim parameters for Nelder Mead
 	double angles[2], dir[3];
 	double *param = 0, *param_red = 0, *param_ret = 0, *param_work = 0, *param_last = 0,
-	*param_tmp = 0, *siq = 0;
+	*param_tmp = 0, *siq = 0, *w = 0;
 	
 	int fail;              // failure code for optim: zero is OK
 	double Fmin = 0.;          // minimal value of obj fct in optim 
@@ -858,7 +858,8 @@ void mixture2( int* method, int* optmethod, int* n1, int* n2, int* n3,
 	siq_init = siq_in; penc = pen; grad = grad_in, ngrad0c = *ngrad0;
 	
 	// not yet initialized
-	double* w = R_alloc(maxcompc, sizeof(double));
+	//double* w = R_alloc(maxcompc, sizeof(double));
+	w = (double*) R_alloc(maxcompc, sizeof(double));
 	
 	//Gradient vectors corresponding to minima in spherical coordinates
 	

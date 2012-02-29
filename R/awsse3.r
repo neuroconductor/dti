@@ -18,9 +18,11 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
      cat("using supplied sigma",sigma,"\n")
   } else {
   mask <- getmask(object,level)$mask
+  vext <- object@voxelext[2:3]/object@voxelext[1]
   sigma <- numeric(object@ngrad)
   for(i in 1:object@ngrad){
-  sigma[i] <- sqrt(lvar(object@si[,,,i],!mask,ncoils))
+  sigma[i] <- awssigmc(object@si[,,,i],!mask,ncoils,vext,h0=1.25)
+#  sigma[i] <- sqrt(lvar(object@si[,,,i],!mask,ncoils))
   }
  cat("quantiles of estimated sigma values",quantile(sigma),"\n")
   sigma <- median(sigma)
@@ -82,7 +84,6 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
      ni0 <- array(1,ddim)
   mask <- apply(sb,1:3,mean) > minsb
   masksb <- array(mask,c(ddim,ngrad))
-  vext <- object@voxelext[2:3]/object@voxelext[1]
   gradstats <- getkappas(grad,dist=dist)
   hseq <- gethseqfullse3(kstar,gradstats,kappa0,vext=vext)
   kappa <- hseq$kappa
@@ -100,9 +101,9 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
     param <- lkfullse3(hakt,kappa/hakt,gradstats,vext,nind) 
     if(length(sigma)==1) {
     z <- .Fortran("adrsmse3",
-                as.double(sb),
-                as.double(z$th),
-                ni=as.double(z$ni),
+                as.single(sb),
+                as.single(z$th),
+                ni=as.single(z$ni),
                 as.logical(mask),
                 as.integer(ddim[1]),
                 as.integer(ddim[2]),
@@ -113,13 +114,15 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
                 as.integer(param$ind),
                 as.double(param$w),
                 as.integer(param$n),
-                th=double(prod(ddim)*ngrad),
+                th=single(prod(ddim)*ngrad),
+                single(prod(ddim)*ngrad),#ldf (to precompute lgamma)
                 as.double(sigma),
                 double(ngrad),
                 double(ngrad),
                 as.integer(model),
                 DUPL=FALSE,
                 PACKAGE="dti")[c("ni","th")]
+    gc()
     } else {
     warning("not yet implemented for heterogenious variances\n
              returning original object")
@@ -151,6 +154,7 @@ if(verbose){
                     as.integer(param$starts),
                     as.integer(param$nstarts),
                     th0=double(prod(ddim)),
+                    double(prod(ddim)),#ldf (to precompute lgamma)
                     as.double(sigma),
                     double(param$nstarts),#swi
                     as.integer(model),
