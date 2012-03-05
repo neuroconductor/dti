@@ -42,6 +42,91 @@ getkappas <- function(grad, trace = 0, dist = 1){
 #  dist = 1: k4^2+k5^2+|k6|
 #  dist = 2: k4^2+k5^2+k6^2
 #  dist = 3: sin^2(g_i,g_j)
+# new version with analytic expm(par[1]*mx)
+#
+  krit <- function(par, matm, beta){
+    ## sum((matm-expm(par[1]*m4)%*%expm(par[2]*m5)%*%expm(par[3]*m6))^2)
+    .Fortran("k456krb",
+             as.double(par),
+             as.double(beta),
+             as.double(matm),
+             erg = double(1),
+             DUPL = FALSE,
+             PACKAGE = "dti")$erg
+  }
+  krit5 <- function(x,p,pk4,matm,beta){
+# for line search with respect to k5 to get second solution
+     p1 <- p+c(pk4/2,x,pi)
+     krit(p1,matm,beta)
+  }
+  ngrad <- dim(grad)[2]
+  if(dist<3){
+  prta <- Sys.time()
+  cat("Start computing spherical distances", format(Sys.time()), "\n")
+  kappa456 <- kappa456a <- array(0, c(3, ngrad, ngrad))
+  zbg <- betagamma(grad)
+  for (i in 1:ngrad) for (j in 1:ngrad) {
+    bg <- zbg$bghat[, i, j]
+#   fix for discontinuity
+    if(abs(cos(bg[1])) < 1.e-7) bg[1] = pi/2 - 1e-7*sign(cos(bg[1]))
+    matm <- matrm(bg[1], bg[2])
+    cbg1 <- cos(bg[1])
+    k456 <- runif(3, -.1, .1)
+    z <- optim(k456, krit, method = "BFGS", matm = matm, beta=bg[1],
+               control = list(trace = trace, maxit=50000, reltol = 1e-12, abstol = 1e-16))
+    count <- 10
+    while (z$value > 1e-14&count>0) {
+      ## cat("i",i,"j",j,"value",z$value,"par",z$par,"\n")
+      k456 <- runif(3, -1, 1)
+      z <- optim(k456, krit, method = "BFGS", matm = matm, beta=bg[1],
+                 control = list(trace = trace, maxit=50000, reltol = 1e-12, abstol = 1e-16))
+      ## cat(" new value",z$value,"par",z$par,"\n")
+      count <- count - 1
+      if(count==0)
+      cat("failed for bg:",bg,"value",z$value,"par",z$par,"\n")
+    }
+    z$par[1] <- z$par[1]/cbg1
+    kappa456[, i, j] <- z$par
+    pk4 <- abs(2*pi*cos(bg[1])/(2-cos(bg[1])^2)^.5)
+    while(kappa456[1,i,j] < -pk4/2) kappa456[1,i,j] <- kappa456[1,i,j] + pk4
+    while(kappa456[1,i,j] >= pk4/2) kappa456[1,i,j] <- kappa456[1,i,j] - pk4
+    kappa456a[,i,j] <- kappa456[,i,j]+c(pk4/2,0,pi)
+    kpar <- kappa456[,i,j]*c(cbg1,1,1)
+    kappa456a[2,i,j] <- optimize(krit5,c(-pi,pi),p=kpar,pk4=pk4,
+                          matm=matm,beta=bg[1],maximum=FALSE)$minimum
+    while(kappa456a[1,i,j] < -pk4/2) kappa456a[1,i,j] <- kappa456a[1,i,j] + pk4
+    while(kappa456a[1,i,j] >= pk4/2) kappa456a[1,i,j] <- kappa456a[1,i,j] - pk4
+    }
+  while (any(abs(kappa456[2:3, , ]) > pi)) {
+    kappa456[2:3, , ][kappa456[2:3, , ] < -pi] <- kappa456[2:3, , ][kappa456[2:3, , ] < -pi] + 2*pi
+    kappa456[2:3, , ][kappa456[2:3, , ] >  pi] <- kappa456[2:3, , ][kappa456[2:3, , ] > pi] - 2*pi
+  }
+  while (any(abs(kappa456a[2:3, , ]) > pi)) {
+    kappa456a[2:3, , ][kappa456a[2:3, , ] < -pi] <- kappa456a[2:3, , ][kappa456a[2:3, , ] < -pi] + 2*pi
+    kappa456a[2:3, , ][kappa456a[2:3, , ] >  pi] <- kappa456a[2:3, , ][kappa456a[2:3, , ] > pi] - 2*pi
+  }
+  dka <- switch(dist,kappa456[1,,]^2+kappa456[2,,]^2+abs(kappa456[3,,]),
+                     kappa456[1,,]^2+kappa456[2,,]^2+kappa456[3,,]^2)
+  dkb <- switch(dist,kappa456a[1,,]^2+kappa456a[2,,]^2+abs(kappa456a[3,,]),
+                     kappa456a[1,,]^2+kappa456a[2,,]^2+kappa456a[3,,]^2)
+  dim(kappa456) <- dim(kappa456a) <- c(3,ngrad*ngrad)
+  kappa456[,dkb<dka] <- kappa456a[,dkb<dka]
+  dim(kappa456) <- c(3,ngrad,ngrad)
+  prtb <- Sys.time()
+  cat("End computing spherical distances", format(Sys.time()), "\n")
+  } else {
+      kappa456 <- array(0, c(3, ngrad, ngrad))
+      zbg <- betagamma(grad)
+      for(i in 1:ngrad) kappa456[1,i,] <- 1-(grad[,i]%*%grad)^2
+  }
+  list(k456 = kappa456, bghat = zbg$bghat, nbg = zbg$nbg, dist=dist)
+}
+getkappas0 <- function(grad, trace = 0, dist = 1){
+#
+#  dist = 1: k4^2+k5^2+|k6|
+#  dist = 2: k4^2+k5^2+k6^2
+#  dist = 3: sin^2(g_i,g_j)
+#  old version
 #
   krit <- function(par, matm, m4, m5, m6){
     ## sum((matm-expm(par[1]*m4)%*%expm(par[2]*m5)%*%expm(par[3]*m6))^2)

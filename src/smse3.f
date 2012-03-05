@@ -83,6 +83,57 @@ C
       g123(3,3) = sg
       RETURN
       END
+      subroutine exppm6(p,ex)
+      implicit logical (a-z)
+      real*8 p,ex(3,3)
+      ex(1,1)=dcos(p)
+      ex(1,2)=dsin(p)
+      ex(1,3)=0.d0
+      ex(2,1)=-dsin(p)
+      ex(2,2)=dcos(p)
+      ex(2,3)=0.d0
+      ex(3,1)=0.d0
+      ex(3,2)=0.d0
+      ex(3,3)=1.d0
+      RETURN
+      END
+      subroutine exppm5(p,ex)
+      implicit logical (a-z)
+      real*8 p,ex(3,3)
+      ex(1,1)=dcos(p)
+      ex(1,2)=0.d0
+      ex(1,3)=-dsin(p)
+      ex(2,1)=0.d0
+      ex(2,2)=1.d0
+      ex(2,3)=0.d0
+      ex(3,1)=dsin(p)
+      ex(3,2)=0.d0
+      ex(3,3)=dcos(p)
+      RETURN
+      END
+      subroutine exppm4(p,b,ex)
+      implicit logical (a-z)
+      real*8 b,p,ex(3,3)
+      real*8 D,sqr2,sb,pDs,D2,cpds,spds,spdsh
+      sqr2 = dsqrt(2.d0)
+      sb = dsin(b)
+      D = dsqrt(3.d0-dcos(2.d0*b))
+      pDs = p*D/sqr2
+      cpds = dcos(pDs)
+      spds = dsin(pDs)
+      spdsh = dsin(pDs/2.d0)
+      D2 = D*D
+      ex(1,1)=2.d0*(1.d0+cpDs*sb*sb)/D2
+      ex(1,2)=-sqr2/D*sb*spDs
+      ex(1,3)=-4.d0/D2*sb*spdsh*spdsh
+      ex(2,1)=-ex(1,2)
+      ex(2,2)=cpDs
+      ex(2,3)=sqr2/D*spDs
+      ex(3,1)=ex(1,3)
+      ex(3,2)=-ex(2,3)
+      ex(3,3)=1.d0-2.d0/D2*(1.d0-cpDs)
+      RETURN
+      END
       subroutine expm3(m,ex)
 C
 C   Compute matrix exponential of m:   ex = exp(m) 
@@ -122,7 +173,9 @@ C
                ex(i1,i2)=ex(i1,i2)+z
                z = abs(z)
                IF(z.gt.1d20) THEN
-C                  call dblepr("overflow in expm",16,z,1)
+                  call dblepr("overflow in expm",16,z,1)
+                  call dblepr("m",1,m,9)
+                  call dblepr("ex",2,ex,9)
                   EXIT
                END IF
                maxmpot = max(maxmpot,z)
@@ -130,7 +183,7 @@ C                  call dblepr("overflow in expm",16,z,1)
          END DO
          j = j+1
          IF(j.gt.200) THEN
-C            call intpr("max iterations in expm",20,j,1)
+            call intpr("max iterations in expm",20,j,1)
             EXIT
          END IF
       END DO
@@ -145,6 +198,7 @@ C
       real*8 par(3),matm(3,3),m4(3,3),m5(3,3),m6(3,3),erg
       integer i1,i2
       real*8 s,z,am4(3,3),am5(3,3),am6(3,3),em4(3,3),em5(3,3),em6(3,3)
+      real*8 mam4,mam5,mam6
       DO i1=1,3
          DO i2=1,3
             am4(i1,i2)=par(1)*m4(i1,i2)
@@ -155,6 +209,53 @@ C
       call expm3(am4,em4)
       call expm3(am5,em5)
       call expm3(am6,em6)
+      mam4=0.d0
+      mam5=0.d0
+      mam6=0.d0
+      DO i1=1,3
+         DO i2=1,3
+            mam4=max(mam4,abs(em4(i1,i2)))
+            mam5=max(mam5,abs(em5(i1,i2)))
+            mam6=max(mam6,abs(em6(i1,i2)))
+         END DO
+      END DO
+      if(mam4.gt.1d18) call dblepr("par1",4,par(1),1)
+      if(mam5.gt.1d18) call dblepr("par2",4,par(2),1)
+      if(mam6.gt.1d18) call dblepr("par3",4,par(3),1)
+      DO i1=1,3
+         DO i2=1,3
+            am5(i1,i2)=em5(i1,1)*em6(1,i2)+em5(i1,2)*em6(2,i2)+
+     1                                     em5(i1,3)*em6(3,i2)
+            END DO
+         END DO
+      DO i1=1,3
+         DO i2=1,3
+            am4(i1,i2)=em4(i1,1)*am5(1,i2)+em4(i1,2)*am5(2,i2)+
+     1                                     em4(i1,3)*am5(3,i2)
+         END DO
+      END DO
+      s=0.d0
+      DO i1=1,3
+         DO i2=1,3
+            z=matm(i1,i2)-am4(i1,i2)
+            s=s+z*z
+         END DO
+      END DO
+      erg=s
+      RETURN
+      END
+      subroutine k456krb(par,b,matm,erg)
+C
+C  Solve exponential equation for dicrepance parameters
+C  compute ||\prod_{i=4}^6 exp(par[i] m_i) - matm||^2
+C
+      implicit logical (a-z)
+      real*8 par(3),matm(3,3),erg
+      integer i1,i2
+      real*8 s,z,em4(3,3),em5(3,3),em6(3,3),am4(3,3),am5(3,3)
+      call exppm4(par(1),b,em4)
+      call exppm5(par(2),em5)
+      call exppm6(par(3),em6)
       DO i1=1,3
          DO i2=1,3
             am5(i1,i2)=em5(i1,1)*em6(1,i2)+em5(i1,2)*em6(2,i2)+
