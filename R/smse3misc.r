@@ -68,18 +68,22 @@ getkappas <- function(grad, trace = 0, dist = 1){
   for (i in 1:ngrad) for (j in 1:ngrad) {
     bg <- zbg$bghat[, i, j]
 #   fix for discontinuity
-    if(abs(cos(bg[1])) < 1.e-7) bg[1] = pi/2 - 1e-7*sign(cos(bg[1]))
+    if(abs(cos(bg[1])) < 1.e-6) bg[1] = pi/2 - 1e-6*sign(cos(bg[1]))
     matm <- matrm(bg[1], bg[2])
     cbg1 <- cos(bg[1])
     k456 <- runif(3, -.1, .1)
+    maxit <- 10000
+    fnscale <- 1
     z <- optim(k456, krit, method = "BFGS", matm = matm, beta=bg[1],
-               control = list(trace = trace, maxit=50000, reltol = 1e-12, abstol = 1e-16))
-    count <- 10
+               control = list(trace = trace, fnscale=fnscale, maxit=maxit, reltol = 1e-12, abstol = 1e-16))
+    count <- 5
     while (z$value > 1e-14&count>0) {
       ## cat("i",i,"j",j,"value",z$value,"par",z$par,"\n")
+      maxit <- maxit*1.5
+      fnscale <- fnscale/2
       k456 <- runif(3, -1, 1)
       z <- optim(k456, krit, method = "BFGS", matm = matm, beta=bg[1],
-                 control = list(trace = trace, maxit=50000, reltol = 1e-12, abstol = 1e-16))
+                 control = list(trace = trace, fnscale=fnscale, maxit=maxit, reltol = 1e-12, abstol = 1e-16))
       ## cat(" new value",z$value,"par",z$par,"\n")
       count <- count - 1
       if(count==0)
@@ -87,24 +91,32 @@ getkappas <- function(grad, trace = 0, dist = 1){
     }
     z$par[1] <- z$par[1]/cbg1
     kappa456[, i, j] <- z$par
-    pk4 <- abs(2*pi*cos(bg[1])/(2-cos(bg[1])^2)^.5)
-    while(kappa456[1,i,j] < -pk4/2) kappa456[1,i,j] <- kappa456[1,i,j] + pk4
-    while(kappa456[1,i,j] >= pk4/2) kappa456[1,i,j] <- kappa456[1,i,j] - pk4
+    pk4 <- abs(2*pi*cbg1/(2-cbg1^2)^.5)
+    if(kappa456[1,i,j] < -pk4/2) kappa456[1,i,j] <- kappa456[1,i,j] - trunc(kappa456[1, i, j]/pk4-1)*pk4
+    if(kappa456[1,i,j] >= pk4/2) kappa456[1,i,j] <- kappa456[1,i,j] - trunc(kappa456[1, i, j]/pk4+1)*pk4
+    if(kappa456[2,i,j] < -pi) kappa456[2,i,j] <- kappa456[2,i,j] - trunc(kappa456[2, i, j]/2/pi-1)*2*pi
+    if(kappa456[2,i,j] > pi) kappa456[2,i,j] <- kappa456[2,i,j] - trunc(kappa456[2, i, j]/2/pi+1)*2*pi
+    if(kappa456[3,i,j] < -pi) kappa456[3,i,j] <- kappa456[3,i,j] - trunc(kappa456[3, i, j]/2/pi-1)*2*pi
+    if(kappa456[3,i,j] > pi) kappa456[3,i,j] <- kappa456[3,i,j] - trunc(kappa456[3, i, j]/2/pi+1)*2*pi
     kappa456a[,i,j] <- kappa456[,i,j]+c(pk4/2,0,pi)
     kpar <- kappa456[,i,j]*c(cbg1,1,1)
     kappa456a[2,i,j] <- optimize(krit5,c(-pi,pi),p=kpar,pk4=pk4,
                           matm=matm,beta=bg[1],maximum=FALSE)$minimum
-    while(kappa456a[1,i,j] < -pk4/2) kappa456a[1,i,j] <- kappa456a[1,i,j] + pk4
-    while(kappa456a[1,i,j] >= pk4/2) kappa456a[1,i,j] <- kappa456a[1,i,j] - pk4
+    if(kappa456a[1,i,j] < -pk4/2) kappa456a[1,i,j] <- kappa456a[1,i,j] - trunc(kappa456a[1, i, j]/pk4-1)*pk4
+    if(kappa456a[1,i,j] >= pk4/2) kappa456a[1,i,j] <- kappa456a[1,i,j] - trunc(kappa456a[1, i, j]/pk4+1)*pk4
+    if(kappa456a[2,i,j] < -pi) kappa456a[2,i,j] <- kappa456a[2,i,j] - trunc(kappa456a[2, i, j]/2/pi-1)*2*pi
+    if(kappa456a[2,i,j] > pi) kappa456a[2,i,j] <- kappa456a[2,i,j] - trunc(kappa456a[2, i, j]/2/pi+1)*2*pi
+    if(kappa456a[3,i,j] < -pi) kappa456a[3,i,j] <- kappa456a[3,i,j] - trunc(kappa456a[3, i, j]/2/pi-1)*2*pi
+    if(kappa456a[3,i,j] > pi) kappa456a[3,i,j] <- kappa456a[3,i,j] - trunc(kappa456a[3, i, j]/2/pi+1)*2*pi
     }
-  while (any(abs(kappa456[2:3, , ]) > pi)) {
-    kappa456[2:3, , ][kappa456[2:3, , ] < -pi] <- kappa456[2:3, , ][kappa456[2:3, , ] < -pi] + 2*pi
-    kappa456[2:3, , ][kappa456[2:3, , ] >  pi] <- kappa456[2:3, , ][kappa456[2:3, , ] > pi] - 2*pi
-  }
-  while (any(abs(kappa456a[2:3, , ]) > pi)) {
-    kappa456a[2:3, , ][kappa456a[2:3, , ] < -pi] <- kappa456a[2:3, , ][kappa456a[2:3, , ] < -pi] + 2*pi
-    kappa456a[2:3, , ][kappa456a[2:3, , ] >  pi] <- kappa456a[2:3, , ][kappa456a[2:3, , ] > pi] - 2*pi
-  }
+#  while (any(abs(kappa456[2:3, , ]) > pi)) {
+#    kappa456[2:3, , ][kappa456[2:3, , ] < -pi] <- kappa456[2:3, , ][kappa456[2:3, , ] < -pi] + 2*pi
+#    kappa456[2:3, , ][kappa456[2:3, , ] >  pi] <- kappa456[2:3, , ][kappa456[2:3, , ] > pi] - 2*pi
+#  }
+#  while (any(abs(kappa456a[2:3, , ]) > pi)) {
+#    kappa456a[2:3, , ][kappa456a[2:3, , ] < -pi] <- kappa456a[2:3, , ][kappa456a[2:3, , ] < -pi] + 2*pi
+#    kappa456a[2:3, , ][kappa456a[2:3, , ] >  pi] <- kappa456a[2:3, , ][kappa456a[2:3, , ] > pi] - 2*pi
+#  }
   dka <- switch(dist,kappa456[1,,]^2+kappa456[2,,]^2+abs(kappa456[3,,]),
                      kappa456[1,,]^2+kappa456[2,,]^2+kappa456[3,,]^2)
   dkb <- switch(dist,kappa456a[1,,]^2+kappa456a[2,,]^2+abs(kappa456a[3,,]),

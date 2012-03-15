@@ -14,11 +14,11 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
   args <- sys.call(-1)
   args <- c(object@call,args)
   sdcoef <- object@sdcoef
+  vext <- object@voxelext[2:3]/object@voxelext[1]
   if(length(sigma)==1) {
      cat("using supplied sigma",sigma,"\n")
   } else {
   mask <- getmask(object,level)$mask
-  vext <- object@voxelext[2:3]/object@voxelext[1]
   sigma <- numeric(object@ngrad)
   for(i in 1:object@ngrad){
   sigma[i] <- awssigmc(object@si[,,,i],!mask,ncoils,vext,h0=1.25)

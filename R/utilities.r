@@ -637,7 +637,7 @@ setMethod("extract","dtiTensor",function(x, what="tensor", xind=TRUE, yind=TRUE,
 
   z <- list(NULL)
   if(needall){
-    erg <- if(mc.cores<=1)
+    erg <- if(mc.cores<=1||prod(ddim)<=mc.cores)
            .Fortran("dti3Dall",
                     as.double(x@D),
                     as.integer(nvox),

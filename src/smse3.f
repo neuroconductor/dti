@@ -173,9 +173,9 @@ C
                ex(i1,i2)=ex(i1,i2)+z
                z = abs(z)
                IF(z.gt.1d20) THEN
-                  call dblepr("overflow in expm",16,z,1)
-                  call dblepr("m",1,m,9)
-                  call dblepr("ex",2,ex,9)
+C                  call dblepr("overflow in expm",16,z,1)
+C                  call dblepr("m",1,m,9)
+C                  call dblepr("ex",2,ex,9)
                   EXIT
                END IF
                maxmpot = max(maxmpot,z)
@@ -183,7 +183,7 @@ C
          END DO
          j = j+1
          IF(j.gt.200) THEN
-            call intpr("max iterations in expm",20,j,1)
+C            call intpr("max iterations in expm",20,j,1)
             EXIT
          END IF
       END DO
@@ -198,7 +198,6 @@ C
       real*8 par(3),matm(3,3),m4(3,3),m5(3,3),m6(3,3),erg
       integer i1,i2
       real*8 s,z,am4(3,3),am5(3,3),am6(3,3),em4(3,3),em5(3,3),em6(3,3)
-      real*8 mam4,mam5,mam6
       DO i1=1,3
          DO i2=1,3
             am4(i1,i2)=par(1)*m4(i1,i2)
@@ -209,19 +208,6 @@ C
       call expm3(am4,em4)
       call expm3(am5,em5)
       call expm3(am6,em6)
-      mam4=0.d0
-      mam5=0.d0
-      mam6=0.d0
-      DO i1=1,3
-         DO i2=1,3
-            mam4=max(mam4,abs(em4(i1,i2)))
-            mam5=max(mam5,abs(em5(i1,i2)))
-            mam6=max(mam6,abs(em6(i1,i2)))
-         END DO
-      END DO
-      if(mam4.gt.1d18) call dblepr("par1",4,par(1),1)
-      if(mam5.gt.1d18) call dblepr("par2",4,par(2),1)
-      if(mam6.gt.1d18) call dblepr("par3",4,par(3),1)
       DO i1=1,3
          DO i2=1,3
             am5(i1,i2)=em5(i1,1)*em6(1,i2)+em5(i1,2)*em6(2,i2)+
