@@ -813,6 +813,7 @@ setGeneric("getmask", function(object,  ...) standardGeneric("getmask"))
 
 setMethod("getmask","dtiData",function(object, level=NULL, prop=.4, size=3){
 if(is.null(level)) level <- object@level
+if(!is.null(level)){ 
 z <- .Fortran("getmask",
               as.integer(object@si[,,,object@s0ind]),
               as.integer(object@ddim[1]),
@@ -826,6 +827,9 @@ z <- .Fortran("getmask",
               mask=logical(prod(object@ddim)),
               DUP=FALSE,
               PACKAGE="dti")[c("s0","mask")]
+} else {
+z <- list(s0=object@si[,,,object@s0ind],mask=array(TRUE,object@ddim))
+}
 dim(z$s0) <- dim(z$mask) <- object@ddim
 z
 }

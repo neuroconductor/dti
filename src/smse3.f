@@ -134,109 +134,13 @@ C
       ex(3,3)=1.d0-2.d0/D2*(1.d0-cpDs)
       RETURN
       END
-      subroutine expm3(m,ex)
-C
-C   Compute matrix exponential of m:   ex = exp(m) 
-C   using a series expansion
-C
-      implicit logical (a-z)
-      real*8 m(3,3),ex(3,3)
-      integer i1,i2,j
-      real*8 mpot(3,3),mpotn(3,3),maxmpot,jfac,z
-      DO i1=1,3
-         mpot(i1,i1) = 1.d0
-         ex(i1,i1)   = 1.d0
-         IF(i1.eq.3) CYCLE
-         DO i2=i1+1,3
-            mpot(i1,i2) = 0.d0
-            ex(i1,i2)   = 0.d0
-            mpot(i2,i1) = 0.d0
-            ex(i2,i1)   = 0.d0
-         END DO
-      END DO
-      maxmpot = 1.d0
-      j = 1
-      jfac = 1.d0
-      DO While (maxmpot.gt.1.d-14)
-         jfac = jfac*j
-         DO i1=1,3
-            DO i2=1,3
-               mpotn(i1,i2)=mpot(i1,1)*m(1,i2)+mpot(i1,2)*m(2,i2)+
-     1                      mpot(i1,3)*m(3,i2)
-            END DO
-         END DO
-         maxmpot=0.d0
-         DO i1=1,3
-            DO i2=1,3
-               mpot(i1,i2)=mpotn(i1,i2)
-               z = mpot(i1,i2)/jfac
-               ex(i1,i2)=ex(i1,i2)+z
-               z = abs(z)
-               IF(z.gt.1d20) THEN
-C                  call dblepr("overflow in expm",16,z,1)
-C                  call dblepr("m",1,m,9)
-C                  call dblepr("ex",2,ex,9)
-                  EXIT
-               END IF
-               maxmpot = max(maxmpot,z)
-            END DO
-         END DO
-         j = j+1
-         IF(j.gt.200) THEN
-C            call intpr("max iterations in expm",20,j,1)
-            EXIT
-         END IF
-      END DO
-      RETURN
-      END
-      subroutine k456krit(par,matm,m4,m5,m6,erg)
-C
-C  Solve exponential equation for dicrepance parameters
-C  compute ||\prod_{i=4}^6 exp(par[i] m_i) - matm||^2
-C
-      implicit logical (a-z)
-      real*8 par(3),matm(3,3),m4(3,3),m5(3,3),m6(3,3),erg
-      integer i1,i2
-      real*8 s,z,am4(3,3),am5(3,3),am6(3,3),em4(3,3),em5(3,3),em6(3,3)
-      DO i1=1,3
-         DO i2=1,3
-            am4(i1,i2)=par(1)*m4(i1,i2)
-            am5(i1,i2)=par(2)*m5(i1,i2)
-            am6(i1,i2)=par(3)*m6(i1,i2)
-         END DO
-      END DO
-      call expm3(am4,em4)
-      call expm3(am5,em5)
-      call expm3(am6,em6)
-      DO i1=1,3
-         DO i2=1,3
-            am5(i1,i2)=em5(i1,1)*em6(1,i2)+em5(i1,2)*em6(2,i2)+
-     1                                     em5(i1,3)*em6(3,i2)
-            END DO
-         END DO
-      DO i1=1,3
-         DO i2=1,3
-            am4(i1,i2)=em4(i1,1)*am5(1,i2)+em4(i1,2)*am5(2,i2)+
-     1                                     em4(i1,3)*am5(3,i2)
-         END DO
-      END DO
-      s=0.d0
-      DO i1=1,3
-         DO i2=1,3
-            z=matm(i1,i2)-am4(i1,i2)
-            s=s+z*z
-         END DO
-      END DO
-      erg=s
-      RETURN
-      END
       subroutine k456krb(par,b,matm,erg)
 C
 C  Solve exponential equation for dicrepance parameters
 C  compute ||\prod_{i=4}^6 exp(par[i] m_i) - matm||^2
 C
       implicit logical (a-z)
-      real*8 par(3),matm(3,3),erg
+      real*8 par(3),b,matm(3,3),erg
       integer i1,i2
       real*8 s,z,em4(3,3),em5(3,3),em6(3,3),am4(3,3),am5(3,3)
       call exppm4(par(1),b,em4)
@@ -258,39 +162,6 @@ C
       DO i1=1,3
          DO i2=1,3
             z=matm(i1,i2)-am4(i1,i2)
-            s=s+z*z
-         END DO
-      END DO
-      erg=s
-      RETURN
-      END
-      subroutine k456kri1(par,matm,m5,m6,erg)
-C
-C  Solve exponential equation for dicrepance parameters
-C  compute ||\prod_{i=4}^6 exp(par[i] m_i) - matm||^2
-C
-      implicit logical (a-z)
-      real*8 par(3),matm(3,3),m5(3,3),m6(3,3),erg
-      integer i1,i2
-      real*8 s,z,am5(3,3),am6(3,3),em5(3,3),em6(3,3)
-      DO i1=1,3
-         DO i2=1,3
-            am5(i1,i2)=par(2)*m5(i1,i2)
-            am6(i1,i2)=par(3)*m6(i1,i2)
-         END DO
-      END DO
-      call expm3(am5,em5)
-      call expm3(am6,em6)
-      DO i1=1,3
-         DO i2=1,3
-            am5(i1,i2)=em5(i1,1)*em6(1,i2)+em5(i1,2)*em6(2,i2)+
-     1                                     em5(i1,3)*em6(3,i2)
-            END DO
-         END DO
-      s=0.d0
-      DO i1=1,3
-         DO i2=1,3
-            z=matm(i1,i2)-par(1)*am5(i1,i2)
             s=s+z*z
          END DO
       END DO
@@ -421,24 +292,6 @@ C   last three komponents already to large
                DO j3 = -ih3,ih3
                   x3 = vd3*j3
                   z1 = z+x1*x1+x2*x2+x3*x3
-C                  xh1=x1*nbg(1,2,j4)+x2*nbg(2,2,j4)+x3*nbg(3,2,j4)
-C                  xh2=x1*nbg(1,3,j4)+x2*nbg(2,3,j4)+x3*nbg(3,3,j4)
-C                  xh3=x1*nbg(1,1,j4)+x2*nbg(2,1,j4)+x3*nbg(3,1,j4)
-C thats xhat
-C now k1       
-C                  k1=xh1*nbghat(1,2,i4,j4)+xh2*nbghat(2,2,i4,j4)+
-C     1               xh3*nbghat(3,2,i4,j4)
-C                  z1=z+k1*k1
-C                  if(z1.gt.h2) CYCLE
-C   last three komponents + first already to large
-C                  k2=xh1*nbghat(1,3,i4,j4)+xh2*nbghat(2,3,i4,j4)+
-C     1               xh3*nbghat(3,3,i4,j4)
-C                  z1=z1+k2*k2
-C                  if(z1.gt.h2) CYCLE
-C   last three komponents + first two already to large
-C                  k3=xh1*nbghat(1,1,i4,j4)+xh2*nbghat(2,1,i4,j4)+
-C     1               xh3*nbghat(3,1,i4,j4)
-C                  z1=z1+k3*k3
                   if(z1.gt.h2) CYCLE
                   if(i.gt.n) THEN
                      call intpr("Exceeded max i",14,i,1)
@@ -507,27 +360,8 @@ C   last three komponents already to large
                DO j3 = -ih3,ih3
                   x3 = vd3*j3
                   z1 = z+x1*x1+x2*x2+x3*x3
-C                  xh1=x1*nbg(1,2,j4)+x2*nbg(2,2,j4)+x3*nbg(3,2,j4)
-C                  xh2=x1*nbg(1,3,j4)+x2*nbg(2,3,j4)+x3*nbg(3,3,j4)
-C                  xh3=x1*nbg(1,1,j4)+x2*nbg(2,1,j4)+x3*nbg(3,1,j4)
-C thats xhat
-C now k1       
-C                  k1=xh1*nbghat(1,2,i4,j4)+xh2*nbghat(2,2,i4,j4)+
-C     1               xh3*nbghat(3,2,i4,j4)
-C                  z1=z+k1*k1
-C                  if(z1.gt.h2) CYCLE
-C   last three komponents + first already to large
-C                  k2=xh1*nbghat(1,3,i4,j4)+xh2*nbghat(2,3,i4,j4)+
-C     1               xh3*nbghat(3,3,i4,j4)
-C                  z1=z1+k2*k2
-C                  if(z1.gt.h2) CYCLE
-C   last three komponents + first two already to large
-C                  k3=xh1*nbghat(1,1,i4,j4)+xh2*nbghat(2,1,i4,j4)+
-C     1               xh3*nbghat(3,1,i4,j4)
-C                  z1=z1+k3*k3
                   if(z1.gt.h2) CYCLE
                   wght= (1.d0-z1/h2)
-C        *cb
 C   if j1>0  (-j1,-j2,-j3) gets the same weight, so count it twice
                   if(j1.eq.0) THEN
                      anz=1.d0
@@ -789,89 +623,9 @@ C
 C   Kullback-leibler distance for noncentral-Chi-distributions
 C   with parameters thi/sigma and thj/sigma and 2*nc degrees of freedom
 C
-      real*8 function kldistnc(thi,thj,sigma,nc,model)
-C    for smoothing noncentral Chi values
-C    thi,thj  current estimates
-C    sigma    estimated scale parameter 
-C    nc number of coils
-C    model = 0   smoothing of chi values
-C    model = 1   smoothing of chi^2 values
-      implicit logical (a-z)
-      integer nc,model
-      real*8 thi,thj,sigma
-      real*8 mu2i,mu2j,fi,fj,ci,cj,df,z1,z2,dlci
-      real*8 lgammaf,digammaf
-      external lgammaf, digammaf
-C  use Chi^2 instead of Chi for KL distance
-      mu2i = thi/sigma
-      mu2j = thj/sigma
-      if(model.eq.0) THEN
-         mu2i = mu2i*mu2i
-         mu2j = mu2j*mu2j
-      END IF
-C  Approximation by Patnaik (1949)
-      df = 2.d0*nc
-      z1 = df + mu2i
-      z2 = z1 + mu2i
-      ci = z2/z1
-      fi = z1*z1/z2
-      dlci = dlog(ci)
-      z1 = df + mu2j
-      z2 = z1 + mu2j
-      cj = z2/z1
-      fj = z1*z1/z2
-      kldistnc = lgammaf(fj/2.d0)-lgammaf(fi/2.d0)+
-     1           0.5d0*(fj*dlog(cj)-fi*dlci+fi*(ci/cj-1)+
-     2           (fi-fj)*(dlci+digammaf(0.5d0*fi)))
-      RETURN
-      END
 C
 C   variant with precomputed quantities
 C
-      real*8 function kldistnc0(lgfi,dgfi,fici,thj,sigma,df,model)
-C    for smoothing noncentral Chi values
-C    thi,thj  current estimates
-C    sigma    estimated scale parameter 
-C    df= 2 * number of coils
-C    model = 0   smoothing of chi values
-C    model = 1   smoothing of chi^2 values
-      implicit logical (a-z)
-      integer model
-      real*8 lgfi,dgfi,fici,thj,sigma,df
-      real*8 mu2j,fj,cj,z1,z2
-      real*8 lgammaf
-      external lgammaf
-C  use Chi^2 instead of Chi for KL distance
-      mu2j = thj/sigma
-      if(model.eq.0) mu2j = mu2j*mu2j
-C  Approximation by Patnaik (1949)
-      z1 = df + mu2j
-      z2 = z1 + mu2j
-      cj = z2/z1
-      fj = z1/cj
-      kldistnc0 = lgammaf(fj/2.d0)-lgfi+0.5d0*(fj*dlog(cj)+
-     1           fici/cj-fj*dgfi)
-      RETURN
-      END
-      subroutine ncstats(thi,sigma,df,model,lgfi,dgfi,fici)
-      implicit logical (a-z)
-      integer model
-      real*8 thi,sigma,lgfi,dgfi,fici,df
-      real*8 mu2i,z1,z2,dlci,fi,ci
-      real*8 lgammaf,digammaf
-      external lgammaf, digammaf
-      mu2i = thi/sigma
-      if(model.eq.0) mu2i = mu2i*mu2i
-      z1 = df + mu2i
-      z2 = z1 + mu2i
-      ci = z2/z1
-      fi = z1/ci
-      fici = fi*ci
-      dlci = dlog(ci)
-      dgfi = digammaf(0.5d0*fi)+dlci
-      lgfi = lgammaf(fi/2.d0)+0.5d0*(fi*dlci+fi-fi*dgfi)
-      RETURN
-      END
       subroutine lgstats(thi,sigma,df,model,lgfi)
       implicit logical (a-z)
       integer model
