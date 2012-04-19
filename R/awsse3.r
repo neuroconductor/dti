@@ -21,7 +21,8 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
   mask <- getmask(object,level)$mask
   sigma <- numeric(object@ngrad)
   for(i in 1:object@ngrad){
-  sigma[i] <- awssigmc(object@si[,,,i],19,!mask,ncoils,vext,h0=1.25)
+  sigma[i] <- awssigmc(object@si[,,,i],12,mask,ncoils,vext,h0=1.25,verbose=verbose)
+  cat("image ",i," estimated sigma",sigma[i],"\n")
   }
  cat("quantiles of estimated sigma values",quantile(sigma),"\n")
   sigma <- median(sigma)

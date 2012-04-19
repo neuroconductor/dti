@@ -3,7 +3,8 @@
 #      estimate variance parameter in a multicoil system
 #
 #
-awssigmc <- function(y,steps,mask,ncoils=1,vext=c(1,1),lambda=6,h0=2,method=1){
+awssigmc <- function(y,steps,mask,ncoils=1,vext=c(1,1),lambda=6,h0=2,method=1,
+     verbose=FALSE){
    ddim <- dim(y)
    n <- prod(ddim)
    if(length(ddim)!=3) {
@@ -14,7 +15,7 @@ awssigmc <- function(y,steps,mask,ncoils=1,vext=c(1,1),lambda=6,h0=2,method=1){
       warning("dimensions of data array and mask should coincide")
       stop()
    }
-   sigma <- mean(y^2)
+   sigma <- mean(y[mask]^2)
    th <- array(2*ncoils+sigma,ddim)
 #  use chi-sq quantities
    ni <- array(1,ddim)
@@ -54,11 +55,14 @@ awssigmc <- function(y,steps,mask,ncoils=1,vext=c(1,1),lambda=6,h0=2,method=1){
      } else {
      s2<-(m1-sqrt(pmax(0,m1^2-mu*ncoils)))/p
      }
-     plot(density(sqrt(s2),to=min(max(sqrt(s2)),median(sqrt(s2))*5)))
-     cat("step",i,"h=",signif(h,3),"quantiles of ni",signif(quantile(ni),3),"mean",signif(mean(ni),3),"\n")
-     cat("quantiles of sigma",signif(sqrt(quantile(s2)),3),"mean",signif(sqrt(mean(s2)),3),"\n")
-     sigma <- median(s2)
+     if(verbose){
+     plot(density(sqrt(s2[s2>0]),to=min(max(sqrt(s2[s2>0])),median(sqrt(s2[s2>0]))*5)),
+            main=paste("estimated sigmas step",i,"h=",signif(h,3)))
+#     cat("step",i,"h=",signif(h,3),"quantiles of ni",signif(quantile(ni),3),"mean",signif(mean(ni),3),"\n")
+#     cat("quantiles of sigma",signif(sqrt(quantile(s2)),3),"mean",signif(sqrt(mean(s2)),3),"\n")
      }
+     sigma <- median(s2[s2>0])
+     } 
      sqrt(sigma)
      }
 #
