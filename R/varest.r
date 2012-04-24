@@ -15,7 +15,7 @@ awssigmc <- function(y,steps,mask,ncoils=1,vext=c(1,1),lambda=6,h0=2,method=1,
       warning("dimensions of data array and mask should coincide")
       stop()
    }
-   sigma <- mean(y[mask]^2)
+   sigma <- mean(y[mask]^2)/2/ncoils
    th <- array(2*ncoils+sigma,ddim)
 #  use chi-sq quantities
    ni <- array(1,ddim)

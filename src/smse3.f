@@ -633,7 +633,7 @@ C
       real*8 mu2i,z1,z2,fi
       real*8 lgammaf,digammaf
       external lgammaf, digammaf
-      mu2i = thi/sigma
+      mu2i = max(0.d0,thi/sigma-df)
       if(model.eq.0) mu2i = mu2i*mu2i
       z1 = df + mu2i
       z2 = z1 + mu2i
@@ -648,7 +648,7 @@ C
       real*8 mu2i,z1,z2,dlci,fi,ci
       real*8 lgammaf,digammaf
       external lgammaf, digammaf
-      mu2i = thi/sigma
+      mu2i = max(0.d0,thi/sigma-df)
       if(model.eq.0) mu2i = mu2i*mu2i
       z1 = df + mu2i
       z2 = z1 + mu2i
@@ -675,7 +675,7 @@ C    model = 1   smoothing of chi^2 values
       real*8 lgammaf
       external lgammaf
 C  use Chi^2 instead of Chi for KL distance
-      mu2j = thj/sigma
+      mu2j = max(0.d0,thj/sigma-df)
       if(model.eq.0) mu2j = mu2j*mu2j
 C  Approximation by Patnaik (1949)
       z1 = df + mu2j
@@ -703,7 +703,7 @@ C
      2       ldf(n1,n2,n3)
       integer i1,i2,i3,j1,j2,j3,cw1,cw2,cw3
       real*8 z,lgfi,dgfi,fici,df,kval,w,w0,h2,sw,sw2,swy,swy2,yj,
-     1       z1,z2,z3
+     1       z1,z2,z3,eta
       real*8 kldisnc1
       external kldisnc1
       df=2.d0*ncoils
@@ -715,6 +715,7 @@ C  precompute values of lgamma(corrected df/2) in each voxel
       DO i1=1,n1
          DO i2=1,n2
             DO i3=1,n3
+               eta=
                call lgstats(th(i1,i2,i3),sigma,df,1,ldf(i1,i2,i3))
             END DO
          END DO
