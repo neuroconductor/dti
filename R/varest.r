@@ -4,7 +4,7 @@
 #
 #
 awssigmc <- function(y,steps,mask,ncoils=1,vext=c(1,1),lambda=6,h0=2,method=1,
-     verbose=FALSE){
+     verbose=FALSE,model="chisq"){
    ddim <- dim(y)
    n <- prod(ddim)
    if(length(ddim)!=3) {
@@ -21,6 +21,7 @@ awssigmc <- function(y,steps,mask,ncoils=1,vext=c(1,1),lambda=6,h0=2,method=1,
    ni <- array(1,ddim)
    for(i in 1:steps){
    h <- h0*1.25^((i-1)/3)
+   if(model=="chisq"){
    z <- .Fortran("awsvchi2",
                  as.double(y^2),
                  as.double(th),
@@ -62,7 +63,43 @@ awssigmc <- function(y,steps,mask,ncoils=1,vext=c(1,1),lambda=6,h0=2,method=1,
 #     cat("quantiles of sigma",signif(sqrt(quantile(s2)),3),"mean",signif(sqrt(mean(s2)),3),"\n")
      }
      sigma <- median(s2[s2>0])
-     } 
+     } else {
+    z <- .Fortran("awsvchi2",
+                 as.double(y),
+                 as.double(th),
+                 ni=as.double(ni),
+                 as.logical(mask),
+                 as.integer(ddim[1]),
+                 as.integer(ddim[2]),
+                 as.integer(ddim[3]),
+                 as.double(lambda),
+                 as.integer(ncoils),
+                 th=double(n),
+                 th2=double(n),
+                 ni2=double(n),
+                 double(n),#array to precompute lgamma
+                 as.double(sigma),
+                 as.double(h),
+                 as.double(vext),
+                 DUPL=FALSE,
+                 PACKAGE="dti")[c("ni","th","th2","ni2")]
+     ni <- z$ni
+     th <- z$th2
+     ind <- ni>mean(ni)
+     m1 <- z$th[ind]
+     cw <- z$ni2[ind]/ni[ind]^2
+     mu <- pmax(1/(1-cw)*(th[ind]-m1^2),0)
+     eta <- fixpetaL(ncoils,rep(1,length(ind)),m1,mu)
+     s2 <- (m1/m1chiL(ncoils,eta))^2
+    }
+     if(verbose){
+     plot(density(sqrt(s2[s2>0]),to=min(max(sqrt(s2[s2>0])),median(sqrt(s2[s2>0]))*5)),
+            main=paste("estimated sigmas step",i,"h=",signif(h,3)))
+#     cat("step",i,"h=",signif(h,3),"quantiles of ni",signif(quantile(ni),3),"mean",signif(mean(ni),3),"\n")
+#     cat("quantiles of sigma",signif(sqrt(quantile(s2)),3),"mean",signif(sqrt(mean(s2)),3),"\n")
+     }
+     sigma <- median(s2[s2>0])
+     }
      sqrt(sigma)
      }
 #
