@@ -89,14 +89,14 @@ awssigmc <- function(y,steps,mask,ncoils=1,vext=c(1,1),lambda=6,h0=2,method=1,
      m1 <- z$th[ind]
      cw <- z$ni2[ind]/ni[ind]^2
      mu <- pmax(1/(1-cw)*(th[ind]-m1^2),0)
-     eta <- fixpetaL(ncoils,rep(1,length(ind)),m1,mu)
+     eta <- fixpetaL(ncoils,rep(1,sum(ind)),m1,mu)
      s2 <- (m1/m1chiL(ncoils,eta))^2
     }
      if(verbose){
      plot(density(sqrt(s2[s2>0]),to=min(max(sqrt(s2[s2>0])),median(sqrt(s2[s2>0]))*5)),
             main=paste("estimated sigmas step",i,"h=",signif(h,3)))
-#     cat("step",i,"h=",signif(h,3),"quantiles of ni",signif(quantile(ni),3),"mean",signif(mean(ni),3),"\n")
-#     cat("quantiles of sigma",signif(sqrt(quantile(s2)),3),"mean",signif(sqrt(mean(s2)),3),"\n")
+     cat("step",i,"h=",signif(h,3),"quantiles of ni",signif(quantile(ni),3),"mean",signif(mean(ni),3),"\n")
+     cat("quantiles of sigma",signif(sqrt(quantile(s2[s2>0])),3),"mean",signif(sqrt(mean(s2[s2>0])),3),"\n")
      }
      sigma <- median(s2[s2>0])
      }
