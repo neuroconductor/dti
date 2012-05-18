@@ -1,6 +1,6 @@
 useDynLib(dti)
 
-import("methods", "oro.dicom")
+import("methods", "oro.dicom", "awsMethods")
 importFrom(graphics,plot)
 importFrom(fmri,read.NIFTI,write.NIFTI)
 importFrom(adimpro,make.image,show.image)

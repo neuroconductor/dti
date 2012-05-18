@@ -514,9 +514,10 @@ setMethod("[","dwiQball",function(x, i, j, k, drop=FALSE){
 
 ########## extract()
 
-extract <- function(x, ...) cat("Data extraction not defined for this class:",class(x),"\n")
+#extract <- function(x, ...) cat("Data extraction not defined for this class:",class(x),"\n")
 
-setGeneric("extract", function(x, ...) standardGeneric("extract"))
+#setGeneric("extract", function(x, ...) standardGeneric("extract"))
+#setGeneric("extract", function(x, ...) cat("Data extraction not defined for this class:",class(x),"\n"), package="dti")
 
 setMethod("extract","dtiData",function(x, what="data", xind=TRUE, yind=TRUE, zind=TRUE){
   what <- tolower(what) 
