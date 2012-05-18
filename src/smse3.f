@@ -633,8 +633,9 @@ C
       real*8 mu2i,z1,z2,fi
       real*8 lgammaf,digammaf
       external lgammaf, digammaf
-      mu2i = max(0.d0,thi/sigma-df)
+      mu2i = thi/sigma
       if(model.eq.0) mu2i = mu2i*mu2i
+      mu2i = max(0.d0,mu2i-df)
       z1 = df + mu2i
       z2 = z1 + mu2i
       fi = z1*z1/z2
@@ -648,8 +649,9 @@ C
       real*8 mu2i,z1,z2,dlci,fi,ci
       real*8 lgammaf,digammaf
       external lgammaf, digammaf
-      mu2i = max(0.d0,thi/sigma-df)
+      mu2i = thi/sigma
       if(model.eq.0) mu2i = mu2i*mu2i
+      mu2i = max(0.d0,mu2i-df)
       z1 = df + mu2i
       z2 = z1 + mu2i
       ci = z2/z1
@@ -675,8 +677,9 @@ C    model = 1   smoothing of chi^2 values
       real*8 lgammaf
       external lgammaf
 C  use Chi^2 instead of Chi for KL distance
-      mu2j = max(0.d0,thj/sigma-df)
+      mu2j = thj/sigma
       if(model.eq.0) mu2j = mu2j*mu2j
+      mu2j = max(0.d0,mu2j-df)
 C  Approximation by Patnaik (1949)
       z1 = df + mu2j
       z2 = z1 + mu2j

@@ -3,8 +3,8 @@
 #      estimate variance parameter in a multicoil system
 #
 #
-awssigmc <- function(y,steps,mask,ncoils=1,vext=c(1,1),lambda=6,h0=2,method=1,
-     verbose=FALSE,model="chisq"){
+awssigmc <- function(y,steps,mask,ncoils=1,vext=c(1,1),lambda=6,h0=2,method="median",
+     verbose=FALSE,model="chisq",sequence=FALSE){
    ddim <- dim(y)
    n <- prod(ddim)
    if(length(ddim)!=3) {
@@ -19,6 +19,7 @@ awssigmc <- function(y,steps,mask,ncoils=1,vext=c(1,1),lambda=6,h0=2,method=1,
    th <- array(2*ncoils+sigma,ddim)
 #  use chi-sq quantities
    ni <- array(1,ddim)
+   if(sequence) sigmas <- numeric(steps)
    for(i in 1:steps){
    h <- h0*1.25^((i-1)/3)
    if(model=="chisq"){
@@ -48,21 +49,7 @@ awssigmc <- function(y,steps,mask,ncoils=1,vext=c(1,1),lambda=6,h0=2,method=1,
      cw <- z$ni2[ind]/ni[ind]^2
      mu <- pmax(1/(1-cw)*(z$th2[ind]-m1^2),0)
      p <- 2*ncoils
-#     D <- pmax(p,2*cw*m1^2/mu)
-     if(method==0){
-     D <- 2*m1^2/mu
-     l <- (D-p)+sqrt(pmax(0,D*(D-p)))
-     s2 <- m1/(p+l)
-     } else {
      s2<-(m1-sqrt(pmax(0,m1^2-mu*ncoils)))/p
-     }
-     if(verbose){
-     plot(density(sqrt(s2[s2>0]),to=min(max(sqrt(s2[s2>0])),median(sqrt(s2[s2>0]))*5)),
-            main=paste("estimated sigmas step",i,"h=",signif(h,3)))
-#     cat("step",i,"h=",signif(h,3),"quantiles of ni",signif(quantile(ni),3),"mean",signif(mean(ni),3),"\n")
-#     cat("quantiles of sigma",signif(sqrt(quantile(s2)),3),"mean",signif(sqrt(mean(s2)),3),"\n")
-     }
-     sigma <- median(s2[s2>0])
      } else {
     z <- .Fortran("awsvchi2",
                  as.double(y),
@@ -98,9 +85,14 @@ awssigmc <- function(y,steps,mask,ncoils=1,vext=c(1,1),lambda=6,h0=2,method=1,
      cat("step",i,"h=",signif(h,3),"quantiles of ni",signif(quantile(ni),3),"mean",signif(mean(ni),3),"\n")
      cat("quantiles of sigma",signif(sqrt(quantile(s2[s2>0])),3),"mean",signif(sqrt(mean(s2[s2>0])),3),"\n")
      }
-     sigma <- median(s2[s2>0])
+     if(method=="median") sigma <- median(s2[s2>0]) else {
+#  use the maximal mode of estimated local variance parameters, exclude largest values for better precision
+        dsigma <- density(s2[s2>0],n=1024,to=quantile(s2[s2>0],.95))
+        sigma <- dsigma$x[dsigma$y==max(dsigma$y)][1]
      }
-     sqrt(sigma)
+     if(sequence) sigmas[i] <- sigma
+     }
+     sqrt(if(sequence) sigmas else sigma)
      }
 #
 #    R - function  aws  for likelihood  based  Adaptive Weights Smoothing (AWS)
