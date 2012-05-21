@@ -3,7 +3,7 @@
 #      estimate variance parameter in a multicoil system
 #
 #
-awssigmc <- function(y,steps,mask,ncoils=1,vext=c(1,1),lambda=6,h0=2,method="median",
+awssigmc <- function(y,steps,mask=NULL,ncoils=1,vext=c(1,1),lambda=10,h0=2,method="median",
      verbose=FALSE,model="chisq",sequence=FALSE){
    ddim <- dim(y)
    n <- prod(ddim)
@@ -15,6 +15,7 @@ awssigmc <- function(y,steps,mask,ncoils=1,vext=c(1,1),lambda=6,h0=2,method="med
       warning("dimensions of data array and mask should coincide")
       stop()
    }
+   if(is.null(mask)) mask <- array(TRUE,ddim)
    sigma <- mean(y[mask]^2)/2/ncoils
    th <- array(2*ncoils+sigma,ddim)
 #  use chi-sq quantities
