@@ -4,7 +4,7 @@
 #
 #
 awssigmc <- function(y,steps,mask=NULL,ncoils=1,vext=c(1,1),lambda=10,h0=2,method="median",
-     verbose=FALSE,model="chisq",sequence=FALSE){
+     verbose=FALSE,model="chisq",sequence=FALSE,eps=1e-7,maxcount=200){
    ddim <- dim(y)
    n <- prod(ddim)
    if(length(ddim)!=3) {
@@ -18,41 +18,13 @@ awssigmc <- function(y,steps,mask=NULL,ncoils=1,vext=c(1,1),lambda=10,h0=2,metho
    if(is.null(mask)) mask <- array(TRUE,ddim)
    sigma <- mean(y[mask]^2)/2/ncoils
    th <- array(2*ncoils+sigma,ddim)
+   if(model=="chisq") y <- y^2
 #  use chi-sq quantities
    ni <- array(1,ddim)
    if(sequence) sigmas <- numeric(steps)
    for(i in 1:steps){
    h <- h0*1.25^((i-1)/3)
-   if(model=="chisq"){
    z <- .Fortran("awsvchi2",
-                 as.double(y^2),
-                 as.double(th),
-                 ni=as.double(ni),
-                 as.logical(mask),
-                 as.integer(ddim[1]),
-                 as.integer(ddim[2]),
-                 as.integer(ddim[3]),
-                 as.double(lambda),
-                 as.integer(ncoils),
-                 th=double(n),
-                 th2=double(n),
-                 ni2=double(n),
-                 double(n),#array to precompute lgamma
-                 as.double(sigma),
-                 as.double(h),
-                 as.double(vext),
-                 DUPL=FALSE,
-                 PACKAGE="dti")[c("ni","th","th2","ni2")]
-     ni <- z$ni
-     th <- z$th
-     ind <- ni>mean(ni)
-     m1 <- th[ind]
-     cw <- z$ni2[ind]/ni[ind]^2
-     mu <- pmax(1/(1-cw)*(z$th2[ind]-m1^2),0)
-     p <- 2*ncoils
-     s2<-(m1-sqrt(pmax(0,m1^2-mu*ncoils)))/p
-     } else {
-    z <- .Fortran("awsvchi2",
                  as.double(y),
                  as.double(th),
                  ni=as.double(ni),
@@ -72,12 +44,19 @@ awssigmc <- function(y,steps,mask=NULL,ncoils=1,vext=c(1,1),lambda=10,h0=2,metho
                  DUPL=FALSE,
                  PACKAGE="dti")[c("ni","th","th2","ni2")]
      ni <- z$ni
-     th <- z$th2
      ind <- ni>mean(ni)
-     m1 <- z$th[ind]
      cw <- z$ni2[ind]/ni[ind]^2
+   if(model=="chisq"){
+     th <- z$th
+     m1 <- th[ind]
+     mu <- pmax(1/(1-cw)*(z$th2[ind]-m1^2),0)
+     p <- 2*ncoils
+     s2<-(m1-sqrt(pmax(0,m1^2-mu*ncoils)))/p
+     } else {
+     th <- z$th2
+     m1 <- z$th[ind]
      mu <- pmax(1/(1-cw)*(th[ind]-m1^2),0)
-     eta <- fixpetaL(ncoils,rep(1,sum(ind)),m1,mu)
+     eta <- fixpetaL(ncoils,rep(1,sum(ind)),m1,mu,eps=eps,maxcount=maxcount)
      s2 <- (m1/m1chiL(ncoils,eta))^2
     }
      if(verbose){
@@ -93,7 +72,10 @@ awssigmc <- function(y,steps,mask=NULL,ncoils=1,vext=c(1,1),lambda=10,h0=2,metho
      }
      if(sequence) sigmas[i] <- sigma
      }
-     sqrt(if(sequence) sigmas else sigma)
+     eta <- sqrt(pmax(0,th/sigma-2*ncoils)) 
+     dim(eta) <- ddim
+     result <- list(sigma=sqrt(if(sequence) sigmas else sigma) , theta=eta*sqrt(sigma))
+     result 
      }
 #
 #    R - function  aws  for likelihood  based  Adaptive Weights Smoothing (AWS)

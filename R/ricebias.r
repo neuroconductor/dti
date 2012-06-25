@@ -60,6 +60,9 @@ betaL <- function(L,eta){
 require(gsl)
 sqrt(pi/2)*poch(L,.5)/factorial(.5)
 }
+#
+#
+#
 xiofetaL <- function(L,eta){
 require(gsl)
 2*L+eta^2-betaL(L,eta)^2*hyperg_1F1(-.5,L,-eta^2/2)^2
@@ -68,6 +71,9 @@ m1chiL <- function(L,eta){
 require(gsl)
 betaL(L,eta)*hyperg_1F1(-.5,L,-eta^2/2)
 }
+#
+#
+#
 fixpetaL <- function(L,eta,m1,mu2,eps=1e-8,maxcount=1000){
 n <- length(eta)
 converged <- rep(FALSE,n)

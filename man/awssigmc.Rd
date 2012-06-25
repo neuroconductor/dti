@@ -64,7 +64,10 @@ awssigmc(y, steps, mask = NULL, ncoils = 1, vext = c(1, 1), lambda = 10, h0 = 2,
 }
 }
 \value{
-   either a scalar or a vector of estimated noise standard deviations.
+   a list with components
+\item{sigma}{either a scalar or a vector of estimated noise standard deviations.
+}
+\item{theta}{the estimated mean structure}
 }
 \references{
 K. Tabelow and J. Polzehl (2013). Estimating the noise level in 
