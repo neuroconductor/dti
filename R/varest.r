@@ -4,7 +4,7 @@
 #
 #
 awssigmc <- function(y,steps,mask=NULL,ncoils=1,vext=c(1,1),lambda=10,h0=2,method="median",
-     verbose=FALSE,model="chisq",sequence=FALSE,eps=1e-7,maxcount=200){
+     verbose=FALSE,model="chisq",sequence=FALSE,eps=1e-4,maxcount=500){
    ddim <- dim(y)
    n <- prod(ddim)
    if(length(ddim)!=3) {
