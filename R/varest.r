@@ -60,7 +60,7 @@ awssigmc <- function(y,steps,mask=NULL,ncoils=1,vext=c(1,1),lambda=10,h0=2,
      s2 <- (m1/m1chiL(ncoils,eta))
     }
 #  use the maximal mode of estimated local variance parameters, exclude largest values for better precision
-     dsigma <- density(s2[s2>0],n=4092,adjust=hadj,to=min(max(sqrt(s2[s2>0])),median(sqrt(s2[s2>0]))*5))
+     dsigma <- density(s2[s2>0],n=4092,adjust=hadj,to=min(max(s2[s2>0]),median(s2[s2>0])*5))
      sigma <- dsigma$x[dsigma$y==max(dsigma$y)][1]
      if(sequence) sigmas[i] <- sigma
      if(verbose){
