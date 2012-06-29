@@ -74,6 +74,40 @@ awssigmc <- function(y,steps,mask=NULL,ncoils=1,vext=c(1,1),lambda=10,h0=2,
      result <- list(sigma=if(sequence) sigmas else sigma, theta=eta*sigma)
      result 
      }
+afsigmc <- function(y,mask=NULL,ncoils=1,vext=c(1,1),h=2,verbose=FALSE,hadj=1){
+   ddim <- dim(y)
+   n <- prod(ddim)
+   if(length(ddim)!=3) {
+      warning("first argument should be a 3-dimentional array")
+      stop()
+   }
+   if(length(mask)!=n) {
+      warning("dimensions of data array and mask should coincide")
+      stop()
+   }
+   if(is.null(mask)) mask <- array(TRUE,ddim)
+   sigma <- .Fortran("afvarest",
+                 as.double(y),
+                 as.integer(ddim[1]),
+                 as.integer(ddim[2]),
+                 as.integer(ddim[3]),
+                 as.logical(mask),
+                 as.double(h),
+                 as.double(vext),
+                 sigma=double(n),
+                 DUPL=FALSE,
+                 PACKAGE="dti")$sigma
+   sigma <- array(sqrt(sigma),ddim)
+#  use the maximal mode of estimated local variance parameters, exclude largest values for better precision
+     dsigma <- density(sigma[sigma>0],n=4092,adjust=hadj,
+           to=min(max(sigma[sigma>0]),median(sigma[sigma>0])*5))
+     sigmag <- dsigma$x[dsigma$y==max(dsigma$y)][1]
+     if(verbose){
+     plot(dsigma,main=paste("estimated sigmas h=",signif(h,3)))
+     cat("quantiles of sigma",signif(quantile(sigma[sigma>0]),3),"mode",signif(sigmag,3),"\n")
+     }
+     sigmag
+}
 #
 #    R - function  aws  for likelihood  based  Adaptive Weights Smoothing (AWS)
 #    for local constant Gaussian, Bernoulli, Exponential, Poisson, Weibull and  
