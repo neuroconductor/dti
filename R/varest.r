@@ -16,8 +16,8 @@ awssigmc <- function(y,steps,mask=NULL,ncoils=1,vext=c(1,1),lambda=10,h0=2,
       stop()
    }
    if(is.null(mask)) mask <- array(TRUE,ddim)
-   sigma <- mean(y[mask]^2)/2/ncoils
-   th <- array(2*ncoils+sigma,ddim)
+   sigma <- sqrt(mean(y[mask]^2)/2/ncoils)
+   th <- array(2*ncoils+sigma^2,ddim)
    if(model=="chisq") y <- y^2
 #  use chi-sq quantities
    ni <- array(1,ddim)
@@ -38,7 +38,7 @@ awssigmc <- function(y,steps,mask=NULL,ncoils=1,vext=c(1,1),lambda=10,h0=2,
                  th2=double(n),
                  ni2=double(n),
                  double(n),#array to precompute lgamma
-                 as.double(sigma),
+                 as.double(sigma^2),
                  as.double(h),
                  as.double(vext),
                  DUPL=FALSE,
@@ -51,27 +51,27 @@ awssigmc <- function(y,steps,mask=NULL,ncoils=1,vext=c(1,1),lambda=10,h0=2,
      m1 <- th[ind]
      mu <- pmax(1/(1-cw)*(z$th2[ind]-m1^2),0)
      p <- 2*ncoils
-     s2<-(m1-sqrt(pmax(0,m1^2-mu*ncoils)))/p
+     s2<-sqrt((m1-sqrt(pmax(0,m1^2-mu*ncoils)))/p)
      } else {
      th <- z$th2
      m1 <- z$th[ind]
      mu <- pmax(1/(1-cw)*(th[ind]-m1^2),0)
      eta <- fixpetaL(ncoils,rep(1,sum(ind)),m1,mu,eps=eps,maxcount=500)
-     s2 <- (m1/m1chiL(ncoils,eta))^2
+     s2 <- (m1/m1chiL(ncoils,eta))
     }
 #  use the maximal mode of estimated local variance parameters, exclude largest values for better precision
-     dsigma <- density(sqrt(s2[s2>0]),n=4092,adjust=hadj,to=min(max(sqrt(s2[s2>0])),median(sqrt(s2[s2>0]))*5))
+     dsigma <- density(s2[s2>0],n=4092,adjust=hadj,to=min(max(sqrt(s2[s2>0])),median(sqrt(s2[s2>0]))*5))
      sigma <- dsigma$x[dsigma$y==max(dsigma$y)][1]
      if(sequence) sigmas[i] <- sigma
      if(verbose){
      plot(dsigma,main=paste("estimated sigmas step",i,"h=",signif(h,3)))
      cat("step",i,"h=",signif(h,3),"quantiles of ni",signif(quantile(ni),3),"mean",signif(mean(ni),3),"\n")
-     cat("quantiles of sigma",signif(sqrt(quantile(s2[s2>0])),3),"mode",signif(sigma,3),"\n")
+     cat("quantiles of sigma",signif(quantile(s2[s2>0]),3),"mode",signif(sigma,3),"\n")
      }
      }
-     eta <- sqrt(pmax(0,th/sigma-2*ncoils)) 
+     eta <- sqrt(pmax(0,th/sigma^2-2*ncoils)) 
      dim(eta) <- ddim
-     result <- list(sigma=sqrt(if(sequence) sigmas else sigma) , theta=eta*sqrt(sigma))
+     result <- list(sigma=if(sequence) sigmas else sigma, theta=eta*sigma)
      result 
      }
 #
