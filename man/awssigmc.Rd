@@ -17,7 +17,8 @@ Estimate noise variance for multicoil MR systems
      the noncentrality parameter \eqn{\eta}.
 }
 \usage{
-awssigmc(y, steps, mask = NULL, ncoils = 1, vext = c(1, 1), lambda = 10, h0 = 2, method = "median", verbose = FALSE, model = "chisq", sequence = FALSE)
+awssigmc(y, steps, mask = NULL, ncoils = 1, vext = c(1, 1), lambda = 10, h0 = 2, verbose = FALSE, 
+         model = "chisq", sequence = FALSE, eps = 1e-05, hadj = 1)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -45,9 +46,6 @@ awssigmc(y, steps, mask = NULL, ncoils = 1, vext = c(1, 1), lambda = 10, h0 = 2,
   \item{h0}{
    initial bandwidth
 }
-  \item{method}{
-   either \code{"median"} or \code{"mode"}.
-}
   \item{verbose}{
    if \code{verbose==TRUE} density plots 
    and quantiles of local estimates of \code{sigma} are provided.
@@ -61,6 +59,13 @@ awssigmc(y, steps, mask = NULL, ncoils = 1, vext = c(1, 1), lambda = 10, h0 = 2,
    if \code{sequence=TRUE} a vector of estimates for the noise
    standard deviation \code{sigma} for the individual steps is returned
    instead of the final value only.  
+}
+  \item{eps}{
+   accuracy when solving fixpoint equation for noncentrality parameter in case of
+   \code{model="chi"}.
+}
+  \item{hadj}{
+   adjustment factor for bandwidth (chosen by \code{bw.nrd}) in mode estimation 
 }
 }
 \value{

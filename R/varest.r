@@ -3,8 +3,8 @@
 #      estimate variance parameter in a multicoil system
 #
 #
-awssigmc <- function(y,steps,mask=NULL,ncoils=1,vext=c(1,1),lambda=10,h0=2,method="median",
-     verbose=FALSE,model="chisq",sequence=FALSE,eps=1e-4,maxcount=500){
+awssigmc <- function(y,steps,mask=NULL,ncoils=1,vext=c(1,1),lambda=10,h0=2,
+     verbose=FALSE,model="chisq",sequence=FALSE,eps=1e-5,hadj=1){
    ddim <- dim(y)
    n <- prod(ddim)
    if(length(ddim)!=3) {
@@ -56,21 +56,18 @@ awssigmc <- function(y,steps,mask=NULL,ncoils=1,vext=c(1,1),lambda=10,h0=2,metho
      th <- z$th2
      m1 <- z$th[ind]
      mu <- pmax(1/(1-cw)*(th[ind]-m1^2),0)
-     eta <- fixpetaL(ncoils,rep(1,sum(ind)),m1,mu,eps=eps,maxcount=maxcount)
+     eta <- fixpetaL(ncoils,rep(1,sum(ind)),m1,mu,eps=eps,maxcount=500)
      s2 <- (m1/m1chiL(ncoils,eta))^2
     }
-     if(verbose){
-     plot(density(sqrt(s2[s2>0]),to=min(max(sqrt(s2[s2>0])),median(sqrt(s2[s2>0]))*5)),
-            main=paste("estimated sigmas step",i,"h=",signif(h,3)))
-     cat("step",i,"h=",signif(h,3),"quantiles of ni",signif(quantile(ni),3),"mean",signif(mean(ni),3),"\n")
-     cat("quantiles of sigma",signif(sqrt(quantile(s2[s2>0])),3),"mean",signif(sqrt(mean(s2[s2>0])),3),"\n")
-     }
-     if(method=="median") sigma <- median(s2[s2>0]) else {
 #  use the maximal mode of estimated local variance parameters, exclude largest values for better precision
-        dsigma <- density(s2[s2>0],n=1024,to=quantile(s2[s2>0],.95))
-        sigma <- dsigma$x[dsigma$y==max(dsigma$y)][1]
-     }
+     dsigma <- density(sqrt(s2[s2>0]),n=4092,adjust=hadj,to=min(max(sqrt(s2[s2>0])),median(sqrt(s2[s2>0]))*5))
+     sigma <- dsigma$x[dsigma$y==max(dsigma$y)][1]
      if(sequence) sigmas[i] <- sigma
+     if(verbose){
+     plot(dsigma,main=paste("estimated sigmas step",i,"h=",signif(h,3)))
+     cat("step",i,"h=",signif(h,3),"quantiles of ni",signif(quantile(ni),3),"mean",signif(mean(ni),3),"\n")
+     cat("quantiles of sigma",signif(sqrt(quantile(s2[s2>0])),3),"mode",signif(sigma,3),"\n")
+     }
      }
      eta <- sqrt(pmax(0,th/sigma-2*ncoils)) 
      dim(eta) <- ddim

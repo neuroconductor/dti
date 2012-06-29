@@ -34,6 +34,9 @@ setMethod("sdpar","dtiData",function(object,level=NULL,sdmethod="sd",interactive
     A1 <- quantile(s0[s0>0],.98)
   }
   if(interactive) {
+    par(mfrow=c(1,3),mar=c(3,3,3,1),mgp=c(2,1,0))
+    img <- if(ls0ind>1) s0mean[,,(object@ddim[3]-1)%/%2+1] else s0[,,(object@ddim[3]-1)%/%2+1]
+    maximg <- max(img)
     accept <- FALSE
     ddim <- object@ddim
     ddm1 <- ddim-1
@@ -65,6 +68,10 @@ setMethod("sdpar","dtiData",function(object,level=NULL,sdmethod="sd",interactive
       legend(min(A0,0.25*max(z$x)),ylim[2],c("Full cube",paste("Central",(n1*100)%/%n,"%"),
       paste("Central",(n2*100)%/%n,"%"),paste("Central",(n3*100)%/%n,"%")),col=1:4,lwd=rep(1,4))
       cat("A good cut off point should be left of support of the density of grayvalues within the head\n")
+      show.image(make.image(img/maximg))
+      title("Central slice: Intensity values")
+      show.image(make.image((img<A0)))
+      title("Central slice: voxel not in mask")
       a <- readline(paste("Accept current cut off point",A0," (Y/N):"))
       if (toupper(a) == "N") {
         cutpoint <-  readline("Provide value for cut off point:")
