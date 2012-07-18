@@ -51,10 +51,12 @@ awssigmc <- function(y,steps,mask=NULL,ncoils=1,vext=c(1,1),lambda=10,h0=2,
      m1 <- th[ind]
      mu <- pmax(1/(1-cw)*(z$th2[ind]-m1^2),0)
      p <- 2*ncoils
+     indt <- m1^2-mu*ncoils<0
      s2<-sqrt((m1-sqrt(pmax(0,m1^2-mu*ncoils)))/p)
      } else {
      th <- z$th2
      m1 <- z$th[ind]
+     indt <- th[ind]-m1^2<0
      mu <- pmax(1/(1-cw)*(th[ind]-m1^2),0)
      eta <- fixpetaL(ncoils,rep(1,sum(ind)),m1,mu,eps=eps,maxcount=500)
      s2 <- (m1/m1chiL(ncoils,eta))
@@ -71,7 +73,8 @@ awssigmc <- function(y,steps,mask=NULL,ncoils=1,vext=c(1,1),lambda=10,h0=2,
      }
      eta <- sqrt(pmax(0,th/sigma^2-2*ncoils)) 
      dim(eta) <- ddim
-     result <- list(sigma=if(sequence) sigmas else sigma, theta=eta*sigma)
+     result <- list(sigma=if(sequence) sigmas else sigma, theta=eta*sigma, 
+                 ni=ni,ind=ind, s2=s2,itrunc=indt,cw=cw)
      result 
      }
 afsigmc <- function(y,mask=NULL,ncoils=1,vext=c(1,1),h=2,verbose=FALSE,hadj=1){
