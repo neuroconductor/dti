@@ -260,14 +260,14 @@ readDWIdata <- function(gradient, dirlist,
     } else {
       if (length(filelist) > 1) { # list of 3D files
 	if (first) { 
-	  ttt <- dd[xind, yind, zind]
+	  ttt <- dd[xind, yind, zind, 1]
 	  nttt <- dim(ttt)
 	  si <- numeric(nfiles * prod(nttt))
 	  dim(si) <- c(nttt, nfiles)
 	  si[ , , , 1] <- ttt
 	  first <- FALSE
 	} else {
-	  si[ , , , i] <- dd[xind, yind, zind]
+	  si[ , , , i] <- dd[xind, yind, zind, 1]
 	}
       } else { # this is a 4D file
 	si <- dd[xind, yind, zind,]
