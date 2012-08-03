@@ -842,3 +842,31 @@ dim(z$s0) <- dim(z$mask) <- object@ddim
 z
 }
 )
+setMethod("getmask","array",function(object, level=NULL, prop=.4, size=3){
+if(length(dim(object))!=3){
+level <- NULL
+warning("array dimension need to be of length 3, returning trivial mask")
+} else {
+ddim <- dim(object)
+}
+if(!is.null(level)){ 
+z <- .Fortran("getmask",
+              as.integer(object),
+              as.integer(ddim[1]),
+              as.integer(ddim[2]),
+              as.integer(ddim[3]),
+              as.integer(1),
+              as.double(level),
+              as.integer(size),
+              as.double(prop),
+              s0=double(prod(ddim)),
+              mask=logical(prod(ddim)),
+              DUP=FALSE,
+              PACKAGE="dti")[c("s0","mask")]
+} else {
+z <- list(s0=object,mask=array(TRUE,dim(object)))
+}
+dim(z$s0) <- dim(z$mask) <- dim(object)
+z
+}
+)
