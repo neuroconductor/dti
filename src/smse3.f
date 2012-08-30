@@ -1,13 +1,13 @@
-      subroutine ghfse3i(i4,kstar,k456,nbg,ng,
+      subroutine ghfse3i(i4,kstar,k456,ng,
      1                    kappa,vext,h,varred,n,dist)
 C
 C   compute bandwidth sequence for given kappa and gradients  
 C   lkfse3i0 computes weighting schemes and corresponding variance reduction
-C   k456,nbg,ng (input) contain auxiliary statistics(gradients)
+C   k456,ng (input) contain auxiliary statistics(gradients)
 C
       implicit logical (a-z)
       integer ng,i4,kstar,n,dist
-      real*8 k456(3,ng,ng),nbg(3,3,ng),vext(2),
+      real*8 k456(3,ng,ng),vext(2),
      1       kappa,h(kstar),varred(kstar)
       logical getkappa
       integer k,n0,maxn
@@ -17,18 +17,18 @@ C
       hakt=1.d0
 C   initialize kappa
 C   loop over steps
-      call lkfse3i0(hakt,kappa/hakt,i4,k456,nbg,ng,
+      call lkfse3i0(hakt,kappa/hakt,i4,k456,ng,
      1                   vext,vr,n,dist)
       chk=ch*vr
       maxn = 1
       DO k=1,kstar
-         call lkfse3i0(hakt,kappa/hakt,i4,k456,nbg,ng,
+         call lkfse3i0(hakt,kappa/hakt,i4,k456,ng,
      1                   vext,vr,n,dist)
 C  search for new hakt   
          vred=vr/chk
          DO WHILE (vred.lt.1) 
             hakt=hakt*1.05
-            call lkfse3i0(hakt,kappa/hakt,i4,k456,nbg,ng,
+            call lkfse3i0(hakt,kappa/hakt,i4,k456,ng,
      1                   vext,vr,n,dist)
             vred=vr/chk
          END DO
@@ -37,7 +37,7 @@ C  search for new hakt
             v0r=vr
             n0=n
             hakt=hakt/1.005
-            call lkfse3i0(hakt,kappa/hakt,i4,k456,nbg,ng,
+            call lkfse3i0(hakt,kappa/hakt,i4,k456,ng,
      1                   vext,vr,n,dist)
             vred=vr/chk
             If (vred.lt.1) THEN
@@ -51,36 +51,12 @@ C  search for new hakt
          chk=chk*ch
          maxn=max(maxn,n)
          if(k.eq.kstar) THEN
-            call lkfse3i0(h(k),kappa/hakt,i4,k456,nbg,ng,
+            call lkfse3i0(h(k),kappa/hakt,i4,k456,ng,
      1                   vext,vr,n,dist)
          END IF
 C  number of positive weights for last step in n
       END DO
       n=maxn
-      RETURN
-      END
-      subroutine ng123(beta,gamma,g123)
-C
-C                     sin(beta)          , cos(beta)          , 0
-C  computes g123 = ( -cos(beta)sin(gamma), sin(beta)sin(gamma), cos(gamma) )
-C                     cos(beta)cos(gamma),-sin(beta)cos(gamma), sin(gamma)
-C
-      implicit logical (a-z)
-      real*8 beta,gamma,g123(3,3)
-      real*8 cb,sb,cg,sg
-      sb = sin(beta)
-      sg = sin(gamma)
-      cb = cos(beta)
-      cg = cos(gamma)
-      g123(1,1) = sb
-      g123(2,1) = -cb*sg
-      g123(3,1) = cb*cg
-      g123(1,2) = cb
-      g123(2,2) = sb*sg
-      g123(3,2) = -sb*cg
-      g123(1,3) = 0.d0
-      g123(2,3) = cg
-      g123(3,3) = sg
       RETURN
       END
       subroutine exppm6(p,ex)
@@ -205,10 +181,10 @@ C standardize to length 1
       END DO
       RETURN
       END
-      subroutine bgstats(g,n,bg,bghat,nbg)
+      subroutine bgstats(g,n,bg,bghat)
       implicit logical (a-z)
       integer n
-      real*8 g(3,n),bg(2,n),bghat(2,n,n),nbg(3,3,n)
+      real*8 g(3,n),bg(2,n),bghat(2,n,n)
       integer i1,i2
       real*8 dgamma,cb1,sb1,cb2,sb2,betah,cbh,z,gammah,cdg
 C   first get sperical coordinates in bg
@@ -216,7 +192,6 @@ C   first get sperical coordinates in bg
       DO i1=1,n
          sb1=sin(bg(1,i1))
          cb1=cos(bg(1,i1))
-         call ng123(bg(1,i1),bg(2,i1),nbg(1,1,i1))
 C    die normalen-vektoren der Gradienten
          DO i2=1,n
             dgamma=bg(2,i1)-bg(2,i2)
@@ -242,7 +217,6 @@ C   this should not happen
                   call dblepr("cb1",3,cb1,1)
                   call dblepr("cbh",3,cbh,1)
                END IF
-C               gammah = asin(dgamma*sign(1d0,cb1*cbh)) 
                gammah = dgamma*sign(1d0,cb1*cbh)
             END IF
             bghat(1,i1,i2)=betah
@@ -252,16 +226,13 @@ C    die spherischen Koordinaten der Gradientenpaare (Parameter der Rotationsmat
       END DO  
       RETURN
       END
-      subroutine lkfse3i(h,kappa,i4,k456,nbg,ng,
+      subroutine lkfse3i(h,kappa,i4,k456,ng,
      1                   vext,ind,wght,n,dist)
       implicit logical (a-z)
       integer ng,n,ind(5,n),i4,dist
-      real*8 h,kappa,k456(3,ng,ng),
-     1       nbg(3,3,ng),vext(2),wght(n)
+      real*8 h,kappa,k456(3,ng,ng),vext(2),wght(n)
       integer ih1,ih2,ih3,i,j1,j2,j3,j4
-      real*8 h2,kap2,x1,x2,x3,k4,k5,k6,z,z1,
-     1       vd2,vd3,gi1,gi2,gi3
-C     real*8 k1,k2,k3,xh1,xh2,xh3,
+      real*8 h2,kap2,x1,x2,x3,k4,k5,k6,z,z1,vd2,vd3
       ih1 = max(1.d0,5.0d0*h)
       ih2 = max(1.d0,5.0d0*h/vext(1))
       ih3 = max(1.d0,5.0d0*h/vext(2))
@@ -270,13 +241,9 @@ C     real*8 k1,k2,k3,xh1,xh2,xh3,
       vd2 = vext(1)
       vd3 = vext(2)
       i = 1
-      gi1 = nbg(1,1,i4)
-      gi2 = nbg(2,1,i4)
-      gi3 = nbg(3,1,i4)
       z = 0.d0
 C  just to prevent compiler warnings
       DO j4 = 1,ng
-C         cb = abs(gi1*nbg(1,1,j4)+gi2*nbg(2,1,j4)+gi3*nbg(3,1,j4))
          k4 = k456(1,i4,j4)
          k5 = k456(2,i4,j4)
          k6 = k456(3,i4,j4)
@@ -315,16 +282,14 @@ C   *cb
       n = i-1
       RETURN
       END
-      subroutine lkfse3i0(h,kappa,i4,k456,nbg,ng,
+      subroutine lkfse3i0(h,kappa,i4,k456,ng,
      1                   vext,vred,n,dist)
       implicit logical (a-z)
       integer ng,n,i4,dist
-      real*8 h,kappa,k456(3,ng,ng),
-     1       nbg(3,3,ng),vext(2),vred
+      real*8 h,kappa,k456(3,ng,ng),vext(2),vred
       integer ih1,ih2,ih3,j1,j2,j3,j4,mj1,mj2,mj3,rad
       real*8 x1,x2,x3,k4,k5,k6,z,z1,
-     1       sw,sw2,wght,anz,h2,kap2,vd2,vd3,gi1,gi2,gi3
-C     real*8 k1,k2,k3,xh1,xh2,xh3
+     1       sw,sw2,wght,anz,h2,kap2,vd2,vd3
       ih1 = max(1.d0,5.0d0*h)
       ih2 = max(1.d0,5.0d0*h/vext(1))
       ih3 = max(1.d0,5.0d0*h/vext(2))
@@ -338,13 +303,9 @@ C     real*8 k1,k2,k3,xh1,xh2,xh3
       vd2 = vext(1)
       vd3 = vext(2)
       n = 0
-      gi1 = nbg(1,1,i4)
-      gi2 = nbg(2,1,i4)
-      gi3 = nbg(3,1,i4)
       z = 0.d0
 C  just to prevent compiler warnings
       DO j4 = 1,ng
-C         cb = abs(gi1*nbg(1,1,j4)+gi2*nbg(2,1,j4)+gi3*nbg(3,1,j4))
          k4 = k456(1,i4,j4)
          k5 = k456(2,i4,j4)
          k6 = k456(3,i4,j4)
@@ -388,15 +349,15 @@ C   if j1>0  (-j1,-j2,-j3) gets the same weight, so count it twice
       END IF
       RETURN
       END
-      subroutine lkfulse3(h,kappa,k456,nbg,ng,vext,ind,wght,n,dist)
+      subroutine lkfulse3(h,kappa,k456,ng,vext,ind,wght,n,dist)
       implicit logical (a-z)
       integer ng,n,ind(5,n),dist
-      real*8 h(ng),kappa(ng),k456(3,ng,ng),nbg(3,3,ng),vext(2),wght(n)
+      real*8 h(ng),kappa(ng),k456(3,ng,ng),vext(2),wght(n)
       integer ns,ni,i
       ns = 0
       DO i = 1,ng
          ni = n-ns
-         call lkfse3i(h(i),kappa(i),i,k456,nbg,ng,
+         call lkfse3i(h(i),kappa(i),i,k456,ng,
      1                vext,ind(1,ns+1),wght(ns+1),ni,dist)
          ns = ns+ni
       END DO

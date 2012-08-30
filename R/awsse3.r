@@ -27,18 +27,6 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
  cat("quantiles of estimated sigma values",quantile(sigma),"\n")
   sigma <- median(sigma)
  cat("using median estimated sigma",sigma,"\n")
-#  if(length(sdcoef)==4||all(sdcoef[5:8]==0)) object <- getsdofsb(object,qA0=.1,qA1=.95,nsb=1,level=NULL)
-#  sdcoef <- object@sdcoef
-#  get mode
-#   ind <- object@si>sdcoef[7]&object@si<sdcoef[8]
-#   dsi <- density(object@si[ind],n=512,bw=sum(ind)^(-1/5)*(sdcoef[8]-sdcoef[7]))
-#plot(dsi)
-#   maxdsi <- (2:511)[dsi$y[2:511]>pmax(dsi$y[1:510],dsi$y[3:512])]
-#cat("maxdsi",maxdsi,"\n","values",dsi$x[max(maxdsi)],"\n")
-#   sigma <- sdcoef[5]+sdcoef[6]*dsi$x[max(maxdsi)]
-#   cat("mode at",dsi$x[max(maxdsi)],"sigma",sigma,"\n")
-#   sigma <- sigmaRicecorrected(dsi$x[max(maxdsi)],sigma)
-#   cat("sdcoef",sdcoef,"estimated sigma",sigma,"\n")
   }
   model <- if(model=="Chi2") 1 else 0 
   if(!(is.null(xind)&is.null(yind)&is.null(zind))){
@@ -55,7 +43,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
   grad <- object@gradient[,-s0ind]
   sb <- object@si[,,,-s0ind]
   s0 <- object@si[,,,s0ind]
-  if(is.null(kappa)){
+  if(is.null(kappa0)){
 #  select kappa based on variance reduction on the sphere
    if(is.null(vred)) {
      warning("You need to specify either kappa0 or vred\n returning unsmoothed object")
@@ -212,7 +200,6 @@ lkfullse3 <- function(h,kappa,gradstats,vext,n){
                     as.double(h),
                     as.double(kappa),
                     as.double(gradstats$k456),
-                    as.double(gradstats$nbg),
                     as.integer(ngrad),
                     as.double(vext),
                     ind=integer(5*n),
