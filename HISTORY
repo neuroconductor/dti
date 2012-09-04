@@ -1,3 +1,7 @@
+2012-09-04
+
+  - code for sqrtODF kernel following Jian Chengs paper 
+  
 2012-05-21
 
   -added function awssigmc for estimation of noise standard deviation.
