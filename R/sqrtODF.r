@@ -32,7 +32,7 @@ g1
 Inna <- function(n,L,zeta,q=1){
 Inn <- array(0,c(L+1,n+1,n+1))
 hi <- hnni(n)
-g1 <- g1f1(n,L,zeta,q=1)
+g1 <- g1f1(n,L,zeta,q=q)
 kn <- kappan(n,zeta)
 for(a in 0:L) {
    za <- zeta^(0:L+1.5)*pi^(2*L+.5)*q^(2*(0:L))/4/gamma(2*(0:L)+1.5)
@@ -117,7 +117,7 @@ for(i in 0:(L)) a <- c(a,rep(2*i,4*i+1))
 Kofg <- array(0,c(Lind,Lind,N+1,N+1,ngrad))
 Yabm <- Yab(2*L,grad)# dim Lind2, ngrad
 Qlmm <- Qlmmat(L)# dim Lind,Lind,Lind2
-Inn <- Inna(N,L,zeta,q=1)# dim L+1 (even values only) , N+1, N+1
+Inn <- Inna(N,L,zeta,q=q)# dim L+1 (even values only) , N+1, N+1
 for(i1 in 1:Lind) for(i2 in 1:i1)
 for(n1 in 1:Np1) for(n2 in 1:n1)
 for(ig in 1:ngrad){ 

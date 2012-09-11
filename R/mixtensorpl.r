@@ -122,22 +122,22 @@ if(ord>0){
 or <- matrix(par[2:lpar],2,m)[,o,drop=FALSE]
 
 while(length(or[1,or[1,]<0])!=0 && or[1,or[1,]<0]){
-	or[1,or[1,]<0] <- or[1,or[1,]<0]+pi
+   or[1,or[1,]<0] <- or[1,or[1,]<0]+pi
 }
 
 
 while(length(or[1,or[1,]>pi])!=0 && or[1,or[1,]>pi]){
-	or[1,or[1,]>pi] <- or[1,or[1,]>pi]-pi
+   or[1,or[1,]>pi] <- or[1,or[1,]>pi]-pi
 }
 
 
 while(length(or[2,or[2,]<0])!=0 && or[2,or[2,]<0]){
-	or[2,or[2,]<0] <- or[2,or[2,]<0]+2*pi
+   or[2,or[2,]<0] <- or[2,or[2,]<0]+2*pi
 }
 
 
 while(length(or[2,or[2,]>2*pi])!=0 && or[2,or[2,]>2*pi]){
-	or[2,or[2,]>2*pi] <- or[2,or[2,]>2*pi]-2*pi
+   or[2,or[2,]>2*pi] <- or[2,or[2,]>2*pi]-2*pi
 }
 
 par <- c(par[1],or[,1:ord])
@@ -148,55 +148,55 @@ mfunwghtsi <- function(par,siq,grad){
 lparw <- length(par)
 m <- (lparw-2)/3
 if(m>0){
-	lpar <- 2*m+1
-	ngrad <- dim(grad)[1]
-	w <- par[-(1:lpar)]           
-	w0 <- w[1]
-	w <- w[-1]
-	o <- order(w,decreasing=TRUE)
-	ord <- sum(w>0)
-	if(ord<m){
-		o <- o[1:ord]
-	}
-	sw <- sum(w[w>0])+max(w0,0)
-	lev <- c(par[1],-log(sw))
-	if(ord>0){
-		mix <- w[o]/sw
-	} else {
-		mix <- NULL
-	} 
-	
-	or <- matrix(par[2:lpar],2,m)[,o,drop=FALSE]
+   lpar <- 2*m+1
+   ngrad <- dim(grad)[1]
+   w <- par[-(1:lpar)]           
+   w0 <- w[1]
+   w <- w[-1]
+   o <- order(w,decreasing=TRUE)
+   ord <- sum(w>0)
+   if(ord<m){
+      o <- o[1:ord]
+   }
+   sw <- sum(w[w>0])+max(w0,0)
+   lev <- c(par[1],-log(sw))
+   if(ord>0){
+      mix <- w[o]/sw
+   } else {
+      mix <- NULL
+   } 
+   
+   or <- matrix(par[2:lpar],2,m)[,o,drop=FALSE]
 
-	while(length(or[1,or[1,]<0])!=0 && or[1,or[1,]<0]){
-		or[1,or[1,]<0] <- or[1,or[1,]<0]+pi
-	}
-	
-	
-	while(length(or[1,or[1,]>pi])!=0 && or[1,or[1,]>pi]){
-		or[1,or[1,]>pi] <- or[1,or[1,]>pi]-pi
-	}
-	
-	
-	while(length(or[2,or[2,]<0])!=0 && or[2,or[2,]<0]){
-		or[2,or[2,]<0] <- or[2,or[2,]<0]+2*pi
-	}
-	
-	
-	while(length(or[2,or[2,]>2*pi])!=0 && or[2,or[2,]>2*pi]){
-		or[2,or[2,]>2*pi] <- or[2,or[2,]>2*pi]-2*pi
-	}
+   while(length(or[1,or[1,]<0])!=0 && or[1,or[1,]<0]){
+      or[1,or[1,]<0] <- or[1,or[1,]<0]+pi
+   }
+   
+   
+   while(length(or[1,or[1,]>pi])!=0 && or[1,or[1,]>pi]){
+      or[1,or[1,]>pi] <- or[1,or[1,]>pi]-pi
+   }
+   
+   
+   while(length(or[2,or[2,]<0])!=0 && or[2,or[2,]<0]){
+      or[2,or[2,]<0] <- or[2,or[2,]<0]+2*pi
+   }
+   
+   
+   while(length(or[2,or[2,]>2*pi])!=0 && or[2,or[2,]>2*pi]){
+      or[2,or[2,]>2*pi] <- or[2,or[2,]>2*pi]-2*pi
+   }
 
-	par <- c(par[1],or[,1:ord])
-	w <- w[o]
+   par <- c(par[1],or[,1:ord])
+   w <- w[o]
 } else {
-	ord <- 0
-	lev <- c(par[1],0)
-	or <- NULL
-	w0 <- 1
-	w <- NULL
-	par <- par[1]
-	mix <- NULL
+   ord <- 0
+   lev <- c(par[1],0)
+   or <- NULL
+   w0 <- 1
+   w <- NULL
+   par <- par[1]
+   mix <- NULL
 }
 list(ord=ord,lev=lev,mix=mix,orient=or,par=par,w=c(w0,w))
 }
@@ -333,31 +333,31 @@ erg<-.Fortran("mfunpl0w",as.double(par),#par(lpar)
            lev <- c(par[1],-log(sw))
 
            if(ord>0){
-	     mix <- w[o]/sw
+        mix <- w[o]/sw
            } else {
-	     mix <- NULL
+        mix <- NULL
            } 
 
            or <- matrix(par[2:lpar],2,m)[,o,drop=FALSE]
 
-	   while(length(or[1,or[1,]<0])!=0 && or[1,or[1,]<0]){
-		or[1,or[1,]<0] <- or[1,or[1,]<0]+pi
-	   }
+      while(length(or[1,or[1,]<0])!=0 && or[1,or[1,]<0]){
+         or[1,or[1,]<0] <- or[1,or[1,]<0]+pi
+      }
 
 
-	   while(length(or[1,or[1,]>pi])!=0 && or[1,or[1,]>pi]){
-		or[1,or[1,]>pi] <- or[1,or[1,]>pi]-pi
-	   }
+      while(length(or[1,or[1,]>pi])!=0 && or[1,or[1,]>pi]){
+         or[1,or[1,]>pi] <- or[1,or[1,]>pi]-pi
+      }
 
 
-	   while(length(or[2,or[2,]<0])!=0 && or[2,or[2,]<0]){
-		or[2,or[2,]<0] <- or[2,or[2,]<0]+2*pi
-	   }
+      while(length(or[2,or[2,]<0])!=0 && or[2,or[2,]<0]){
+         or[2,or[2,]<0] <- or[2,or[2,]<0]+2*pi
+      }
 
 
-	   while(length(or[2,or[2,]>2*pi])!=0 && or[2,or[2,]>2*pi]){
-		or[2,or[2,]>2*pi] <- or[2,or[2,]>2*pi]-2*pi
-	   }
+      while(length(or[2,or[2,]>2*pi])!=0 && or[2,or[2,]>2*pi]){
+         or[2,or[2,]>2*pi] <- or[2,or[2,]>2*pi]-2*pi
+      }
 
            par <- c(par[1],or[,1:ord])
 
@@ -408,23 +408,23 @@ z <- .Fortran("mfunpl0h",as.double(par),#par(lpar)
            or <- matrix(par[2:lpar],2,m)[,o,drop=FALSE]
 
            while(length(or[1,or[1,]<0])!=0 && or[1,or[1,]<0]){
-		or[1,or[1,]<0] <- or[1,or[1,]<0]+pi
-	   }
+              or[1,or[1,]<0] <- or[1,or[1,]<0]+pi
+              }
 
 
-	   while(length(or[1,or[1,]>pi])!=0 && or[1,or[1,]>pi]){
-		or[1,or[1,]>pi] <- or[1,or[1,]>pi]-pi
-	   }
+      while(length(or[1,or[1,]>pi])!=0 && or[1,or[1,]>pi]){
+         or[1,or[1,]>pi] <- or[1,or[1,]>pi]-pi
+         }
 
 
-	   while(length(or[2,or[2,]<0])!=0 && or[2,or[2,]<0]){
-		or[2,or[2,]<0] <- or[2,or[2,]<0]+2*pi
-	   }
+      while(length(or[2,or[2,]<0])!=0 && or[2,or[2,]<0]){
+         or[2,or[2,]<0] <- or[2,or[2,]<0]+2*pi
+         }
 
 
-	   while(length(or[2,or[2,]>2*pi])!=0 && or[2,or[2,]>2*pi]){
-		or[2,or[2,]>2*pi] <- or[2,or[2,]>2*pi]-2*pi
-	   }
+      while(length(or[2,or[2,]>2*pi])!=0 && or[2,or[2,]>2*pi]){
+         or[2,or[2,]>2*pi] <- or[2,or[2,]>2*pi]-2*pi
+         }
 
            par <- c(par[1],or[,1:ord])
 
@@ -559,8 +559,9 @@ krit[!landir] <- z$krit[!landir]
    x[1:nsi,] <- t(matrix(si,nvoxel,nsi))[,mask&!landir]
    x[nsi+1,] <- sigma2[mask&!landir]
    x[nsi+2,] <- indth[mask&!landir]
-   z <- pmatrix(x,pgetsii30,maxcomp=maxcomp,dgrad=dgrad,th=th,isample0=isample0,
-                mc.cores=mc.cores,mc.silent = TRUE)
+   z <- plmatrix(x,pgetsii30,maxcomp=maxcomp,dgrad=dgrad,th=th,isample0=isample0,
+                nsi=nsi,nth=length(th),nvico=nvico,nguess=nguess,
+                mc.cores=mc.cores)
    dim(z) <- c(maxcomp+3,sum(mask&!landir))
    siind[,mask&!landir] <- z[-1,]
    krit[mask&!landir] <- z[1,]
@@ -604,8 +605,9 @@ krit[landir] <- z$krit[landir]
    x[nsi+1,] <- sigma2[mask&landir]
    x[nsi+2,] <- indth[mask&landir]
    x[nsi+3,] <- iandir[1,mask&landir]
-   z <- pmatrix(x,pgetsii31,maxcomp=maxcomp,dgrad=dgrad,th=th,isample1=isample1,
-                dgradi=dgradi,maxc=maxc,mc.cores=mc.cores,mc.silent = TRUE)
+   z <- plmatrix(x,pgetsii31,maxcomp=maxcomp,dgrad=dgrad,th=th,isample1=isample1,
+                nsi=nsi,nth=length(th),nvico=nvico,nguess=nguess,
+                dgradi=dgradi,maxc=maxc,mc.cores=mc.cores)
 #   z <- pgetsii31(x,maxcomp=maxcomp,dgrad=dgrad,th=th,isample1=isample1,
 #               dgradi=dgradi,maxc=maxc)
    dim(z) <- c(maxcomp+3,sum(mask&landir))
@@ -811,14 +813,6 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3, method="mixtensor
   th <- ev[1,,,] - (ev[2,,,]+ev[3,,,])/2
   falevel <- min(quantile(fa[fa>0],.75),.4)
   cat("falevel",falevel,"\n")
-#  rth <- quantile(th[fa>=falevel],c(.1,.99))
-#  if(diff(rth)>0){
-#     indth <- trunc((nth-1)*(th-rth[1])/diff(rth)+1)
-#     th <- seq(rth[1],rth[2],length=nth)
-#  } else {
-#     th <- rep(max(th),nth)
-#     indth <- rep(1,length(th))
-#  }
   qth <- unique(quantile(th[fa>=falevel&fa<.95],seq(.8,.99,length=nth)))
   nth <- length(qth)
   if(nth>1){
@@ -938,9 +932,9 @@ cat("using th:::",th,"\n")
 
 if(mc.cores<=1){
   cat("Starting parameter estimation and model selection (C-code)",format(Sys.time()),"\n")
-dim(siq) <- c(nvox,ngrad0)
-dim(siind) <- c(2+maxcomp,nvox)
-nvoxm <- sum(mask)
+  dim(siq) <- c(nvox,ngrad0)
+  dim(siind) <- c(2+maxcomp,nvox)
+  nvoxm <- sum(mask)
 #save(siinda <- siind[,mask], sigma2a <- sigma2[mask], ga <- t(grad), siqa <- 
   z <- .C("mixture2", 
           as.integer(meth),
@@ -970,44 +964,50 @@ nvoxm <- sum(mask)
           mix     = double(maxcomp*nvoxm),   # mixture weights
           DUPL=FALSE, PACKAGE="dti")[c("sigma2","orient","order","lev","mix")]
   cat("End parameter estimation and model selection (C-code)",format(Sys.time()),"\n")
-sigma2 <-  array(0,ddim)
-sigma2[mask] <- z$sigma2
-orient <- matrix(0,2*maxcomp,nvox)
-orient[,mask] <- z$orient
-dim(orient) <- c(2, maxcomp, ddim)
-order <- array(0, ddim)
-order[mask] <- z$order
-lev <- matrix(0,2,nvox)
-lev[,mask] <- z$lev
-dim(lev) <- c(2,ddim)
-mix <- matrix(0,maxcomp,nvox)
-mix[,mask] <- z$mix
-dim(mix) <- c(maxcomp, ddim)
+  sigma2 <-  array(0,ddim)
+  sigma2[mask] <- z$sigma2
+  orient <- matrix(0,2*maxcomp,nvox)
+  orient[,mask] <- z$orient
+  dim(orient) <- c(2, maxcomp, ddim)
+  order <- array(0, ddim)
+  order[mask] <- z$order
+  lev <- matrix(0,2,nvox)
+  lev[,mask] <- z$lev
+  dim(lev) <- c(2,ddim)
+  mix <- matrix(0,maxcomp,nvox)
+  mix[,mask] <- z$mix
+  dim(mix) <- c(maxcomp, ddim)
 } else {
   cat("Starting parameter estimation and model selection (C-code) on",mc.cores," cores",format(Sys.time()),"\n")
-x <- matrix(0,ngrad0+3+maxcomp,sum(mask))
-dim(siq) <- c(nvox,ngrad0)
-x[1:ngrad0,] <- t(siq[mask,])
-x[ngrad0+1,] <- sigma2[mask]
-dim(siind) <- c(2+maxcomp,nvox)
-x[ngrad0+2:(3+maxcomp),] <- siind[,mask] 
-res <- matrix(0,4+3*maxcomp,nvox)
-res[,mask] <- pmatrix(x,pmixtens,
+  x <- matrix(0,ngrad0+3+maxcomp,sum(mask))
+  dim(siq) <- c(nvox,ngrad0)
+  x[1:ngrad0,] <- t(siq[mask,])
+  x[ngrad0+1,] <- sigma2[mask]
+  dim(siind) <- c(2+maxcomp,nvox)
+  x[ngrad0+2:(3+maxcomp),] <- siind[,mask] 
+  res <- matrix(0,4+3*maxcomp,nvox)
+#  res[,mask] <- pmatrix(x,pmixtens,
+#                      meth=meth,optmeth=optmeth,
+#                      ngrad0=ngrad0,maxcomp=maxcomp,maxit=maxit,
+#                      pen=pen,grad=grad,reltol=reltol,th=th,
+#                      penIC=penIC,vert=vert,
+#                      mc.cores=mc.cores,mc.silent = FALSE)
+  res[,mask] <- plmatrix(x,pmixtens,
                       meth=meth,optmeth=optmeth,
                       ngrad0=ngrad0,maxcomp=maxcomp,maxit=maxit,
                       pen=pen,grad=grad,reltol=reltol,th=th,
                       penIC=penIC,vert=vert,
-                      mc.cores=mc.cores,mc.silent = FALSE)
+                      mc.cores=mc.cores)
   cat("End parameter estimation and model selection (C-code)",format(Sys.time()),"\n")
-rm(x)
-gc()
-sigma2 <-  array(res[2,],ddim)
-orient <- array(res[maxcomp+4+1:(2*maxcomp),], c(2, maxcomp, ddim))
-order <- array(as.integer(res[1,]), ddim)
-lev <- array(res[3:4,], c(2,ddim))
-mix <- array(res[4+(1:maxcomp),], c(maxcomp, ddim))
-}
-method <- "mixtensor"
+  rm(x)
+  gc()
+  sigma2 <-  array(res[2,],ddim)
+  orient <- array(res[maxcomp+4+1:(2*maxcomp),], c(2, maxcomp, ddim))
+  order <- array(as.integer(res[1,]), ddim)
+  lev <- array(res[3:4,], c(2,ddim))
+  mix <- array(res[4+(1:maxcomp),], c(maxcomp, ddim))
+  }
+  method <- "mixtensor"
   } else {
   order <- array(0,ddim)
   mix <- array(0,c(maxcomp,ddim))
@@ -1059,12 +1059,12 @@ method <- "mixtensor"
 #  otherwise we would reanalyze a model
 #
            if(optmethod=="L-BFGS-B"){
-		param <- if(method=="mixtensor") param[1:(3*k+1)] else param[1:(3*k+2)]
-		if(k==mc0){
-			param[-(1:(2*k+1))] <- if(method=="mixtensor") rep(1/k,k) else rep(1/k,k+1)
-		} else {
-			param[-(1:(2*k+1))] <- zz$w[1:(if(method=="mixtensor") k else (k+1))]
-		}
+      param <- if(method=="mixtensor") param[1:(3*k+1)] else param[1:(3*k+2)]
+      if(k==mc0){
+         param[-(1:(2*k+1))] <- if(method=="mixtensor") rep(1/k,k) else rep(1/k,k+1)
+      } else {
+         param[-(1:(2*k+1))] <- zz$w[1:(if(method=="mixtensor") k else (k+1))]
+      }
           }
 
           if(method=="mixtensor"){

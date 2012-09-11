@@ -660,7 +660,7 @@ setMethod("extract","dtiTensor",function(x, what="tensor", xind=TRUE, yind=TRUE,
     else {
           D <- matrix(x@D,6,prod(ddim))[,x@mask]
                 res <- matrix(0,9,prod(ddim))
-                res[,x@mask] <- pmatrix(D,pdti3Dall,mc.cores=mc.cores,mc.silent = TRUE)
+                res[,x@mask] <- plmatrix(D,pdti3Dall,mc.cores=mc.cores)
                 list(andir=res[4:6,],
                      fa=res[1,],
                      ga=res[2,],
@@ -685,7 +685,7 @@ setMethod("extract","dtiTensor",function(x, what="tensor", xind=TRUE, yind=TRUE,
           else {
             ev <- matrix(0,3,nvox)
             D <- matrix(x@D,6,nvox)[,x@mask]
-            ev[,x@mask] <- pmatrix(D,pdti3Dev,mc.cores=mc.cores,mc.silent = TRUE)
+            ev[,x@mask] <- plmatrix(D,pdti3Dev,mc.cores=mc.cores)
          }
      if("fa" %in% what) {
         dd <- apply(ev^2,2:4,sum)
@@ -715,7 +715,7 @@ setMethod("extract","dtiTensor",function(x, what="tensor", xind=TRUE, yind=TRUE,
           else {
             z$andir <- matrix(0,3,nvox)
             D <- matrix(x@D,6,nvox)[,x@mask]
-            z$andir[,x@mask] <- pmatrix(D,pdti3Dand,mc.cores=mc.cores,mc.silent = TRUE)
+            z$andir[,x@mask] <- plmatrix(D,pdti3Dand,mc.cores=mc.cores)
          }
     }
   }

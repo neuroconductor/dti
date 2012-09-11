@@ -134,10 +134,10 @@ setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="r
      rss <- z$rss
      th0 <- z$th0
      } else {
-        dim(si) <- c(dim(si)[1],nvox)
         z <- matrix(0,8+ngrad,nvox)
-        z[,mask] <- pmatrix(si[,mask],pnlrdtirg,btb=object@btb,sdcoef=sdcoef,s0ind=s0ind,
-                     mc.cores=mc.cores,mc.silent = TRUE)
+        dim(si) <- c(ngrad,nvox)
+        z[,mask] <- plmatrix(si[,mask],pnlrdtirg,btb=object@btb,sdcoef=sdcoef,s0ind=s0ind,
+                     ngrad = ngrad,mc.cores=mc.cores)
         th0 <- z[1,]
         D <- z[2:7,]
         rss <- z[8,]
@@ -211,7 +211,7 @@ setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="r
    else {
       ev <- matrix(0,3,prod(ddim))
       dim(D) <- c(6,prod(ddim))
-      ev[,mask] <- pmatrix(D[,mask],pdti3Dev,mc.cores=mc.cores,mc.silent = TRUE)
+      ev[,mask] <- plmatrix(D[,mask],pdti3Dev,mc.cores=mc.cores)
    }
   dim(ev) <- c(3,ddim)   
   dim(D) <- c(6,ddim)   
@@ -309,7 +309,7 @@ function(object, which, mc.cores=getOption("mc.cores", 2L)) {
                 PACKAGE="dti")[c("fa","ga","md","andir","bary")] else {
            D <- matrix(object@D,6,prod(ddim))[,object@mask]
            res <- matrix(0,9,prod(ddim))
-           res[,object@mask] <- pmatrix(D,pdtiind3D,mc.cores=mc.cores,mc.silent = TRUE)
+           res[,object@mask] <- plmatrix(D,pdtiind3D,mc.cores=mc.cores)
            list(andir=res[1:3,],
                    fa=res[4,],
                    ga=res[5,],

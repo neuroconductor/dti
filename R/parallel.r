@@ -49,7 +49,32 @@ pdataframe <- function (v, FUN, ..., mc.set.seed = TRUE, mc.silent = FALSE,
         warning("some results may be missing, folded or caused an error")
     res
 }
-pmatrix <- function (v, FUN, ..., mc.set.seed = TRUE, mc.silent = FALSE, 
+pmatrix <- function(x, FUN, ..., mc.cores = getOption("mc.cores", 2L)){
+     require(parallel)
+     cl <- makeCluster(mc <- mc.cores)
+#
+#   parCapply does not pass dimension attributes to FUN !!!!
+#
+     z <- parCapply(cl, x, FUN, ...)
+     stopCluster(cl)
+     z
+}
+plmatrix <- function(x, FUN, ..., mc.cores = getOption("mc.cores", 2L)){
+dx <- dim(x)[2]
+if(mc.cores>dx) mc.cores <- dx
+n <- trunc((dx-1)/mc.cores)+1
+lx <- list(NULL)
+for(i in 1:(mc.cores-1)) lx[[i]] <- x[,(i-1)*n+1:n]
+lx[[mc.cores]] <- x[,((mc.cores-1)*n+1):dx]
+cl <- makeCluster(mc <- mc.cores)
+lz <- parLapply(cl, lx, FUN , ...)
+stopCluster(cl)
+z <- matrix(0,length(lz[[1]])/n, dx)
+for(i in 1:(mc.cores-1)) z[,(i-1)*n+1:n] <- lz[[i]]
+z[,((mc.cores-1)*n+1):dx] <- lz[[mc.cores]]
+z
+}
+pmatrix0 <- function (v, FUN, ..., mc.set.seed = TRUE, mc.silent = FALSE, 
     mc.cores = getOption("mc.cores", 2L), mc.cleanup = TRUE) 
 {
     require(parallel)
@@ -98,7 +123,7 @@ pmatrix <- function (v, FUN, ..., mc.set.seed = TRUE, mc.silent = FALSE,
 }
 
 pdti3Dev <- function(D){
-nvox <- dim(D)[2]
+nvox <- length(D)/6
 .Fortran("dti3Devp",
          as.double(D),
          as.integer(nvox),
@@ -108,7 +133,7 @@ nvox <- dim(D)[2]
 }
 
 pdtiind3D <- function(D){
-nvox <- dim(D)[2]
+nvox <- length(D)/6
 .Fortran("dtiind3p",
          as.double(D),
          as.integer(nvox),
@@ -118,7 +143,7 @@ nvox <- dim(D)[2]
 }
 
 pdti3Dand <- function(D){
-nvox <- dim(D)[2]
+nvox <- length(D)/6
 .Fortran("dti3Danp",
          as.double(D),
          as.integer(nvox),
@@ -128,7 +153,7 @@ nvox <- dim(D)[2]
 }
 
 pdti3Dall <- function(D){
-nvox <- dim(D)[2]
+nvox <- length(D)/6
 .Fortran("dti3Dalp",
          as.double(D),
          as.integer(nvox),
@@ -137,11 +162,12 @@ nvox <- dim(D)[2]
          PACKAGE="dti")$ergs
 }
 
-pnlrdtirg <- function(si,btb,sdcoef,s0ind){
+pnlrdtirg <- function(si,btb,sdcoef,s0ind,ngrad){
    ns0 <- length(s0ind)
+   nvox <- length(si)/ngrad
+   dim(si) <- c(ngrad,length(si)/ngrad)
    s0 <- if(ns0>1) rep(1/ns0,ns0)%*%si[s0ind,] else si[s0ind,]
-   nvox <- length(s0)
-   ngrad <- dim(btb)[2]
+#   ngrad <- dim(btb)[2]
    z <- .Fortran("nlrdtirp",
                  as.integer(si),
                  as.integer(ngrad),
@@ -156,10 +182,12 @@ pnlrdtirg <- function(si,btb,sdcoef,s0ind){
                  double(ngrad),
                  DUP=FALSE,
                  PACKAGE="dti")$res
+    z
 }
 
 pmixtens <- function(x,meth,optmeth,ngrad0,maxcomp,maxit,pen,grad,reltol,th,penIC,vert){
-nvox <- dim(x)[2]
+nvox <- length(x)/(ngrad0+3+maxcomp)
+dim(x) <- c(ngrad0+3+maxcomp,nvox)
 z <- .C("mixture2", 
           as.integer(meth),
           as.integer(optmeth), 
@@ -189,15 +217,10 @@ z <- .C("mixture2",
           rbind(z$order,z$sigma2,matrix(z$lev,2,nvox),matrix(z$mix,maxcomp,nvox),matrix(z$orient,2*maxcomp,nvox))
 }
 
-pgetsii30 <- function(x,maxcomp,dgrad,th,isample0){
-         dx <- dim(x)
-         nsi <- dx[1]-2
-         nvox <- dx[2]
-         nth <- length(th)
-         nvico <- dim(dgrad)[2]
-         nguess <- if(maxcomp<=1) length(isample0) else dim(isample0)[2]
+pgetsii30 <- function(x,maxcomp,dgrad,th,isample0,nsi,nth,nvico,nguess){
+         nvox <- length(x)/(nsi+2)
+         dim(x) <- c(nsi+2,nvox)
 z <- .Fortran("pgtsii30",
-#         as.double(aperm(si,c(4,1:3))),
          as.double(x[1:nsi,]),
          as.double(x[nsi+1,]),#sigma2
          as.integer(nsi),
@@ -218,17 +241,13 @@ z <- .Fortran("pgtsii30",
          as.integer(maxcomp+2),
          DUP=FALSE,
          PACKAGE="dti")[c("siind","krit")]
-         rbind(z$krit,matrix(z$siind,maxcomp+2,nvox))
+         dim(z$siind) <- c(maxcomp+2,nvox)
+         rbind(z$krit,z$siind)
 }
-pgetsii31 <- function(x,maxcomp,dgrad,th,isample1,dgradi,maxc){
-         dx <- dim(x)
-         nsi <- dx[1]-3
-         nvox <- dx[2]
-         nth <- length(th)
-         nvico <- dim(dgrad)[2]
-         nguess <- if(maxcomp<=2) length(isample1) else dim(isample1)[2]
+pgetsii31 <- function(x,maxcomp,dgrad,th,isample1,nsi,nth,nvico,nguess,dgradi,maxc){
+         nvox <- length(x)/(nsi+3)
+         dim(x) <- c(nsi+3,nvox)
 z <- .Fortran("pgtsii31",
-#         as.double(aperm(si,c(4,1:3))),
          as.double(x[1:nsi,]),
          as.double(x[nsi+1,]),#sigma2
          as.integer(nsi),
@@ -252,5 +271,6 @@ z <- .Fortran("pgtsii31",
          as.double(maxc),
          DUP=FALSE,
          PACKAGE="dti")[c("siind","krit")]
-         rbind(z$krit,matrix(z$siind,maxcomp+2,nvox))
+         dim(z$siind) <- c(maxcomp+2,nvox)
+         rbind(z$krit,z$siind)
 }
