@@ -1,3 +1,7 @@
+2012-09-12
+  - package no longer depends on fmri, but oro.nifti for IO. 
+  - readDWIdata() has new argument SPM for SPM like ANALYZE data
+
 2012-09-04
 
   - code for sqrtODF kernel following Jian Chengs paper 

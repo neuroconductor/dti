@@ -12,7 +12,7 @@ dtiData(gradient, imagefile, ddim, xind = NULL, yind = NULL, zind = NULL,
 readDWIdata(gradient, dirlist, format = c("DICOM", "NIFTI", "ANALYZE", "AFNI"), nslice = NULL, order = NULL, 
         xind = NULL, yind = NULL, zind = NULL, level = 0, mins0value = 0, 
         maxvalue = 32000, voxelext = NULL, orientation = c(0, 2, 5), 
-        rotation = NULL, verbose = FALSE)
+        rotation = NULL, SPM = FALSE, verbose = FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -32,6 +32,11 @@ readDWIdata(gradient, dirlist, format = c("DICOM", "NIFTI", "ANALYZE", "AFNI"), 
   \item{voxelext}{ voxel extensions in coordinate directions }
   \item{orientation}{ orientations of data as coded in AFNI }
   \item{rotation}{ optional rotation matrix for the coordinate system.}
+  \item{SPM}{ is a logical variable (default = ‘FALSE’) that forces the
+          	  voxel data values to be rescaled using the funused1 ANALYZE
+              header field.  This is an undocumented convention of ANALYZE
+              files processed using the Statistical Parametric Mapping
+              (SPM) software.}
   \item{verbose}{ some progress reports if TRUE }
 }
 \details{
