@@ -676,12 +676,14 @@ tensor2medinria <- function(obj, filename, xind=NULL, yind=NULL, zind=NULL) {
   if (obj@orientation[2]==3) yind <- min(yind)+max(yind)-yind
   if (obj@orientation[3]==4) zind <- min(zind)+max(zind)-zind
 
-  nim <- nifti(aperm( obj@D, c( 2:4, 1))[ xind, yind, zind, c( 1, 2, 4, 3, 5, 6)],
-		       dim_ = c( 5, length(xind), length(yind), length(zind), 1, 6, 0, 0),
-			   pixdim = c( -1, obj@voxelext[1:3], 0, 0, 0, 0),
+  D <- aperm( obj@D, c( 2:4, 1))[ xind, yind, zind, c( 1, 2, 4, 3, 5, 6)]
+  dim(D) <- c( length(xind), length(yind), length(zind), 1, 6)
+  nim <- nifti(D,
+		       dim_ = c( 5, length(xind), length(yind), length(zind), 1, 6, 1, 1),
+			   pixdim = c( -1, obj@voxelext[1:3], 1, 1, 0, 0),
 			   intent_code = 1007,
 			   datatype = 16,
-			   bitpix = 192,
+			   bitpix = 32, ## must correspond to datatype
 			   sclslope = 1,
 			   xyztunits = "\002", # ???
 	           qform = 1,
@@ -698,13 +700,13 @@ tensor2medinria <- function(obj, filename, xind=NULL, yind=NULL, zind=NULL) {
 medinria2tensor <- function(filename) {
 	args <- sys.call() 
 	data <- readNIfTI(filename, reorient = FALSE)
- 
+    
     invisible(new("dtiTensor",
     	          call  = list(args),
-        	      D     = aperm(data,c(4,1:3))[c(1,2,4,3,5,6),,,],
+        	      D     = aperm(data, c( 5, 1:4))[ c( 1, 2, 4, 3, 5, 6), , , , , drop = TRUE],
                   sigma = array(0, dim(data)[1:3]),
-                  scorr = array(0, c(1,1,1)),
-                  bw    = rep(0,3),
+                  scorr = array(0, c( 1, 1, 1)),
+                  bw    = rep( 0, 3),
                   mask  = array(TRUE, dim(data)[1:3]),
                   method = "unknown",
                   hmax  = 1,
