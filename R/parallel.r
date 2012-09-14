@@ -1,54 +1,3 @@
-pdataframe <- function (v, FUN, ..., mc.set.seed = TRUE, mc.silent = FALSE, 
-    mc.cores = getOption("mc.cores", 2L), mc.cleanup = TRUE) 
-{
-    require(parallel)
-    if (!is.data.frame(v)) 
-        stop("'v' must be a dataframe")
-    env <- parent.frame()
-    cores <- as.integer(mc.cores)
-    if (cores < 1L) 
-        stop("'mc.cores' must be >= 1")
-    if (cores == 1L) 
-        return(FUN(v, ...))
-    if (mc.set.seed) 
-        mc.reset.stream()
-    n <- length(v)
-    l <- if (n <= cores) 
-        as.list(v)
-    else {
-        il <- as.integer(n/cores)
-        xc <- n - il * cores
-        sl <- rep(il, cores)
-        if (xc) 
-            sl[1:xc] <- il + 1L
-        si <- cumsum(c(1L, sl))
-        se <- si + c(sl, 0L) - 1L
-        lapply(seq_len(cores), function(ix) v[si[ix]:se[ix]])
-    }
-    jobs <- NULL
-    cleanup <- function() {
-        if (length(jobs) && mc.cleanup) {
-            mccollect(parallel:::children(jobs), FALSE)
-            parallel:::mckill(parallel:::children(jobs), if (is.integer(mc.cleanup)) 
-                mc.cleanup
-            else 15L)
-            mccollect(parallel:::children(jobs))
-        }
-        if (length(jobs)) {
-            mccollect(parallel:::children(jobs), FALSE)
-        }
-    }
-    on.exit(cleanup())
-    FUN <- match.fun(FUN)
-    jobs <- lapply(seq_len(min(n, cores)), function(i) mcparallel(FUN(l[[i]], 
-        ...), name = i, mc.set.seed = mc.set.seed, silent = mc.silent))
-    res <- mccollect(jobs)
-    names(res) <- NULL
-    res <- do.call(c, res)
-    if (length(res) != n) 
-        warning("some results may be missing, folded or caused an error")
-    res
-}
 pmatrix <- function(x, FUN, ..., mc.cores = getOption("mc.cores", 2L)){
      require(parallel)
      cl <- makeCluster(mc <- mc.cores)
@@ -73,53 +22,6 @@ z <- matrix(0,length(lz[[1]])/n, dx)
 for(i in 1:(mc.cores-1)) z[,(i-1)*n+1:n] <- lz[[i]]
 z[,((mc.cores-1)*n+1):dx] <- lz[[mc.cores]]
 z
-}
-pmatrix0 <- function (v, FUN, ..., mc.set.seed = TRUE, mc.silent = FALSE, 
-    mc.cores = getOption("mc.cores", 2L), mc.cleanup = TRUE) 
-{
-    require(parallel)
-    if (!is.matrix(v)) 
-        stop("'v' must be a matrix")
-    env <- parent.frame()
-    cores <- as.integer(mc.cores)
-    if (cores < 1L) 
-        stop("'mc.cores' must be >= 1")
-    if (cores == 1L) 
-        return(FUN(v, ...))
-    if (mc.set.seed) 
-        mc.reset.stream()
-    n <- dim(v)[2]
-    if (n <= cores)  return(FUN(v, ...))
-    il <- as.integer(n/cores)
-    xc <- n - il * cores
-    sl <- rep(il, cores)
-    if (xc) sl[1:xc] <- il + 1L
-    si <- cumsum(c(1L, sl))
-    se <- si + c(sl, 0L) - 1L
-    l <- lapply(seq_len(cores), function(ix) v[,si[ix]:se[ix],drop=FALSE])
-    jobs <- NULL
-    cleanup <- function() {
-        if (length(jobs) && mc.cleanup) {
-            mccollect(parallel:::children(jobs), FALSE)
-            parallel:::mckill(parallel:::children(jobs), if (is.integer(mc.cleanup)) 
-                mc.cleanup
-            else 15L)
-            mccollect(parallel:::children(jobs))
-        }
-        if (length(jobs)) {
-            mccollect(parallel:::children(jobs), FALSE)
-        }
-    }
-    on.exit(cleanup())
-    FUN <- match.fun(FUN)
-    jobs <- lapply(seq_len(min(n, cores)), function(i) mcparallel(FUN(l[[i]], 
-        ...), name = i, mc.set.seed = mc.set.seed, silent = mc.silent))
-    res <- mccollect(jobs)
-    names(res) <- NULL
-    res <- do.call(c, res)
-    if (length(res)<n || length(res)%%n != 0) 
-        warning("some results may be missing, folded or caused an error")
-    res
 }
 
 pdti3Dev <- function(D){
@@ -184,6 +86,15 @@ pnlrdtirg <- function(si,btb,sdcoef,s0ind,ngrad){
                  PACKAGE="dti")$res
     z
 }
+pnltens <- function(si,grad,sdcoef){
+#
+#  to be used with pmatrix
+#
+s0 <- si[s0ind]
+sb <- si[-s0ind]
+zz <- optim(c(1,0,0,1,0,1),opttensR,method="BFGS",si=sb,s0=s0,grad=grad,sdcoef=sdcoef)
+c(rho2D(zz$par),s0,zz$value,tensRres(zz$par,sb,s0,grad))
+}
 
 pmixtens <- function(x,meth,optmeth,ngrad0,maxcomp,maxit,pen,grad,reltol,th,penIC,vert){
 nvox <- length(x)/(ngrad0+3+maxcomp)
@@ -206,7 +117,6 @@ z <- .C("mixture2",
           as.double(penIC),
           as.double(x[ngrad0+1,]),
           as.double(vert),
-#          as.double(orient),
           as.double(t(x[1:ngrad0,])),
           sigma2  = double(nvox),# error variance 
           orient  = double(2*maxcomp*nvox), # phi/theta for all mixture tensors

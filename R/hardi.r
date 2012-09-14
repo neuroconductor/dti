@@ -19,19 +19,9 @@ setMethod("dwiQball","dtiData",function(object,what="wODF",order=4,lambda=0){
   s0ind <- object@s0ind
   ns0 <- length(s0ind)
   sdcoef <- object@sdcoef
-  z <- .Fortran("outlier",
-                as.double(object@si),
-                as.integer(prod(ddim)),
-                as.integer(ngrad),
-                as.logical((1:ngrad)%in%s0ind),
-                as.integer(ns0),
-                si=integer(prod(ddim)*ngrad),
-                index=integer(prod(ddim)),
-                lindex=integer(1),
-                DUP=FALSE,
-                PACKAGE="dti")[c("si","index","lindex")]
+  z <- sioutlier(object@si,(1:ngrad)%in%s0ind)
   si <- array(z$si,c(ddim,ngrad))
-  index <- if(z$lindex>0) z$index[1:z$lindex] else numeric(0)
+  index <- z$index
   rm(z)
   gc()
 
@@ -173,45 +163,26 @@ setMethod("dwiQball","dtiData",function(object,what="wODF",order=4,lambda=0){
   th0 <- array(s0,object@ddim)
   th0[!mask] <- 0
   gc()
-  lags <- c(5,5,3)
-  scorr <- .Fortran("mcorr",as.double(res),
-                   as.logical(mask),
-                   as.integer(ddim[1]),
-                   as.integer(ddim[2]),
-                   as.integer(ddim[3]),
-                   as.integer(ngrad0),
-                   double(prod(ddim)),
-                   double(prod(ddim)),
-                   scorr = double(prod(lags)),
-                   as.integer(lags[1]),
-                   as.integer(lags[2]),
-                   as.integer(lags[3]),
-                   PACKAGE="dti",DUP=FALSE)$scorr
-  dim(scorr) <- lags
-  scorr[is.na(scorr)] <- 0
-  cat("estimated spatial correlations",format(Sys.time()),"\n")
-  cat("first order  correlation in x-direction",signif(scorr[2,1,1],3),"\n")
-  cat("first order  correlation in y-direction",signif(scorr[1,2,1],3),"\n")
-  cat("first order  correlation in z-direction",signif(scorr[1,1,2],3),"\n")
-
-  scorr[is.na(scorr)] <- 0
-  bw <- optim(c(2,2,2),corrrisk,method="L-BFGS-B",lower=c(.2,.2,.2),
-  upper=c(3,3,3),lag=lags,data=scorr)$par
-  bw[bw <= .25] <- 0
-  cat("estimated corresponding bandwidths",format(Sys.time()),"\n")
+#
+#   get spatial correlation
+#
+  scorr <- function(res,mask,ddim,ngrad0,lags=c(5,5,3),mc.cores=mc.cores)
   invisible(new("dwiQball",
                 call  = args,
                 order = as.integer(order),
+                forder = 0,
+                zeta = 1,
                 lambda = lambda,
                 sphcoef = sphcoef,
                 varsphcoef = varcoef,
                 th0   = th0,
                 sigma = sigma2,
-                scorr = scorr, 
-                bw = bw, 
+                scorr = scorr$scorr, 
+                bw = scorr$bw, 
                 mask = mask,
                 hmax = 1,
                 gradient = object@gradient,
+                bvalue = object@bvalue,
                 btb   = object@btb,
                 ngrad = object@ngrad, # = dim(btb)[2]
                 s0ind = object@s0ind,

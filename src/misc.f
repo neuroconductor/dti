@@ -45,45 +45,47 @@ C
       END DO
       RETURN
       END
-      subroutine outlier(si,n,nb,s0ind,ls0,sinew,ind,lind)
+      subroutine outlier(si,n,nb,s0ind,ls0,sinew,ind)
 C
 C   replace physically meaningless Si values by mean S0
 C
       implicit logical(a-z)
-      integer n,nb,ls0,sinew(n,nb),ind(n),lind
-      real*8 si(n,nb)
-      logical s0ind(nb)
+      integer n,nb,ls0,sinew(nb,n)
+      real*8 si(nb,n)
+      logical s0ind(nb),ind(n)
       integer i,j,ls0m1
       real*8 s0
       logical changed
       ls0m1=ls0-1
-      lind=0
+C$OMP PARALLEL DEFAULT(NONE)
+C$OMP& SHARED(s0ind,si,sinew,n,nb,ls0m1,ls0,ind)
+C$OMP& PRIVATE(i,s0,j,changed)
+C$OMP DO SCHEDULE(GUIDED)
       DO i=1,n
          s0=0
          DO j=1,nb
             if(s0ind(j)) THEN
-               s0=s0+si(i,j)
-               sinew(i,j)=si(i,j)
+               s0=s0+si(j,i)
+               sinew(j,i)=si(j,i)
             END IF
          END DO
          s0=(s0+ls0m1)/ls0
          changed=.FALSE.
          DO j=1,nb
             if(.not.s0ind(j)) THEN 
-               if(si(i,j).gt.s0) THEN
-                  sinew(i,j)=s0
+               if(si(j,i).gt.s0) THEN
+                  sinew(j,i)=s0
                   changed=.TRUE.
                ELSE 
-                  sinew(i,j)=si(i,j)
+                  sinew(j,i)=si(j,i)
                END IF
             END IF
          END DO
-         if(changed) THEN
-            lind=lind+1
-            ind(lind)=i
-         END IF
+         ind(i)=changed
       END DO
-      call rchkusr()
+C$OMP END DO NOWAIT
+C$OMP END PARALLEL
+C$OMP FLUSH(sinew,ind)
       RETURN
       END
       subroutine mcorrlag(res,mask,n1,n2,n3,nv,sigma,mean,scorr,lag)
@@ -128,46 +130,54 @@ C  correlation in x
       return
       end
 
-      subroutine msd(res,mask,n1,n2,n3,nv,sigma,mean)
+      subroutine msd(res,mask,n,nv,sigma,mean)
       implicit logical(a-z)
-      integer n1,n2,n3,nv
-      real*8 sigma(n1,n2,n3),res(nv,n1,n2,n3),mean(n1,n2,n3)
-      logical mask(n1,n2,n3)
-      integer i1,i2,i3,iv
+      integer n,nv
+      real*8 sigma(n),res(nv,n),mean(n)
+      logical mask(n)
+      integer i,iv
       real*8 z,resi,zm
-      DO i1=1,n1
-         DO i2=1,n2
-            DO i3=1,n3
-               if(mask(i1,i2,i3)) THEN
-                  z=0.d0
-                  zm=0.d0
-                  DO iv=1,nv
-                     resi=res(iv,i1,i2,i3)
-                     zm=zm+resi
-                     z=z+resi*resi
-                  END DO
-                  zm=zm/nv
-                  z=z/nv-zm*zm
-                  sigma(i1,i2,i3)=sqrt(z)
-                  mean(i1,i2,i3)=zm
-               ELSE
-                  sigma(i1,i2,i3)=0.d0
-               ENDIF
+C$OMP PARALLEL DEFAULT(NONE)
+C$OMP& SHARED(res,n,mask,nv,sigma,mean)
+C$OMP& PRIVATE(z,iv,i,resi,zm)
+C$OMP DO SCHEDULE(GUIDED)
+      DO i=1,n
+         if(mask(i)) THEN
+            z=0.d0
+            zm=0.d0
+            DO iv=1,nv
+               resi=res(iv,i)
+               zm=zm+resi
+               z=z+resi*resi
             END DO
-         END DO
+            zm=zm/nv
+            z=z/nv-zm*zm
+            sigma(i)=sqrt(z)
+            mean(i)=zm
+            ELSE
+               sigma(i)=0.d0
+         ENDIF
       END DO
+C$OMP END DO NOWAIT
+C$OMP END PARALLEL
+C$OMP FLUSH(mean,sigma)
       RETURN
       END
       
       subroutine mcorr(res,mask,n1,n2,n3,nv,sigma,mean,scorr,l1,l2,l3)
 
       implicit logical(a-z)
-      integer n1,n2,n3,nv,l1,l2,l3,lag(3)
+      integer n1,n2,n3,nv,l1,l2,l3,lag(3),n
       real*8 scorr(l1,l2,l3),res(nv,n1,n2,n3),sigma(n1,n2,n3),
      1       mean(n1,n2,n3)
       logical mask(n1,n2,n3)
       integer i1,i2,i3
-      call msd(res,mask,n1,n2,n3,nv,sigma,mean)
+      n=n1*n2*n3
+      call msd(res,mask,n,nv,sigma,mean)
+C$OMP PARALLEL DEFAULT(NONE)
+C$OMP& SHARED(res,mask,n1,n2,n3,nv,sigma,mean,scorr,l1,l2,l3)
+C$OMP& PRIVATE(lag)
+C$OMP DO SCHEDULE(GUIDED)
       Do i1=1,l1
          lag(1)=i1-1
          DO i2=1,l2
@@ -180,6 +190,9 @@ C  correlation in x
             END DO
          END DO
       END DO
+C$OMP END DO NOWAIT
+C$OMP END PARALLEL
+C$OMP FLUSH(scorr)
       return
       end
       subroutine thcorr(w,n1,n2,n3,scorr,l1,l2,l3)

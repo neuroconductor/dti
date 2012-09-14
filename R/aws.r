@@ -38,20 +38,10 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
   ddim0 <- object@ddim0
   ddim <- object@ddim
   nvox <- prod(ddim)
-  z <- .Fortran("outlier",
-                as.double(object@si),
-                as.integer(prod(ddim)),
-                as.integer(ngrad),
-                as.logical((1:ngrad)%in%s0ind),
-                as.integer(ns0),
-                si=integer(prod(ddim)*ngrad),
-                index=integer(prod(ddim)),
-                lindex=integer(1),
-                DUPL=FALSE,
-                PACKAGE="dti")[c("si","index","lindex")]
+  z <- sioutlier(object@si,(1:ngrad)%in%s0ind)
   si <- array(z$si,c(ddim,ngrad))
   object@si <- si
-  index <- if(z$lindex>0) z$index[1:z$lindex] else numeric(0)
+  index <- z$index
   s0 <- si[,,,s0ind]
   if(length(s0ind)>1) s0 <- apply(s0,1:3,mean) 
   si <- si[,,,-s0ind]
@@ -295,6 +285,7 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
                 D     = z$D,
                 th0   = th0,
                 gradient = object@gradient,
+                bvalue = object@bvalue,
                 btb   = btb,
                 sigma = z$sigma2hat, 
                 scorr = scorr,

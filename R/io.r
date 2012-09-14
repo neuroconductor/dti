@@ -4,13 +4,20 @@
 #                                                              #
 ################################################################
 
-dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=0,mins0value=0,maxvalue=32000,voxelext=c(1,1,1),orientation=c(0,2,5),rotation=diag(3)) {
+dtiData <- function(gradient,imagefile,ddim,bvalue=NULL,xind=NULL,yind=NULL,zind=NULL,level=0,mins0value=0,maxvalue=32000,voxelext=c(1,1,1),orientation=c(0,2,5),rotation=diag(3)) {
   args <- list(sys.call())
   if (any(sort((orientation)%/%2) != 0:2)) stop("invalid orientation \n")
   if (dim(gradient)[2]==3) gradient <- t(gradient)
   if (dim(gradient)[1]!=3) stop("Not a valid gradient matrix")
   ngrad <- dim(gradient)[2]
   s0ind <- (1:ngrad)[apply(abs(gradient),2,max)==0] 
+  if (is.null(bvalue)){
+     bvalue <- rep(1,ngrad)
+     bvalue[s0ind] <- 0
+  } else {
+     if(length(bvalue)!=ngrad || max(bvalue[s0ind]) > 10*min(bvalue[-s0ind])) 
+        stop("invalid b-values")
+  }   
   if (!(file.exists(imagefile))) stop("Image file does not exist")
   cat("Start Data reading",format(Sys.time()), "\n")
   zz <- file(imagefile,"rb")
@@ -109,7 +116,7 @@ dtiData <- function(gradient,imagefile,ddim,xind=NULL,yind=NULL,zind=NULL,level=
 ##       the loop over files contains many not neccessary operations (voxelext etc)
 readDWIdata <- function(gradient, dirlist, 
                         format = c("DICOM", "NIFTI", "ANALYZE", "AFNI"), 
-                        nslice = NULL, order = NULL,
+                        nslice = NULL, order = NULL, bvalue = NULL,
                         xind = NULL, yind = NULL, zind = NULL,
                         level = 0, mins0value = 0, maxvalue = 32000,
                         voxelext = NULL, orientation = c(0L, 2L, 5L), rotation = NULL,
@@ -127,7 +134,13 @@ readDWIdata <- function(gradient, dirlist,
   ngrad <- dim(gradient)[2]
   s0ind <- (1:ngrad)[apply(abs(gradient), 2, max) == 0]
   if (length(s0ind) < 1) stop("readDWIdata: No b0 gradients found.")
-
+  if (is.null(bvalue)){
+     bvalue <- rep(1,ngrad)
+     bvalue[s0ind] <- 0
+  } else {
+     if(length(bvalue)!=ngrad || max(bvalue[s0ind]) > 10*min(bvalue[-s0ind])) 
+        stop("invalid b-values")
+  }   
   ## generate file list in specified order
   filelist <- NULL
   for (dd in dirlist) filelist <- c(filelist, paste(dd, list.files(dd), sep = .Platform$file.sep))

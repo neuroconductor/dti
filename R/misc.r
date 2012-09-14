@@ -1,3 +1,62 @@
+#
+#   This function is a slightly modified version of
+#   function setCores in package spMC version 0.2.2
+#   written by Luca Sartore <drwolf85@gmail.com>
+#
+sioutlier <- function(si,s0ind,mc.cores=1){
+   mc.cores.old <- setCores(,reprt=FALSE)
+   setCores(mc.cores)
+   dsi <- dim(si)
+   n <- prod(dsi[-length(dsi)])
+   ng <- dsi[length(dsi)]
+   ns0 <- sum(s0ind)
+   dim(si) <- c(n,ng)
+   z <- .Fortran("outlier",
+                 as.double(t(si)),
+                 as.integer(n),
+                 as.integer(ng),
+                 as.logical(s0ind),
+                 as.integer(ns0),
+                 si=integer(n*ng),
+                 index=logical(n),
+                 DUP=FALSE,
+                 PACKAGE="dti")[c("si","index")]
+  setCores(mc.cores.old,reprt=FALSE)
+  index <- (1:n)[z$index]
+  dim(z$si) <- c(ng,n)
+  si <- array(t(z$si),dsi)
+  list(si=si,index=index)
+}
+mcorr <- function(res,mask,ddim,ngrad0,lags=c(5,5,3),mc.cores=1){
+   mc.cores.old <- setCores(,reprt=FALSE)
+   setCores(min(mc.cores,lags[1]))
+   scorr <- .Fortran("mcorr",as.double(res),
+                   as.logical(mask),
+                   as.integer(ddim[1]),
+                   as.integer(ddim[2]),
+                   as.integer(ddim[3]),
+                   as.integer(ngrad0),
+                   double(prod(ddim)),
+                   double(prod(ddim)),
+                   scorr = double(prod(lags)),
+                   as.integer(lags[1]),
+                   as.integer(lags[2]),
+                   as.integer(lags[3]),
+                   PACKAGE="dti",DUP=FALSE)$scorr
+  setCores(mc.cores.old,reprt=FALSE)
+  dim(scorr) <- lags
+  scorr[is.na(scorr)] <- 0
+  cat("estimated spatial correlations",format(Sys.time()),"\n")
+  cat("first order  correlation in x-direction",signif(scorr[2,1,1],3),"\n")
+  cat("first order  correlation in y-direction",signif(scorr[1,2,1],3),"\n")
+  cat("first order  correlation in z-direction",signif(scorr[1,1,2],3),"\n")
+  bw <- optim(c(2,2,2),corrrisk,method="L-BFGS-B",lower=c(.2,.2,.2),
+  upper=c(3,3,3),lag=lags,data=scorr)$par
+  bw[bw <= .25] <- 0
+  cat("estimated corresponding bandwidths",format(Sys.time()),"\n")
+  list(scorr=scorr,bw=bw)
+}
+
 kldist <- function(L,eta1,eta2){
 #
 #  L -number of coils

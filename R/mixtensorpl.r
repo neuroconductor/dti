@@ -834,20 +834,10 @@ cat("using th:::",th,"\n")
 #
 #  replace physically meaningless S_i by mena S_0 values
 #
-  z <- .Fortran("outlier",#misc.f 
-                as.double(object@si),
-                as.integer(nvox),
-                as.integer(ngrad),
-                as.logical((1:ngrad)%in%s0ind),
-                as.integer(ns0),
-                si=integer(nvox*ngrad),
-                index=integer(nvox),
-                lindex=integer(1),
-                DUP=FALSE,
-                PACKAGE="dti")[c("si","index","lindex")]
+  z <- sioutlier(object@si,(1:ngrad)%in%s0ind,mc.cores)
   cat("End search outlier detection at",format(Sys.time()),"\n")
   si <- array(as.integer(z$si),c(ddim,ngrad))
-  index <- if(z$lindex>0) z$index[1:z$lindex] else numeric(0)
+  index <- z$index
   rm(z)
   gc()
   cat("Start generating auxiliary objects",format(Sys.time()),"\n")
@@ -935,7 +925,6 @@ if(mc.cores<=1){
   dim(siq) <- c(nvox,ngrad0)
   dim(siind) <- c(2+maxcomp,nvox)
   nvoxm <- sum(mask)
-#save(siinda <- siind[,mask], sigma2a <- sigma2[mask], ga <- t(grad), siqa <- 
   z <- .C("mixture2", 
           as.integer(meth),
           as.integer(optmeth), 
@@ -944,7 +933,6 @@ if(mc.cores<=1){
           as.integer(nvoxm),
           as.integer(rep(1L,nvoxm)), 
           as.integer(siind[,mask]), 
-#          as.integer(ngrad), 
           as.integer(ngrad0),
           as.integer(maxcomp),
           as.integer(maxit),
@@ -955,7 +943,6 @@ if(mc.cores<=1){
           as.double(penIC),
           as.double(sigma2[mask]),
           as.double(vert),
-#          as.double(orient),
           as.double(siq[mask,]),
           sigma2  = double(nvoxm),# error variance 
           orient  = double(2*maxcomp*nvoxm), # phi/theta for all mixture tensors
@@ -986,12 +973,6 @@ if(mc.cores<=1){
   dim(siind) <- c(2+maxcomp,nvox)
   x[ngrad0+2:(3+maxcomp),] <- siind[,mask] 
   res <- matrix(0,4+3*maxcomp,nvox)
-#  res[,mask] <- pmatrix(x,pmixtens,
-#                      meth=meth,optmeth=optmeth,
-#                      ngrad0=ngrad0,maxcomp=maxcomp,maxit=maxit,
-#                      pen=pen,grad=grad,reltol=reltol,th=th,
-#                      penIC=penIC,vert=vert,
-#                      mc.cores=mc.cores,mc.silent = FALSE)
   res[,mask] <- plmatrix(x,pmixtens,
                       meth=meth,optmeth=optmeth,
                       ngrad0=ngrad0,maxcomp=maxcomp,maxit=maxit,
@@ -1160,6 +1141,7 @@ if(mc.cores<=1){
                 mask   = mask,
                 hmax   = 1,
                 gradient = object@gradient,
+                bvalue = object@bvalue,
                 btb    = object@btb,
                 ngrad  = object@ngrad, # = dim(btb)[2]
                 s0ind  = object@s0ind,
