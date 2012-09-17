@@ -1,31 +1,3 @@
-      subroutine initdat0(si,n1,n2,n3,nb,maxvalue)
-C
-C   set si()==0 for all voxel that have si-values <=0 or > maxvalue
-C
-      integer n1,n2,n3,nb,maxvalue,si(n1,n2,n3,nb)
-      logical mask
-      integer i1,i2,i3,k,sii
-      DO i1=1,n1
-         DO i2=1,n2
-            DO i3=1,n3
-               mask=.FALSE.
-               DO k=1,nb
-                  sii=si(i1,i2,i3,k)
-                  if(sii.le.0.or.sii.gt.maxvalue) THEN
-                     mask=.TRUE.
-                     CYCLE
-                  END IF
-               END DO
-               IF(mask) THEN
-                  DO k=1,nb
-                     si(i1,i2,i3,k)=0.d0
-                  END DO
-               END IF
-            END DO
-         END DO
-      END DO
-      RETURN
-      END
       subroutine initdata(si,n1,n2,n3,nb,maxvalue)
 C
 C   project all values to (1,maxvalue) to avoid infinite estimates
@@ -58,10 +30,12 @@ C
       logical changed
       ls0m1=ls0-1
 C$OMP PARALLEL DEFAULT(NONE)
-C$OMP& SHARED(s0ind,si,sinew,n,nb,ls0m1,ls0,ind)
-C$OMP& PRIVATE(i,s0,j,changed)
-C$OMP DO SCHEDULE(GUIDED)
+C$OMP& SHARED(s0ind,si,sinew,n,nb,ls0,ind)
+C$OMP& FIRSTPRIVATE(ls0m1)
+C$OMP& PRIVATE(i,j,changed,s0)
+C$OMP DO SCHEDULE(STATIC)
       DO i=1,n
+C         call outlier0(si(1,i),nb,s0ind,ls0,sinew(1,i),ind(i))
          s0=0
          DO j=1,nb
             if(s0ind(j)) THEN
@@ -88,13 +62,45 @@ C$OMP END PARALLEL
 C$OMP FLUSH(sinew,ind)
       RETURN
       END
+      subroutine outlier0(si,nb,s0ind,ls0,sinew,ind)
+      implicit logical(a-z)
+      integer nb,ls0,sinew(nb)
+      real*8 si(nb)
+      logical s0ind(nb),ind
+      integer j,ls0m1
+      real*8 s0
+      logical changed
+      ls0m1=ls0-1
+      s0=0
+      DO j=1,nb
+         if(s0ind(j)) THEN
+            s0=s0+si(j)
+            sinew(j)=si(j)
+         END IF
+      END DO
+      s0=(s0+ls0m1)/ls0
+      changed=.FALSE.
+      DO j=1,nb
+         if(.not.s0ind(j)) THEN 
+            if(si(j).gt.s0) THEN
+               sinew(j)=s0
+               changed=.TRUE.
+            ELSE 
+               sinew(j)=si(j)
+            END IF
+         END IF
+      END DO
+      ind=changed
+      RETURN
+      END
+      
       subroutine mcorrlag(res,mask,n1,n2,n3,nv,sigma,mean,scorr,lag)
 
       implicit logical(a-z)
       integer n1,n2,n3,nv,lag(3)
       real*8 scorr,res(nv,n1,n2,n3),sigma(n1,n2,n3),mean(n1,n2,n3)
       logical mask(n1,n2,n3)
-      real*8 vrm,zcorr,z
+      real*8 vrm,zcorr,z,mi,mj
       integer i1,i2,i3,i4,l1,l2,l3,k,j1,j2,j3
       l1=lag(1)
       l2=lag(2)
@@ -109,10 +115,12 @@ C  correlation in x
             do i3=1,n3-l3
                j3=i3+l3
                if (.not.(mask(i1,i2,i3).and.mask(j1,j2,j3))) CYCLE
-               zcorr=0.d0
-               do i4=1,nv
-                  zcorr=zcorr+(res(i4,i1,i2,i3)-mean(i1,i2,i3))*
-     1                        (res(i4,j1,j2,j3)-mean(j1,j2,j3))
+               mi=mean(i1,i2,i3)
+               mj=mean(j1,j2,j3)
+               zcorr=(res(1,i1,i2,i3)-mi)*(res(1,j1,j2,j3)-mj)
+               do i4=2,nv
+                  zcorr=zcorr+(res(i4,i1,i2,i3)-mi)*
+     1                         (res(i4,j1,j2,j3)-mj)
                enddo
                vrm=sigma(i1,i2,i3)*sigma(j1,j2,j3)
                if(vrm.gt.1e-10) THEN
@@ -154,8 +162,8 @@ C$OMP DO SCHEDULE(GUIDED)
             z=z/nv-zm*zm
             sigma(i)=sqrt(z)
             mean(i)=zm
-            ELSE
-               sigma(i)=0.d0
+         ELSE
+            sigma(i)=0.d0
          ENDIF
       END DO
 C$OMP END DO NOWAIT
@@ -176,7 +184,7 @@ C$OMP FLUSH(mean,sigma)
       call msd(res,mask,n,nv,sigma,mean)
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(res,mask,n1,n2,n3,nv,sigma,mean,scorr,l1,l2,l3)
-C$OMP& PRIVATE(lag)
+C$OMP& PRIVATE(lag,i1,i2,i3)
 C$OMP DO SCHEDULE(GUIDED)
       Do i1=1,l1
          lag(1)=i1-1

@@ -34,7 +34,7 @@ readDWIdata(gradient, dirlist, format = c("DICOM", "NIFTI", "ANALYZE", "AFNI"), 
   \item{orientation}{ orientations of data as coded in AFNI }
   \item{rotation}{ optional rotation matrix for the coordinate system.}
   \item{SPM}{ is a logical variable (default = ‘FALSE’) that forces the
-          	  voxel data values to be rescaled using the funused1 ANALYZE
+              voxel data values to be rescaled using the funused1 ANALYZE
               header field.  This is an undocumented convention of ANALYZE
               files processed using the Statistical Parametric Mapping
               (SPM) software.}

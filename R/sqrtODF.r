@@ -1,5 +1,5 @@
 
-dwiQball <- function(object,  ...) cat("No DWI Q-ball calculation defined for this class:",class(object),"\n")
+dwiSqrtODF <- function(object,  ...) cat("No DWI Q-ball calculation defined for this class:",class(object),"\n")
 
 setGeneric("dwiSqrtODF", function(object,  ...) standardGeneric("dwiSqrtODF"))
 

@@ -4,13 +4,17 @@
 #   written by Luca Sartore <drwolf85@gmail.com>
 #
 sioutlier <- function(si,s0ind,mc.cores=1){
-   mc.cores.old <- setCores(,reprt=FALSE)
-   setCores(mc.cores)
    dsi <- dim(si)
    n <- prod(dsi[-length(dsi)])
    ng <- dsi[length(dsi)]
    ns0 <- sum(s0ind)
    dim(si) <- c(n,ng)
+   cat("outlier:")
+   if(mc.cores>1){
+   mc.cores.old <- setCores(,reprt=FALSE)
+   setCores(mc.cores)
+   }
+   t1 <- Sys.time()
    z <- .Fortran("outlier",
                  as.double(t(si)),
                  as.integer(n),
@@ -21,15 +25,21 @@ sioutlier <- function(si,s0ind,mc.cores=1){
                  index=logical(n),
                  DUP=FALSE,
                  PACKAGE="dti")[c("si","index")]
-  setCores(mc.cores.old,reprt=FALSE)
+  t2 <- Sys.time()
+  cat(difftime(t2,t1),"for",n,"voxel\n")
+  if(mc.cores>1) setCores(mc.cores.old,reprt=FALSE)
   index <- (1:n)[z$index]
   dim(z$si) <- c(ng,n)
   si <- array(t(z$si),dsi)
   list(si=si,index=index)
 }
 mcorr <- function(res,mask,ddim,ngrad0,lags=c(5,5,3),mc.cores=1){
+   cat("mcorr:")
+   if(mc.cores>1){
    mc.cores.old <- setCores(,reprt=FALSE)
    setCores(min(mc.cores,lags[1]))
+   }
+   t1 <- Sys.time()
    scorr <- .Fortran("mcorr",as.double(res),
                    as.logical(mask),
                    as.integer(ddim[1]),
@@ -43,20 +53,184 @@ mcorr <- function(res,mask,ddim,ngrad0,lags=c(5,5,3),mc.cores=1){
                    as.integer(lags[2]),
                    as.integer(lags[3]),
                    PACKAGE="dti",DUP=FALSE)$scorr
-  setCores(mc.cores.old,reprt=FALSE)
+  t2 <- Sys.time()
+  cat(difftime(t2,t1),"\n")
+  if(mc.cores>1) setCores(mc.cores.old,reprt=FALSE)
   dim(scorr) <- lags
   scorr[is.na(scorr)] <- 0
   cat("estimated spatial correlations",format(Sys.time()),"\n")
   cat("first order  correlation in x-direction",signif(scorr[2,1,1],3),"\n")
   cat("first order  correlation in y-direction",signif(scorr[1,2,1],3),"\n")
   cat("first order  correlation in z-direction",signif(scorr[1,1,2],3),"\n")
+   cat("thcorr:")
   bw <- optim(c(2,2,2),corrrisk,method="L-BFGS-B",lower=c(.2,.2,.2),
   upper=c(3,3,3),lag=lags,data=scorr)$par
   bw[bw <= .25] <- 0
   cat("estimated corresponding bandwidths",format(Sys.time()),"\n")
   list(scorr=scorr,bw=bw)
 }
-
+dti3Dreg <- function(D,mc.cores=1){
+   nvox <- length(D)/6
+   cat("dti3Dreg:")
+   if(mc.cores>1){
+   mc.cores.old <- setCores(,reprt=FALSE)
+   setCores(mc.cores)
+   }
+   t1 <- Sys.time()
+   D <- .Fortran("dti3Dreg",
+                 D=as.double(D),
+                 as.integer(nvox),
+                 DUP=TRUE,
+                 PACKAGE="dti")$D
+   t2 <- Sys.time()
+   cat(difftime(t2,t1)," for",nvox,"voxel\n")
+   if(mc.cores>1) setCores(mc.cores.old,reprt=FALSE)
+   matrix(D,6,nvox)
+}
+dti3Dev <- function(D,mask,mc.cores=1){
+   dimD <- dim(D)[-1]
+   nvox <- prod(dimD)
+   nvox0 <- sum(mask)
+   dim(D) <- c(6,nvox)
+   cat("dti3Dev:")
+   if(mc.cores>1){
+   mc.cores.old <- setCores(,reprt=FALSE)
+   setCores(mc.cores)
+   }
+   ev <- matrix(0,3,nvox)
+   t1 <- Sys.time()
+   ev[,mask] <- .Fortran("dti3Dev",
+                   as.double(D[,mask]),
+                   as.integer(nvox0),
+                   ev=double(3*nvox0),
+                   DUP=FALSE,
+                   PACKAGE="dti")$ev
+   t2 <- Sys.time()
+   cat(difftime(t2,t1)," for",nvox0,"voxel\n")
+   if(mc.cores>1) setCores(mc.cores.old,reprt=FALSE)
+   dim(ev) <- c(3,dimD)
+   ev
+}
+dti3Dand <- function(D,mask,mc.cores=1){
+   dimD <- dim(D)[-1]
+   nvox <- prod(dimD)
+   nvox0 <- sum(mask)
+   dim(D) <- c(6,nvox)
+   cat("dti3Dand:")
+   if(mc.cores>1){
+   mc.cores.old <- setCores(,reprt=FALSE)
+   setCores(mc.cores)
+   }
+   andir <- matrix(0,3,nvox)
+   t1 <- Sys.time()
+   andir[,mask] <- .Fortran("dti3Dand",
+                   as.double(D[,mask]),
+                   as.integer(nvox0),
+                   andir=double(3*nvox0),
+                   DUP=FALSE,
+                   PACKAGE="dti")$andir
+   t2 <- Sys.time()
+   cat(difftime(t2,t1)," for",nvox0,"voxel\n")
+   if(mc.cores>1) setCores(mc.cores.old,reprt=FALSE)
+   dim(andir) <- c(3,dimD)
+   andir
+}
+dti3Dall <- function(D,mask,mc.cores=1){
+   dimD <- dim(D)[-1]
+   nvox <- prod(dimD)
+   nvox0 <- sum(mask)
+   dim(D) <- c(6,nvox)
+   cat("dti3Dall:")
+   if(mc.cores>1){
+   mc.cores.old <- setCores(,reprt=FALSE)
+   setCores(mc.cores)
+   }
+   ev <- andir <- matrix(0,3,nvox)
+   fa <- ga <- md <- numeric(nvox)
+   t1 <- Sys.time()
+   z <- .Fortran("dti3Dall",
+                   as.double(D[,mask]),
+                   as.integer(nvox0),
+                   fa=double(nvox0),
+                   ga=double(nvox0),
+                   md=double(nvox0),
+                   andir=double(3*nvox0),
+                   ev=double(3*nvox0),
+                   DUP=FALSE,
+                   PACKAGE="dti")[c("fa","ga","md","andir","ev")]
+   t2 <- Sys.time()
+   cat(difftime(t2,t1)," for",nvox0,"voxel\n")
+   if(mc.cores>1) setCores(mc.cores.old,reprt=FALSE)
+   fa[mask] <- z$fa
+   ga[mask] <- z$ga
+   md[mask] <- z$md
+   andir[,mask] <- z$andir
+   ev[,mask] <- z$ev
+   list(fa=fa,ga=ga,md=md,andir=andir,ev=ev)
+}
+dtieigen <- function(D,mask,mc.cores=1){
+   dimD <- dim(D)[-1]
+   nvox <- prod(dimD)
+   nvox0 <- sum(mask)
+   dim(D) <- c(6,nvox)
+   cat("dtieigen:")
+   if(mc.cores>1){
+   mc.cores.old <- setCores(,reprt=FALSE)
+   setCores(mc.cores)
+   }
+   ev <- matrix(0,3,nvox)
+   andir <- matrix(0,6,nvox)
+   fa <-numeric(nvox)
+   t1 <- Sys.time()
+   z <- .Fortran("dtieigen",
+                   as.double(D[,mask]),
+                   as.integer(nvox0),
+                   fa=double(nvox0),
+                   ev=double(3*nvox0),
+                   andir=double(6*nvox0),
+                   DUP=FALSE,
+                   PACKAGE="dti")[c("fa","ev","andir")]
+   t2 <- Sys.time()
+   cat(difftime(t2,t1)," for",nvox0,"voxel\n")
+   if(mc.cores>1) setCores(mc.cores.old,reprt=FALSE)
+   fa[mask] <- z$fa
+   andir[,mask] <- z$andir
+   ev[,mask] <- z$ev
+   list(fa=fa,ev=ev,andir=andir)
+}
+dtiind3D <- function(D,mask,mc.cores=1){
+   dimD <- dim(D)[-1]
+   nvox <- prod(dimD)
+   nvox0 <- sum(mask)
+   dim(D) <- c(6,nvox)
+   cat("dtiind3:")
+   if(mc.cores>1){
+   mc.cores.old <- setCores(,reprt=FALSE)
+   setCores(mc.cores)
+   }
+   bary <- andir <- matrix(0,3,nvox)
+   fa <- ga <- md <- numeric(nvox)
+   t1 <- Sys.time()
+   z <- .Fortran("dtiind3D",
+                   as.double(D[,mask]),
+                   as.integer(nvox0),
+                   fa=double(nvox0),
+                   ga=double(nvox0),
+                   md=double(nvox0),
+                   andir=double(3*nvox0),
+                   bary=double(3*nvox0),
+                   DUP=FALSE,
+                   PACKAGE="dti")[c("fa","ga","md","andir","bary")]
+   if(mc.cores>1) setCores(mc.cores.old,reprt=FALSE)
+   t2 <- Sys.time()
+   cat(difftime(t2,t1)," for",nvox0,"voxel\n")
+   fa[mask] <- z$fa
+   ga[mask] <- z$ga
+   md[mask] <- z$md
+   andir[,mask] <- z$andir
+   bary[,mask] <- z$bary
+   list(fa=fa,ga=ga,md=md,andir=andir,bary=bary)
+}
 kldist <- function(L,eta1,eta2){
 #
 #  L -number of coils
@@ -72,8 +246,7 @@ lGf1 <- lgamma(f1/2)
 lGf2 <- lgamma(f2/2)
 flc1 <- f1/2*log(c1)
 flc2 <- f2/2*log(c2)
-psif1 <- digamma(f1/2)
--outer(lGf1,lGf2,"-")-outer(flc1,flc2,"-")+outer(f1,f2,"-")/2*outer(log(c1)+psif1,rep(1,n2),"*")+
+psif1 <- digamma(f1/2)-outer(lGf1,lGf2,"-")-outer(flc1,flc2,"-")+outer(f1,f2,"-")/2*outer(log(c1)+psif1,rep(1,n2),"*")+
 (outer(c1,c2,"/")-1)*outer(f1,rep(1/2,n2),"*")
 }
 

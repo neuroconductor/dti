@@ -478,12 +478,12 @@ paroforient <- function(dir){
 getsiind3 <- function(si,mask,sigma2,grad,vico,th,indth,ev,fa,andir,maxcomp=3,
 maxc=.866,nguess=100,mc.cores = getOption("mc.cores", 2L)){
 # assumes dim(grad) == c(ngrad,3)
-# assumes dim(si) == c(n1,n2,n3,ngrad)
+# assumes dim(si) == c(ngrad,n1,n2,n3)
 # SO removed
 ngrad <- dim(grad)[1]
 nvico <- dim(vico)[1]
 ddim <- dim(fa)
-nsi <- dim(si)[4]
+nsi <- dim(si)[1]
 dgrad <- matrix(abs(grad%*%t(vico)),ngrad,nvico)
 dgrad <- dgrad/max(dgrad)
 dgradi <- matrix(abs(vico%*%t(vico)),nvico,nvico)
@@ -521,7 +521,7 @@ if(maxcomp==1) isample1 <- sample(ngrad, nguess, replace = TRUE)
 #
 # this provides configurations of initial estimates with minimum angle between 
 # directions > acos(maxc)
-nvoxel <- prod(dim(si)[-4])
+nvoxel <- prod(dim(si)[-1])
 cat("using ",nguess,"guesses for initial estimates\n")
 siind <- matrix(as.integer(0),maxcomp+2,nvoxel)
 krit <- numeric(nvoxel)
@@ -530,7 +530,7 @@ cat(sum(mask&!landir),"voxel with small FA\n")
 nguess <- length(isample0)/maxcomp
 if(mc.cores<=1){
 z <- .Fortran("getsii30",
-         as.double(aperm(si,c(4,1:3))),
+         as.double(si),
          as.double(sigma2),
          as.integer(nsi),
          as.integer(nvoxel),
@@ -556,7 +556,7 @@ siind[,!landir] <- z$siind[,!landir]
 krit[!landir] <- z$krit[!landir]
 } else {
    x <- matrix(0,nsi+2,sum(mask&!landir))
-   x[1:nsi,] <- t(matrix(si,nvoxel,nsi))[,mask&!landir]
+   x[1:nsi,] <- matrix(si,nsi,nvoxel)[,mask&!landir]
    x[nsi+1,] <- sigma2[mask&!landir]
    x[nsi+2,] <- indth[mask&!landir]
    z <- plmatrix(x,pgetsii30,maxcomp=maxcomp,dgrad=dgrad,th=th,isample0=isample0,
@@ -572,7 +572,7 @@ cat(sum(mask&landir),"voxel with distinct first eigenvalue \n")
 nguess <- if(maxcomp>1) length(isample1)/(maxcomp-1) else length(isample1)
 if(mc.cores<=1){
 z <- .Fortran("getsii31",
-         as.double(aperm(si,c(4,1:3))),
+         as.double(si),
          as.double(sigma2),
          as.integer(nsi),
          as.integer(nvoxel),
@@ -601,15 +601,13 @@ siind[,landir] <- z$siind[,landir]
 krit[landir] <- z$krit[landir]
 } else {
    x <- matrix(0,nsi+3,sum(mask&landir))
-   x[1:nsi,] <- t(matrix(si,nvoxel,nsi))[,mask&landir]
+   x[1:nsi,] <- matrix(si,nsi,nvoxel)[,mask&landir]
    x[nsi+1,] <- sigma2[mask&landir]
    x[nsi+2,] <- indth[mask&landir]
    x[nsi+3,] <- iandir[1,mask&landir]
    z <- plmatrix(x,pgetsii31,maxcomp=maxcomp,dgrad=dgrad,th=th,isample1=isample1,
                 nsi=nsi,nth=length(th),nvico=nvico,nguess=nguess,
                 dgradi=dgradi,maxc=maxc,mc.cores=mc.cores)
-#   z <- pgetsii31(x,maxcomp=maxcomp,dgrad=dgrad,th=th,isample1=isample1,
-#               dgradi=dgradi,maxc=maxc)
    dim(z) <- c(maxcomp+3,sum(mask&landir))
    siind[,mask&landir] <- z[-1,]
    krit[mask&landir] <- z[1,]
@@ -617,21 +615,18 @@ krit[landir] <- z$krit[landir]
 }
 failed <- (krit^2/ngrad) > (sigma2-1e-10)
 if(any(failed[mask])){
-#print((krit[mask])[failed[mask]])
-#print(((1:prod(dim(si)[1:3]))[mask])[failed[mask]])
-#print(sum(failed[mask]))
 }
-list(siind=array(siind,c(maxcomp+2,dim(si)[-4])),
-     krit=array(krit,dim(si)[-4]))
+list(siind=array(siind,c(maxcomp+2,dim(si)[-1])),
+     krit=array(krit,dim(si)[-1]))
 }
 getsiind3iso <- function(si,mask,sigma2,grad,vico,th,indth,ev,fa,andir,maxcomp=3,maxc=.866,nguess=100){
 # assumes dim(grad) == c(ngrad,3)
-# assumes dim(si) == c(n1,n2,n3,ngrad)
+# assumes dim(si) == c(ngrad,n1,n2,n3)
 # SO removed
 ngrad <- dim(grad)[1]
 nvico <- dim(vico)[1]
 ddim <- dim(fa)
-nsi <- dim(si)[4]
+nsi <- dim(si)[1]
 dgrad <- matrix(abs(grad%*%t(vico)),ngrad,nvico)
 dgrad <- dgrad/max(dgrad)
 dgradi <- matrix(abs(vico%*%t(vico)),nvico,nvico)
@@ -669,7 +664,7 @@ if(maxcomp==1) isample1 <- sample(ngrad, nguess, replace = TRUE)
 #
 # this provides configurations of initial estimates with minimum angle between 
 # directions > acos(maxc)
-nvoxel <- prod(dim(si)[-4])
+nvoxel <- prod(dim(si)[-1])
 cat("using ",nguess,"guesses for initial estimates\n")
 siind <- matrix(as.integer(0),maxcomp+2,nvoxel)
 krit <- numeric(nvoxel)
@@ -677,7 +672,7 @@ krit <- numeric(nvoxel)
 cat(sum(mask&!landir),"voxel with small FA\n")
 nguess <- length(isample0)/maxcomp
 z <- .Fortran("getsi30i",
-         as.double(aperm(si,c(4,1:3))),
+         as.double(si),
          as.double(sigma2),
          as.integer(nsi),
          as.integer(nvoxel),
@@ -705,7 +700,7 @@ if(maxcomp >0){
 cat(sum(mask&landir),"voxel with distinct first eigenvalue \n")
 nguess <- if(maxcomp>1) length(isample1)/(maxcomp-1) else length(isample1)
 z <- .Fortran("getsi31i",
-         as.double(aperm(si,c(4,1:3))),
+         as.double(si),
          as.double(sigma2),
          as.integer(nsi),
          as.integer(nvoxel),
@@ -738,7 +733,7 @@ if(any(failed[mask])){
 #print(((1:prod(dim(si)[1:3]))[mask])[failed[mask]])
 #print(sum(failed[mask]))
 }
-list(siind=array(siind,c(maxcomp+2,dim(si)[-4])),
+list(siind=array(siind,c(maxcomp+2,dim(si)[-1])),
      krit=array(krit,dim(si)[-4]))
 }
 
@@ -791,15 +786,7 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3, method="mixtensor
   cat("Start tensor estimation at",format(prta),"\n")
   tensorobj <- dtiTensor(object, mc.cores = mc.cores)
   cat("Start evaluation of eigenstructure at",format(Sys.time()),"\n")
-  z <- .Fortran("dtieigen",
-                as.double(tensorobj@D),
-                as.integer(nvox),
-                as.logical(tensorobj@mask),
-                fa=double(nvox),
-                ev=double(3*nvox),
-                andir=double(6*nvox),
-                DUP=FALSE,
-                PACKAGE="dti")[c("fa","ev","andir")]
+  z <- dtieigen(tensorobj@D, tensorobj@mask, mc.cores = mc.cores)
   rm(tensorobj)
   gc()
   fa <- array(z$fa,ddim)
@@ -844,10 +831,15 @@ cat("using th:::",th,"\n")
 #
 #  compute mean S_0, s_i/S_0 (siq), var(siq) and mask
 #
+  si <- aperm(si,c(4,1:3))
   nvox <- prod(ddim[1:3])
+  cat("sweeps0:")
+  mc.cores.old <- setCores(,reprt=FALSE)
+  setCores(mc.cores)
+  t1 <- Sys.time()
   z <- .Fortran("sweeps0",# mixtens.f
-                as.integer(si[,,,-s0ind,drop=FALSE]),
-                as.integer(si[,,,s0ind,drop=FALSE]),
+                as.integer(si[-s0ind,,,,drop=FALSE]),
+                as.integer(si[s0ind,,,,drop=FALSE]),
                 as.integer(nvox),
                 as.integer(ns0),
                 as.integer(ngrad0),
@@ -858,9 +850,15 @@ cat("using th:::",th,"\n")
                 mask=logical(nvox),
                 DUPL=FALSE,
                 PACKAGE="dti")[c("siq","s0","vsi","mask")]
+  t2 <- Sys.time()
+  cat(difftime(t2,t1),"for",nvox,"voxel\n")
   rm(si)
+  setCores(mc.cores.old,reprt=FALSE)
   s0 <- array(z$s0,ddim[1:3])
-  siq <- array(z$siq,c(ddim[1:3],ngrad0))
+  siq <- array(z$siq,c(ngrad0,ddim[1:3]))
+#
+#  siq is permutated c(4,1:3)
+#
   sigma2 <- array(z$vsi,ddim[1:3])
   mask <- array(z$mask,ddim[1:3])
   rm(z)
@@ -922,7 +920,7 @@ cat("using th:::",th,"\n")
 
 if(mc.cores<=1){
   cat("Starting parameter estimation and model selection (C-code)",format(Sys.time()),"\n")
-  dim(siq) <- c(nvox,ngrad0)
+  dim(siq) <- c(ngrad0,nvox)
   dim(siind) <- c(2+maxcomp,nvox)
   nvoxm <- sum(mask)
   z <- .C("mixture2", 
@@ -943,7 +941,7 @@ if(mc.cores<=1){
           as.double(penIC),
           as.double(sigma2[mask]),
           as.double(vert),
-          as.double(siq[mask,]),
+          as.double(t(siq[,mask])),
           sigma2  = double(nvoxm),# error variance 
           orient  = double(2*maxcomp*nvoxm), # phi/theta for all mixture tensors
           order   = integer(nvoxm),   # selected order of mixture
@@ -967,8 +965,8 @@ if(mc.cores<=1){
 } else {
   cat("Starting parameter estimation and model selection (C-code) on",mc.cores," cores",format(Sys.time()),"\n")
   x <- matrix(0,ngrad0+3+maxcomp,sum(mask))
-  dim(siq) <- c(nvox,ngrad0)
-  x[1:ngrad0,] <- t(siq[mask,])
+  dim(siq) <- c(ngrad0,nvox)
+  x[1:ngrad0,] <- siq[,mask]
   x[ngrad0+1,] <- sigma2[mask]
   dim(siind) <- c(2+maxcomp,nvox)
   x[ngrad0+2:(3+maxcomp),] <- siind[,mask] 
@@ -1052,21 +1050,21 @@ if(mc.cores<=1){
 
             z <- switch(optmethod,
                     "BFGS"=optim(param[1:(2*k+1)],mfunpl0,gmfunpl0,
-                           siq=siq[i1,i2,i3,],grad=grad,pen=pen,
+                           siq=siq[,i1,i2,i3],grad=grad,pen=pen,
                            method="BFGS",control=list(maxit=maxit,reltol=reltol)),
                     "CG"=optim(param[1:(2*k+1)],mfunpl0,gmfunpl0,
-                           siq=siq[i1,i2,i3,],grad=grad,pen=pen,
+                           siq=siq[,i1,i2,i3],grad=grad,pen=pen,
                            method="CG",control=list(maxit=maxit,reltol=reltol)),
                     "Nelder-Mead"=optim(param[1:(2*k+1)],mfunpl0h,
-                           siq=siq[i1,i2,i3,],grad=grad,method="Nelder-Mead",
+                           siq=siq[,i1,i2,i3],grad=grad,method="Nelder-Mead",
                            control=list(maxit=maxit,reltol=reltol)),
                     "L-BFGS-B"=optim(param[1:(3*k+1)],mfunpl,gmfunpl,
-                           siq=siq[i1,i2,i3,],grad=grad,method="L-BFGS-B",
+                           siq=siq[,i1,i2,i3],grad=grad,method="L-BFGS-B",
                            lower=c(0,rep(-Inf,2*k),rep(0,k)),
                            control=list(maxit=maxit,factr=reltol/.Machine$double.eps)))
           } else { # method=="mixtensoriso"
             z <- optim(param[1:(3*k+2)],fn=mfunpli,gr=gmfunpli,
-                           siq=siq[i1,i2,i3,],grad=grad,method="L-BFGS-B",
+                           siq=siq[,i1,i2,i3],grad=grad,method="L-BFGS-B",
                            lower=c(0,rep(-Inf,2*k),rep(0,k+1)),
                            control=list(maxit=maxit,factr=reltol/.Machine$double.eps))
 #
@@ -1078,12 +1076,12 @@ if(mc.cores<=1){
 #
           if(method=="mixtensor"){
             zz <- switch(optmethod,
-                    "BFGS"=mfunplwghts0(z$par[1:(2*k+1)],siq[i1,i2,i3,],grad,pen),
-                    "CG"=mfunplwghts0(z$par[1:(2*k+1)],siq[i1,i2,i3,],grad,pen),
-                    "Nelder-Mead"=mfunplwghts0h(z$par[1:(2*k+1)],siq[i1,i2,i3,],grad),
-                    "L-BFGS-B"=mfunwghts(z$par[1:(3*k+1)],siq[i1,i2,i3,],grad))
+                    "BFGS"=mfunplwghts0(z$par[1:(2*k+1)],siq[,i1,i2,i3],grad,pen),
+                    "CG"=mfunplwghts0(z$par[1:(2*k+1)],siq[,i1,i2,i3],grad,pen),
+                    "Nelder-Mead"=mfunplwghts0h(z$par[1:(2*k+1)],siq[,i1,i2,i3],grad),
+                    "L-BFGS-B"=mfunwghts(z$par[1:(3*k+1)],siq[,i1,i2,i3],grad))
           } else {
-            zz <- mfunwghtsi(z$par[1:(3*k+2)],siq[i1,i2,i3,],grad)
+            zz <- mfunwghtsi(z$par[1:(3*k+2)],siq[,i1,i2,i3],grad)
           }
           value <- if(optmethod=="L-BFGS-B") z$value else zz$value
           ord <- zz$ord

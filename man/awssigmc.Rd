@@ -18,7 +18,7 @@ Estimate noise variance for multicoil MR systems
 }
 \usage{
 awssigmc(y, steps, mask = NULL, ncoils = 1, vext = c(1, 1), lambda = 10, h0 = 2, verbose = FALSE, 
-         model = "chisq", sequence = FALSE, eps = 1e-05, hadj = 1)
+         model = "chisq", sequence = FALSE, eps = 1e-05, hadj = 1, q = 0.25)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -66,6 +66,9 @@ awssigmc(y, steps, mask = NULL, ncoils = 1, vext = c(1, 1), lambda = 10, h0 = 2,
 }
   \item{hadj}{
    adjustment factor for bandwidth (chosen by \code{bw.nrd}) in mode estimation 
+}
+  \item{q}{
+   quantile to be used for interquantile-differences. 
 }
 }
 \value{

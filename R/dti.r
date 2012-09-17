@@ -65,11 +65,7 @@ setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="r
      sigma2 <- rss/(ngrad0-6)
      D[c(1,4,6),!mask] <- 1e-6
      D[c(2,3,5),!mask] <- 0
-     D <- .Fortran("dti3Dreg",
-                   D=as.double(D),
-                   as.integer(prod(ddim)),
-                   DUP=FALSE,
-                   PACKAGE="dti")$D                   
+     D <- dti3Dreg(D,mc.cores=mc.cores)
      dim(D) <- c(6,ddim)
      dim(res) <- c(ngrad0,ddim)
      cat("Variance estimates generated ",format(Sys.time()),"\n")
@@ -146,7 +142,7 @@ setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="r
         res[-s0ind,i] <- tensRres(zz$par,si[-s0ind,i],s0[i],grad[,-s0ind],mc.cores=mc.cores)
      }
      } else {
-        zz <- pmatrix(si[,indD],pnltens,grad=grad[,-s0ind],
+        zz <- pmatrix(si[,indD],pnltens,grad=grad[,-s0ind],s0ind=s0ind,
                       sdcoef=sdcoef,mc.cores=min(mc.cores,length(indD)))
         D[,indD] <- zz[1:6,]
         th0[indD] <- zz[7,]
@@ -166,19 +162,7 @@ setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="r
 #   get spatial correlation
 #
   scorr <- mcorr(res,mask,ddim,ngrad0,lags=c(5,5,3),mc.cores=mc.cores)
-  if(mc.cores<=1){
-     ev <- .Fortran("dti3Dev",
-                       as.double(D),
-                       as.integer(nvox),
-                       as.logical(mask),
-                       ev=double(3*nvox),
-                       DUP=FALSE,
-                       PACKAGE="dti")$ev
-   } else {
-      ev <- matrix(0,3,prod(ddim))
-      dim(D) <- c(6,prod(ddim))
-      ev[,mask] <- plmatrix(D[,mask],pdti3Dev,mc.cores=mc.cores)
-   }
+  ev <- dti3Dev(D,mask,mc.cores=mc.cores)
   dim(ev) <- c(3,ddim)   
   dim(D) <- c(6,ddim)   
   scale <- quantile(ev[3,,,][mask],.95)
@@ -263,27 +247,7 @@ function(object, which, mc.cores=getOption("mc.cores", 2L)) {
   args <- c(object@call,args)
   ddim <- object@ddim
   n <- prod(ddim)
-  z <- if(mc.cores==1) .Fortran("dtiind3D",
-                as.double(object@D),
-                as.integer(n),
-                as.logical(object@mask),
-                fa=double(n),
-                ga=double(n),
-                md=double(n),
-                andir=double(3*n),
-                bary=double(3*n),
-                DUP=FALSE,
-                PACKAGE="dti")[c("fa","ga","md","andir","bary")] else {
-           D <- matrix(object@D,6,prod(ddim))[,object@mask]
-           res <- matrix(0,9,prod(ddim))
-           res[,object@mask] <- plmatrix(D,pdtiind3D,mc.cores=mc.cores)
-           list(andir=res[1:3,],
-                   fa=res[4,],
-                   ga=res[5,],
-                   md=res[6,],
-                 bary=res[7:9,])
-                }
-
+  z <- dtiind3D(object@D,object@mask,mc.cores=mc.cores)
   invisible(new("dtiIndices",
                 call = args,
                 fa = array(z$fa,ddim),

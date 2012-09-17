@@ -1,3 +1,9 @@
+2012-09-17 version 1.0-7
+
+  - further parallelization (openMP) and code optimization (avoiding multiple aperms on si)
+  - optimization for Jian Chengs paper
+  
+
 2012-09-12
   - package no longer depends on fmri, but oro.nifti for IO. 
   - readDWIdata() has new argument SPM for SPM like ANALYZE data

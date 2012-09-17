@@ -8,6 +8,7 @@ pmatrix <- function(x, FUN, ..., mc.cores = getOption("mc.cores", 2L)){
      stopCluster(cl)
      z
 }
+
 plmatrix <- function(x, FUN, ..., mc.cores = getOption("mc.cores", 2L)){
 dx <- dim(x)[2]
 if(mc.cores>dx) mc.cores <- dx
@@ -22,46 +23,6 @@ z <- matrix(0,length(lz[[1]])/n, dx)
 for(i in 1:(mc.cores-1)) z[,(i-1)*n+1:n] <- lz[[i]]
 z[,((mc.cores-1)*n+1):dx] <- lz[[mc.cores]]
 z
-}
-
-pdti3Dev <- function(D){
-nvox <- length(D)/6
-.Fortran("dti3Devp",
-         as.double(D),
-         as.integer(nvox),
-         ev=double(3*nvox),
-         DUP=FALSE,
-         PACKAGE="dti")$ev
-}
-
-pdtiind3D <- function(D){
-nvox <- length(D)/6
-.Fortran("dtiind3p",
-         as.double(D),
-         as.integer(nvox),
-         res=double(9*nvox),
-         DUP=FALSE,
-         PACKAGE="dti")$res
-}
-
-pdti3Dand <- function(D){
-nvox <- length(D)/6
-.Fortran("dti3Danp",
-         as.double(D),
-         as.integer(nvox),
-         andir=double(9*nvox),
-         DUP=FALSE,
-         PACKAGE="dti")$andir
-}
-
-pdti3Dall <- function(D){
-nvox <- length(D)/6
-.Fortran("dti3Dalp",
-         as.double(D),
-         as.integer(nvox),
-         ergs=double(9*nvox),
-         DUP=FALSE,
-         PACKAGE="dti")$ergs
 }
 
 pnlrdtirg <- function(si,btb,sdcoef,s0ind,ngrad){
@@ -86,7 +47,7 @@ pnlrdtirg <- function(si,btb,sdcoef,s0ind,ngrad){
                  PACKAGE="dti")$res
     z
 }
-pnltens <- function(si,grad,sdcoef){
+pnltens <- function(si,grad,s0ind,sdcoef){
 #
 #  to be used with pmatrix
 #

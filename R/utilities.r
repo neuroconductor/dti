@@ -650,29 +650,7 @@ setMethod("extract","dtiTensor",function(x, what="tensor", xind=TRUE, yind=TRUE,
 
   z <- list(NULL)
   if(needall){
-    erg <- if(mc.cores<=1||prod(ddim)<=mc.cores)
-           .Fortran("dti3Dall",
-                    as.double(x@D),
-                    as.integer(nvox),
-                    as.logical(x@mask),
-                    fa=double(nvox),
-                    ga=double(nvox),
-                    md=double(nvox),
-                    andir=double(3*nvox),
-                    ev=double(3*nvox),
-                    DUP=FALSE,
-                    PACKAGE="dti")[c("fa","ga","md","andir","ev")]
-    else {
-          D <- matrix(x@D,6,prod(ddim))[,x@mask]
-                res <- matrix(0,9,prod(ddim))
-                res[,x@mask] <- plmatrix(D,pdti3Dall,mc.cores=mc.cores)
-                list(andir=res[4:6,],
-                     fa=res[1,],
-                     ga=res[2,],
-                     md=res[3,],
-                     ev=res[7:9,])
-      
-    }
+    erg <- dti3Dall(x@D,x@mask,mc.cores=mc.cores)
     if("fa" %in% what) z$fa <- array(erg$fa,x@ddim)
     if("ga" %in% what) z$ga <- array(erg$ga,x@ddim)
     if("md" %in% what) z$md <- array(erg$md,x@ddim)
@@ -680,19 +658,8 @@ setMethod("extract","dtiTensor",function(x, what="tensor", xind=TRUE, yind=TRUE,
     if("andir" %in% what) z$andir <- array(erg$andir,c(3,n1,n2,n3))
   } else {
     if(needev){
-      if(mc.cores<=1) ev <- array(.Fortran("dti3Dev",
-                           as.double(x@D),
-                           as.integer(nvox),
-                           as.logical(x@mask),
-                           ev=double(3*nvox),
-                           DUP=FALSE,
-                           PACKAGE="dti")$ev,c(3,n1,n2,n3))
-          else {
-            ev <- matrix(0,3,nvox)
-            D <- matrix(x@D,6,nvox)[,x@mask]
-            ev[,x@mask] <- plmatrix(D,pdti3Dev,mc.cores=mc.cores)
-         }
-     if("fa" %in% what) {
+      ev <- array(dti3Dev(x@D,x@mask,mc.cores=mc.cores),c(3,n1,n2,n3))
+      if("fa" %in% what) {
         dd <- apply(ev^2,2:4,sum)
         md <- (ev[1,,,]+ev[2,,,]+ev[3,,,])/3
         sev <- sweep(ev,2:4,md)
@@ -710,18 +677,7 @@ setMethod("extract","dtiTensor",function(x, what="tensor", xind=TRUE, yind=TRUE,
       if("evalues" %in% what) z$evalues <- array(ev,c(3,x@ddim))
     }
     if("andir" %in% what){
-      if(mc.cores<=1) z$andir <- array(.Fortran("dti3Dand",
-                                as.double(x@D),
-                                as.integer(nvox),
-                                as.logical(x@mask),
-                                andir=double(3*nvox),
-                                DUP=FALSE,
-                                PACKAGE="dti")$andir,c(3,nvox))
-          else {
-            z$andir <- matrix(0,3,nvox)
-            D <- matrix(x@D,6,nvox)[,x@mask]
-            z$andir[,x@mask] <- plmatrix(D,pdti3Dand,mc.cores=mc.cores)
-         }
+      ev <- array(dti3Dand(x@D,x@mask,mc.cores=mc.cores),c(3,nvox))
     }
   }
   if("tensor" %in% what) z$tensor <- array(x@D,c(6,x@ddim))

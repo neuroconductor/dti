@@ -120,7 +120,7 @@ readDWIdata <- function(gradient, dirlist,
                         xind = NULL, yind = NULL, zind = NULL,
                         level = 0, mins0value = 0, maxvalue = 32000,
                         voxelext = NULL, orientation = c(0L, 2L, 5L), rotation = NULL,
-						SPM = FALSE, verbose = FALSE) {
+                        SPM = FALSE, verbose = FALSE) {
 
   args <- list(sys.call())
 
