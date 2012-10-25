@@ -38,8 +38,8 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
   ddim0 <- object@ddim0
   ddim <- object@ddim
   nvox <- prod(ddim)
-  z <- sioutlier(object@si,(1:ngrad)%in%s0ind)
-  si <- array(z$si,c(ddim,ngrad))
+  z <- sioutlier(object@si,s0ind)
+  si <- aperm(array(z$si,c(ngrad,ddim)),c(2:4,1))
   object@si <- si
   index <- z$index
   s0 <- si[,,,s0ind]

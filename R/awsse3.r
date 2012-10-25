@@ -53,7 +53,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
      warning("vred needs to be >= 1\n returning unsmoothed object")
      return(object)
    }
-   kappa0 <- suggestkappa(grad,vred,dist)
+   kappa0 <- suggestkappa(grad,vred,dist)$kappa
   }
   if(model==1){
 #

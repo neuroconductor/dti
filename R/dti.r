@@ -8,7 +8,7 @@ dtiTensor <- function(object,  ...) cat("No DTI tensor calculation defined for t
 
 setGeneric("dtiTensor", function(object,  ...) standardGeneric("dtiTensor"))
 
-setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="replicates",varmodel="local",mc.cores=getOption("mc.cores", 2L)) {
+setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="replicates",varmodel="local",mc.cores=getOption("mc.cores", 1L)) {
 #  available methods are 
 #  "linear" - use linearized model (log-transformed)
 #  "nonlinear" - use nonlinear model with parametrization according to Koay et.al. (2006)
@@ -28,29 +28,31 @@ setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="r
     cat("No parameters for model of error standard deviation found\n estimating these parameters\n You may prefer to run sdpar before calling dtiTensor")
     sdcoef <- sdpar(object,interactive=FALSE)@sdcoef
   }
-  z <- sioutlier(object@si,(1:ngrad)%in%s0ind,mc.cores=mc.cores)
-  si <- array(z$si,c(ddim,ngrad))
+  z <- sioutlier(object@si,s0ind,mc.cores=mc.cores)
+#
+#  this does not scale well with openMP
+#
+  si <- array(z$si,c(ngrad,ddim))
   index <- z$index
   rm(z)
   gc()
   if(method=="linear"){
      ngrad0 <- ngrad - length(s0ind)
-     s0 <- si[,,,s0ind]
-     si <- si[,,,-s0ind]
+     s0 <- si[s0ind,,,]
+     si <- si[-s0ind,,,]
      if(ns0>1) {
-         dim(s0) <- c(prod(ddim),ns0)
-         s0 <- s0 %*% rep(1/ns0,ns0)
+         dim(s0) <- c(ns0,prod(ddim))
+         s0 <- rep(1/ns0,ns0)%*%s0
          dim(s0) <- ddim
      }
      mask <- s0 > object@level
      mask <- connect.mask(mask)
-     dim(s0) <- dim(si) <- NULL
-     ttt <- -log(si/s0)
+     idsi <- 1:length(dim(si))
+     ttt <- -log(sweep(si,idsi[-1],s0,"/"))
      ttt[is.na(ttt)] <- 0
      ttt[(ttt == Inf)] <- 0
      ttt[(ttt == -Inf)] <- 0
-     dim(ttt) <- c(prod(ddim),ngrad0)
-     ttt <- t(ttt)
+     dim(ttt) <- c(ngrad0,prod(ddim))
      cat("Data transformation completed ",format(Sys.time()),"\n")
 
      btbsvd <- svd(object@btb[,-s0ind])
@@ -75,7 +77,6 @@ setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="r
   } else {
 #  method == "nonlinear" 
      ngrad0 <- ngrad
-     si <- aperm(si,c(4,1:3))
      s0 <- si[s0ind,,,]
      if(ns0>1) {
          dim(s0) <- c(ns0,nvox)
@@ -132,7 +133,7 @@ setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="r
      dim(si) <- c(ngrad,n)
      dim(D) <- c(6,n)
      dim(res) <- c(ngrad,n)
-     if(mc.cores==1){
+     if(mc.cores==1||length(ind)<2*mc.cores){
      for(i in indD){
         zz <- optim(c(1,0,0,1,0,1),opttensR,method="BFGS",si=si[-s0ind,i],s0=s0[i],grad=grad[,-s0ind],sdcoef=sdcoef)
         D[,i] <- rho2D(zz$par)

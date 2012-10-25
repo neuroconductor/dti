@@ -7,31 +7,53 @@ sioutlier <- function(si,s0ind,mc.cores=1){
    dsi <- dim(si)
    n <- prod(dsi[-length(dsi)])
    ng <- dsi[length(dsi)]
-   ns0 <- sum(s0ind)
+   ns0 <- length(s0ind)
+   siind <- (1:ng)[-s0ind]
    dim(si) <- c(n,ng)
+   si <- t(si)
    cat("outlier:")
    if(mc.cores>1){
    mc.cores.old <- setCores(,reprt=FALSE)
    setCores(mc.cores)
    }
+   siindex <- (1:ng)[-s0ind]
    t1 <- Sys.time()
+   if(mc.cores==1||ng>250){
    z <- .Fortran("outlier",
-                 as.double(t(si)),
+                 as.double(si),
                  as.integer(n),
                  as.integer(ng),
-                 as.logical(s0ind),
+                 as.integer(s0ind),
+                 as.integer(siind),
                  as.integer(ns0),
                  si=integer(n*ng),
                  index=logical(n),
                  DUP=FALSE,
                  PACKAGE="dti")[c("si","index")]
+                 } else {
+   zz <- matrix(.Fortran("outlierp",
+                 as.double(si),
+                 as.integer(n),
+                 as.integer(ng),
+                 as.integer(s0ind),
+                 as.integer(ns0),
+                 as.integer(siind),
+                 as.integer(ng-ns0),
+                 si=integer(n*(ng+1)),
+                 as.integer(ng+1),
+                 DUP=FALSE,
+                 PACKAGE="dti")$si,ng+1,n)
+  t2 <- Sys.time()
+  cat(difftime(t2,t1),"for",n,"voxel\n")
+  if(mc.cores>1) setCores(mc.cores.old,reprt=FALSE)
+  return(list(si=zz[1:ng,],index=(1:n)[as.logical(zz[ng+1,])]))         
+  }
   t2 <- Sys.time()
   cat(difftime(t2,t1),"for",n,"voxel\n")
   if(mc.cores>1) setCores(mc.cores.old,reprt=FALSE)
   index <- (1:n)[z$index]
-  dim(z$si) <- c(ng,n)
-  si <- array(t(z$si),dsi)
-  list(si=si,index=index)
+  dim(z$si) <- c(ng,dsi[-length(dsi)])
+  list(si=z$si,index=index)
 }
 mcorr <- function(res,mask,ddim,ngrad0,lags=c(5,5,3),mc.cores=1){
    cat("mcorr:")

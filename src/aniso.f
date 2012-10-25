@@ -312,7 +312,7 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       integer n
       real*8 D(6,n),fa(n),md(n),adir(3,n),bary(3,n),ga(n)
       integer i,ierr
-      real*8 lambda(3),evec(3,3),trc,d1,d2,d3,a1,a2,a3,dd
+      real*8 lambda(3),evec(9),trc,d1,d2,d3,a1,a2,a3,dd
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(D,n,fa,ga,md,adir,bary)
 C$OMP& PRIVATE(i,ierr,lambda,evec,trc,d1,d2,d3,a1,a2,a3,dd)
@@ -323,9 +323,6 @@ C$OMP DO SCHEDULE(GUIDED)
          a2=lambda(2)
          a3=lambda(3)
          trc=(a1+a2+a3)/3.d0
-         adir(1,i)=evec(1,3)
-         adir(2,i)=evec(2,3)
-         adir(3,i)=evec(3,3)
          md(i)=trc
          d1=a1-trc
          d2=a2-trc
@@ -350,6 +347,9 @@ C$OMP DO SCHEDULE(GUIDED)
          d2=d2-dd
          d3=d3-dd
          ga(i)=sqrt(d1*d1+d2*d2+d3*d3)
+         adir(1,i)=evec(7)
+         adir(2,i)=evec(8)
+         adir(3,i)=evec(9)
       END DO
 C$OMP END DO NOWAIT
 C$OMP END PARALLEL
@@ -364,37 +364,38 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine dtieigen(D,n,fa,ev,adir)
       implicit logical (a-z)
       integer n
-      real*8 D(6,n),fa(n),ev(3,n),adir(3,2,n)
+      real*8 D(6,n),fa(n),ev(3,n),adir(6,n)
       integer i,ierr
-      real*8 lambda(3),evec(3,3),trc,d1,d2,d3,a1,a2,a3,dd
+      real*8 lambda(3),evec(9),trc,d1,d2,d3,a1,a2,a3,dd,fai
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(D,n,fa,ev,adir)
-C$OMP& PRIVATE(i,ierr,lambda,evec,trc,d1,d2,d3,a1,a2,a3,dd)
+C$OMP& PRIVATE(i,ierr,lambda,evec,trc,d1,d2,d3,a1,a2,a3,dd,fai)
 C$OMP DO SCHEDULE(STATIC)
       DO i=1,n
          call eigen3(D(1,i),lambda,evec,ierr)
-         ev(1,i)=lambda(3)
-         ev(2,i)=lambda(2)
-         ev(3,i)=lambda(1)
          a1=lambda(1)
          a2=lambda(2)
          a3=lambda(3)
          trc=(a1+a2+a3)/3.d0
-         adir(1,1,i)=evec(1,3)
-         adir(2,1,i)=evec(2,3)
-         adir(3,1,i)=evec(3,3)
-         adir(1,2,i)=evec(1,2)
-         adir(2,2,i)=evec(2,2)
-         adir(3,2,i)=evec(3,2)
          d1=a1-trc
          d2=a2-trc
          d3=a3-trc
          dd=a1*a1+a2*a2+a3*a3
          IF(dd.gt.1.d-12) THEN
-            fa(i)=sqrt(1.5d0*(d1*d1+d2*d2+d3*d3)/dd)
+            fai=sqrt(1.5d0*(d1*d1+d2*d2+d3*d3)/dd)
          ELSE
-            fa(i)=0.d0
+            fai=0.d0
          ENDIF
+         adir(1,i)=evec(7)
+         adir(2,i)=evec(8)
+         adir(3,i)=evec(9)
+         adir(4,i)=evec(4)
+         adir(5,i)=evec(5)
+         adir(6,i)=evec(6)
+         ev(1,i)=a3
+         ev(2,i)=a2
+         ev(3,i)=a1
+         fa(i)=fai
       END DO
 C$OMP END DO NOWAIT
 C$OMP END PARALLEL
@@ -415,7 +416,7 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(D,n,mask,fa,ga,md,adir,ev)
 C$OMP& PRIVATE(i,ierr,evec,trc,d1,d2,d3,a1,a2,a3,dd)
-C$OMP DO SCHEDULE(GUIDED)
+C$OMP DO SCHEDULE(STATIC)
       DO i=1,n
          call eigen3(D(1,i),ev(1,i),evec,ierr)
          a1=ev(1,i)
@@ -465,7 +466,7 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(D,n,ev)
 C$OMP& PRIVATE(i,ierr)
-C$OMP DO SCHEDULE(GUIDED)
+C$OMP DO SCHEDULE(STATIC)
       DO i=1,n
             call eigen30(D(1,i),ev(1,i),ierr)
       END DO
@@ -488,7 +489,7 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(D,n,andir)
 C$OMP& PRIVATE(i,lambda,evec,ierr)
-C$OMP DO SCHEDULE(GUIDED)
+C$OMP DO SCHEDULE(STATIC)
       DO i=1,n
          call eigen3(D(1,i),lambda,evec,ierr)
          andir(1,i)=evec(1,3)
@@ -514,11 +515,11 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(D,n)
 C$OMP& PRIVATE(i,lam,evec,ierr)
-C$OMP DO SCHEDULE(GUIDED)
+C$OMP DO SCHEDULE(STATIC)
       DO i=1,n
          call eigen3(D(1,i),lam,evec,ierr)
-         if(lam(1).lt.0.d0) lam(1)=0.d0
-         if(lam(2).lt.0.d0) lam(2)=0.d0
+         lam(1)=max(0.d0,lam(1))
+         lam(2)=max(0.d0,lam(2))
          D(1,i) = lam(1)*evec(1,1)*evec(1,1)+
      1          lam(2)*evec(1,2)*evec(1,2)+lam(3)*evec(1,3)*evec(1,3)
          D(2,i) = lam(1)*evec(1,1)*evec(2,1)+

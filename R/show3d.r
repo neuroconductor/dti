@@ -502,24 +502,40 @@ setMethod("show3d","dwiQball", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,
   obj <- obj[xind,yind,zind]
   vext <- obj@voxelext
   center <- center*vext
-  sphcoef <- obj@sphcoef
-  dim(sphcoef) <- c(dim(sphcoef)[1],prod(dim(sphcoef)[-1]))
   tmean <- array(0,c(3,n1,n2,n3))
   tmean[1,,,] <- xind*vext[1]
   tmean[2,,,] <- outer(rep(1,n1),yind)*vext[2]
   tmean[3,,,] <- outer(rep(1,n1),outer(rep(1,n2),zind))*vext[3]
   dim(tmean) <- c(3,n)
   polyeder <- switch(subdivide+1,icosa0,icosa1,icosa2,icosa3,icosa4)
-  sphdesign <- design.spheven(obj@order,polyeder$vertices,obj@lambda)$design
-  radii <- t(sphdesign)%*%sphcoef
-  radii <- array(pmax(0,radii),dim(radii))
+  if(obj@what=="sqrtODF"){
+     sphdesign <- design.spheven0(obj@order,polyeder$vertices,"Re")$design
+     radii <- 0
+     for(i in (0:obj@forder)+1){
+     sphcoef <- obj@sphcoef[,i,,,]
+     dim(sphcoef) <- c(dim(sphcoef)[1],prod(dim(sphcoef)[-1]))
+     radii <- radii+(t(sphdesign)%*%sphcoef)^2
+     sphdesign <- design.spheven0(obj@order,polyeder$vertices,"Im")$design
+     sphcoef <- obj@sphcoef[,i,,,]
+     dim(sphcoef) <- c(dim(sphcoef)[1],prod(dim(sphcoef)[-1]))
+     radii <- radii-(t(sphdesign)%*%sphcoef)^2
+     }
+# integration over fourier frequencies (in radial direction)
+  } else {
+     sphcoef <- obj@sphcoef
+     sphdesign <- design.spheven(obj@order,polyeder$vertices,obj@lambda)$design
+     dim(sphcoef) <- c(dim(sphcoef)[1],prod(dim(sphcoef)[-1]))
+     cat("dim(sphcoef)",dim(sphcoef),"dim(sphdesign)",dim(sphdesign),"\n")
+     radii <- t(sphdesign)%*%sphcoef
+     radii <- array(pmax(0,radii),dim(radii))
+     mradii <- apply(radii,2,mean)
+     radii <- sweep(radii,2,mradii,"/")+level
+  }
 #  avoid negative ODF's, otherwise scaling by volume produces
 #  strange results
-  mradii <- apply(radii,2,mean)
 #
 #   rescale and use a sphere of radius level as baseline for the ODF
 #
-  radii <- sweep(radii,2,mradii,"/")+level
   radii[is.na(radii)] <- 0
 #
 #   to display results in a form that the volumes are comparable,

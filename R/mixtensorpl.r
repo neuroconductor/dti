@@ -504,15 +504,15 @@ if(any(is.na(fa))) {
 cat(sum(is.na(fa)),"na's in fa")
 fa[is.na(fa)]<-0
 }
-iandir <- array(.Fortran("iandir",
+iandir <- .Fortran("iandir",
                    as.double(t(vico)),
                    as.integer(nvico),
                    as.double(andir),
                    as.integer(nvoxel),
                    as.logical(landir),
-                   iandir=integer(2*prod(ddim)),
+                   iandir=integer(prod(ddim)),
                    DUPL=FALSE,
-                   PACKAGE="dti")$iandir,c(2,nvoxel))
+                   PACKAGE="dti")$iandir
 isample0 <- selisample(nvico,maxcomp,nguess,dgradi,maxc)
 if(maxcomp>1) isample1 <- selisample(nvico,maxcomp-1,nguess,dgradi,maxc)
 if(maxcomp==1) isample1 <- sample(ngrad, nguess, replace = TRUE)
@@ -579,7 +579,7 @@ z <- .Fortran("getsii31",
          as.integer(maxcomp),
          as.double(dgrad),
          as.integer(nvico),
-         as.integer(iandir[1,]),
+         as.integer(iandir),
          as.double(th),
          as.integer(nth),
          as.integer(indth),
@@ -604,7 +604,7 @@ krit[landir] <- z$krit[landir]
    x[1:nsi,] <- matrix(si,nsi,nvoxel)[,mask&landir]
    x[nsi+1,] <- sigma2[mask&landir]
    x[nsi+2,] <- indth[mask&landir]
-   x[nsi+3,] <- iandir[1,mask&landir]
+   x[nsi+3,] <- iandir[mask&landir]
    z <- plmatrix(x,pgetsii31,maxcomp=maxcomp,dgrad=dgrad,th=th,isample1=isample1,
                 nsi=nsi,nth=length(th),nvico=nvico,nguess=nguess,
                 dgradi=dgradi,maxc=maxc,mc.cores=mc.cores)
@@ -647,15 +647,15 @@ if(any(is.na(fa))) {
 cat(sum(is.na(fa)),"na's in fa")
 fa[is.na(fa)]<-0
 }
-iandir <- array(.Fortran("iandir",
+iandir <- .Fortran("iandir",
                    as.double(t(vico)),
                    as.integer(nvico),
                    as.double(andir),
                    as.integer(nvoxel),
                    as.logical(landir),
-                   iandir=integer(2*prod(ddim)),
+                   iandir=integer(prod(ddim)),
                    DUPL=FALSE,
-                   PACKAGE="dti")$iandir,c(2,nvoxel))
+                   PACKAGE="dti")$iandir
 isample0 <- selisample(nvico,maxcomp,nguess,dgradi,maxc)
 if(maxcomp>1) isample1 <- selisample(nvico,maxcomp-1,nguess,dgradi,maxc)
 if(maxcomp==1) isample1 <- sample(ngrad, nguess, replace = TRUE)
@@ -707,7 +707,7 @@ z <- .Fortran("getsi31i",
          as.integer(maxcomp),
          as.double(dgrad),
          as.integer(nvico),
-         as.integer(iandir[1,]),
+         as.integer(iandir),
          as.double(th),
          as.integer(nth),
          as.integer(indth),
@@ -821,9 +821,12 @@ cat("using th:::",th,"\n")
 #
 #  replace physically meaningless S_i by mena S_0 values
 #
-  z <- sioutlier(object@si,(1:ngrad)%in%s0ind,mc.cores)
+  z <- sioutlier(object@si,s0ind,mc.cores=mc.cores)
+#
+#  this does not scale well with openMP
+#
   cat("End search outlier detection at",format(Sys.time()),"\n")
-  si <- array(as.integer(z$si),c(ddim,ngrad))
+  si <- array(as.integer(z$si),c(ngrad,ddim))
   index <- z$index
   rm(z)
   gc()
@@ -831,12 +834,10 @@ cat("using th:::",th,"\n")
 #
 #  compute mean S_0, s_i/S_0 (siq), var(siq) and mask
 #
-  si <- aperm(si,c(4,1:3))
   nvox <- prod(ddim[1:3])
   cat("sweeps0:")
-  mc.cores.old <- setCores(,reprt=FALSE)
-  setCores(mc.cores)
   t1 <- Sys.time()
+  if(mc.cores==1||ngrad0>250){
   z <- .Fortran("sweeps0",# mixtens.f
                 as.integer(si[-s0ind,,,,drop=FALSE]),
                 as.integer(si[s0ind,,,,drop=FALSE]),
@@ -852,8 +853,6 @@ cat("using th:::",th,"\n")
                 PACKAGE="dti")[c("siq","s0","vsi","mask")]
   t2 <- Sys.time()
   cat(difftime(t2,t1),"for",nvox,"voxel\n")
-  rm(si)
-  setCores(mc.cores.old,reprt=FALSE)
   s0 <- array(z$s0,ddim[1:3])
   siq <- array(z$siq,c(ngrad0,ddim[1:3]))
 #
@@ -861,6 +860,32 @@ cat("using th:::",th,"\n")
 #
   sigma2 <- array(z$vsi,ddim[1:3])
   mask <- array(z$mask,ddim[1:3])
+  } else {
+  mc.cores.old <- setCores(,reprt=FALSE)
+  setCores(mc.cores)
+  z <- matrix(.Fortran("sweeps0p",# mixtens.f
+                as.integer(si[-s0ind,,,,drop=FALSE]),
+                as.integer(si[s0ind,,,,drop=FALSE]),
+                as.integer(nvox),
+                as.integer(ns0),
+                as.integer(ngrad0),
+                as.integer(object@level),
+                siq=double(nvox*(ngrad0+3)),
+                as.integer(ngrad0+3),
+                DUPL=FALSE,
+                PACKAGE="dti")$siq,ngrad0+3,nvox)
+  t2 <- Sys.time()
+  cat(difftime(t2,t1),"for",nvox,"voxel\n")
+  setCores(mc.cores.old,reprt=FALSE)
+  s0 <- array(z[ngrad0+1,],ddim[1:3])
+  siq <- array(z[1:ngrad0,],c(ngrad0,ddim[1:3]))
+#
+#  siq is permutated c(4,1:3)
+#
+  sigma2 <- array(z[ngrad0+2,],ddim[1:3])
+  mask <- array(as.logical(z[ngrad0+3,]),ddim[1:3])
+  }
+  rm(si)
   rm(z)
   gc()
   npar <- if(method=="mixtensor") 1+3*(0:maxcomp) else c(1,2+3*(1:maxcomp))

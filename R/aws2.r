@@ -40,12 +40,11 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
   ngrad <- object@ngrad
   ddim0 <- object@ddim0
   ddim <- object@ddim
-  z <- sioutlier(object@si,(1:ngrad)%in%s0ind)
-  si <- array(z$si,c(ddim,ngrad))
+  z <- sioutlier(object@si,s0ind)
+  si <- array(z$si,c(ngrad,ddim))
   index <- z$index 
   rm(z)
   gc()
-  si <- aperm(si,c(4,1:3))
   xind <- object@xind
   yind <- object@yind
   zind <- object@zind
