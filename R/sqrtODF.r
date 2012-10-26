@@ -7,6 +7,7 @@ setMethod("dwiSqrtODF","dtiData",function(object,what="sqrtODF",order=4,forder=1
 #  tau in seconds
 #  D_0 set to 1.4e-3 mm^2/s
 #  q as sqrt(b/4/tau)/pi
+  t0 <- Sys.time()
   if(is.null(D0)) D0 <- 1.4e-3
   args <- sys.call(-1)
   args <- c(object@call,args)
@@ -55,6 +56,8 @@ setMethod("dwiSqrtODF","dtiData",function(object,what="sqrtODF",order=4,forder=1
 #  order of coefficients as in  c((order+1)*(order+2)/2,forder+1,ng)
 #
   n <- prod(ddim)
+  t1 <- Sys.time()
+  cat("Kernel computed in",format(difftime(t1,t0)),"\n")
   coefs <- matrix(.Fortran("sqrteap",
                 as.double(aperm(si,c(4,1:3))),
                 as.double(Kqzeta),
@@ -69,6 +72,8 @@ setMethod("dwiSqrtODF","dtiData",function(object,what="sqrtODF",order=4,forder=1
                 coefs=double(nk*n),
                 DUPL=TRUE,
                 PACKAGE="dti")$coefs,c(nk,n))
+  t2 <- Sys.time()
+  cat("Obtained parameter estimates in",format(difftime(t2,t1)),"\n")
    z <- .Fortran("Mofcall",
                 as.double(coefs),
                 as.double(Kqzeta),
@@ -115,6 +120,8 @@ setMethod("dwiSqrtODF","dtiData",function(object,what="sqrtODF",order=4,forder=1
 #   get spatial correlation
 #
   scorr <- mcorr(res,mask,ddim,ng,lags=c(5,5,3),mc.cores=1)  
+  t3 <- Sys.time()
+  cat("Obtained statistics in",format(difftime(t3,t2)),"\n")
   invisible(new("dwiQball",
                 call  = args,
                 order = as.integer(order),
@@ -190,7 +197,7 @@ g1 <- g1f1(n,L,bvD0)
 # second component: i
 # third component: bvalue*D0
 kn <- kappan(n)
-bvl <- t(outer(bvD0,2*(0:L),"^"))#/gamma(2*(0:L)+1.5)
+bvl <- t(outer(bvD0,2*(0:L),"^"))/gamma(2*(0:L)+1.5)
 # first component: alpha
 # second component: bvalue*D0
 for(i in 0:n) for(j in 0:n){
@@ -245,13 +252,17 @@ for(l1 in kseq){
          for(m2 in m2seq){
             i3 <- 1
             for(a in kseq2){
-               bseq <- seq(-a,a,1)
-               for(b in bseq){
-                  if(m1+m2+b==0) Qmat[i1,i2,i3] <- Qlm(l1,l2,a,m1,m2,b)
+               if(a<=l1+l2&l1<=l2+a&l2<=a+l1){
+                  bseq <- seq(-a,a,1)
+                  for(b in bseq){
+                     if(m1+m2+b==0) Qmat[i1,i2,i3] <- Qlm(l1,l2,a,m1,m2,b)
 #  otherwise the result is zero
-                  i3 <- i3+1
+                     i3 <- i3+1
+                     }
+                  } else {
+                    i3 <- i3+2*a+1
                   }
-               }               
+               }
                i2 <- i2+1
             }
          }
@@ -259,6 +270,60 @@ for(l1 in kseq){
       }
    }
 Qmat
+}
+QlmmatR <- function(order){
+# warning
+# Spherical integral over triplets of real valued SH basis functions
+Qmat <- Qlmmat(order)
+# thats the array of corresponding integrals for the complex valued basis
+indlm <- function(l,m) (l^2+l+2)/2+m
+indl <- function(i,horder){
+rep(2*(0:horder),4*(0:horder)+1)[i]
+}
+indm <- function(i,horder){
+il <- indl(i,horder)
+i - (il^2+il+2)/2
+}
+dqm <- dim(Qmat)
+QmatR <- array(0,dqm)
+for(i1 in 1:dqm[1]){
+   l1 <- indl(i1,order/2); m1 <- indm(i1,order/2)
+   for(i2 in 1:dqm[2]){
+      l2 <- indl(i2,order/2); m2 <- indm(i2,order/2)
+      for(i3 in 1:dqm[3]){
+         l3 <- indl(i3,order); m3 <- indm(i3,order)
+         result <- 0
+         if (m1<0 && m2<0 && m3<0){
+            if (m1+m2==m3) result <- (-1)^m3*Qmat[indlm(l1,m1),indlm(l2,m2),indlm(l3,-m3)]/sqrt(2)#
+            else if (m1+m3==m2) result <- (-1)^m2*Qmat[indlm(l1,m1),indlm(l2,-m2),indlm(l3,m3)]/sqrt(2)#
+            else if (m2+m3==m1) result <- (-1)^m1*Qmat[indlm(l1,-m1),indlm(l2,m2),indlm(l3,m3)]/sqrt(2)#
+         }
+#         if (m1>0 && m2<0 && m3<0 || m1<0 && m2>0 && m3<0 || m1<0 && m2<0 && m3>0)      result = 0
+         if (m1>0 && m2>0 && m3<0){ 
+            if (m1+m2+m3==0) result <- (-1)^m3*Qmat[indlm(l1,m1),indlm(l2,m2),indlm(l3,m3)]/sqrt(2)#
+            else if (m1==m2+m3) result <- (-1)^m2*Qmat[indlm(l1,m1),indlm(l2,-m2),indlm(l3,-m3)]/sqrt(2)#
+            else if (m2==m1+m3) result <- (-1)^m1*Qmat[indlm(l1,-m1),indlm(l2,m2),indlm(l3,-m3)]/sqrt(2)#
+         }
+         if (m1>0 && m2<0 && m3>0){
+            if (m1+m2+m3==0) result <- (-1)^m2*Qmat[indlm(l1,m1),indlm(l2,m2),indlm(l3,m3)]/sqrt(2)#
+            else if (m1==m2+m3) result <- (-1)^m3*Qmat[indlm(l1,m1),indlm(l2,-m2),indlm(l3,-m3)]/sqrt(2)#
+            else if (m3==m1+m2) result <- (-1)^m1*Qmat[indlm(l1,-m1),indlm(l2,-m2),indlm(l3,m3)]/sqrt(2)#
+         }
+         if (m1<0 && m2>0 && m3>0){
+            if (m1+m2+m3==0) result <- (-1)^m1*Qmat[indlm(l1,m1),indlm(l2,m2),indlm(l3,m3)]/sqrt(2)#
+            else if (m3==m2+m1) result <- (-1)^m2*Qmat[indlm(l1,-m1),indlm(l2,-m2),indlm(l3,m3)]/sqrt(2)#
+            else if (m2==m1+m3) result <- (-1)^m3*Qmat[indlm(l1,-m1),indlm(l2,m2),indlm(l3,-m3)]/sqrt(2)#
+         }
+#         if (m1>0 && m2>0 && m3>0)     result <- 0
+         if (m1==0 && m2==0 && m3==0) result <- Qmat[indlm(l1,m1),indlm(l2,m2),indlm(l3,m3)]
+         if (m1==0 && m2==m3) result <-(-1)^m3*Qmat[indlm(l1,m1),indlm(l2,m2),indlm(l3,-m3)]
+         if (m2==0 && m3==m1) result <-(-1)^m1*Qmat[indlm(l1,m1),indlm(l2,m2),indlm(l3,-m3)]
+         if (m3==0 && m1==m2) result <-(-1)^m2*Qmat[indlm(l1,m1),indlm(l2,-m2),indlm(l3,m3)]
+         QmatR[i1,i2,i3] <- result
+         }
+      }  
+   }
+QmatR
 }
 
 Kofgrad <- function(grad,D0,N=1,L=2,bvalue){
@@ -278,7 +343,7 @@ a <- NULL
 for(i in 0:(L)) a <- c(a,rep(2*i,4*i+1))
 Kofg <- array(0,c(Lind,N+1,Lind,N+1,ngrad))
 Yabm <- Yab(2*L,grad)# dim Lind2, ngrad
-Qlmm <- Qlmmat(L)# dim Lind,Lind,Lind2
+Qlmm <- QlmmatR(L)# dim Lind,Lind,Lind2
 Inn <- Inna(N,L,bvalue*D0)# dim L+1 (even values only) , N+1, N+1
 for(i1 in 1:Lind) for(i2 in 1:i1)
 for(n1 in 1:Np1) for(n2 in 1:n1){

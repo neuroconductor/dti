@@ -509,16 +509,12 @@ setMethod("show3d","dwiQball", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,
   dim(tmean) <- c(3,n)
   polyeder <- switch(subdivide+1,icosa0,icosa1,icosa2,icosa3,icosa4)
   if(obj@what=="sqrtODF"){
-     sphdesign <- design.spheven0(obj@order,polyeder$vertices,"Re")$design
+     sphdesign <- design.spheven(obj@order,polyeder$vertices,obj@lambda)$design
      radii <- 0
      for(i in (0:obj@forder)+1){
      sphcoef <- obj@sphcoef[,i,,,]
      dim(sphcoef) <- c(dim(sphcoef)[1],prod(dim(sphcoef)[-1]))
      radii <- radii+(t(sphdesign)%*%sphcoef)^2
-     sphdesign <- design.spheven0(obj@order,polyeder$vertices,"Im")$design
-     sphcoef <- obj@sphcoef[,i,,,]
-     dim(sphcoef) <- c(dim(sphcoef)[1],prod(dim(sphcoef)[-1]))
-     radii <- radii-(t(sphdesign)%*%sphcoef)^2
      }
 # integration over fourier frequencies (in radial direction)
   } else {

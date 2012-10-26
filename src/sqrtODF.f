@@ -35,7 +35,7 @@ C now c^T K(g(k)) C  for gradient k
             zz=zz+ci*ci*kern(i,i,k)
             ci2=2.d0*ci
             Do j=1,i-1
-               zz=zz+ci2*c(j)*kern(i,j,k)
+               zz=zz+ci2*c(j)*kern(j,i,k)
             END DO
          END DO
 C  get residual in zz and penalized sum of squares in z
@@ -65,7 +65,7 @@ C  first the penalty term
             zz=zz+ci*ci*kern(i,i,k)
             ci2=2.d0*ci
             Do j=1,i-1
-               zz=zz+ci2*c(j)*kern(i,j,k)
+               zz=zz+ci2*c(j)*kern(j,i,k)
             END DO
          END DO
          zz=zz-e(k)
@@ -129,9 +129,9 @@ C
       external dnrm2
       vn = dnrm2(nk,v,1)
       cv = dcos(dt*vn)
-      sv = dsin(dt*vn)/vn/dt
+      sv = dsin(dt*vn)/vn
       DO i=1,nk
-         r(i) = c(i)*cv-dt*v(i)*sv
+         r(i) = c(i)*cv-v(i)*sv
       END DO
       RETURN
       END
@@ -150,7 +150,7 @@ C first get nabla M(c) in nablam
       call nablmofc(c,kern,nk,ng,e,l,w,nablam)
 C get norm of it 
 C      dt0 = dnrm2(nk,nablam,1)
-      dt0=1d0
+      dt0=.1d0
 C perform line search 
 C first M(c) in m0
       call Mofc(c,kern,nk,ng,e,l,m0)
@@ -200,7 +200,7 @@ C try to get larger stepsize with better value
          call Mofc(ck1,kern,nk,ng,e,l,mdt2)          
       END DO
 C now we have dt1 > dt0 > dt2 and mdt1 > mdt0 < mdt2
-      DO while (dt2/dt1.gt.0.95d0)
+      DO while (dt2/dt1.lt.0.9d0)
          dtn = 0.5*(dt1+dt0)
          call expcv(c,nablam,nk,dtn,ck1) 
          call Mofc(ck1,kern,nk,ng,e,l,mdtn)
@@ -230,7 +230,7 @@ C now get new c in ck1
       call expcv(c,nablam,nk,dt0,ck1) 
       normck = dnrm2(nk,ck1,1)   
       if(abs(normck-1.d0).gt.1d-5) THEN
-          call dblepr("normck",6,normck,1)
+C          call dblepr("normck",6,normck,1)
           Do i = 1,nk
              ck1(i)=ck1(i)/normck
           End do
@@ -261,7 +261,7 @@ C            call dblepr("mck",3,mck,1)
             call getnewck(ck,kern,nk,ng,ei(1,i),l,w,nablam,ck1)
             call Mofc(ck1,kern,nk,ng,ei(1,i),l,mck1)
             call DCOPY(nk,ck1,1,ck,1)
-            ndone = (mck-mck1)/mck.ge.1e-5
+            ndone = (mck-mck1)/mck.ge.1d-4
             mck = mck1
          END DO
          call DCOPY(nk,ck,1,cres(1,i),1)
