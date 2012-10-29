@@ -56,22 +56,25 @@ setMethod("dwiSqrtODF","dtiData",function(object,what="sqrtODF",order=4,forder=1
 #  order of coefficients as in  c((order+1)*(order+2)/2,forder+1,ng)
 #
   n <- prod(ddim)
+  nmask <- sum(mask)
+  dim(si) <- c(n,dim(si)[4])
   t1 <- Sys.time()
+  mc.cores <- setCores(,reprt=FALSE)
   cat("Kernel computed in",format(difftime(t1,t0)),"\n")
   coefs <- matrix(.Fortran("sqrteap",
-                as.double(aperm(si,c(4,1:3))),
+                as.double(t(si[mask,])),
                 as.double(Kqzeta),
                 as.integer(nk),
                 as.integer(ng),
-                as.integer(n),
+                as.integer(nmask),
                 as.double(L),
-                double(nk),#w
-                double(nk),#nablam
-                double(nk),#ck
-                double(nk),#ck1
-                coefs=double(nk*n),
+                double(nk*mc.cores),#w
+                double(nk*mc.cores),#nablam
+                double(nk*mc.cores),#ck
+                double(nk*mc.cores),#ck1
+                coefs=double(nk*nmask),
                 DUPL=TRUE,
-                PACKAGE="dti")$coefs,c(nk,n))
+                PACKAGE="dti")$coefs,c(nk,nmask))
   t2 <- Sys.time()
   cat("Obtained parameter estimates in",format(difftime(t2,t1)),"\n")
    z <- .Fortran("Mofcall",
@@ -79,15 +82,15 @@ setMethod("dwiSqrtODF","dtiData",function(object,what="sqrtODF",order=4,forder=1
                 as.double(Kqzeta),
                 as.integer(nk),
                 as.integer(ng),
-                as.integer(n),
-                as.double(aperm(si,c(4,1:3))),
+                as.integer(nmask),
+                as.double(t(si[mask,])),
                 as.double(L),
-                fvmofc=double(n),
-                res=double(n*ng),
+                fvmofc=double(nmask),
+                res=double(nmask*ng),
                 DUPL=TRUE,
                 PACKAGE="dti")
   sigma2 <- z$fvmofc/(ng-nk)*2
-  res <- array(z$res,c(ng,n))
+  res <- array(z$res,c(ng,nmask))
   rm(z)
   if(length(D0)>1) {
      if(i==1) {
@@ -108,10 +111,24 @@ setMethod("dwiSqrtODF","dtiData",function(object,what="sqrtODF",order=4,forder=1
      sigma2 <- bsigma2
   }  
   cat("mean squared sum of residuals",mean(rep(1,ng)%*%(res^2)),"\n")
+  resa <- res
+  res <- matrix(0,ng,n)
+  res[,mask] <- resa
+  rm(resa)
+  gc()
   dim(res) <- c(ng,ddim)
-  dim(sigma2) <- ddim
-  coefs[,!mask] <- 0
+  sigma2a <- sigma2
+  sigma2 <- numeric(n)
+  sigma2[mask] <- sigma2a
+  rm(sigma2a)
+  coefsa <- coefs
+  coefs  <- matrix(0,nk,n)
+  coefs[,mask] <- coefsa
+  rm(coefsa)
+  gc()
+  coefs[1,!mask] <- 1
   dim(coefs) <- c((order+1)*(order+2)/2,forder+1,ddim)
+  dim(sigma2) <- ddim
   cat("Variance estimates generated ",format(Sys.time()),"\n")
   th0 <- array(s0,object@ddim)
   th0[!mask] <- 0
@@ -359,7 +376,7 @@ Kofg[i2,n2,i1,n1,] <- z
 Kofg[i1,n2,i2,n1,] <- z
 }
 dim(Kofg) <- c(Lind*(N+1),Lind*(N+1),ngrad)
-save(bvalue,D0,Lind,Np1,ngrad,Lind2,a,Yabm,Qlmm,Inn,Kofg,file="YQI.rsc")
+#save(bvalue,D0,Lind,Np1,ngrad,Lind2,a,Yabm,Qlmm,Inn,Kofg,file="YQI.rsc")
 Kofg
 }
 Lnlm <- function(lambda,N,L){

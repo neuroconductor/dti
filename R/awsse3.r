@@ -164,6 +164,7 @@ if(verbose){
   si[,,,-1] <- z$th
   object@si <- if(model==1) sqrt(si) else si
   object@gradient <- grad <- cbind(c(0,0,0),grad)
+  object@bvalue <- grad <- c(0,object@bvalue[-object@s0ind])
   object@btb <- create.designmatrix.dti(grad)
   object@s0ind <- as.integer(1)
   object@replind <- as.integer(1:ngrad)

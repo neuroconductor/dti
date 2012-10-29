@@ -228,6 +228,92 @@ setMethod("[","dtiData",function(x, i, j, k, drop=FALSE){
             )
 })
 
+
+subsetg <- function(x, ind){
+  args <- sys.call(-1)
+  args <- c(x@call,args)
+  if (missing(ind)) ind <- 1:ngrad
+  s0ind <- (1:length(ind))[ind%in%x@s0ind]  
+  invisible(new("dtiData",
+                call   = args,
+                si     = x@si[,,,ind,drop=FALSE],
+                gradient = x@gradient[,ind],
+                bvalue = x@bvalue[ind],
+                btb    = x@btb[,ind],
+                ngrad  = as.integer(length(ind)),
+                s0ind  = s0ind,
+                replind = replind(x@gradient[,ind]),
+                ddim   = x@ddim,
+                ddim0  = x@ddim0,
+                xind   = x@xind,
+                yind   = x@yind,
+                zind   = x@zind,
+                sdcoef = x@sdcoef,
+                level  = x@level,
+                voxelext = x@voxelext,
+                orientation = as.integer(x@orientation),
+                rotation = x@rotation,
+                source = x@source)
+            )
+}
+
+combineDWIdata <- function(x1, x2, s0strategy="first"){
+# s0 strategies: "first", "second", "both", "rfirst", "rsecond", "rboth"
+  args <- sys.call(-1)
+  args <- c(x1@call,x2@call,args)
+  if(any(x1@ddim!=x2@ddim)) return(warning("Incompatible dimensions"))
+  s01 <- x1@si[,,,x1@s0ind]
+  s02 <- x2@si[,,,x2@s0ind]
+  ls01 <- length(x1@s0ind)
+  ls02 <- length(x2@s0ind)
+  if(s0strategy%in%c("both","rfirst","rboth")) dim(s01) <- c(prod(x1@ddim),ls01)
+  if(s0strategy%in%c("both","rsecond","rboth")) dim(s02) <- c(prod(x2@ddim),ls02)
+  grad1 <- x1@gradient[,-x1@s0ind]
+  grad2 <- x2@gradient[,-x2@s0ind]
+  s0 <- switch(s0strategy,"first" = s01, 
+                          "second" = s02, 
+                          "both" = array(c(s01,s02),c(x1@ddim,ls01+ls02)),
+                          "rfirst" = s01%*%rep(1/ls01,ls01), 
+                          "rsecond" = s02%*%rep(1/ls02,ls02), 
+                          "rboth" = cbind(s01,s02)%*%rep(1/(ls01+ls02),ls01+ls02))
+  ls0 <- switch(s0strategy,"first" = ls01, 
+                          "second" = ls02, 
+                          "both" = ls01+ls02,
+                          "rfirst" = 1, 
+                          "rsecond" = 1, 
+                          "rboth" = 1)
+  ns1 <- x1@ngrad-ls01
+  ns2 <- x2@ngrad-ls02
+  si <- array(c(s0,x1@si[,,,-x1@s0ind],x2@si[,,,-x2@s0ind]),c(x1@ddim,ls0+ns1+ns2))
+  gradient <- matrix(c(rep(0,3*ls0),x1@gradient[,-x1@s0ind],
+                      x2@gradient[,-x2@s0ind]),c(3,ls0+ns1+ns2))
+  bvalue <- c(rep(0,ls0),x1@bvalue[-x1@s0ind],x2@bvalue[-x2@s0ind])
+  btb <- matrix(c(rep(0,6*ls0),x1@btb[,-x1@s0ind],
+                      x2@btb[,-x2@s0ind]),c(6,ls0+ns1+ns2))
+  invisible(new("dtiData",
+                call   = args,
+                si     = si,
+                gradient = gradient,
+                bvalue = bvalue,
+                btb    = btb,
+                ngrad  = as.integer(ls0+ns1+ns2),
+                s0ind  = 1:ls0,
+                replind = replind(gradient),
+                ddim   = x1@ddim,
+                ddim0  = as.integer(c(x1@ddim0[1:3],ls0+ns1+ns2)),
+                xind   = x1@xind,
+                yind   = x1@yind,
+                zind   = x1@zind,
+                sdcoef = x1@sdcoef,
+                level  = x1@level,
+                voxelext = x1@voxelext,
+                orientation = as.integer(x1@orientation),
+                rotation = x1@rotation,
+                source = x1@source)
+            )
+  
+}
+
 ##############
 
 setMethod("[","dtiTensor",function(x, i, j, k, drop=FALSE){

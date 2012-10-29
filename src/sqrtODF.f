@@ -6,9 +6,16 @@ C
       integer nk,ng,n
       real*8 c(nk,n),kern(nk,nk,ng),e(ng,n),l(nk),fvmofc(n),res(ng,n)
       integer i
+C$OMP PARALLEL DEFAULT(NONE)
+C$OMP& SHARED(c,kern,nk,ng,n,e,l,fvmofc,res)
+C$OMP& PRIVATE(i)
+C$OMP DO SCHEDULE(GUIDED)
       DO i=1,n
          call Mofcres(c(1,i),kern,nk,ng,e(1,i),l,fvmofc(i),res(1,i))
       END DO
+C$OMP END DO NOWAIT
+C$OMP END PARALLEL
+C$OMP FLUSH(res,fvmofc)
       RETURN
       END
 C
@@ -138,27 +145,26 @@ C
 C
 C  compute c^(k+!) from c^k in Jiang Cheng (2012)
 C
-      subroutine getnewck(c,kern,nk,ng,e,l,w,nablam,ck1)
+      subroutine getnewck(c,kern,nk,ng,m0,e,l,w,nablam,ck1,mdt0,ierr)
       implicit logical (a-z)
       integer nk,ng
       real*8 c(nk),kern(nk,nk,ng),e(ng),l(nk),w(nk),nablam(nk),
      1       ck1(nk)
-      real*8 dt0,dt1,dt2,dnrm2,m0,mdt0,mdt1,mdt2,dtn,mdtn,normck
-      integer i
+      real*8 dt0,dnrm2,m0,mdt0,normck
+      integer i,ierr
       external dnrm2
+      ierr=0
 C first get nabla M(c) in nablam
       call nablmofc(c,kern,nk,ng,e,l,w,nablam)
 C get norm of it 
 C      dt0 = dnrm2(nk,nablam,1)
-      dt0=.1d0
+      dt0=.25d0
 C perform line search 
 C first M(c) in m0
-      call Mofc(c,kern,nk,ng,e,l,m0)
 C now M(dt*v/||v||) in mdt
       call expcv(c,nablam,nk,dt0,ck1) 
       call Mofc(ck1,kern,nk,ng,e,l,mdt0)
       winit = .TRUE.
-      wextend = .TRUE.
 C try to find valid start
       DO while (winit) 
          IF(mdt0.ge.m0) THEN
@@ -168,66 +174,13 @@ C try to find valid start
          ELSE
             winit = .FALSE.
          END IF
-         if(dt0.lt.1d-6) THEN
+         if(dt0.lt.1d-5) THEN
 C no descent found, keep c(nk)
             winit = .FALSE.
+            ierr=1
          END IF
       END DO
 C haben jetzt mdt0 <= m0 
-C best value in dt0, mdt0
-C try to get larger stepsize with better value
-      DO while (wextend)
-         dt1 = 1.29*dt0
-         call expcv(c,nablam,nk,dt1,ck1) 
-         call Mofc(ck1,kern,nk,ng,e,l,mdt1)
-         if(mdt1.lt.mdt0) THEN
-            dt0 = dt1
-            mdt0 = mdt1
-         ELSE
-            wextend = .FALSE.
-         ENDIF
-      END DO
-      dt2 = dt0*0.775
-      call expcv(c,nablam,nk,dt2,ck1) 
-      call Mofc(ck1,kern,nk,ng,e,l,mdt2)
-      DO while (mdt2.lt.mdt0)
-         dt1 = dt0
-         mdt1 = mdt0
-         dt0 = dt2
-         mdt0 =mdt2
-         dt2 = dt2*0.775
-         call expcv(c,nablam,nk,dt2,ck1) 
-         call Mofc(ck1,kern,nk,ng,e,l,mdt2)          
-      END DO
-C now we have dt1 > dt0 > dt2 and mdt1 > mdt0 < mdt2
-      DO while (dt2/dt1.lt.0.9d0)
-         dtn = 0.5*(dt1+dt0)
-         call expcv(c,nablam,nk,dtn,ck1) 
-         call Mofc(ck1,kern,nk,ng,e,l,mdtn)
-         if(mdtn.lt.mdt0) THEN
-            dt2=dt0
-            mdt2=mdt0
-            dt0=dtn
-            mdt0=mdtn
-         ELSE
-            dt1=dtn
-            mdt1=mdtn
-         END IF
-         dtn = 0.5*(dt2+dt0)
-         call expcv(c,nablam,nk,dtn,ck1) 
-         call Mofc(ck1,kern,nk,ng,e,l,mdtn)
-         if(mdtn.lt.mdt0) THEN
-            dt1=dt0
-            mdt1=mdt0
-            dt0=dtn
-            mdt0=mdtn
-         ELSE
-            dt2=dtn
-            mdt2=mdtn
-         END IF
-      END DO
-C now get new c in ck1
-      call expcv(c,nablam,nk,dt0,ck1) 
       normck = dnrm2(nk,ck1,1)   
       if(abs(normck-1.d0).gt.1d-5) THEN
 C          call dblepr("normck",6,normck,1)
@@ -243,29 +196,44 @@ C
       subroutine sqrteap(ei,kern,nk,ng,n,l,w,nablam,ck,ck1,cres)
       implicit logical (a-z)
       integer nk,ng,n
-      real*8 ck(nk),kern(nk,nk,ng),ei(ng,n),l(nk),w(nk),
-     1       nablam(nk),ck1(nk),cres(nk,n)
-      integer i,k
+      real*8 ck(nk,1),kern(nk,nk,ng),ei(ng,n),l(nk),w(nk,1),
+     1       nablam(nk,1),ck1(nk,1),cres(nk,n)
+      logical ndone
+      integer i,k,ierr,thrnr
       real*8 mck,mck1
-C      call dblepr("l",1,l,nk)
+      integer omp_get_thread_num
+      external omp_get_thread_num
+C$OMP PARALLEL DEFAULT(NONE)
+C$OMP& SHARED(ei,kern,nk,ng,n,l,w,nablam,ck,ck1,cres)
+C$OMP& PRIVATE(i,k,ierr,mck,mck1,ndone,thrnr)
+C$OMP DO SCHEDULE(GUIDED)
       DO i=1,n
-C         call intpr("i",1,i,1)
-         ck(1)=1.d0
+         thrnr = omp_get_thread_num()+1
+         ck(1,thrnr)=1.d0
          DO k=2,nk
-            ck(k)=0.d0
+            ck(k,thrnr)=0.d0
          END DO
-         call Mofc(ck,kern,nk,ng,ei(1,i),l,mck)
+         call Mofc(ck(1,thrnr),kern,nk,ng,ei(1,i),l,mck)
          ndone=.TRUE.
-C            call dblepr("mck",3,mck,1)
          DO WHILE (ndone)
-            call getnewck(ck,kern,nk,ng,ei(1,i),l,w,nablam,ck1)
-            call Mofc(ck1,kern,nk,ng,ei(1,i),l,mck1)
-            call DCOPY(nk,ck1,1,ck,1)
-            ndone = (mck-mck1)/mck.ge.1d-4
-            mck = mck1
+            call getnewck(ck(1,thrnr),kern,nk,ng,mck,ei(1,i),l,
+     1              w(1,thrnr),nablam(1,thrnr),ck1(1,thrnr),mck1,ierr)
+C            call Mofc(ck1,kern,nk,ng,ei(1,i),l,mck1)
+            if(ierr.eq.0) THEN
+               call DCOPY(nk,ck1(1,thrnr),1,ck(1,thrnr),1)
+               ndone = (mck-mck1)/mck.ge.1d-5
+               mck = mck1
+            ELSE
+               ndone = .FALSE.
+C  kein Abswtiegspunkt gefunden
+            END IF
          END DO
-         call DCOPY(nk,ck,1,cres(1,i),1)
+         call DCOPY(nk,ck(1,thrnr),1,cres(1,i),1)
+C         call rchkusr()
       END DO
+C$OMP END DO NOWAIT
+C$OMP END PARALLEL
+C$OMP FLUSH(cres)
       RETURN
       END
       
