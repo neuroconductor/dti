@@ -21,31 +21,34 @@ setMethod("dwiSqrtODF","dtiData",function(object,what="sqrtODF",order=4,forder=1
   grad <- object@gradient[,-s0ind]
   sdcoef <- object@sdcoef
   z <- sioutlier(object@si,s0ind)
-  si <- aperm(array(z$si,c(ng,ddim)),c(2:4,1))
+  si <- array(z$si,c(ng,ddim))
   index <- z$index
   rm(z)
   gc()
 
   # prepare data including mask
   ng <- ng - length(s0ind)
-  s0 <- si[,,,s0ind]
-  si <- si[,,,-s0ind]
+  s0 <- si[s0ind,,,]
+  si <- si[-s0ind,,,]
   if (ns0>1) {
-    dim(s0) <- c(prod(ddim),ns0)
-    s0 <- s0 %*% rep(1/ns0,ns0)
+    dim(s0) <- c(ns0,prod(ddim))
+    s0 <- rep(1/ns0,ns0)%*%s0
     dim(s0) <- ddim
   }
   mask <- s0 > object@level
   mask <- connect.mask(mask)
   bvalue <- object@bvalue[-s0ind]
-  si <- sweep(si,1:3,s0,"/")
+  si <- sweep(si,2:4,s0,"/")
   nbv <- length(unique(bvalue)) # thats number of different b-balues
 #  forder <- min(forder,nbv-1)
   cat("Using",forder,"radial fourier basis functions\n")
   while((order+1)*(order+2)/2*(forder+1) >=ng) order <- order-2
   cat("Using",(order+1)*(order+2)/2,"sperical harmonics\n")
   L <- Lnlm(lambda,forder,order)
-  if(is.null(D0)) D0 <- getD0(siq,bvalue)
+  if(is.null(D0)) D0 <- getD0(siq,bvalue)  ## check ##
+  n <- prod(ddim)
+  dim(si) <- c(ng,n)
+  nmask <- sum(mask)
   for (i in 1:length(D0)){
   Kqzeta <- Kofgrad(grad,D0[i],forder,order,bvalue)
 #
@@ -55,14 +58,11 @@ setMethod("dwiSqrtODF","dtiData",function(object,what="sqrtODF",order=4,forder=1
 #
 #  order of coefficients as in  c((order+1)*(order+2)/2,forder+1,ng)
 #
-  n <- prod(ddim)
-  nmask <- sum(mask)
-  dim(si) <- c(n,dim(si)[4])
   t1 <- Sys.time()
   mc.cores <- setCores(,reprt=FALSE)
   cat("Kernel computed in",format(difftime(t1,t0)),"\n")
   coefs <- matrix(.Fortran("sqrteap",
-                as.double(t(si[mask,])),
+                as.double(si[,mask]),
                 as.double(Kqzeta),
                 as.integer(nk),
                 as.integer(ng),
@@ -83,7 +83,7 @@ setMethod("dwiSqrtODF","dtiData",function(object,what="sqrtODF",order=4,forder=1
                 as.integer(nk),
                 as.integer(ng),
                 as.integer(nmask),
-                as.double(t(si[mask,])),
+                as.double(si[,mask]),
                 as.double(L),
                 fvmofc=double(nmask),
                 res=double(nmask*ng),
