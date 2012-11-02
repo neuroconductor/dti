@@ -92,7 +92,7 @@ dtiData <- function(gradient,imagefile,ddim,bvalue=NULL,xind=NULL,yind=NULL,zind
                 si     = si,
                 gradient = gradient,
 				bvalue = bvalue,
-                btb    = create.designmatrix.dti(gradient),
+                btb    = sweep( create.designmatrix.dti(gradient), 2, bvalue, "*"),
                 ngrad  = ngrad, # = dim(btb)[2]
                 s0ind  = s0ind, # indices of S_0 images
                 replind = rind,
@@ -344,7 +344,7 @@ readDWIdata <- function(gradient, dirlist,
                 si          = si,
                 gradient    = gradient,
 				bvalue      = as.vector(bvalue),
-				btb         = create.designmatrix.dti(gradient),
+				btb         = sweep( create.designmatrix.dti(gradient), 2, bvalue, "*"),
                 ngrad       = ngrad,
                 s0ind       = s0ind,
                 replind     = replind(gradient),
