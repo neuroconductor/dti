@@ -54,13 +54,13 @@ awssigmc <- function(y,                 # data
   ## initial value for sigma_0 
   # sigma <- sqrt( mean( y[mask]^2) / 2 / ncoils)
   sigma <- IQQdiff( y, mask, q)
-  cat( "sigmahat1", sigma, "\n")
+#  cat( "sigmahat1", sigma, "\n")
   sigma <- estsigma( y, mask, q, ncoils, sigma)
-  cat( "sigmahat2", sigma, "\n")
+#  cat( "sigmahat2", sigma, "\n")
   sigma <- estsigma( y, mask, q, ncoils, sigma)
-  cat( "sigmahat3", sigma, "\n")
+#  cat( "sigmahat3", sigma, "\n")
   sigma <- estsigma( y, mask, q, ncoils, sigma)
-  cat( "sigmahat4", sigma,"\n")
+#  cat( "sigmahat4", sigma,"\n")
 
   ## define initial arrays for parameter estimates and sum of weights (see PS)
   th <- array( 1, ddim)

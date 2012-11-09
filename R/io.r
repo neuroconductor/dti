@@ -91,7 +91,7 @@ dtiData <- function(gradient,imagefile,ddim,bvalue=NULL,xind=NULL,yind=NULL,zind
                 call = args,
                 si     = si,
                 gradient = gradient,
-				bvalue = bvalue,
+                bvalue = bvalue,
                 btb    = sweep( create.designmatrix.dti(gradient), 2, bvalue, "*"),
                 ngrad  = ngrad, # = dim(btb)[2]
                 s0ind  = s0ind, # indices of S_0 images

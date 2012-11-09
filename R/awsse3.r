@@ -83,12 +83,13 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
   prt0 <- Sys.time()
   cat("adaptive smoothing in SE3, kstar=",kstar,if(verbose)"\n" else " ")
   kinit <- if(lambda<1e10) 1 else kstar
+  mc.cores <- setCores(,reprt=FALSE)
   for(k in kinit:kstar){
     gc()
     hakt <- hseq[,k]
     param <- lkfullse3(hakt,kappa/hakt,gradstats,vext,nind) 
     if(length(sigma)==1) {
-    z <- .Fortran("adrsmse3",
+    z <- .Fortran("adsmse3p",
                 as.single(sb),
                 as.single(z$th),
                 ni=as.single(z$ni),
@@ -99,14 +100,15 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
                 as.integer(ngrad),
                 as.double(lambda),
                 as.integer(ncoils),
+                as.integer(mc.cores),
                 as.integer(param$ind),
                 as.double(param$w),
                 as.integer(param$n),
                 th=single(prod(ddim)*ngrad),
                 single(prod(ddim)*ngrad),#ldf (to precompute lgamma)
                 as.double(sigma),
-                double(ngrad),
-                double(ngrad),
+                double(ngrad*mc.cores),
+                double(ngrad*mc.cores),
                 as.integer(model),
                 DUPL=FALSE,
                 PACKAGE="dti")[c("ni","th")]
@@ -125,7 +127,7 @@ if(verbose){
       cat(".")
     }
       param <- reduceparam(param)
-     z0 <- .Fortran("asmse3s0",
+     z0 <- .Fortran("asmse30p",
                     as.double(s0),
                     as.double(th0),
                     ni=as.double(ni0),

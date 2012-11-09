@@ -489,6 +489,159 @@ C  do not adapt on the sphere !!!
       END DO
       RETURN
       END
+      subroutine adsmse3p(y,th,ni,mask,n1,n2,n3,ngrad,lambda,ncoils,
+     1                    ncores,ind,w,n,thn,ldf,sigma,sw,swy,model)
+C   model=1 takes noncentral Chi-sq values in y
+C   model=0 takes noncentral Chi values in y
+C
+C   perform adaptive smoothing on SE(3) 
+C   ind(.,i) contains coordinate indormation corresponding to positive
+C   location weights in w(i)
+C   ind(.,i)[1:5] are j1-i1,j2-i2,j3-i3, i4 and j4 respectively 
+C
+      implicit logical (a-z)
+      integer n1,n2,n3,ngrad,n,ind(5,n),ncoils,model,ncores
+      logical mask(n1,n2,n3)
+      real y(n1,n2,n3,ngrad),thn(n1,n2,n3,ngrad),ni(n1,n2,n3,ngrad),
+     1     ldf(n1,n2,n3,ngrad),th(n1,n2,n3,ngrad)
+      real*8 lambda,w(n),sw(ngrad,ncores),swy(ngrad,ncores),
+     2       sigma,lgfi,dgfi,fici,df
+      integer iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr
+      real*8 z,thi,nii,thj,ldfi,ldfj
+      integer omp_get_thread_num
+      real*8 kldisnc1
+      external kldisnc1,omp_get_thread_num
+      nii=1.d0
+      df=2.d0*ncoils
+C just to prevent a compiler warning
+C  precompute values of lgamma(corrected df/2) in each voxel
+C$OMP PARALLEL DEFAULT(NONE)
+C$OMP& SHARED(n1,n2,n3,ngrad,ncores,mask,y,thn,ni,ldf,th,w,sw,swy,
+C$OMP& ind,ncoils,model,df,n,lambda,sigma)
+C$OMP& PRIVATE(iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,z,thi,nii,thj,
+C$OMP& ldfi,ldfj,dgfi,fici,lgfi)
+C$OMP DO SCHEDULE(GUIDED)
+      DO iind=1,n1*n2*n3
+         i1=mod(iind,n1)
+         if(i1.eq.0) i1=n1
+         i2=mod((iind-i1)/n1+1,n2)
+         if(i2.eq.0) i2=n2
+         i3=(iind-i1-(i2-1)*n1)/n1/n2+1
+         if(.not.mask(i1,i2,i3)) CYCLE
+C      DO i1=1,n1
+C         DO i2=1,n2
+C            DO i3=1,n3
+               DO i4=1,ngrad
+                  thi=th(i1,i2,i3,i4)
+                  call lgstats(thi,sigma,df,model,ldfi)
+                  ldf(i1,i2,i3,i4)=ldfi
+               END DO
+C            END DO
+C         END DO
+      END DO
+C$OMP END DO 
+C$OMP BARRIER
+C$OMP DO SCHEDULE(GUIDED)
+      DO iind=1,n1*n2*n3
+         thrednr = omp_get_thread_num()+1
+C returns value in 0:(ncores-1)
+         i1=mod(iind,n1)
+         if(i1.eq.0) i1=n1
+         i2=mod((iind-i1)/n1+1,n2)
+         if(i2.eq.0) i2=n2
+         i3=(iind-i1-(i2-1)*n1)/n1/n2+1         
+C      DO i1=1,n1
+C         DO i2=1,n2
+C            DO i3=1,n3
+               if(.not.mask(i1,i2,i3)) CYCLE
+               DO i4=1,ngrad
+                  sw(i4,thrednr)=0.d0
+                  swy(i4,thrednr)=0.d0
+               END DO
+               i4=0
+               DO i=1,n
+                  if(ind(4,i).ne.i4) THEN
+C   by construction ind(4,.) should have same values consequtively
+                     i4 = ind(4,i)
+                     thi = th(i1,i2,i3,i4)
+                     nii = ni(i1,i2,i3,i4)/lambda
+                     ldfi=ldf(i1,i2,i3,i4)
+                     call ncstats0(thi,ldfi,sigma,df,
+     1                             model,lgfi,dgfi,fici)
+                  END IF
+                  j1=i1+ind(1,i)
+                  if(j1.le.0.or.j1.gt.n1) CYCLE
+                  j2=i2+ind(2,i)
+                  if(j2.le.0.or.j2.gt.n2) CYCLE
+                  j3=i3+ind(3,i)
+                  if(j3.le.0.or.j3.gt.n3) CYCLE
+                  if(.not.mask(j1,j2,j3)) CYCLE          
+                  j4=ind(5,i)
+C adaptation 
+                  if(lambda.lt.1d10) THEN
+                     thj=th(j1,j2,j3,j4)
+                     ldfj=ldf(j1,j2,j3,j4)
+                     z=nii*kldisnc1(lgfi,dgfi,fici,thj,
+     1                              ldfj,sigma,df,model)
+C  do not adapt on the sphere !!! 
+                  ELSE
+                     z=0.d0
+                  END IF
+                  if(z.ge.1.d0) CYCLE
+                  z=w(i)*min(1.d0,2.d0-2.d0*z)
+                  sw(i4,thrednr)=sw(i4,thrednr)+z
+                  swy(i4,thrednr)=swy(i4,thrednr)+z*y(j1,j2,j3,j4)
+               END DO
+               DO i=1,n
+                  if(ind(1,i).eq.0) CYCLE
+                  if(ind(4,i).ne.i4) THEN
+C   by construction ind(4,.) should have same values consequtively
+                     i4 = ind(4,i)
+                     thi = th(i1,i2,i3,i4)
+                     nii = ni(i1,i2,i3,i4)/lambda
+                     ldfi=ldf(i1,i2,i3,i4)
+                     call ncstats0(thi,ldfi,sigma,df,
+     1                             model,lgfi,dgfi,fici)
+                  END IF
+C
+C   handle case j1-i1 < 0 which is not contained in ind 
+C   using axial symmetry
+C
+                  j1=i1-ind(1,i)
+                  if(j1.le.0.or.j1.gt.n1) CYCLE
+                  j2=i2-ind(2,i)
+                  if(j2.le.0.or.j2.gt.n2) CYCLE
+                  j3=i3-ind(3,i)
+                  if(j3.le.0.or.j3.gt.n3) CYCLE
+                  if(.not.mask(j1,j2,j3)) CYCLE          
+                  j4=ind(5,i)
+                  if(lambda.lt.1d10) THEN
+                     thj=th(j1,j2,j3,j4)
+                     ldfj=ldf(j1,j2,j3,j4)
+                     z=nii*kldisnc1(lgfi,dgfi,fici,thj,
+     1                              ldfj,sigma,df,model)
+C  do not adapt on the sphere !!! 
+                  ELSE
+                     z=0.d0
+                  END IF
+                  if(z.ge.1.d0) CYCLE
+                  z=w(i)*min(1.d0,2.d0-2.d0*z)
+                  sw(i4,thrednr)=sw(i4,thrednr)+z
+                  swy(i4,thrednr)=swy(i4,thrednr)+z*y(j1,j2,j3,j4)
+               END DO
+               DO i4=1,ngrad
+                  thn(i1,i2,i3,i4) = swy(i4,thrednr)/sw(i4,thrednr)
+                  ni(i1,i2,i3,i4) = sw(i4,thrednr)
+               END DO
+C               call rchkusr()
+C            END DO
+C         END DO
+      END DO
+C$OMP END DO NOWAIT
+C$OMP END PARALLEL
+C$OMP FLUSH(thn,ni)
+      RETURN
+      END
       subroutine asmse3s0(y,th,ni,mask,n1,n2,n3,ns0,
      1                    lambda,ncoils,ind,w,n,starts,nstarts,
      2                    thn,ldf,sigma,swi,model)
@@ -542,6 +695,7 @@ C
                   l3=ind(3,1+starts(i0))
                   j3=i3+l3
                   if(j3.le.0.or.j3.gt.n3) CYCLE
+                  if(.not.mask(j1,j2,j3)) CYCLE
                   z=ns0*kldisnc1(lgfi,dgfi,fici,th(j1,j2,j3),
      1                            ldf(j1,j2,j3),sigma,df,model)
                   if(z.ge.ns0sc) CYCLE
@@ -563,6 +717,7 @@ C  this part for negative l1 only (opposite directions)
                   l3=ind(3,1+starts(i0))
                   j3=i3-l3
                   if(j3.le.0.or.j3.gt.n3) CYCLE
+                  if(.not.mask(j1,j2,j3)) CYCLE
                   z=ns0*kldisnc1(lgfi,dgfi,fici,th(j1,j2,j3),
      1                           ldf(j1,j2,j3),sigma,df,model)
                   if(z.ge.ns0sc) CYCLE
@@ -578,6 +733,126 @@ C  this part for negative l1 only (opposite directions)
             END DO
          END DO
       END DO
+      RETURN
+      END
+      subroutine asmse30p(y,th,ni,mask,n1,n2,n3,ns0,lambda,ncoils,
+     1                ind,w,n,starts,nstarts,thn,ldf,sigma,swi,model)
+C   model=1 takes noncentral Chi-sq values in y0
+C   model=0 takes noncentral Chi values in y0
+C   perform adaptive smoothing on R^3
+C   ind(.,i) contains coordinate indormation corresponding to positive
+C   location weights in w(i)
+C   ind(.,i)[1:5] are j1-i1,j2-i2,j3-i3, i4 and j4 respectively 
+C
+      implicit logical (a-z)
+      integer n1,n2,n3,n,ind(5,n),ns0,starts(1),nstarts,ncoils,model
+      logical mask(n1,n2,n3)
+      real*8 y(n1,n2,n3),th(n1,n2,n3),ni(1),thn(1),
+     1       lambda,w(n),sw0,swy0,sigma,swi(nstarts),ldf(n1,n2,n3)
+      integer i,i0,i1,i2,i3,j1,j2,j3,l1,l2,l3,nn
+      real*8 z,ldfi,lgfi,dgfi,fici,ns0sc,df
+      real*8 kldisnc1
+      external kldisnc1
+      df=2.d0*ncoils
+      nn=n1*n2*n3
+      DO i0=1,nstarts
+         swi(i0)=0.d0
+         DO i=starts(i0)+1,starts(i0+1)
+            swi(i0)=swi(i0)+w(i)
+         END DO
+         swi(i0)=swi(i0)/(starts(i0+1)-starts(i0))
+      END DO
+C$OMP PARALLEL DEFAULT(NONE)
+C$OMP& SHARED(n1,n2,n3,nn,ncoils,mask,y,th,ni,thn,ind,ldf,n,nstarts,
+C$OMP& starts,w,swi,df)
+C$OMP& FIRSTPRIVATE(ns0,model,lambda,sigma)
+C$OMP& PRIVATE(sw0,swy0,i,i0,i1,i2,i3,j1,j2,j3,l1,l2,l3,z,lgfi,dgfi,
+C$OMP& ldfi,fici,ns0sc)
+C$OMP DO SCHEDULE(GUIDED)
+      DO i=1,nn
+C      DO i1=1,n1
+C         DO i2=1,n2
+C            DO i3=1,n3
+         i1=mod(i,n1)
+         if(i1.eq.0) i1=n1
+         i2=mod((i-i1)/n1+1,n2)
+         if(i2.eq.0) i2=n2
+         i3=(i-i1-(i2-1)*n1)/n1/n2+1
+         if(.not.mask(i1,i2,i3)) CYCLE
+         call lgstats(th(i1,i2,i3),sigma,df,model,ldfi)
+         ldf(i1,i2,i3) = ldfi
+C            END DO
+C         END DO
+      END DO
+C$OMP END DO
+C$OMP BARRIER
+C$OMP DO SCHEDULE(GUIDED)
+      DO i=1,nn
+C      DO i1=1,n1
+C         DO i2=1,n2
+C            DO i3=1,n3
+         i1=mod(i,n1)
+         if(i1.eq.0) i1=n1
+         i2=mod((i-i1)/n1+1,n2)
+         if(i2.eq.0) i2=n2
+         i3=(i-i1-(i2-1)*n1)/n1/n2+1         
+               if(.not.mask(i1,i2,i3)) CYCLE
+               sw0=0.d0
+               swy0=0.d0
+               ns0sc = ns0*lambda/ni(i)
+               call ncstats0(th(i1,i2,i3),ldf(i1,i2,i3),sigma,df,
+     1                       model,lgfi,dgfi,fici)
+               DO i0=1,nstarts
+                  l1=ind(1,1+starts(i0))
+                  j1=i1+l1
+                  if(j1.le.0.or.j1.gt.n1) CYCLE
+                  l2=ind(2,1+starts(i0))
+                  j2=i2+l2
+                  if(j2.le.0.or.j2.gt.n2) CYCLE
+                  l3=ind(3,1+starts(i0))
+                  j3=i3+l3
+                  if(j3.le.0.or.j3.gt.n3) CYCLE
+                  if(.not.mask(j1,j2,j3)) CYCLE
+                  z=ns0*kldisnc1(lgfi,dgfi,fici,th(j1,j2,j3),
+     1                            ldf(j1,j2,j3),sigma,df,model)
+                  if(z.ge.ns0sc) CYCLE
+                  if(z.lt.ns0sc) THEN
+                     z=swi(i0)*min(1.d0,2.d0-2.d0*z/ns0sc)
+                     sw0=sw0+z
+                     swy0=swy0+z*y(j1,j2,j3)
+                  END IF
+               END DO
+               DO i0=1,nstarts
+                  l1=ind(1,1+starts(i0))
+                  if(l1.eq.0) CYCLE
+C  this part for negative l1 only (opposite directions)
+                  j1=i1-l1
+                  if(j1.le.0.or.j1.gt.n1) CYCLE
+                  l2=ind(2,1+starts(i0))
+                  j2=i2-l2
+                  if(j2.le.0.or.j2.gt.n2) CYCLE
+                  l3=ind(3,1+starts(i0))
+                  j3=i3-l3
+                  if(j3.le.0.or.j3.gt.n3) CYCLE
+                  if(.not.mask(j1,j2,j3)) CYCLE
+                  z=ns0*kldisnc1(lgfi,dgfi,fici,th(j1,j2,j3),
+     1                           ldf(j1,j2,j3),sigma,df,model)
+                  if(z.ge.ns0sc) CYCLE
+                  if(z.lt.ns0sc) THEN
+                     z=swi(i0)*min(1.d0,2.d0-2.d0*z/ns0sc)
+                     sw0=sw0+z
+                     swy0=swy0+z*y(j1,j2,j3)
+                  END IF
+               END DO
+               thn(i) = swy0/sw0
+               ni(i) = sw0
+C               call rchkusr()
+C            END DO
+C         END DO
+      END DO
+C$OMP END DO NOWAIT
+C$OMP END PARALLEL
+C$OMP FLUSH(thn,ni)
       RETURN
       END
 C
@@ -608,8 +883,8 @@ C
       integer model
       real*8 thi,sigma,lgfi0,lgfi,dgfi,fici,df
       real*8 mu2i,z1,z2,dlci,fi,ci
-      real*8 lgammaf,digammaf
-      external lgammaf, digammaf
+      real*8 digammaf
+      external digammaf
       mu2i = thi/sigma
       if(model.eq.0) mu2i = mu2i*mu2i
       mu2i = max(0.d0,mu2i-df)
@@ -635,8 +910,6 @@ C    model = 1   smoothing of chi^2 values
       integer model
       real*8 lgfi,dgfi,fici,thj,sigma,df,lgfj
       real*8 mu2j,fj,cj,z1,z2
-      real*8 lgammaf
-      external lgammaf
 C  use Chi^2 instead of Chi for KL distance
       mu2j = thj/sigma
       if(model.eq.0) mu2j = mu2j*mu2j
@@ -662,10 +935,10 @@ C
       implicit logical (a-z)
       integer n1,n2,n3,ncoils
       logical mask(n1,n2,n3)
-      real*8 y(n1,n2,n3),th(n1,n2,n3),ni(n1,n2,n3),thn(n1,n2,n3),
-     1       th2(n1,n2,n3),ni2(n1,n2,n3),lambda,sigma,h,vext(2),
+      real*8 y(n1,n2,n3),th(n1,n2,n3),ni(1),thn(1),
+     1       th2(1),ni2(1),lambda,sigma,h,vext(2),
      2       ldf(n1,n2,n3)
-      integer i1,i2,i3,j1,j2,j3,cw1,cw2,cw3
+      integer i1,i2,i3,j1,j2,j3,cw1,cw2,cw3,i,n
       real*8 z,lgfi,dgfi,fici,df,kval,w,w0,h2,sw,sw2,swy,swy2,yj,
      1       z1,z2,z3
       real*8 kldisnc1
@@ -675,23 +948,45 @@ C
       cw1=h
       cw2=h/vext(1)
       cw3=h/vext(2)
+      n = n1*n2*n3
 C  precompute values of lgamma(corrected df/2) in each voxel
-      DO i1=1,n1
-         DO i2=1,n2
-            DO i3=1,n3
+C$OMP PARALLEL DEFAULT(NONE)
+C$OMP& SHARED(n1,n2,n3,ncoils,mask,y,th,ni,thn,th2,ni2,h,vext,ldf,n)
+C$OMP& FIRSTPRIVATE(lambda,sigma,cw1,cw2,cw3,df,h2)
+C$OMP& PRIVATE(i1,i2,i3,j1,j2,j3,i,z,lgfi,dgfi,fici,kval,w,w0,
+C$OMP& sw,sw2,swy,swy2,yj,z1,z2,z3)
+C$OMP DO SCHEDULE(GUIDED)
+      DO i=1,n
+C      DO i1=1,n1
+C         DO i2=1,n2
+C            DO i3=1,n3
+         i1=mod(i,n1)
+         if(i1.eq.0) i1=n1
+         i2=mod((i-i1)/n1+1,n2)
+         if(i2.eq.0) i2=n2
+         i3=(i-i1-(i2-1)*n1)/n1/n2+1         
                call lgstats(th(i1,i2,i3),sigma,df,1,ldf(i1,i2,i3))
-            END DO
-         END DO
+C            END DO
+C         END DO
       END DO
-      DO i1=1,n1
-         DO i2=1,n2
-           DO i3=1,n3
+C$OMP END DO
+C$OMP BARRIER
+C$OMP DO SCHEDULE(GUIDED)
+      DO i=1,n
+         i1=mod(i,n1)
+         if(i1.eq.0) i1=n1
+         i2=mod((i-i1)/n1+1,n2)
+         if(i2.eq.0) i2=n2
+         i3=(i-i1-(i2-1)*n1)/n1/n2+1         
+C      DO i1=1,n1
+C         DO i2=1,n2
+C           DO i3=1,n3
                if(.not.mask(i1,i2,i3)) CYCLE
                sw=0.d0
                swy=0.d0
                sw2=0.d0
                swy2=0.d0
-               kval = lambda/ni(i1,i2,i3)
+               kval = lambda/ni(i)
                call ncstats0(th(i1,i2,i3),ldf(i1,i2,i3),sigma,df,
      1                       1,lgfi,dgfi,fici)
                DO j1=max(1,i1-cw1),min(i1+cw1,n1)
@@ -718,14 +1013,17 @@ C  precompute values of lgamma(corrected df/2) in each voxel
                      END DO
                   END DO
                END DO
-               thn(i1,i2,i3) = swy/sw
-               th2(i1,i2,i3) = swy2/sw
-               ni(i1,i2,i3) = sw
-               ni2(i1,i2,i3) = sw2
-               call rchkusr()
-            END DO
-         END DO
+               thn(i) = swy/sw
+               th2(i) = swy2/sw
+               ni(i) = sw
+               ni2(i) = sw2
+C               call rchkusr()
+C            END DO
+C         END DO
       END DO
+C$OMP END DO NOWAIT
+C$OMP END PARALLEL
+C$OMP FLUSH(thn,ni,ni2,th2)
       RETURN
       END
       
