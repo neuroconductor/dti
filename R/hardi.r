@@ -97,7 +97,7 @@ setMethod("dwiQball","dtiData",function(object,what="wODF",order=4,lambda=0){
      sphcoef <- plz%*%L%*%sicoef
      coef0 <- sphcoef[1,]
      sphcoef[1,] <- 1/2/sqrt(pi)
-     sphcoef[-1,] <- sphcoef[-1,]/8/pi
+     sphcoef[-1,] <- - sphcoef[-1,]/8/pi
      cat("Estimated coefficients for wODF (order=",order,") ",format(Sys.time()),"\n")
   } else if (what=="aODF") {
      cat("Data transformation started ",format(Sys.time()),"\n")
@@ -166,12 +166,12 @@ setMethod("dwiQball","dtiData",function(object,what="wODF",order=4,lambda=0){
 #
 #   get spatial correlation
 #
-  scorr <- function(res,mask,ddim,ngrad0,lags=c(5,5,3),mc.cores=mc.cores)
+  scorr <- mcorr(res,mask,ddim,ngrad0,lags=c(5,5,3))
   invisible(new("dwiQball",
                 call  = args,
                 order = as.integer(order),
-                forder = 0,
-                zeta = 1,
+                forder = as.integer(0),
+                D0  = 1e-3,
                 lambda = lambda,
                 sphcoef = sphcoef,
                 varsphcoef = varcoef,
