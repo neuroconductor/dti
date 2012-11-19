@@ -1424,7 +1424,7 @@ C$OMP DO SCHEDULE(STATIC)
             z2=0.d0
             DO k=1,ng1
                s=si(k,i)/s0mean
-               s=max(s,0.99d0)
+               s=min(s,0.99d0)
                z=z+s
                z2=z2+s*s
                siqi(k)=s

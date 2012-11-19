@@ -519,7 +519,7 @@ gettriangles <- function(gradients){
   list(triangles=matrix(z$triangles,3,5*ngrad)[,1:z$ntriangle], edges=ab[,z$iab==2])
 }
 
-create.designmatrix.dti <- function(gradient, bvalue=1) {
+create.designmatrix.dti <- function(gradient) {
   dgrad <- dim(gradient)
   if (dgrad[2]==3) gradient <- t(gradient)
   if (dgrad[1]!=3) stop("Not a valid gradient matrix")
@@ -532,7 +532,7 @@ create.designmatrix.dti <- function(gradient, bvalue=1) {
   btb[3,] <- 2*gradient[1,]*gradient[3,]
   btb[5,] <- 2*gradient[2,]*gradient[3,]
 
-  btb * bvalue
+  btb
 }
 
 identify.fa <- function(view,slice,xind,yind,zind){

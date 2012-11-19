@@ -526,6 +526,7 @@ cat("using ",nguess,"guesses for initial estimates\n")
 siind <- matrix(as.integer(0),maxcomp+2,nvoxel)
 krit <- numeric(nvoxel)
 # first voxel with fa<.3
+if(sum(mask&!landir)>0){
 cat(sum(mask&!landir),"voxel with small FA\n")
 nguess <- length(isample0)/maxcomp
 if(mc.cores<=1){
@@ -566,7 +567,9 @@ krit[!landir] <- z$krit[!landir]
    siind[,mask&!landir] <- z[-1,]
    krit[mask&!landir] <- z[1,]
 }
+}
 # now voxel where first tensor direction seems important
+if(sum(mask&landir)>0){
 if(maxcomp >0){
 cat(sum(mask&landir),"voxel with distinct first eigenvalue \n")
 nguess <- if(maxcomp>1) length(isample1)/(maxcomp-1) else length(isample1)
@@ -611,6 +614,7 @@ krit[landir] <- z$krit[landir]
    dim(z) <- c(maxcomp+3,sum(mask&landir))
    siind[,mask&landir] <- z[-1,]
    krit[mask&landir] <- z[1,]
+}
 }
 }
 failed <- (krit^2/ngrad) > (sigma2-1e-10)
@@ -743,7 +747,7 @@ dwiMixtensor <- function(object, ...) cat("No dwiMixtensor calculation defined f
 setGeneric("dwiMixtensor", function(object,  ...) standardGeneric("dwiMixtensor"))
 
 setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3, method="mixtensor", reltol=1e-6, maxit=5000,ngc=1000, optmethod="BFGS", nguess=100*maxcomp^2,msc="BIC",pen=NULL,code="C",thinit=NULL, 
-    mc.cores = getOption("mc.cores", 2L)){
+    mc.cores = getOption("mc.cores", 1L)){
 #
 #  uses  S(g)/s_0 = w_0 exp(-l_1) +\sum_{i} w_i exp(-l_2-(l_1-l_2)(g^T d_i)^2)
 #
@@ -762,6 +766,13 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3, method="mixtensor
      code <- "R"
   }
   set.seed(1)
+  bvalue <- object@bvalue
+  bvalue <- bvalue[bvalue>.1*median(bvalue)]
+  if(sd(bvalue)>.1*median(bvalue)){
+     warning("b-values indicate measurements on multiple shells,
+         tensor mixtures not yet implemented\n returning original object")
+     return(object)
+  }
   if(is.null(pen)) pen <- 100
   if(method=="mixtensoriso") optmethod <- "L-BFGS-B"
   theta <- .5
@@ -790,7 +801,10 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3, method="mixtensor
   rm(tensorobj)
   gc()
   fa <- array(z$fa,ddim)
-  ev <- array(z$ev,c(3,ddim))
+  ev <- array(z$ev,c(3,ddim))*median(bvalue)
+#
+#  rescale by bvalue to go to implemented scale
+#
   andir <- array(z$andir,c(3,2,ddim))
   rm(z)
   gc()
