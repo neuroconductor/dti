@@ -485,7 +485,7 @@ sphcoord <- function(ccoord){
 #  transform cartesian into sherical coordinates
 #
   ccoord <- ccoord/sqrt(sum(ccoord^2))
-  phi <- atan2(ccoord[2],ccoord[1])
+  phi <- atan2(ccoord[2],ccoord[1])+2*pi*(ccoord[2]<0)
   theta <- atan2(sqrt(ccoord[2]^2+ccoord[1]^2),ccoord[3])
   c(theta,phi)
 }

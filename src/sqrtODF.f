@@ -174,7 +174,7 @@ C try to find valid start
          ELSE
             winit = .FALSE.
          END IF
-         if(dt0.lt.1d-5) THEN
+         if(dt0.lt.1d-6) THEN
 C no descent found, keep c(nk)
             winit = .FALSE.
             ierr=1
@@ -182,7 +182,7 @@ C no descent found, keep c(nk)
       END DO
 C haben jetzt mdt0 <= m0 
       normck = dnrm2(nk,ck1,1)   
-      if(abs(normck-1.d0).gt.1d-5) THEN
+      if(abs(normck-1.d0).gt.1d-6) THEN
 C          call dblepr("normck",6,normck,1)
           Do i = 1,nk
              ck1(i)=ck1(i)/normck
@@ -221,7 +221,7 @@ C$OMP DO SCHEDULE(GUIDED)
 C            call Mofc(ck1,kern,nk,ng,ei(1,i),l,mck1)
             if(ierr.eq.0) THEN
                call DCOPY(nk,ck1(1,thrnr),1,ck(1,thrnr),1)
-               ndone = (mck-mck1)/mck.ge.1d-5
+               ndone = (mck-mck1)/mck.ge.1d-7
                mck = mck1
             ELSE
                ndone = .FALSE.

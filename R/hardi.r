@@ -93,7 +93,7 @@ setMethod("dwiQball","dtiData",function(object,what="wODF",order=4,lambda=0){
      # see Aganj et al. (2009)
      # include FRT(SH) -> P_l(0)
      sicoef <- z$matrix%*% si
-     plz <- plzero(order)/2/pi
+     plz <- plzeroaganji(order)
      sphcoef <- plz%*%L%*%sicoef
      coef0 <- sphcoef[1,]
      sphcoef[1,] <- 1/2/sqrt(pi)
@@ -146,6 +146,7 @@ setMethod("dwiQball","dtiData",function(object,what="wODF",order=4,lambda=0){
   rss <- res[1,]^2
   for(i in 2:ngrad0) rss <- rss + res[i,]^2
   sigma2 <- rss/(ngrad0-length(lord))
+  cat("Mean residual sum of squares for SPH approximation",mean(rss),"\n")
   if(what %in% c("ODF","aODF")){
      varcoef <- outer(diag(plzero(order))^2*diag(z$matrix%*%t(z$matrix)),sigma2,"*")
   } else if(what=="wODF"){
@@ -236,38 +237,27 @@ design.spheven <- function(order,gradients,lambda){
        theta = theta,
        phi = phi)
 }
-design.spheven0 <- function(order,gradients,part="Re"){
-#
-#  compute spherical harmonics d3esign
-#
-  order <- as.integer(max(0,order))
-  if(order%%2==1){
-    warning("maximum order needs to be even, increase order by one")
-    order <- order+1
-  } 
-
-  # calculate spherical angles theta and phi corresponding to the gradients
-  n <- dim(gradients)[2]
-  theta <- phi <- numeric(n)
-  for( i in 1:n){
-    angles <- sphcoord(gradients[,i])
-    theta[i] <- angles[1]
-    phi[i] <-  angles[2]
-  }
-
-  # values of SH on specified spherical angles
-  sphharmonics <- 
-  if(part=="Re") getsphericalharmonicsevenR(order,theta,phi) else getsphericalharmonicsevenI(order,theta,phi)
-  # Laplace-Beltrami-Regularization term
-  list(design = sphharmonics,
-       theta = theta,
-       phi = phi)
-}
 
 plzero <- function(order){
+#
+#  computes  2 pi P_l(0)
+#  addititional factor of -l*(l+1) see aganji (2009)
+#
+  if(order<2) return(2*pi)
   l <- seq(2,order,2)
   pl <- l
   for(i in 1:length(l)) pl[i] <- (-1)^(l[i]/2)*prod(seq(1,(l[i]-1),2))/prod(seq(2,l[i],2))
   2*pi*diag(rep(c(1,pl),2*seq(0,order,2)+1))
+}
+plzeroaganji <- function(order){
+#
+#  computes - 2 pi l(l+1)P_l(0)
+#  addititional factor of -l*(l+1) see Aganji (2009)
+#
+  if(order<2) return(-1)
+  l <- seq(2,order,2)
+  pl <- -l
+  for(i in 1:length(l)) pl[i] <- -(-1)^(l[i]/2)*prod(seq(1,(l[i]-1),2))/prod(seq(2,l[i],2))*l[i]*(l[i]+1)
+  diag(rep(c(1,pl),2*seq(0,order,2)+1))
 }
 

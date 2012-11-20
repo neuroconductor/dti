@@ -7,7 +7,6 @@ setMethod("dwiSqrtODF","dtiData",function(object,what="sqrtODF",order=4,forder=1
 #  tau in seconds
 #  D_0 set to 1.4e-3 mm^2/s
 #  q as sqrt(b/4/tau)/pi
-  t0 <- Sys.time()
   if(is.null(D0)) D0 <- 1.4e-3
   args <- sys.call(-1)
   args <- c(object@call,args)
@@ -50,6 +49,7 @@ setMethod("dwiSqrtODF","dtiData",function(object,what="sqrtODF",order=4,forder=1
   dim(si) <- c(ng,n)
   nmask <- sum(mask)
   for (i in 1:length(D0)){
+  t0 <- Sys.time()
   Kqzeta <- Kofgrad(grad,D0[i],forder,order,bvalue)
 #
 #   now we have the ingredients
@@ -92,6 +92,7 @@ setMethod("dwiSqrtODF","dtiData",function(object,what="sqrtODF",order=4,forder=1
   sigma2 <- z$fvmofc/(ng-nk)*2
   res <- array(z$res,c(ng,nmask))
   rm(z)
+  cat("mean sigma2",mean(sigma2),"\n")
   if(length(D0)>1) {
      if(i==1) {
           bcoefs <- coefs
@@ -110,7 +111,7 @@ setMethod("dwiSqrtODF","dtiData",function(object,what="sqrtODF",order=4,forder=1
      res <- bres
      sigma2 <- bsigma2
   }  
-  cat("mean squared sum of residuals",mean(rep(1,ng)%*%(res^2)),"\n")
+  cat("mean sum of squared residuals",mean(rep(1,ng)%*%(res^2)),"\n")
   resa <- res
   res <- matrix(0,ng,n)
   res[,mask] <- resa
@@ -244,7 +245,7 @@ Yab <- function(order,gradients){
   }
 
   # values of SH on specified spherical angles 
-  getsphericalharmonicsevenR(order,theta,phi)# first index spharmon (a,b)-index 
+  getsphericalharmonicseven(order,theta,phi)# first index spharmon (a,b)-index 
   #second index - gradient
 }
 Qlmmat <- function(order){
