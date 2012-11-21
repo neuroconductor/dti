@@ -164,24 +164,24 @@ readDWIdata <- function(gradient, dirlist,
     if (format == "AFNI") filelist <- filelist[regexpr("\\.HEAD$", filelist) != -1]
     if (format == "NIFTI") {
       if ((length(filelist) != ngrad) & (length(filelist) != 1))
-	stop("readDWIdata: Number of found NIfTI files (", length(filelist),") does not match ngrad and is larger then 1\nPlease provide each gradient cube in a separate file or one 4D file.")
-	if (length(filelist) == ngrad) {
-	  if (is.null(order)) {
-	    order <- 1:ngrad
-	  } else {
-	    if (length(order) != ngrad)
-	      stop("readDWIdata: Length of order vector does not match ngrad")
-	  }
-	  filelist <- filelist[order]
-	}
+        stop("readDWIdata: Number of found NIfTI files (", length(filelist),") does not match ngrad and is larger then 1\nPlease provide each gradient cube in a separate file or one 4D file.")
+        if (length(filelist) == ngrad) {
+          if (is.null(order)) {
+             order <- 1:ngrad
+          } else {
+          if (length(order) != ngrad)
+            stop("readDWIdata: Length of order vector does not match ngrad")
+          }
+          filelist <- filelist[order]
+        }
     } else {
       if (length(filelist) != ngrad)
-	stop("readDWIdata: Number of found files does not match ngrad",length(filelist),"\nPlease provide each gradient cube in a separate file.")
+      stop("readDWIdata: Number of found files does not match ngrad",length(filelist),"\nPlease provide each gradient cube in a separate file.")
       if (is.null(order)) {
-	order <- 1:ngrad
+         order <- 1:ngrad
       } else {
-	if (length(order) != ngrad)
-	  stop("readDWIdata: Length of order vector does not match ngrad")
+         if (length(order) != ngrad)
+         stop("readDWIdata: Length of order vector does not match ngrad")
       }
       filelist <- filelist[order]
     }
@@ -219,10 +219,10 @@ readDWIdata <- function(gradient, dirlist,
       imageOrientationPatient <- t(matrix(c(dd@srow_x[1:3]/dd@pixdim[2:4], dd@srow_y[1:3]/dd@pixdim[2:4], dd@srow_z[1:3]/dd@pixdim[2:4]), 3, 3))
     } else if (format == "ANALYZE") {
       dd <- readANALYZE(ff, SPM = SPM)
-	  ## this is an SPM hack, as it uses funused1 as scaling factor:
-	  ## if (dd@funused1 != 0) dd@.Data <- dd@.Data * dd@funused1
-	  ## END HACK. Hope, typically funused is either 1 or 0!
-	  ## no longer needed since oro.nifti version 0.3.5
+  ## this is an SPM hack, as it uses funused1 as scaling factor:
+  ## if (dd@funused1 != 0) dd@.Data <- dd@.Data * dd@funused1
+  ## END HACK. Hope, typically funused is either 1 or 0!
+  ## no longer needed since oro.nifti version 0.3.5
       nslice <- dim(dd)[3]
       if (is.null(zind)) zind <- 1:nslice
       delta <- dd@pixdim[2:4]
@@ -238,10 +238,10 @@ readDWIdata <- function(gradient, dirlist,
 
     if (is.null(voxelext)) {
       if (length(delta) == 3) {
-	voxelext <- delta
+         voxelext <- delta
       } else {
-	voxelext <- c(1, 1, 1)
-	warning("readDWIdata: Could not find voxel size. Setting default.")
+         voxelext <- c(1, 1, 1)
+         warning("readDWIdata: Could not find voxel size. Setting default.")
       }
     } else {
       if (length(delta) == 3) {
@@ -252,9 +252,9 @@ readDWIdata <- function(gradient, dirlist,
 
     if (is.null(rotation)) {
       if (any(imageOrientationPatient != 0)) {
-	rotation <- imageOrientationPatient
+         rotation <- imageOrientationPatient
       } else {
-	rotation <- diag(3)
+         rotation <- diag(3)
       }
     } else {
       if (any(imageOrientationPatient != rotation)) {
@@ -277,18 +277,18 @@ readDWIdata <- function(gradient, dirlist,
       }
     } else {
       if (length(filelist) > 1) { # list of 3D files
-	if (first) { 
-	  ttt <- dd[xind, yind, zind]
-	  nttt <- dim(ttt)
-	  si <- numeric(nfiles * prod(nttt))
-	  dim(si) <- c(nttt, nfiles)
-	  si[ , , , 1] <- ttt
-	  first <- FALSE
-	} else {
-	  si[ , , , i] <- dd[xind, yind, zind]
-	}
+        if (first) { 
+          ttt <- dd[xind, yind, zind]
+          nttt <- dim(ttt)
+          si <- numeric(nfiles * prod(nttt))
+          dim(si) <- c(nttt, nfiles)
+          si[ , , , 1] <- ttt
+          first <- FALSE
+        } else {
+          si[ , , , i] <- dd[xind, yind, zind]
+        }
       } else { # this is a 4D file
-	si <- dd[xind, yind, zind,]
+        si <- dd[xind, yind, zind,]
       }
     }
   }
@@ -343,8 +343,8 @@ readDWIdata <- function(gradient, dirlist,
                 call        = args,
                 si          = si,
                 gradient    = gradient,
-				bvalue      = as.vector(bvalue),
-				btb         = sweep( create.designmatrix.dti(gradient), 2, bvalue, "*"),
+                bvalue      = as.vector(bvalue),
+                btb         = sweep( create.designmatrix.dti(gradient), 2, bvalue, "*"),
                 ngrad       = ngrad,
                 s0ind       = s0ind,
                 replind     = replind(gradient),

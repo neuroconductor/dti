@@ -3,10 +3,8 @@ dwiSqrtODF <- function(object,  ...) cat("No DWI Q-ball calculation defined for 
 
 setGeneric("dwiSqrtODF", function(object,  ...) standardGeneric("dwiSqrtODF"))
 
-setMethod("dwiSqrtODF","dtiData",function(object,what="sqrtODF",order=4,forder=1,lambda=0,D0=1.4e-3,tau=0.05){
-#  tau in seconds
+setMethod("dwiSqrtODF","dtiData",function(object,what="sqrtODF",order=4,forder=1,lambda=0,D0=1.4e-3){
 #  D_0 set to 1.4e-3 mm^2/s
-#  q as sqrt(b/4/tau)/pi
   if(is.null(D0)) D0 <- 1.4e-3
   args <- sys.call(-1)
   args <- c(object@call,args)

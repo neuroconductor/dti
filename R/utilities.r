@@ -232,7 +232,7 @@ setMethod("[","dtiData",function(x, i, j, k, drop=FALSE){
 subsetg <- function(x, ind){
   args <- sys.call(-1)
   args <- c(x@call,args)
-  if (missing(ind)) ind <- 1:ngrad
+  if (missing(ind)) ind <- 1:x@ngrad
   s0ind <- (1:length(ind))[ind%in%x@s0ind]  
   invisible(new("dtiData",
                 call   = args,
