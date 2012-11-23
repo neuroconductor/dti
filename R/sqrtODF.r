@@ -5,6 +5,7 @@ setGeneric("dwiSqrtODF", function(object,  ...) standardGeneric("dwiSqrtODF"))
 
 setMethod("dwiSqrtODF","dtiData",function(object,what="sqrtODF",order=4,forder=1,lambda=0,D0=1.4e-3){
 #  D_0 set to 1.4e-3 mm^2/s
+  cat("Nonnegative Definite EAP and ODF Estimation via a Unified Multi-Shell HARDI Reconstruction (Cheng et al, MICCAI 2012)\n This code is still experimental and not sufficiently testet\n")
   if(is.null(D0)) D0 <- 1.4e-3
   args <- sys.call(-1)
   args <- c(object@call,args)

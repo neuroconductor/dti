@@ -121,7 +121,8 @@ readDWIdata <- function(gradient, dirlist,
                         xind = NULL, yind = NULL, zind = NULL,
                         level = 0, mins0value = 0, maxvalue = 32000,
                         voxelext = NULL, orientation = c(0L, 2L, 5L), rotation = NULL,
-                        SPM = FALSE, verbose = FALSE) {
+#                        SPM = FALSE, 
+                        verbose = FALSE) {
 
   args <- list(sys.call())
 
@@ -218,7 +219,8 @@ readDWIdata <- function(gradient, dirlist,
       delta <- dd@pixdim[2:4]
       imageOrientationPatient <- t(matrix(c(dd@srow_x[1:3]/dd@pixdim[2:4], dd@srow_y[1:3]/dd@pixdim[2:4], dd@srow_z[1:3]/dd@pixdim[2:4]), 3, 3))
     } else if (format == "ANALYZE") {
-      dd <- readANALYZE(ff, SPM = SPM)
+      dd <- readANALYZE(ff)
+  #    dd <- readANALYZE(ff, SPM = SPM)
   ## this is an SPM hack, as it uses funused1 as scaling factor:
   ## if (dd@funused1 != 0) dd@.Data <- dd@.Data * dd@funused1
   ## END HACK. Hope, typically funused is either 1 or 0!
