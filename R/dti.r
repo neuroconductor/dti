@@ -140,7 +140,7 @@ setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="r
         th0[i] <- s0[i]
         rss[i] <- zz$value
         res[s0ind,i] <- 0
-        res[-s0ind,i] <- tensRres(zz$par,si[-s0ind,i],s0[i],grad[,-s0ind],mc.cores=mc.cores)
+        res[-s0ind,i] <- tensRres(zz$par,si[-s0ind,i],s0[i],grad[,-s0ind])
      }
      } else {
         zz <- pmatrix(si[,indD],pnltens,grad=grad[,-s0ind],s0ind=s0ind,
