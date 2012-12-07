@@ -11,7 +11,6 @@ awssigmc <- function(y,                 # data
                      lambda = 10,       # adaptation parameter for PS
                      h0 = 2,            # initial bandwidth for first step in PS
                      verbose = FALSE, 
-                     model = "chisq",   # use chi or chisq data (and corr. moments)
                      sequence = FALSE,  # return estimated sigma for intermediate steps of PS?
                      eps = 1e-5,        # accuracy for fixpoint iteration 
                      hadj = 1,          # adjust parameter for density() call for mode estimation
@@ -65,10 +64,10 @@ awssigmc <- function(y,                 # data
   ## define initial arrays for parameter estimates and sum of weights (see PS)
   th <- array( 1, ddim)
   ni <- array( 1, ddim)
-
+  y <- y/sigma # rescale to avoid passing sigma to awsvchi2
   ## use squared quantities for chisq method
-  if (model == "chisq") y <- y^2
-
+  y <- y^2
+    
   if (sequence) sigmas <- numeric(steps)
 
   ## iterate PS starting with bandwidth h0
@@ -91,7 +90,7 @@ awssigmc <- function(y,                 # data
                   th2 = double(n),
                   ni2 = double(n),
                   double(n),           # array to precompute lgamma
-                  as.double(sigma^2),
+#                  as.double(sigma^2),
                   as.double(h),
                   as.double(vext),
                   DUPL = FALSE,
@@ -102,8 +101,6 @@ awssigmc <- function(y,                 # data
     ind <- ni > mean(ni)
     cw <- z$ni2[ind]/ni[ind]^2
 
-    if (model == "chisq") {
-      
       th <- z$th
       m1 <- th[ind]
       mu <- pmax( 1/(1-cw)*(z$th2[ind]-m1^2), 0)
@@ -111,20 +108,12 @@ awssigmc <- function(y,                 # data
       indt <- m1^2 - mu*ncoils < 0
       s2 <- sqrt((m1-sqrt(pmax( 0, m1^2-mu*ncoils)))/p)
 
-    } else { # fixpoint equation
-
-      th <- z$th2
-      m1 <- z$th[ind]
-      indt <- th[ind]-m1^2<0
-      mu <- pmax(1/(1-cw)*(th[ind]-m1^2),0)
-      eta <- fixpetaL(ncoils, rep(1,sum(ind)), m1, mu, eps = eps, maxcount = 500)
-      s2 <- (m1/m1chiL( ncoils, eta))
-
-    }
-
     ## use the maximal mode of estimated local variance parameters, exclude largest values for better precision
-    dsigma <- density( s2[s2>0], n = 4092, adjust = hadj, to = min( max(s2[s2>0]), median(s2[s2>0])*5) )
-    sigma <- dsigma$x[dsigma$y == max(dsigma$y)][1]
+    dsigma <- density( sigma[sigma>0], n = 4092, adjust = hadj, to = min( max(sigma[sigma>0]), median(sigma[sigma>0])*5) )
+    sigmaf <- dsigma$x[dsigma$y == max(dsigma$y)][1]
+      th <- th/sigmaf
+      y <- y/sigmaf 
+      sigma <- sigma*sqrt(sigmaf)
 
     if (sequence) sigmas[i] <- sigma
 
@@ -137,17 +126,12 @@ awssigmc <- function(y,                 # data
   ## END PS iteration
 
   ## estimate parameter
-  eta <- sqrt(pmax( 0, th/sigma^2-2*ncoils)) 
+  eta <- sqrt(pmax( 0, th-2*ncoils)) 
   dim(eta) <- ddim
 
   ## this is the result
   invisible(list(sigma = if(sequence) sigmas else sigma,
-                 theta = eta*sigma, 
-                 ni = ni,
-                 ind = ind,
-                 s2 = s2,
-                 itrunc = indt,
-                 cw = cw))
+                 theta = eta*sigma))
 }
 
 

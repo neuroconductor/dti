@@ -10,7 +10,7 @@ dwi.smooth <- function(object, ...) cat("No DTI smoothing defined for this class
 
 setGeneric("dwi.smooth", function(object, ...) standardGeneric("dwi.smooth"))
 
-setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,ncoils=1,sigma=NULL,sigma2=NULL,level=NULL,minsb=5,vred=4,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE,dist=1,model="Chi2"){
+setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,ncoils=1,sigma=NULL,level=NULL,minsb=5,vred=4,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE,dist=1,model="Chi2"){
   args <- sys.call(-1)
   args <- c(object@call,args)
   sdcoef <- object@sdcoef
@@ -28,7 +28,16 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
   sigma <- median(sigma)
  cat("using median estimated sigma",sigma,"\n")
   }
-  model <- if(model=="Chi2") 1 else 0 
+  model <- switch(model,"Chi2"=1,"Chi"=0,"Gapprox"=2,1)
+#
+#  Chi2 uses approx of noncentral Chi^2 by rescaled central Chi^2 with adjusted DF 
+#        and smoothes Y^2
+#  Chi uses approx of noncentral Chi^2 by rescaled central Chi^2 with adjusted DF  
+#        and smoothes Y
+#   uses approximation of noncentral Chi by a Gaussian (with correct mean and variance)
+#        and smoothes Y
+
+#
   if(!(is.null(xind)&is.null(yind)&is.null(zind))){
   if(is.null(xind)) xind <- 1:object@ddim[1]
   if(is.null(yind)) yind <- 1:object@ddim[2]
@@ -55,6 +64,11 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
    }
    kappa0 <- suggestkappa(grad,vred,dist)$kappa
   }
+#
+#  rescale so that we have Chi-distributed values
+#
+  sb <- sb/sigma
+  s0 <- s0/sigma
   if(model==1){
 #
 #   use squared values for Chi^2
@@ -79,7 +93,8 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
   hseq <- hseq$h
 # make it nonrestrictive for the first step
   ni <- array(1,dim(sb))
-  z <- list(th=sb, ni = ni)
+  minlevel <- if(model==1) 2*ncoils*sigma else sqrt(2*ncoils)*sigma
+  z <- list(th=pmax(sb,minlevel), ni = ni)
   prt0 <- Sys.time()
   cat("adaptive smoothing in SE3, kstar=",kstar,if(verbose)"\n" else " ")
   kinit <- if(lambda<1e10) 1 else kstar
@@ -106,7 +121,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
                 as.integer(param$n),
                 th=single(prod(ddim)*ngrad),
                 single(prod(ddim)*ngrad),#ldf (to precompute lgamma)
-                as.double(sigma),
+#                as.double(sigma),
                 double(ngrad*mc.cores),
                 double(ngrad*mc.cores),
                 as.integer(model),
@@ -145,7 +160,7 @@ if(verbose){
                     as.integer(param$nstarts),
                     th0=double(prod(ddim)),
                     double(prod(ddim)),#ldf (to precompute lgamma)
-                    as.double(sigma),
+#                    as.double(sigma),
                     double(param$nstarts),#swi
                     as.integer(model),
                     DUPL=FALSE,
@@ -162,8 +177,11 @@ if(verbose){
   }
   ngrad <- ngrad+1
   si <- array(0,c(ddim,ngrad))
-  si[,,,1] <-  th0 
-  si[,,,-1] <- z$th
+#
+#  back to original scale
+#
+  si[,,,1] <-  th0*sigma
+  si[,,,-1] <- z$th*sigma
   object@si <- if(model==1) sqrt(si) else si
   object@gradient <- grad <- cbind(c(0,0,0),grad)
   object@bvalue <- c(0,object@bvalue[-object@s0ind])

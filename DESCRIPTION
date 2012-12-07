@@ -1,8 +1,8 @@
 Package: dti
-Version: 1.1-0 
+Version: 1.1-1 
 Date: 2012-11-23
 Title: Analysis of diffusion weighted imaging (DWI) data
-authors@R:c(person("Karsten","Tabelow",role=c("aut","cre"),email="karsten.tabelow@wias-berlin.de"), person("Joerg","Polzehl",role=c("aut"),email="joerg.polzehl@wias-berlin.de"))
+Authors@R:c(person("Karsten","Tabelow",role=c("aut","cre"),email="karsten.tabelow@wias-berlin.de"), person("Joerg","Polzehl",role=c("aut"),email="joerg.polzehl@wias-berlin.de"))
 Author: Karsten Tabelow <karsten.tabelow@wias-berlin.de>
         Joerg Polzehl <joerg.polzehl@wias-berlin.de>
 Maintainer: Karsten Tabelow <karsten.tabelow@wias-berlin.de>
