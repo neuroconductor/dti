@@ -34,7 +34,7 @@ setMethod("sdpar","dtiData",function(object,level=NULL,sdmethod="sd",interactive
     A1 <- quantile(s0[s0>0],.98)
   }
   if(interactive) {
-    par(mfrow=c(1,3),mar=c(3,3,3,1),mgp=c(2,1,0))
+    oldpar <- par( mfrow = c( 1, 3), mar = c( 3, 3, 3, 1), mgp = c( 2, 1, 0))
     img <- if(ls0ind>1) s0mean[,,(object@ddim[3]-1)%/%2+1] else s0[,,(object@ddim[3]-1)%/%2+1]
     maximg <- max(img)
     accept <- FALSE
@@ -83,6 +83,7 @@ setMethod("sdpar","dtiData",function(object,level=NULL,sdmethod="sd",interactive
         accept <- TRUE
       }
     }
+	par( oldpar)
   } else {
     if(is.null(level)){
     ddim <- object@ddim
