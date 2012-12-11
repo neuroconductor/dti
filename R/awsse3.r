@@ -50,7 +50,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
   ns0 <- length(s0ind)
   ngrad <- ngrad - ns0
   grad <- object@gradient[,-s0ind]
-  bvalues <- object@bvalues[-s0ind]
+  bvalues <- object@bvalue[-s0ind]
   multishell <- sd(bvalues) > mean(bvalues)/50
   if(multishell) msstructure <- getnext3g(grad,bvalues)
   sb <- object@si[,,,-s0ind]
@@ -138,6 +138,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
                 double(nshell*mc.cores),
                 DUPL=FALSE,
                 PACKAGE="dti")[c("ni","th")]
+       dim(z$th) <- c(ddim,ngrad)
        gc()
        } else {
        warning("not yet implemented for heterogenious variances\n
@@ -170,6 +171,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
                 as.integer(model),
                 DUPL=FALSE,
                 PACKAGE="dti")[c("ni","th")]
+       cat("Step completed\n")
        gc()
        } else {
        warning("not yet implemented for heterogenious variances\n
@@ -178,7 +180,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
        }
     }
 if(verbose){
-   dim(z$ni) <- c(prod(ddim),ngrad)
+   dim(z$ni)  <- c(prod(ddim),ngrad)
    cat("k:",k,"h_k:",signif(max(hakt),3)," quartiles of ni",signif(quantile(z$ni[mask,]),3),
   "mean of ni",signif(mean(z$ni[mask,]),3),
   " time elapsed:",format(difftime(Sys.time(),prt0),digits=3),"\n")

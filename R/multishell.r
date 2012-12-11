@@ -84,22 +84,23 @@ mstheta
 lkfullse3msh <- function(h,kappa,gradstats,vext,n){
     nbv <- gradstats$nbv
     dist <- gradstats$dist
-    h <- vr <- matrix(0,ngrad,kstar)
+    ngrad <- gradstats$ngrad
     bvind <- gradstats$bvind
     ind <- matrix(0,5,n)
+    w <- numeric(n)
     nn <- 0
     for(i in 1:nbv){
-      gshell <- list(k456=gradstats$k456[[i]],dist=dist) 
-      z <- lkfullse3(h[bvind],kappa[bvind],gshell,vext,n)
+      gshell <- list(k456=gradstats$k456[[i]],bghat=gradstats$bghat[[i]],dist=dist) 
+      z <- lkfullse3(h[bvind[[i]]],kappa[bvind[[i]]],gshell,vext,n)
       ind[1:3,nn+1:z$nind] <- z$ind[1:3,]
-      ind[4:5,nn+1:z$nind] <- bvind[z$ind[4:5,]] 
+      ind[4:5,nn+1:z$nind] <- matrix(bvind[[i]][z$ind[4:5,]],2, z$nind)
 #
 #  convert indeces on selected shell to total indeces
 #
       w[nn+1:z$nind] <- z$w
       nn <- nn + z$nind
     }  
-list(h=h,kappa=kappa,ind=ind,w=w,nind=nn)
+list(h=h,kappa=kappa,ind=ind[,1:nn],w=w,nind=nn)
 }
 
 gethseqfullse3msh <-
@@ -111,10 +112,11 @@ function (kstar, gradstats, kappa=NULL, vext = c(1, 1))
 #
     nbv <- gradstats$nbv
     dist <- gradstats$dist
+    ngrad <- gradstats$ngrad
     h <- vr <- matrix(0,ngrad,kstar)
     n <- 0
     for(i in 1:nbv){
-       gshell <- list(k456=gradstats$k456[[i]],dist=dist)
+       gshell <- list(k456=gradstats$k456[[i]],bghat=gradstats$bghat[[i]],dist=dist)
        z <- gethseqfullse3(kstar, gshell, kappa=kappa, vext=vext)
        h[gradstats$bvind[[i]],] <- z$h
        vr[gradstats$bvind[[i]],] <- z$vred

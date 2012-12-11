@@ -386,18 +386,19 @@ C
       integer omp_get_thread_num
       real*8 kldisnc1
       external kldisnc1,omp_get_thread_num
-      nii=1.d0
       df=2.d0*ncoils
       a = -0.356536d0+0.003803d0*ncoils-0.701591d0*sqrt(.5*df)
       b = -0.059703d0+0.029093d0*ncoils+0.098401d0*sqrt(.5*df)
+      nii=1.d0
+      si=0.d0
 C just to prevent a compiler warning
 C  precompute values of lgamma(corrected df/2) in each voxel
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(n1,n2,n3,ngrad,ncores,mask,y,thn,ni,ldf,th,w,sw,swy,
 C$OMP& ind,ncoils,model,df,n,lambda)
-C$OMP& FIRSTPRIVATE(a,b)
-C$OMP& PRIVATE(iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,z,thi,nii,thj,
-C$OMP& ldfi,ldfj,dgfi,fici,lgfi,si)
+C$OMP& FIRSTPRIVATE(a,b,nii,si)
+C$OMP& PRIVATE(iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,z,thi,thj,
+C$OMP& ldfi,ldfj,dgfi,fici,lgfi)
 C$OMP DO SCHEDULE(GUIDED)
       DO iind=1,n1*n2*n3
          if(model.lt.2) THEN
@@ -564,8 +565,8 @@ C  precompute values of lgamma(corrected df/2) in each voxel
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(n1,n2,n3,ngrad,ncores,mask,y,thn,ni,th,w,sw,swy,
 C$OMP& ind,ncoils,df,n,lambda,ns,thi,si)
-C$OMP& FIRSTPRIVATE(a,b)
-C$OMP& PRIVATE(iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,z,nii,thj,sz)
+C$OMP& FIRSTPRIVATE(a,b,nii)
+C$OMP& PRIVATE(iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,z,thj,sz)
 C$OMP DO SCHEDULE(GUIDED)
       DO iind=1,n1*n2*n3
          thrednr = omp_get_thread_num()+1
@@ -576,98 +577,98 @@ C returns value in 0:(ncores-1)
          if(i2.eq.0) i2=n2
          i3=(iind-i1-(i2-1)*n1)/n1/n2+1         
          if(.not.mask(i1,i2,i3)) CYCLE
-            DO i4=1,ngrad
-                  sw(i4,thrednr)=0.d0
-                  swy(i4,thrednr)=0.d0
-               END DO
-               i4=0
-               DO i=1,n
-                  if(ind(4,i).ne.i4) THEN
+         DO i4=1,ngrad
+            sw(i4,thrednr)=0.d0
+            swy(i4,thrednr)=0.d0
+         END DO
+         i4=0
+         DO i=1,n
+            if(ind(4,i).ne.i4) THEN
 C   by construction ind(4,.) should have same values consequtively
-                     i4 = ind(4,i)
-                     DO k=1,ns
-                        z = th(k,i1,i2,i3,i4)
-                        thi(k,thrednr) = z
-                        z = (z+a)**1.5d0
-                        z = (z/(z+b))
-                        si(k,thrednr) = z*z
-                     END DO
-                     nii = ni(i1,i2,i3,i4)/lambda/2.d0
-                  END IF
-                  j1=i1+ind(1,i)
-                  if(j1.le.0.or.j1.gt.n1) CYCLE
-                  j2=i2+ind(2,i)
-                  if(j2.le.0.or.j2.gt.n2) CYCLE
-                  j3=i3+ind(3,i)
-                  if(j3.le.0.or.j3.gt.n3) CYCLE
-                  if(.not.mask(j1,j2,j3)) CYCLE          
-                  j4=ind(5,i)
+               i4 = ind(4,i)
+               DO k=1,ns
+                  z = th(k,i1,i2,i3,i4)
+                  thi(k,thrednr) = z
+                  z = (z+a)**1.5d0
+                  z = (z/(z+b))
+                  si(k,thrednr) = z*z
+               END DO
+               nii = ni(i1,i2,i3,i4)/lambda/2.d0
+            END IF
+            j1=i1+ind(1,i)
+            if(j1.le.0.or.j1.gt.n1) CYCLE
+            j2=i2+ind(2,i)
+            if(j2.le.0.or.j2.gt.n2) CYCLE
+            j3=i3+ind(3,i)
+            if(j3.le.0.or.j3.gt.n3) CYCLE
+            if(.not.mask(j1,j2,j3)) CYCLE          
+            j4=ind(5,i)
 C adaptation 
-                  if(lambda.lt.1d10) THEN
-                     sz=0.d0
-                     DO k=1,ns
-                        thj=th(k,j1,j2,j3,j4)
-                        z=(thi(k,thrednr)-thj)/si(k,thrednr)
-                        sz=sz+z*z
-                     END DO
-                     z=nii*sz
-C  do not adapt on the sphere !!! 
-                  ELSE
-                     z=0.d0
-                  END IF
-                  if(z.ge.1.d0) CYCLE
-                  z=w(i)*min(1.d0,2.d0-2.d0*z)
-                  sw(i4,thrednr)=sw(i4,thrednr)+z
-                  swy(i4,thrednr)=swy(i4,thrednr)+z*y(j1,j2,j3,j4)
+            if(lambda.lt.1d10) THEN
+               sz=0.d0
+               DO k=1,ns
+                  thj=th(k,j1,j2,j3,j4)
+                  z=(thi(k,thrednr)-thj)/si(k,thrednr)
+                  sz=sz+z*z
                END DO
+               z=nii*sz
+C  do not adapt on the sphere !!! 
+            ELSE
+               z=0.d0
+            END IF
+            if(z.ge.1.d0) CYCLE
+            z=w(i)*min(1.d0,2.d0-2.d0*z)
+            sw(i4,thrednr)=sw(i4,thrednr)+z
+            swy(i4,thrednr)=swy(i4,thrednr)+z*y(j1,j2,j3,j4)
+         END DO
 C  now opposite directions
-               DO i=1,n
-                  if(ind(1,i).eq.0) CYCLE
-                  if(ind(4,i).ne.i4) THEN
+         DO i=1,n
+            if(ind(1,i).eq.0) CYCLE
+            if(ind(4,i).ne.i4) THEN
 C   by construction ind(4,.) should have same values consequtively
-                     i4 = ind(4,i)
-                     DO k=1,ns
-                        z = th(k,i1,i2,i3,i4)
-                        thi(k,thrednr) = z
-                        z = (z+a)**1.5d0
-                        z = (z/(z+b))
-                        si(k,thrednr) = z*z
-                     END DO
-                     nii = ni(i1,i2,i3,i4)/lambda/2.d0
-                  END IF
+               i4 = ind(4,i)
+               DO k=1,ns
+                  z = th(k,i1,i2,i3,i4)
+                  thi(k,thrednr) = z
+                  z = (z+a)**1.5d0
+                  z = (z/(z+b))
+                  si(k,thrednr) = z*z
+               END DO
+               nii = ni(i1,i2,i3,i4)/lambda/2.d0
+            END IF
 C
 C   handle case j1-i1 < 0 which is not contained in ind 
 C   using axial symmetry
 C
-                  j1=i1-ind(1,i)
-                  if(j1.le.0.or.j1.gt.n1) CYCLE
-                  j2=i2-ind(2,i)
-                  if(j2.le.0.or.j2.gt.n2) CYCLE
-                  j3=i3-ind(3,i)
-                  if(j3.le.0.or.j3.gt.n3) CYCLE
-                  if(.not.mask(j1,j2,j3)) CYCLE          
-                  j4=ind(5,i)
-                  if(lambda.lt.1d10) THEN
-                     sz=0.d0
-                     DO k=1,ns
-                        thj=th(k,j1,j2,j3,j4)
-                        z=(thi(k,thrednr)-thj)/si(k,thrednr)
-                        sz=sz+z*z
-                     END DO
-                     z=nii*sz
+            j1=i1-ind(1,i)
+            if(j1.le.0.or.j1.gt.n1) CYCLE
+            j2=i2-ind(2,i)
+            if(j2.le.0.or.j2.gt.n2) CYCLE
+            j3=i3-ind(3,i)
+            if(j3.le.0.or.j3.gt.n3) CYCLE
+            if(.not.mask(j1,j2,j3)) CYCLE          
+            j4=ind(5,i)
+            if(lambda.lt.1d10) THEN
+               sz=0.d0
+               DO k=1,ns
+                  thj=th(k,j1,j2,j3,j4)
+                  z=(thi(k,thrednr)-thj)/si(k,thrednr)
+                  sz=sz+z*z
+               END DO
+               z=nii*sz
 C  do not adapt on the sphere !!! 
-                  ELSE
-                     z=0.d0
-                  END IF
-                  if(z.ge.1.d0) CYCLE
-                  z=w(i)*min(1.d0,2.d0-2.d0*z)
-                  sw(i4,thrednr)=sw(i4,thrednr)+z
-                  swy(i4,thrednr)=swy(i4,thrednr)+z*y(j1,j2,j3,j4)
-               END DO
-               DO i4=1,ngrad
-                  thn(i1,i2,i3,i4) = swy(i4,thrednr)/sw(i4,thrednr)
-                  ni(i1,i2,i3,i4) = sw(i4,thrednr)
-               END DO
+            ELSE
+               z=0.d0
+            END IF
+            if(z.ge.1.d0) CYCLE
+            z=w(i)*min(1.d0,2.d0-2.d0*z)
+            sw(i4,thrednr)=sw(i4,thrednr)+z
+            swy(i4,thrednr)=swy(i4,thrednr)+z*y(j1,j2,j3,j4)
+         END DO
+         DO i4=1,ngrad
+            thn(i1,i2,i3,i4) = swy(i4,thrednr)/sw(i4,thrednr)
+            ni(i1,i2,i3,i4) = sw(i4,thrednr)
+         END DO
       END DO
 C$OMP END DO NOWAIT
 C$OMP END PARALLEL
@@ -701,14 +702,15 @@ C
          END DO
          swi(i0)=swi(i0)/(starts(i0+1)-starts(i0))
       END DO
+      si = 0.d0
       a = -0.356536d0+0.003803d0*ncoils-0.701591d0*sqrt(.5*df)
       b = -0.059703d0+0.029093d0*ncoils+0.098401d0*sqrt(.5*df)
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(n1,n2,n3,nn,ncoils,mask,y,th,ni,thn,ind,ldf,n,nstarts,
 C$OMP& starts,w,swi,df)
-C$OMP& FIRSTPRIVATE(ns0,model,lambda,a,b)
+C$OMP& FIRSTPRIVATE(ns0,model,lambda,a,b,si)
 C$OMP& PRIVATE(sw0,swy0,i,i0,i1,i2,i3,j1,j2,j3,l1,l2,l3,z,lgfi,dgfi,
-C$OMP& ldfi,fici,ns0sc,si)
+C$OMP& ldfi,fici,ns0sc)
 C$OMP DO SCHEDULE(GUIDED)
       DO i=1,nn
 C      DO i1=1,n1
@@ -731,83 +733,77 @@ C$OMP END DO
 C$OMP BARRIER
 C$OMP DO SCHEDULE(GUIDED)
       DO i=1,nn
-C      DO i1=1,n1
-C         DO i2=1,n2
-C            DO i3=1,n3
          i1=mod(i,n1)
          if(i1.eq.0) i1=n1
          i2=mod((i-i1)/n1+1,n2)
          if(i2.eq.0) i2=n2
          i3=(i-i1-(i2-1)*n1)/n1/n2+1         
-               if(.not.mask(i1,i2,i3)) CYCLE
-               sw0=0.d0
-               swy0=0.d0
-               ns0sc = ns0*lambda/ni(i)
-               IF(model.eq.2) THEN
-                  si = (th(i1,i2,i3)+a)**1.5d0
-                  si = (si/(si+b))
-                  si = si*si
-               ELSE
-                  call ncstats0(th(i1,i2,i3),ldf(i1,i2,i3),df,
+         if(.not.mask(i1,i2,i3)) CYCLE
+         sw0=0.d0
+         swy0=0.d0
+         ns0sc = ns0*lambda/ni(i)
+         IF(model.eq.2) THEN
+            si = (th(i1,i2,i3)+a)**1.5d0
+            si = (si/(si+b))
+            si = si*si
+         ELSE
+            call ncstats0(th(i1,i2,i3),ldf(i1,i2,i3),df,
      1                       model,lgfi,dgfi,fici)
-               END IF
-               DO i0=1,nstarts
-                  l1=ind(1,1+starts(i0))
-                  j1=i1+l1
-                  if(j1.le.0.or.j1.gt.n1) CYCLE
-                  l2=ind(2,1+starts(i0))
-                  j2=i2+l2
-                  if(j2.le.0.or.j2.gt.n2) CYCLE
-                  l3=ind(3,1+starts(i0))
-                  j3=i3+l3
-                  if(j3.le.0.or.j3.gt.n3) CYCLE
-                  if(.not.mask(j1,j2,j3)) CYCLE
-                  if(model.eq.2) THEN
-                     z=(th(i1,i2,i3)-th(j1,j2,j3))/si
-                     z=ns0**z*z
-                  ELSE
-                     z=ns0*kldisnc1(lgfi,dgfi,fici,th(j1,j2,j3),
-     1                            ldf(j1,j2,j3),df,model)
-                  END IF
-                  if(z.ge.ns0sc) CYCLE
-                  if(z.lt.ns0sc) THEN
-                     z=swi(i0)*min(1.d0,2.d0-2.d0*z/ns0sc)
-                     sw0=sw0+z
-                     swy0=swy0+z*y(j1,j2,j3)
-                  END IF
-               END DO
-               DO i0=1,nstarts
-                  l1=ind(1,1+starts(i0))
-                  if(l1.eq.0) CYCLE
+         END IF
+         DO i0=1,nstarts
+            l1=ind(1,1+starts(i0))
+            j1=i1+l1
+            if(j1.le.0.or.j1.gt.n1) CYCLE
+            l2=ind(2,1+starts(i0))
+            j2=i2+l2
+            if(j2.le.0.or.j2.gt.n2) CYCLE
+            l3=ind(3,1+starts(i0))
+            j3=i3+l3
+            if(j3.le.0.or.j3.gt.n3) CYCLE
+            if(.not.mask(j1,j2,j3)) CYCLE
+            if(model.eq.2) THEN
+               z=(th(i1,i2,i3)-th(j1,j2,j3))/si
+               z=ns0*z*z
+            ELSE
+               z=ns0*kldisnc1(lgfi,dgfi,fici,th(j1,j2,j3),
+     1                        ldf(j1,j2,j3),df,model)
+            END IF
+            if(z.ge.ns0sc) CYCLE
+            if(z.lt.ns0sc) THEN
+               z=swi(i0)*min(1.d0,2.d0-2.d0*z/ns0sc)
+               sw0=sw0+z
+               swy0=swy0+z*y(j1,j2,j3)
+            END IF
+         END DO
+         DO i0=1,nstarts
+            l1=ind(1,1+starts(i0))
+            if(l1.eq.0) CYCLE
 C  this part for negative l1 only (opposite directions)
-                  j1=i1-l1
-                  if(j1.le.0.or.j1.gt.n1) CYCLE
-                  l2=ind(2,1+starts(i0))
-                  j2=i2-l2
-                  if(j2.le.0.or.j2.gt.n2) CYCLE
-                  l3=ind(3,1+starts(i0))
-                  j3=i3-l3
-                  if(j3.le.0.or.j3.gt.n3) CYCLE
-                  if(.not.mask(j1,j2,j3)) CYCLE
-                  if(model.eq.2) THEN
-                     z=(th(i1,i2,i3)-th(j1,j2,j3))/si
-                     z=ns0**z*z
-                  ELSE
-                     z=ns0*kldisnc1(lgfi,dgfi,fici,th(j1,j2,j3),
-     1                            ldf(j1,j2,j3),df,model)
-                  END IF
-                  if(z.ge.ns0sc) CYCLE
-                  if(z.lt.ns0sc) THEN
-                     z=swi(i0)*min(1.d0,2.d0-2.d0*z/ns0sc)
-                     sw0=sw0+z
-                     swy0=swy0+z*y(j1,j2,j3)
-                  END IF
-               END DO
-               thn(i) = swy0/sw0
-               ni(i) = sw0
-C               call rchkusr()
-C            END DO
-C         END DO
+            j1=i1-l1
+            if(j1.le.0.or.j1.gt.n1) CYCLE
+            l2=ind(2,1+starts(i0))
+            j2=i2-l2
+            if(j2.le.0.or.j2.gt.n2) CYCLE
+            l3=ind(3,1+starts(i0))
+            j3=i3-l3
+            if(j3.le.0.or.j3.gt.n3) CYCLE
+            if(.not.mask(j1,j2,j3)) CYCLE
+            if(model.eq.2) THEN
+               z=(th(i1,i2,i3)-th(j1,j2,j3))/si
+               z=ns0*z*z
+            ELSE
+               z=ns0*kldisnc1(lgfi,dgfi,fici,th(j1,j2,j3),
+     1         ldf(j1,j2,j3),df,model)
+            END IF
+            if(z.ge.ns0sc) CYCLE
+            if(z.lt.ns0sc) THEN
+               z=swi(i0)*min(1.d0,2.d0-2.d0*z/ns0sc)
+               sw0=sw0+z
+               swy0=swy0+z*y(j1,j2,j3)
+            END IF
+         END DO
+         thn(i) = swy0/sw0
+         ni(i) = sw0
       END DO
 C$OMP END DO NOWAIT
 C$OMP END PARALLEL
