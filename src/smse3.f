@@ -400,25 +400,20 @@ C$OMP& PRIVATE(iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,z,thi,nii,thj,
 C$OMP& ldfi,ldfj,dgfi,fici,lgfi,si)
 C$OMP DO SCHEDULE(GUIDED)
       DO iind=1,n1*n2*n3
-         i1=mod(iind,n1)
-         if(i1.eq.0) i1=n1
-         i2=mod((iind-i1)/n1+1,n2)
-         if(i2.eq.0) i2=n2
-         i3=(iind-i1-(i2-1)*n1)/n1/n2+1
-         if(.not.mask(i1,i2,i3)) CYCLE
-C      DO i1=1,n1
-C         DO i2=1,n2
-C            DO i3=1,n3
          if(model.lt.2) THEN
+            i1=mod(iind,n1)
+            if(i1.eq.0) i1=n1
+            i2=mod((iind-i1)/n1+1,n2)
+            if(i2.eq.0) i2=n2
+            i3=(iind-i1-(i2-1)*n1)/n1/n2+1
+            if(.not.mask(i1,i2,i3)) CYCLE
 C  not needed for Gauss approximation
-               DO i4=1,ngrad
-                  thi=th(i1,i2,i3,i4)
-                  call lgstats(thi,df,model,ldfi)
-                  ldf(i1,i2,i3,i4)=ldfi
-               END DO
+            DO i4=1,ngrad
+               thi=th(i1,i2,i3,i4)
+               call lgstats(thi,df,model,ldfi)
+               ldf(i1,i2,i3,i4)=ldfi
+            END DO
          END IF
-C            END DO
-C         END DO
       END DO
 C$OMP END DO 
 C$OMP BARRIER
@@ -431,11 +426,157 @@ C returns value in 0:(ncores-1)
          i2=mod((iind-i1)/n1+1,n2)
          if(i2.eq.0) i2=n2
          i3=(iind-i1-(i2-1)*n1)/n1/n2+1         
-C      DO i1=1,n1
-C         DO i2=1,n2
-C            DO i3=1,n3
-               if(.not.mask(i1,i2,i3)) CYCLE
-               DO i4=1,ngrad
+         if(.not.mask(i1,i2,i3)) CYCLE
+         DO i4=1,ngrad
+            sw(i4,thrednr)=0.d0
+            swy(i4,thrednr)=0.d0
+         END DO
+         i4=0
+         DO i=1,n
+            if(ind(4,i).ne.i4) THEN
+C   by construction ind(4,.) should have same values consequtively
+               i4 = ind(4,i)
+               thi = th(i1,i2,i3,i4)
+               IF(model.eq.2) THEN
+                  si = (thi+a)**1.5d0
+                  si = (si/(si+b))
+                  si = si*si
+                  nii = ni(i1,i2,i3,i4)/lambda/2.d0
+               ELSE
+                  ldfi=ldf(i1,i2,i3,i4)
+                  call ncstats0(thi,ldfi,df,model,lgfi,dgfi,fici)
+                  nii = ni(i1,i2,i3,i4)/lambda
+               END IF
+            END IF
+            j1=i1+ind(1,i)
+            if(j1.le.0.or.j1.gt.n1) CYCLE
+            j2=i2+ind(2,i)
+            if(j2.le.0.or.j2.gt.n2) CYCLE
+            j3=i3+ind(3,i)
+            if(j3.le.0.or.j3.gt.n3) CYCLE
+            if(.not.mask(j1,j2,j3)) CYCLE          
+            j4=ind(5,i)
+C adaptation 
+            if(lambda.lt.1d10) THEN
+               thj=th(j1,j2,j3,j4)
+               if(model.eq.2) THEN
+                  z=(thi-thj)/si
+                  z=nii*z*z
+               ELSE
+                  ldfj=ldf(j1,j2,j3,j4)
+                  z=nii*kldisnc1(lgfi,dgfi,fici,thj,ldfj,df,model)
+               END IF
+C  do not adapt on the sphere !!! 
+            ELSE
+            z=0.d0
+            END IF
+            if(z.ge.1.d0) CYCLE
+            z=w(i)*min(1.d0,2.d0-2.d0*z)
+            sw(i4,thrednr)=sw(i4,thrednr)+z
+            swy(i4,thrednr)=swy(i4,thrednr)+z*y(j1,j2,j3,j4)
+         END DO
+C  now opposite directions
+         DO i=1,n
+            if(ind(1,i).eq.0) CYCLE
+            if(ind(4,i).ne.i4) THEN
+C   by construction ind(4,.) should have same values consequtively
+               i4 = ind(4,i)
+               thi = th(i1,i2,i3,i4)
+               IF(model.eq.2) THEN
+                  si = (thi+a)**1.5d0
+                  si = (si/(si+b))
+                  si = si*si
+                  nii = ni(i1,i2,i3,i4)/lambda/2.d0
+               ELSE
+                  ldfi=ldf(i1,i2,i3,i4)
+                  call ncstats0(thi,ldfi,df,model,lgfi,dgfi,fici)
+                  nii = ni(i1,i2,i3,i4)/lambda
+               END IF
+            END IF
+C
+C   handle case j1-i1 < 0 which is not contained in ind 
+C   using axial symmetry
+C
+            j1=i1-ind(1,i)
+            if(j1.le.0.or.j1.gt.n1) CYCLE
+            j2=i2-ind(2,i)
+            if(j2.le.0.or.j2.gt.n2) CYCLE
+            j3=i3-ind(3,i)
+            if(j3.le.0.or.j3.gt.n3) CYCLE
+            if(.not.mask(j1,j2,j3)) CYCLE          
+            j4=ind(5,i)
+            if(lambda.lt.1d10) THEN
+               thj=th(j1,j2,j3,j4)
+               if(model.eq.2) THEN
+                  z=(thi-thj)/si
+                  z=nii*z*z
+               ELSE
+                  ldfj=ldf(j1,j2,j3,j4)
+                  z=nii*kldisnc1(lgfi,dgfi,fici,thj,ldfj,df,model)
+               END IF
+C  do not adapt on the sphere !!! 
+            ELSE
+               z=0.d0
+            END IF
+            if(z.ge.1.d0) CYCLE
+            z=w(i)*min(1.d0,2.d0-2.d0*z)
+            sw(i4,thrednr)=sw(i4,thrednr)+z
+            swy(i4,thrednr)=swy(i4,thrednr)+z*y(j1,j2,j3,j4)
+         END DO
+         DO i4=1,ngrad
+            thn(i1,i2,i3,i4) = swy(i4,thrednr)/sw(i4,thrednr)
+            ni(i1,i2,i3,i4) = sw(i4,thrednr)
+         END DO
+      END DO
+C$OMP END DO NOWAIT
+C$OMP END PARALLEL
+C$OMP FLUSH(thn,ni)
+      RETURN
+      END
+      subroutine adsmse3m(y,th,ni,mask,ns,n1,n2,n3,ngrad,lambda,
+     1                    ncoils,ncores,ind,w,n,thn,sw,swy,si,thi)
+C   
+C  Multi-shell version (differs in dimension of th 
+C  KL-distance based on all spheres and Gauss-approximation only
+C
+C   perform adaptive smoothing on SE(3) 
+C   ind(.,i) contains coordinate indormation corresponding to positive
+C   location weights in w(i)
+C   ind(.,i)[1:5] are j1-i1,j2-i2,j3-i3, i4 and j4 respectively 
+C
+      implicit logical (a-z)
+      integer ns,n1,n2,n3,ngrad,n,ind(5,n),ncoils,ncores
+      logical mask(n1,n2,n3)
+      real y(n1,n2,n3,ngrad),thn(n1,n2,n3,ngrad),ni(n1,n2,n3,ngrad),
+     1     th(ns,n1,n2,n3,ngrad)
+      real*8 lambda,w(n),sw(ngrad,ncores),swy(ngrad,ncores),df
+      integer iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,k
+      real*8 sz,z,nii,thj,a,b,si(ns,ncores),thi(ns,ncores)
+      integer omp_get_thread_num
+      real*8 kldisnc1
+      external kldisnc1,omp_get_thread_num
+      nii=1.d0
+      df=2.d0*ncoils
+      a = -0.356536d0+0.003803d0*ncoils-0.701591d0*sqrt(.5*df)
+      b = -0.059703d0+0.029093d0*ncoils+0.098401d0*sqrt(.5*df)
+C just to prevent a compiler warning
+C  precompute values of lgamma(corrected df/2) in each voxel
+C$OMP PARALLEL DEFAULT(NONE)
+C$OMP& SHARED(n1,n2,n3,ngrad,ncores,mask,y,thn,ni,th,w,sw,swy,
+C$OMP& ind,ncoils,df,n,lambda,ns,thi,si)
+C$OMP& FIRSTPRIVATE(a,b)
+C$OMP& PRIVATE(iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,z,nii,thj,sz)
+C$OMP DO SCHEDULE(GUIDED)
+      DO iind=1,n1*n2*n3
+         thrednr = omp_get_thread_num()+1
+C returns value in 0:(ncores-1)
+         i1=mod(iind,n1)
+         if(i1.eq.0) i1=n1
+         i2=mod((iind-i1)/n1+1,n2)
+         if(i2.eq.0) i2=n2
+         i3=(iind-i1-(i2-1)*n1)/n1/n2+1         
+         if(.not.mask(i1,i2,i3)) CYCLE
+            DO i4=1,ngrad
                   sw(i4,thrednr)=0.d0
                   swy(i4,thrednr)=0.d0
                END DO
@@ -444,16 +585,14 @@ C            DO i3=1,n3
                   if(ind(4,i).ne.i4) THEN
 C   by construction ind(4,.) should have same values consequtively
                      i4 = ind(4,i)
-                     thi = th(i1,i2,i3,i4)
-                     IF(model.eq.2) THEN
-                        si = (thi+a)**1.5d0
-                        si = (si/(si+b))
-                        si = si*si
-                     ELSE
-                        ldfi=ldf(i1,i2,i3,i4)
-                       call ncstats0(thi,ldfi,df,model,lgfi,dgfi,fici)
-                     END IF
-                     nii = ni(i1,i2,i3,i4)/lambda
+                     DO k=1,ns
+                        z = th(k,i1,i2,i3,i4)
+                        thi(k,thrednr) = z
+                        z = (z+a)**1.5d0
+                        z = (z/(z+b))
+                        si(k,thrednr) = z*z
+                     END DO
+                     nii = ni(i1,i2,i3,i4)/lambda/2.d0
                   END IF
                   j1=i1+ind(1,i)
                   if(j1.le.0.or.j1.gt.n1) CYCLE
@@ -465,15 +604,13 @@ C   by construction ind(4,.) should have same values consequtively
                   j4=ind(5,i)
 C adaptation 
                   if(lambda.lt.1d10) THEN
-                     thj=th(j1,j2,j3,j4)
-                     if(model.eq.2) THEN
-                        z=(thi-thj)/si
-                        z=nii*z*z
-                     ELSE
-                        ldfj=ldf(j1,j2,j3,j4)
-                        z=nii*kldisnc1(lgfi,dgfi,fici,thj,
-     1                              ldfj,df,model)
-                     END IF
+                     sz=0.d0
+                     DO k=1,ns
+                        thj=th(k,j1,j2,j3,j4)
+                        z=(thi(k,thrednr)-thj)/si(k,thrednr)
+                        sz=sz+z*z
+                     END DO
+                     z=nii*sz
 C  do not adapt on the sphere !!! 
                   ELSE
                      z=0.d0
@@ -489,16 +626,14 @@ C  now opposite directions
                   if(ind(4,i).ne.i4) THEN
 C   by construction ind(4,.) should have same values consequtively
                      i4 = ind(4,i)
-                     thi = th(i1,i2,i3,i4)
-                     IF(model.eq.2) THEN
-                        si = (thi+a)**1.5d0
-                        si = (si/(si+b))
-                        si = si*si
-                     ELSE
-                        ldfi=ldf(i1,i2,i3,i4)
-                       call ncstats0(thi,ldfi,df,model,lgfi,dgfi,fici)
-                     END IF
-                     nii = ni(i1,i2,i3,i4)/lambda
+                     DO k=1,ns
+                        z = th(k,i1,i2,i3,i4)
+                        thi(k,thrednr) = z
+                        z = (z+a)**1.5d0
+                        z = (z/(z+b))
+                        si(k,thrednr) = z*z
+                     END DO
+                     nii = ni(i1,i2,i3,i4)/lambda/2.d0
                   END IF
 C
 C   handle case j1-i1 < 0 which is not contained in ind 
@@ -513,15 +648,13 @@ C
                   if(.not.mask(j1,j2,j3)) CYCLE          
                   j4=ind(5,i)
                   if(lambda.lt.1d10) THEN
-                     thj=th(j1,j2,j3,j4)
-                     if(model.eq.2) THEN
-                        z=(thi-thj)/si
-                        z=nii*z*z
-                     ELSE
-                        ldfj=ldf(j1,j2,j3,j4)
-                        z=nii*kldisnc1(lgfi,dgfi,fici,thj,
-     1                              ldfj,df,model)
-                     END IF
+                     sz=0.d0
+                     DO k=1,ns
+                        thj=th(k,j1,j2,j3,j4)
+                        z=(thi(k,thrednr)-thj)/si(k,thrednr)
+                        sz=sz+z*z
+                     END DO
+                     z=nii*sz
 C  do not adapt on the sphere !!! 
                   ELSE
                      z=0.d0
@@ -535,9 +668,6 @@ C  do not adapt on the sphere !!!
                   thn(i1,i2,i3,i4) = swy(i4,thrednr)/sw(i4,thrednr)
                   ni(i1,i2,i3,i4) = sw(i4,thrednr)
                END DO
-C               call rchkusr()
-C            END DO
-C         END DO
       END DO
 C$OMP END DO NOWAIT
 C$OMP END PARALLEL

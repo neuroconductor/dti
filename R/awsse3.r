@@ -50,6 +50,9 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
   ns0 <- length(s0ind)
   ngrad <- ngrad - ns0
   grad <- object@gradient[,-s0ind]
+  bvalues <- object@bvalues[-s0ind]
+  multishell <- sd(bvalues) > mean(bvalues)/50
+  if(multishell) msstructure <- getnext3g(grad,bvalues)
   sb <- object@si[,,,-s0ind]
   s0 <- object@si[,,,s0ind]
   if(is.null(kappa0)){
@@ -86,8 +89,13 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
      ni0 <- array(1,ddim)
   mask <- apply(sb,1:3,mean) > minsb
   masksb <- array(mask,c(ddim,ngrad))
-  gradstats <- getkappas(grad,dist=dist)
-  hseq <- gethseqfullse3(kstar,gradstats,kappa0,vext=vext)
+  if(multishell){
+     gradstats <- getkappasmsh(grad, msstructure,dist=dist)
+     hseq <- gethseqfullse3msh(kstar,gradstats,kappa0,vext=vext)
+  } else {
+     gradstats <- getkappas(grad,dist=dist)
+     hseq <- gethseqfullse3(kstar,gradstats,kappa0,vext=vext)
+  }
   kappa <- hseq$kappa
   nind <- hseq$n
   hseq <- hseq$h
@@ -99,12 +107,47 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
   cat("adaptive smoothing in SE3, kstar=",kstar,if(verbose)"\n" else " ")
   kinit <- if(lambda<1e10) 1 else kstar
   mc.cores <- setCores(,reprt=FALSE)
+  nshell <- msstructure$nbv
   for(k in kinit:kstar){
     gc()
     hakt <- hseq[,k]
-    param <- lkfullse3(hakt,kappa/hakt,gradstats,vext,nind) 
-    if(length(sigma)==1) {
-    z <- .Fortran("adsmse3p",
+    if(multishell){
+       thmsh <- interpolatesphere(z$th,msstructure)
+       param <- lkfullse3msh(hakt,kappa/hakt,gradstats,vext,nind) 
+       if(length(sigma)==1) {
+       z <- .Fortran("adsmse3m",
+                as.single(sb),
+                as.single(thmsh),
+                ni=as.single(z$ni),
+                as.logical(mask),
+                as.integer(nshell),# number of shells
+                as.integer(ddim[1]),
+                as.integer(ddim[2]),
+                as.integer(ddim[3]),
+                as.integer(ngrad),
+                as.double(lambda),
+                as.integer(ncoils),
+                as.integer(mc.cores),
+                as.integer(param$ind),
+                as.double(param$w),
+                as.integer(param$n),
+                th=single(prod(ddim)*ngrad),
+                double(ngrad*mc.cores),
+                double(ngrad*mc.cores),
+                double(nshell*mc.cores),
+                double(nshell*mc.cores),
+                DUPL=FALSE,
+                PACKAGE="dti")[c("ni","th")]
+       gc()
+       } else {
+       warning("not yet implemented for heterogenious variances\n
+             returning original object")
+       return(object)
+       }
+    } else {
+       param <- lkfullse3(hakt,kappa/hakt,gradstats,vext,nind) 
+       if(length(sigma)==1) {
+       z <- .Fortran("adsmse3p",
                 as.single(sb),
                 as.single(z$th),
                 ni=as.single(z$ni),
@@ -127,11 +170,12 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
                 as.integer(model),
                 DUPL=FALSE,
                 PACKAGE="dti")[c("ni","th")]
-    gc()
-    } else {
-    warning("not yet implemented for heterogenious variances\n
+       gc()
+       } else {
+       warning("not yet implemented for heterogenious variances\n
              returning original object")
-    return(object)
+       return(object)
+       }
     }
 if(verbose){
    dim(z$ni) <- c(prod(ddim),ngrad)
@@ -140,8 +184,8 @@ if(verbose){
   " time elapsed:",format(difftime(Sys.time(),prt0),digits=3),"\n")
   } else {
       cat(".")
-    }
-      param <- reduceparam(param)
+  }
+     param <- reduceparam(param)
      z0 <- .Fortran("asmse30p",
                     as.double(s0),
                     as.double(th0),
