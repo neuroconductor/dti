@@ -201,11 +201,13 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
      dim(z$th0) <- dim(z$bi) <- dim(z$anindex) <- dim(z$det) <- dim(z$sigma2r) <- dimy[-1]
      dim(z$D) <- dimy
      dim(z$andirection) <- c(3,dimy[-1]) 
+     n <- n1*n2*n3
      if(any(is.na(z$th0))){
         indna <- is.na(z$th0)
 #        cat("found ",sum(indna),"NA's\n")
+#        cat("indna",(1:n)[indna],"\n")
         z$th0[indna] <- th0[indna]
-#        cat("th0",th0[indna])
+#        cat("th0",th0[indna],"\n")
         dim(z$D) <- dim(D) <- c(6,n1*n2*n3)
         z$D[,indna] <- D[,indna]
         dim(z$D) <- dim(D) <- c(6,n1,n2,n3)
@@ -219,9 +221,9 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
 ##
      det95 <- quantile(z$det[mask],.95)
      if(any(z$det[mask]>1e3*det95)){
-        n <- n1*n2*n3
-        indna <- (1:n)[z$det>1e3*det95]
+        indna <- (1:n)[z$det/1e3>det95&mask]
 #        cat("found ",length(indna),"voxel with extreme derterminat 's, keep initial estimates and do not use these voxel\n")
+#        cat("indna",indna,"\n")
         z$th0[indna] <- th0[indna]
         dim(z$D) <- dim(D) <- c(6,n1*n2*n3)
         z$D[,indna] <- D[,indna]
@@ -243,12 +245,14 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
      rg<-quantile(img,c(.01,.99))
      img[img>rg[2]]<-rg[2]
      img[img<rg[1]]<-rg[1]
+     img <- (img-rg[1])/(rg[2]-rg[1])
      show.image(make.image(img),xaxt="n",yaxt="n")
      title(paste("Dxy: min",signif(min(z$D[2,,,][mask]),3),"max",signif(max(z$D[2,,,][mask]),3)))
      img<-z$D[3,,,slice]
      rg<-quantile(img,c(.01,.99))
      img[img>rg[2]]<-rg[2]
      img[img<rg[1]]<-rg[1]
+     img <- (img-rg[1])/(rg[2]-rg[1])
      show.image(make.image(img),xaxt="n",yaxt="n")
      title(paste("Dxz: min",signif(min(z$D[3,,,][mask]),3),"max",signif(max(z$D[3,,,][mask]),3)))
      show.image(make.image(z$anindex[,,slice]),xaxt="n",yaxt="n")
@@ -263,6 +267,7 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
      rg<-quantile(img,c(.01,.99))
      img[img>rg[2]]<-rg[2]
      img[img<rg[1]]<-rg[1]
+     img <- (img-rg[1])/(rg[2]-rg[1])
      show.image(make.image(img),xaxt="n",yaxt="n")
      title(paste("Dyz: min",signif(min(z$D[5,,,][mask]),3),"max",signif(max(z$D[5,,,][mask]),3)))
      andir2.image(z,slice,quant=quant,minfa=minfa,xaxt="n",yaxt="n")

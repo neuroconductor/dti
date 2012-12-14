@@ -34,7 +34,7 @@ if( is.na(sigma)) sigma <- 2400
 rho <- 1
 ddim <- c(64,64,26)
 ngrad <- 25
-factor <- 2.5
+factor <- 1.3
 
 ngrad <- readline("Provide number of gradients (default: 21 minimum: 6  maximum: 162):")
 
@@ -57,13 +57,14 @@ a <- readline("Use phantom nr. 1, 2 or 3? (1/2/3)?")
 
 a <- if(a %in% c("1","2","3")) as.numeric(a) else 1
 
+scalefs0 <- 8
 switch(a,source(system.file("rcode/generatedata.r",package="dti")),
          source(system.file("rcode/generatedata2.r",package="dti")),
          source(system.file("rcode/generatedata3.r",package="dti")))
 # Read Phantom data 
 
 dt0obj <- dtiData(bvec,tmpfile1,mins0value=mins0value,ddim,voxelext=c(1,1,2.5))
-dt0obj <- sdpar(dt0obj,interactive=FALSE)
+dt0obj <- sdpar(dt0obj,interactive=FALSE,level=mins0value*scalefs0)
 
 # Compute phantom tensors
 
@@ -76,7 +77,7 @@ dt0aniso <- dtiIndices(dt0)
 # Read noisy data 
 
 dtobj <- dtiData(bvec,tmpfile2,mins0value=mins0value,ddim,bvalue=bvalue,voxelext=c(1,1,2.5))
-dtobj <- sdpar(dtobj,interactive=FALSE)
+dtobj <- sdpar(dtobj,interactive=FALSE,level=mins0value*scalefs0)
 
 # Estimate tensors
 

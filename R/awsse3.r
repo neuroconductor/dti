@@ -10,7 +10,7 @@ dwi.smooth <- function(object, ...) cat("No DTI smoothing defined for this class
 
 setGeneric("dwi.smooth", function(object, ...) standardGeneric("dwi.smooth"))
 
-setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,ncoils=1,sigma=NULL,level=NULL,minsb=5,vred=4,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE,dist=1,model="Chi2"){
+setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,ncoils=1,sigma=NULL,level=NULL,minsb=5,vred=4,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE,dist=1,model="Chi2",wghts=NULL){
   args <- sys.call(-1)
   args <- c(object@call,args)
   sdcoef <- object@sdcoef
@@ -52,7 +52,11 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
   grad <- object@gradient[,-s0ind]
   bvalues <- object@bvalue[-s0ind]
   multishell <- sd(bvalues) > mean(bvalues)/50
-  if(multishell) msstructure <- getnext3g(grad,bvalues)
+  if(multishell) {
+     msstructure <- getnext3g(grad,bvalues)
+     model <- 2
+     nshell <- msstructure$nbv
+  }
   sb <- object@si[,,,-s0ind]
   s0 <- object@si[,,,s0ind]
   if(is.null(kappa0)){
@@ -82,7 +86,12 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
   }
   if(ns0>1){
      dim(s0) <- c(prod(ddim),ns0)
-     s0 <- s0%*%rep(1/ns0,ns0)
+     if(model==2){
+        s0 <- sqrt(s0^2%*%rep(1,ns0))        
+     } else {
+        s0 <- s0%*%rep(1,ns0)
+     }
+# S0 will be noncentral Chi with 2*ns0*ncoils DF for model 1 and 2
      dim(s0) <- ddim
   }
      th0 <- s0
@@ -101,13 +110,14 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
   hseq <- hseq$h
 # make it nonrestrictive for the first step
   ni <- array(1,dim(sb))
-  minlevel <- if(model==1) 2*ncoils*sigma else sqrt(2*ncoils)*sigma
+  minlevel <- if(model==1) 2*ncoils else sqrt(2*ncoils)
+  minlevel0 <- if(model==1) 2*ns0*ncoils else sqrt(2*ns0*ncoils)
   z <- list(th=pmax(sb,minlevel), ni = ni)
+  th0 <- pmax(s0,minlevel0)
   prt0 <- Sys.time()
   cat("adaptive smoothing in SE3, kstar=",kstar,if(verbose)"\n" else " ")
   kinit <- if(lambda<1e10) 1 else kstar
   mc.cores <- setCores(,reprt=FALSE)
-  nshell <- msstructure$nbv
   for(k in kinit:kstar){
     gc()
     hakt <- hseq[,k]
@@ -136,6 +146,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
                 double(ngrad*mc.cores),
                 double(nshell*mc.cores),
                 double(nshell*mc.cores),
+                as.double(minlevel),
                 DUPL=FALSE,
                 PACKAGE="dti")[c("ni","th")]
        dim(z$th) <- c(ddim,ngrad)
@@ -148,6 +159,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
     } else {
        param <- lkfullse3(hakt,kappa/hakt,gradstats,vext,nind) 
        if(length(sigma)==1) {
+       thk <- z$th
        z <- .Fortran("adsmse3p",
                 as.single(sb),
                 as.single(z$th),
@@ -169,9 +181,10 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
                 double(ngrad*mc.cores),
                 double(ngrad*mc.cores),
                 as.integer(model),
+                as.double(minlevel),
                 DUPL=FALSE,
                 PACKAGE="dti")[c("ni","th")]
-       cat("Step completed\n")
+#     save(z,sb,thk,ni,param,model,ddim,lambda,ngrad,model,minlevel,ncoils,mask,file="tmpi.rsc")
        gc()
        } else {
        warning("not yet implemented for heterogenious variances\n
@@ -196,9 +209,8 @@ if(verbose){
                     as.integer(ddim[1]),
                     as.integer(ddim[2]),
                     as.integer(ddim[3]),
-                    as.integer(ns0),
                     as.double(lambda),
-                    as.integer(ncoils),
+                    as.integer(ncoils*ns0),
                     as.integer(param$ind),
                     as.double(param$w),
                     as.integer(param$n),
@@ -206,11 +218,12 @@ if(verbose){
                     as.integer(param$nstarts),
                     th0=double(prod(ddim)),
                     double(prod(ddim)),#ldf (to precompute lgamma)
-#                    as.double(sigma),
                     double(param$nstarts),#swi
                     as.integer(model),
+                    as.double(minlevel0),
                     DUPL=FALSE,
                     PACKAGE="dti")[c("ni","th0")]
+#     save(z0,s0,th0,ni0,param,model,ddim,lambda,ns0,model,minlevel,ncoils,mask,file="tmp.rsc")
       th0 <- z0$th0
       ni0 <- z0$ni
       rm(z0)
@@ -226,7 +239,8 @@ if(verbose){
 #
 #  back to original scale
 #
-  si[,,,1] <-  th0*sigma
+  s0factor <- switch(model+1,ns0,ns0,sqrt(ns0))
+  si[,,,1] <-  th0*sigma/s0factor
   si[,,,-1] <- z$th*sigma
   object@si <- if(model==1) sqrt(si) else si
   object@gradient <- grad <- cbind(c(0,0,0),grad)
