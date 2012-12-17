@@ -729,7 +729,7 @@ C
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(n1,n2,n3,nn,ncoils,mask,y,th,ni,thn,ind,ldf,n,nstarts,
 C$OMP& starts,w,swi,df,minlev)
-C$OMP& FIRSTPRIVATE(model,lambda,a,b,si)
+C$OMP& FIRSTPRIVATE(model,lambda,a,b,si,maxswi)
 C$OMP& PRIVATE(sw0,swy0,i,i0,i1,i2,i3,j1,j2,j3,l1,l2,l3,z,lgfi,dgfi,
 C$OMP& ldfi,fici,sc,yj)
 C$OMP DO SCHEDULE(GUIDED)
