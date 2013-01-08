@@ -118,7 +118,7 @@ getkappas <- function(grad, trace = 0, dist = 1){
   } else {
       kappa456 <- array(0, c(3, ngrad, ngrad))
       zbg <- betagamma(grad)
-      for(i in 1:ngrad) kappa456[1,i,] <- acos(grad[,i]%*%grad)
+      for(i in 1:ngrad) kappa456[1,i,] <- acos(pmin(1,abs(grad[,i]%*%grad)))
   }
   list(k456 = kappa456, bghat = zbg$bghat, dist=dist)
 }

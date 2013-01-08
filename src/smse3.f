@@ -282,8 +282,7 @@ C   *cb
       n = i-1
       RETURN
       END
-      subroutine lkfse3i0(h,kappa,i4,k456,ng,
-     1                   vext,vred,n,dist)
+      subroutine lkfse3i0(h,kappa,i4,k456,ng,vext,vred,n,dist)
       implicit logical (a-z)
       integer ng,n,i4,dist
       real*8 h,kappa,k456(3,ng,ng),vext(2),vred
@@ -723,6 +722,7 @@ C
          swi(i0)=swi(i0)/(starts(i0+1)-starts(i0))
          maxswi=max(swi(i0),maxswi)
       END DO
+      maxswi=1.d0
       si = 0.d0
       a = -0.356536d0+0.003803d0*ncoils-0.701591d0*sqrt(.5*df)
       b = -0.059703d0+0.029093d0*ncoils+0.098401d0*sqrt(.5*df)

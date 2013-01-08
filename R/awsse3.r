@@ -14,6 +14,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
   args <- sys.call(-1)
   args <- c(object@call,args)
   sdcoef <- object@sdcoef
+  level <- object@level
   vext <- object@voxelext[2:3]/object@voxelext[1]
   if(length(sigma)==1) {
      cat("using supplied sigma",sigma,"\n")
@@ -54,6 +55,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
   multishell <- sd(bvalues) > mean(bvalues)/50
   if(multishell) {
      msstructure <- getnext3g(grad,bvalues)
+     save(grad,bvalues,msstructure,file="msstructure.rsc")
      model <- 2
      nshell <- msstructure$nbv
   }
@@ -96,10 +98,11 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
   }
      th0 <- s0
      ni0 <- array(1,ddim)
-  mask <- apply(sb,1:3,mean) > minsb
-  masksb <- array(mask,c(ddim,ngrad))
+#  mask <- apply(sb,1:3,mean) > minsb
+  mask <- s0>(ns0*level/sigma)
   if(multishell){
      gradstats <- getkappasmsh(grad, msstructure,dist=dist)
+     save(gradstats,file="gradstats.rsc")
      hseq <- gethseqfullse3msh(kstar,gradstats,kappa0,vext=vext)
   } else {
      gradstats <- getkappas(grad,dist=dist)
@@ -123,6 +126,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
     hakt <- hseq[,k]
     if(multishell){
        thmsh <- interpolatesphere(z$th,msstructure)
+       save(z$th,thmsh,file="thmsh.rsc")
        param <- lkfullse3msh(hakt,kappa/hakt,gradstats,vext,nind) 
        if(length(sigma)==1) {
        z <- .Fortran("adsmse3m",

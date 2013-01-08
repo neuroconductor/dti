@@ -51,10 +51,19 @@ pnltens <- function(si,grad,s0ind,sdcoef){
 #
 #  to be used with pmatrix
 #
-s0 <- si[s0ind]
-sb <- si[-s0ind]
+lindD <- dim(si)[2]
+ngrad <- dim(grad)[2]
+zmat <- matrix(0,ngrad+8,lindD)
+for(i in 1:lindD){
+s0 <- si[s0ind,i]
+sb <- si[-s0ind,i]
 zz <- optim(c(1,0,0,1,0,1),opttensR,method="BFGS",si=sb,s0=s0,grad=grad,sdcoef=sdcoef)
-c(rho2D(zz$par),s0,zz$value,tensRres(zz$par,sb,s0,grad))
+zmat[1:6,i] <- rho2D(zz$par)
+zmat[7,i] <- s0
+zmat[8,i] <- zz$value
+zmat[-(1:8),i] <- tensRres(zz$par,sb,s0,grad)
+}
+zmat
 }
 
 pmixtens <- function(x,meth,optmeth,ngrad0,maxcomp,maxit,pen,grad,reltol,th,penIC,vert){

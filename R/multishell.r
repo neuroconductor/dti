@@ -14,6 +14,26 @@ b3 <- (c12-c23*c13)/s23/s13
 acos(b1)+acos(b2)+acos(b3)-pi
 }
 
+sphtrarea1 <- function(g1,g2,g3){
+##  Compute area of sherical triangle spanned by vectors 
+##  g1,g2,g3 on unit sphere
+##  use absolute values to identify opposite directions with each other
+c12 <- abs(g1%*%g2)
+c13 <- abs(g1%*%g3)
+c23 <- abs(g2%*%g3)
+s12 <- sqrt(1-c12^2)
+s13 <- sqrt(1-c13^2)
+s23 <- sqrt(1-c23^2)
+a12 <- acos(c12)
+a23 <- acos(c23)
+a13 <- acos(c13)
+b1 <- 1+(c23-cos(a12-a13))/s12/s13
+b2 <- 1+(c13-cos(a12-a23))/s12/s23
+b3 <- 1+(c12-cos(a13-a23))/s13/s23
+cat(b1,b2,b3)
+acos(b1)+acos(b2)+acos(b3)-pi
+}
+
 
 getsphwghts <- function(g,g1,g2,g3){
 ##
