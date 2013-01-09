@@ -51,8 +51,9 @@ pnltens <- function(si,grad,s0ind,sdcoef){
 #
 #  to be used with pmatrix
 #
-lindD <- dim(si)[2]
-ngrad <- dim(grad)[2]
+ngrad <- length(grad)/3
+lindD <- length(si)/(ngrad+length(s0ind))
+dim(si) <- c(ngrad+length(s0ind),lindD)
 zmat <- matrix(0,ngrad+8,lindD)
 for(i in 1:lindD){
 s0 <- si[s0ind,i]

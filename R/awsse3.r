@@ -55,7 +55,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
   multishell <- sd(bvalues) > mean(bvalues)/50
   if(multishell) {
      msstructure <- getnext3g(grad,bvalues)
-     save(grad,bvalues,msstructure,file="msstructure.rsc")
+#     save(grad,bvalues,msstructure,file="msstructure.rsc")
      model <- 2
      nshell <- msstructure$nbv
   }
@@ -102,7 +102,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
   mask <- s0>(ns0*level/sigma)
   if(multishell){
      gradstats <- getkappasmsh(grad, msstructure,dist=dist)
-     save(gradstats,file="gradstats.rsc")
+#     save(gradstats,file="gradstats.rsc")
      hseq <- gethseqfullse3msh(kstar,gradstats,kappa0,vext=vext)
   } else {
      gradstats <- getkappas(grad,dist=dist)
@@ -126,7 +126,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
     hakt <- hseq[,k]
     if(multishell){
        thmsh <- interpolatesphere(z$th,msstructure)
-       save(z$th,thmsh,file="thmsh.rsc")
+#       save(z,thmsh,file="thmsh.rsc")
        param <- lkfullse3msh(hakt,kappa/hakt,gradstats,vext,nind) 
        if(length(sigma)==1) {
        z <- .Fortran("adsmse3m",

@@ -145,6 +145,8 @@ setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="r
      } else {
         zz <- pmatrix(si[,indD],pnltens,grad=grad[,-s0ind],s0ind=s0ind,
                       sdcoef=sdcoef,mc.cores=min(mc.cores,length(indD)))
+        cat(dim(zz),length(zz),"\n")
+        dim(zz) <- c(length(zz)/length(indD),length(indD))
         D[,indD] <- zz[1:6,]
         th0[indD] <- zz[7,]
         rss[indD] <- zz[8,]
@@ -166,7 +168,7 @@ setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="r
   ev <- dti3Dev(D,mask,mc.cores=mc.cores)
   dim(ev) <- c(3,ddim)   
   dim(D) <- c(6,ddim)   
-  scale <- quantile(ev[3,,,][mask],.95)
+  scale <- quantile(ev[3,,,][mask],.95,na.rm=TRUE)
   cat("estimated scale information",format(Sys.time()),"\n")  
   invisible(new("dtiTensor",
                 call  = args,
