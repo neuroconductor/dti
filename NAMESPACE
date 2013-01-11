@@ -1,5 +1,7 @@
 useDynLib(dti)
 
+exportPattern("^[^\\.]")
+
 import("methods", "oro.dicom", "awsMethods")
 importFrom(graphics,plot)
 importFrom(adimpro,make.image,show.image)
