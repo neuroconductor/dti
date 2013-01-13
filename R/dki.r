@@ -80,8 +80,10 @@ setMethod("dkiTensor", "dtiData",
                   }
                 }
               }
+              if (verbose) close(pb)
             }
-            if (verbose) close(pb)
+
+            if ( verbose) cat( "dkiTensor: finished estimation", format( Sys.time()), "\n")	 
 
             ## CHECK THESE!
             th0 <- apply( dwiobj@si, 1:3, mean)
@@ -131,40 +133,48 @@ dkiIndices <- function( object, ...) cat( "No DKI indices calculation defined fo
 
 setGeneric( "dkiIndices", function( object, ...) standardGeneric( "dkiIndices"))
 
-setMethod( "dkiIndices", "dkiTensor",
-function( object, 
-          mc.cores = getOption( "mc.cores", 2L),
-          verbose = FALSE) {
+setMethod("dkiIndices", "dkiTensor",
+          function(object, 
+                   mc.cores = getOption( "mc.cores", 2L),
+                   verbose = FALSE) {
 			 
-          if ( verbose) cat( "dkiTensor: entering function", format( Sys.time()), "\n")
-			  
-          ## call history  
-	      args <- c( object@call, sys.call(-1))
+            if ( verbose) cat( "dkiTensor: entering function", format( Sys.time()), "\n")
+            
+            ## call history  
+            args <- c( object@call, sys.call(-1))
 
-          invisible( new("dkiIndices",
-                         call = args,
-                         fa = array(z$fa,ddim),
-                         ga = array(z$ga,ddim),
-                         md = array(z$md,ddim),
-                         andir = array(z$andir,c(3,ddim)),
-                         bary = array(z$bary,c(3,ddim)),
-                         gradient = object@gradient,
-                         bvalue = object@bvalue,
-                         btb   = object@btb,
-                         ngrad = object@ngrad, # = dim(btb)[2]
-                         s0ind = object@s0ind,
-                         ddim  = ddim,
-                         ddim0 = object@ddim0,
-                         voxelext = object@voxelext,
-                         orientation = object@orientation,
-                         rotation = object@rotation,
-                         xind  = object@xind,
-                         yind  = object@yind,
-                         zind  = object@zind,
-                         method = object@method,
-                         level = object@level,
-                         source= object@source)
-                    )
+            ## we need this for all the arrays
+            ddim <- object@ddim
+
+            ## perform the DTI indices calculations
+            z <- dtiind3D( object@D[ 1:6, , , ], object@mask, mc.cores = mc.cores)
+
+            if ( verbose) cat( "dkiTensor: exiting function", format( Sys.time()), "\n")
+
+            invisible( new("dkiIndices",
+                           call = args,
+                           fa = array( z$fa, ddim),
+                           ga = array( z$ga, ddim),
+                           md = array( z$md, ddim),
+                           andir = array( z$andir, c( 3, ddim)),
+                           bary = array( z$bary, c( 3, ddim)),
+                           gradient = object@gradient,
+                           bvalue = object@bvalue,
+                           btb   = object@btb,
+                           ngrad = object@ngrad,
+                           s0ind = object@s0ind,
+                           ddim  = ddim,
+                           ddim0 = object@ddim0,
+                           voxelext = object@voxelext,
+                           orientation = object@orientation,
+                           rotation = object@rotation,
+                           xind  = object@xind,
+                           yind  = object@yind,
+                           zind  = object@zind,
+                           method = object@method,
+                           level = object@level,
+                           source = object@source)
+                      )
 })
 
 dkiDesign <- function( gradients) {
