@@ -149,6 +149,25 @@ setMethod("dkiIndices", "dkiTensor",
             ## perform the DTI indices calculations
             z <- dtiind3D( object@D[ 1:6, , , ], object@mask, mc.cores = mc.cores)
 
+            ## PSEUDO code
+            x1 <- dkiDesign( z$andir[ 3, 1, ])
+            x2 <- dkiDesign( z$andir[ 3, 1, ])
+            x3 <- dkiDesign( z$andir[ 3, 1, ])
+            w1111 <- x1[ , 7:21] %*% D[ 7:21, ]
+            w2222 <- x2[ , 7:21] %*% D[ 7:21, ]
+            w3333 <- x3[ , 7:21] %*% D[ 7:21, ]
+
+            k1 <- z$md^2/lambda1^2*w1111
+            k2 <- z$md^2/lambda1^2*w2222
+            k3 <- z$md^2/lambda1^2*w3333
+
+            mk <- (k1+k2+k3)/3
+            kaxial <- k1
+            kradial <- (k2+k3)/2
+            fak <- sqrt( 3/2 *((k1-mk)^2 + (k2-mk)^2 + (k3-mk)^2) / (k1^2+k2^2+k3^2))
+            ## END PSEUDO code
+            ## we finally get k1, k2, k3, kaxial, kradial, mk, fak
+            
             if ( verbose) cat( "dkiTensor: exiting function", format( Sys.time()), "\n")
 
             invisible( new("dkiIndices",
