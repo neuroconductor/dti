@@ -343,35 +343,42 @@ setClass("dkiTensor",
 )
 	 
 setClass("dkiIndices",
-		 representation(method = "character",
-						 fa     = "array",
-						 ga     = "array",
-						 md     = "array",
-						 andir  = "array",
-						 bary   = "array"),
-				 contains=c("list","dwi"),
-				 validity=function(object){
-					 if (any(dim(object@fa)!=object@ddim)) {
-						 cat("invalid dimension of array fa\n")
-						 return(invisible(FALSE))
-					 }
-					 if (any(dim(object@ga)!=object@ddim)) {
-						 cat("invalid dimension of array ga\n")
-						 return(invisible(FALSE))
-					 }
-					 if (any(dim(object@md)!=object@ddim)) {
-						 cat("invalid dimension of array ra\n")
-						 return(invisible(FALSE))
-					 }
-					 if (any(dim(object@andir)!=c(3,object@ddim))) {
-						 cat("invalid dimension of array andir\n")
-						 return(invisible(FALSE))
-					 }
-					 if (any(dim(object@bary)!=c(3,object@ddim))) {
-						 cat("invalid dimension of array bary\n")
-						 return(invisible(FALSE))
-					 }
-				 }
-)
-	 
-		 
+         representation(method  = "character",
+                        fa      = "array",
+                        ga      = "array",
+                        md      = "array",
+                        andir   = "array",
+                        bary    = "array",
+                        k1      = "array",
+                        k2      = "array",
+                        k3      = "array",
+                        mk      = "array",
+                        kaxial  = "array",
+                        kradial = "array",
+                        fak     = "array"),
+         contains=c("list","dwi"),
+         validity=function(object){
+           if (any(dim(object@fa)!=object@ddim)) {
+             cat("invalid dimension of array fa\n")
+             return(invisible(FALSE))
+           }
+           if (any(dim(object@ga)!=object@ddim)) {
+             cat("invalid dimension of array ga\n")
+             return(invisible(FALSE))
+           }
+           if (any(dim(object@md)!=object@ddim)) {
+             cat("invalid dimension of array ra\n")
+             return(invisible(FALSE))
+           }
+           if (any(dim(object@andir)!=c(3,object@ddim))) {
+             cat("invalid dimension of array andir\n")
+             return(invisible(FALSE))
+           }
+           if (any(dim(object@bary)!=c(3,object@ddim))) {
+             cat("invalid dimension of array bary\n")
+             return(invisible(FALSE))
+           }
+         }
+         )
+
+

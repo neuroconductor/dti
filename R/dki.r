@@ -62,11 +62,11 @@ setMethod("dkiTensor", "dtiData",
               Amat <- t( Tabesh_C)
 
               ## go through the dataset
-              if (verbose) pb <- txtProgressBar(0, ddim[3], style = 3)
+              if (verbose) pb <- txtProgressBar(0, ddim[1], style = 3)
               for ( i in 1:ddim[1]) {
+                if (verbose) setTxtProgressBar(pb, i)
                 for ( j in 1:ddim[2]) {
                   for ( k in 1:ddim[3]) {
-                    if (verbose) setTxtProgressBar(pb, i)
                     ## cat( "voxel", i, j, k, "\n")
 				  
                     ## Tabesh Eq. [12]
@@ -145,29 +145,77 @@ setMethod("dkiIndices", "dkiTensor",
 
             ## we need this for all the arrays
             ddim <- object@ddim
+            nvox <- prod( ddim)
+            nvox0 <- sum( object@mask)
 
             ## perform the DTI indices calculations
+            D <- object@D
             z <- dtiind3D( object@D[ 1:6, , , ], object@mask, mc.cores = mc.cores)
 
-            ## PSEUDO code
-            x1 <- dkiDesign( z$andir[ 3, 1, ])
-            x2 <- dkiDesign( z$andir[ 3, 1, ])
-            x3 <- dkiDesign( z$andir[ 3, 1, ])
-            w1111 <- x1[ , 7:21] %*% D[ 7:21, ]
-            w2222 <- x2[ , 7:21] %*% D[ 7:21, ]
-            w3333 <- x3[ , 7:21] %*% D[ 7:21, ]
+            if ( verbose) cat( "dkiTensor: DTI indices calculated", format( Sys.time()), "\n")
 
-            k1 <- z$md^2/lambda1^2*w1111
-            k2 <- z$md^2/lambda1^2*w2222
-            k3 <- z$md^2/lambda1^2*w3333
-
-            mk <- (k1+k2+k3)/3
-            kaxial <- k1
-            kradial <- (k2+k3)/2
-            fak <- sqrt( 3/2 *((k1-mk)^2 + (k2-mk)^2 + (k3-mk)^2) / (k1^2+k2^2+k3^2))
-            ## END PSEUDO code
-            ## we finally get k1, k2, k3, kaxial, kradial, mk, fak
+            ## perform the DKI indices calculations
+            ## DO WE NEED THIS?
+            if ( mc.cores > 1) {
+              mc.cores.old <- setCores( , reprt = FALSE)
+              setCores( mc.cores)
+            }
             
+            dim( D) <- c( 21, nvox)
+            andir <- matrix( 0, 9, nvox)
+            lambda <- matrix( 0, 3, nvox)
+            
+            t1 <- Sys.time()
+            zz <- .Fortran("dti3DevAll",
+                           as.double( D[ 1:6, object@mask]),
+                           as.integer( nvox0),
+                           andir = double( 9*nvox0),
+                           evalues = double( 3*nvox0),
+                           DUP = FALSE,
+                           PACKAGE = "dti")[ c( "andir", "evalues")]
+            andir[ , object@mask] <- zz$andir
+            lambda[ , object@mask] <- zz$evalues 
+            t2 <- Sys.time()
+            if ( verbose) cat( difftime( t2, t1), " for", nvox0, "voxel\n")
+
+            if ( mc.cores > 1) setCores( mc.cores.old, reprt = FALSE)
+            dim( andir) <- c( 3, 3, nvox)
+            
+            k1 <- k2 <- k3 <- numeric( nvox)
+
+            if (verbose) pb <- txtProgressBar(0, nvox, style = 3)
+            for ( i in 1:nvox) {
+              if (verbose) setTxtProgressBar(pb, i)
+              x1 <- dkiDesign( matrix( andir[ , 1, i], 3, 1))
+              x2 <- dkiDesign( matrix( andir[ , 2, i], 3, 1))
+              x3 <- dkiDesign( matrix( andir[ , 3, i], 3, 1))
+              
+              w1111 <- x1[ , 7:21] %*% D[ 7:21, i]
+              w2222 <- x2[ , 7:21] %*% D[ 7:21, i]
+              w3333 <- x3[ , 7:21] %*% D[ 7:21, i]
+
+              k1[ i] <- z$md[ i]^2 / lambda[ 1, i]^2 * w1111
+              k2[ i] <- z$md[ i]^2 / lambda[ 2, i]^2 * w2222
+              k3[ i] <- z$md[ i]^2 / lambda[ 3, i]^2 * w3333
+
+            }
+            if (verbose) close(pb)
+            mk <- ( k1 + k2 + k3) / 3
+            kaxial <- k1
+            kradial <- ( k2 + k3) / 2
+            fak <- sqrt( 3/2 *( (k1-mk)^2 + (k2-mk)^2 + (k3-mk)^2) / ( k1^2 + k2^2 + k3^2))
+
+            ## we finally got k1, k2, k3, kaxial, kradial, mk, fak
+            dim( k1) <- ddim
+            dim( k2) <- ddim
+            dim( k3) <- ddim
+            dim( mk) <- ddim
+            dim( kaxial) <- ddim
+            dim( kradial) <- ddim
+            dim( fak) <- ddim
+            
+            if ( verbose) cat( "dkiTensor: DKI indices calculated", format( Sys.time()), "\n")
+                      
             if ( verbose) cat( "dkiTensor: exiting function", format( Sys.time()), "\n")
 
             invisible( new("dkiIndices",
@@ -177,6 +225,13 @@ setMethod("dkiIndices", "dkiTensor",
                            md = array( z$md, ddim),
                            andir = array( z$andir, c( 3, ddim)),
                            bary = array( z$bary, c( 3, ddim)),
+                           k1 = k1,
+                           k2 = k2,
+                           k3 = k3,
+                           mk = mk,
+                           kaxial = kaxial,
+                           kradial = kradial,
+                           fak = fak,
                            gradient = object@gradient,
                            bvalue = object@bvalue,
                            btb   = object@btb,
