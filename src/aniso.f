@@ -518,7 +518,6 @@ C$OMP& PRIVATE(i,lambda,evec,ierr)
 C$OMP DO SCHEDULE(STATIC)
       DO i=1,n
          call eigen3(D(1,i),lambda,evec,ierr)
-C dont know, whether the re-ordering is useful!
          andir( 1, i) = evec( 1, 3)
          andir( 2, i) = evec( 2, 3)
          andir( 3, i) = evec( 3, 3)
@@ -528,9 +527,9 @@ C dont know, whether the re-ordering is useful!
          andir( 7, i) = evec( 1, 1)
          andir( 8, i) = evec( 2, 1)
          andir( 9, i) = evec( 3, 1)
-         evalues( 1, i) = lambda( 1)
+         evalues( 1, i) = lambda( 3)
          evalues( 2, i) = lambda( 2)
-         evalues( 3, i) = lambda( 3)
+         evalues( 3, i) = lambda( 1)
       END DO
 C$OMP END DO NOWAIT
 C$OMP END PARALLEL
