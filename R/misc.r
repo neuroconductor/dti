@@ -522,6 +522,7 @@ gettriangles <- function(gradients){
 create.designmatrix.dti <- function(gradient) {
   dgrad <- dim(gradient)
   if (dgrad[2]==3) gradient <- t(gradient)
+  dgrad <- dim(gradient)
   if (dgrad[1]!=3) stop("Not a valid gradient matrix")
 
   btb <- matrix(0,6,dgrad[2])

@@ -86,13 +86,13 @@ dtiData <- function(gradient,imagefile,ddim,bvalue=NULL,xind=NULL,yind=NULL,zind
 
   cat("Create auxiliary statistics",format(Sys.time()), " \n")
   rind <- replind(gradient)
-  
+  design <- create.designmatrix.dti(gradient)
   invisible(new("dtiData",
                 call = args,
                 si     = si,
                 gradient = gradient,
                 bvalue = bvalue,
-                btb    = sweep( create.designmatrix.dti(gradient), 2, bvalue, "*"),
+                btb    = sweep( design, 2, bvalue, "*"),
                 ngrad  = ngrad, # = dim(btb)[2]
                 s0ind  = s0ind, # indices of S_0 images
                 replind = rind,
@@ -340,13 +340,14 @@ readDWIdata <- function(gradient, dirlist,
   ## set level to level*mean  of positive s_0 values
   level <- max(mins0value, level * mean(si[ , , , s0ind][si[ , , , s0ind] > 0]))
   cat("readDWIdata: Create auxiliary statistics",format(Sys.time()), " \n")
+  design <- create.designmatrix.dti(gradient)
 
   invisible(new("dtiData",
                 call        = args,
                 si          = si,
                 gradient    = gradient,
                 bvalue      = as.vector(bvalue),
-                btb         = sweep( create.designmatrix.dti(gradient), 2, bvalue, "*"),
+                btb         = sweep( design, 2, bvalue, "*"),
                 ngrad       = ngrad,
                 s0ind       = s0ind,
                 replind     = replind(gradient),

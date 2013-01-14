@@ -30,7 +30,6 @@ a13 <- acos(c13)
 b1 <- 1+(c23-cos(a12-a13))/s12/s13
 b2 <- 1+(c13-cos(a12-a23))/s12/s23
 b3 <- 1+(c12-cos(a13-a23))/s13/s23
-cat(b1,b2,b3)
 acos(b1)+acos(b2)+acos(b3)-pi
 }
 
@@ -39,11 +38,20 @@ getsphwghts <- function(g,g1,g2,g3){
 ##
 ##   compute weights for linear interpolation in g using g1,g2,g3
 ##
+ierr <- 0
 w <- numeric(3)
-w[1] <- sphtrarea(g,g2,g3)
-w[2] <- sphtrarea(g,g1,g3)
-w[3] <- sphtrarea(g,g1,g2)
-w/sum(w) 
+w0 <- sphtrarea1(g1,g2,g3)
+w[1] <- sphtrarea1(g,g2,g3)
+w[2] <- sphtrarea1(g,g1,g3)
+w[3] <- sphtrarea1(g,g1,g2)
+if(w0 < sum(w) - 1e-6){ 
+#cat("gradient does not belong to triangle")
+#print(g)
+#print(cbind(g1,g2,g3))
+#cat("w0",w0,"w",w,"alt",w[1]+w[2]-w[3],"\n")
+ierr <- 1
+}
+list(w=w/sum(w),ierr=ierr) 
 }
 
 getnext3g <- function(grad,bv){
@@ -51,6 +59,17 @@ getnext3g <- function(grad,bv){
 ##  calculate next neighbors on the sphere and weights for interpolation
 ##
 grad <- grad[,bv>0]
+ng <- dim(grad)[2]
+perm <- matrix(1,ng^2/8,3)
+l <- 1
+for(i in 3:(ng/2)){
+for(j in 2:i){
+perm[l,-1] <- c(j,i+1)
+l <- l+1
+}
+}
+dperm <- l-1
+perm <- perm[1:dperm,]
 bv <- bv[bv>0]
 ubv <- unique(bv[bv>max(bv)/50])
 nbv <- length(ubv)
@@ -69,12 +88,24 @@ for(i in 1:nbv){
       indbk <- (1:ng)[bv==ubv[j]]
       for(k in indb){
          d <- abs(t(grad[,k])%*%grad[,indbk])
-         ijk <- indbk[order(d,decreasing = TRUE)[1:3]]
-         ind[j,k,] <- ijk
-         if(max(d)>1-1e-8){
+         od <- order(d,decreasing = TRUE)
+         ijk <- indbk[od]
+         cat("k",k,"d",d[od][1:8],"ijk",ijk[1:8],"\n")
+         ind[j,k,] <- ijk[1:3]
+         if(max(d)>1-1e-6){
             w[j,k,] <- c(1,0,0)
          } else {
-            w[j,k,] <- getsphwghts(grad[,k],grad[,ijk[1]],grad[,ijk[2]],grad[,ijk[3]])
+            z <- getsphwghts(grad[,k],grad[,ijk[1]],grad[,ijk[2]],grad[,ijk[3]])
+            l <- 1
+            ijk1 <- ijk
+            while(z$ierr==1&&l<dperm){
+               ijk1 <- ijk[perm[l,]]
+               z <- getsphwghts(grad[,k],grad[,ijk1[1]],grad[,ijk1[2]],grad[,ijk1[3]])
+               ind[j,k,] <- ijk1[1:3]
+               l<-l+1
+            }
+            cat("l",l-1,"ijk1",ijk1[1:3],"w",z$w,"\n")
+            w[j,k,] <- z$w
          }
    }
 }   
