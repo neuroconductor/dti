@@ -3,53 +3,55 @@
 #   function setCores in package spMC version 0.2.2
 #   written by Luca Sartore <drwolf85@gmail.com>
 #
-sioutlier <- function(si,s0ind,mc.cores=1){
-   dsi <- dim(si)
-   n <- prod(dsi[-length(dsi)])
-   ng <- dsi[length(dsi)]
-   ns0 <- length(s0ind)
-   siind <- (1:ng)[-s0ind]
-   dim(si) <- c(n,ng)
-   si <- t(si)
-   cat("outlier:")
-   if(mc.cores>1){
-   mc.cores.old <- setCores(,reprt=FALSE)
-   setCores(mc.cores)
-   }
-   siindex <- (1:ng)[-s0ind]
-   t1 <- Sys.time()
-   if(mc.cores==1||ng>250){
-   z <- .Fortran("outlier",
-                 as.double(si),
-                 as.integer(n),
-                 as.integer(ng),
-                 as.integer(s0ind),
-                 as.integer(siind),
-                 as.integer(ns0),
-                 si=integer(n*ng),
-                 index=logical(n),
-                 DUP=FALSE,
-                 PACKAGE="dti")[c("si","index")]
-                 } else {
-   zz <- matrix(.Fortran("outlierp",
-                 as.double(si),
-                 as.integer(n),
-                 as.integer(ng),
-                 as.integer(s0ind),
-                 as.integer(ns0),
-                 as.integer(siind),
-                 as.integer(ng-ns0),
-                 si=integer(n*(ng+1)),
-                 as.integer(ng+1),
-                 DUP=FALSE,
-                 PACKAGE="dti")$si,ng+1,n)
-  t2 <- Sys.time()
-  cat(difftime(t2,t1),"for",n,"voxel\n")
-  if(mc.cores>1) setCores(mc.cores.old,reprt=FALSE)
-  return(list(si=zz[1:ng,],index=(1:n)[as.logical(zz[ng+1,])]))         
+sioutlier <- function( si, s0ind, mc.cores = 1, verbose = TRUE){
+  dsi <- dim(si)
+  n <- prod(dsi[-length(dsi)])
+  ng <- dsi[length(dsi)]
+  ns0 <- length(s0ind)
+  siind <- (1:ng)[-s0ind]
+  dim(si) <- c(n,ng)
+  si <- t(si)
+  
+  if (verbose) cat("outlier: ")
+
+  if(mc.cores>1){
+    mc.cores.old <- setCores(,reprt=FALSE)
+    setCores(mc.cores)
+  }
+  siindex <- (1:ng)[-s0ind]
+  t1 <- Sys.time()
+  if(mc.cores==1||ng>250){
+    z <- .Fortran("outlier",
+                  as.double(si),
+                  as.integer(n),
+                  as.integer(ng),
+                  as.integer(s0ind),
+                  as.integer(siind),
+                  as.integer(ns0),
+                  si=integer(n*ng),
+                  index=logical(n),
+                  DUP=FALSE,
+                  PACKAGE="dti")[c("si","index")]
+  } else {
+    zz <- matrix(.Fortran("outlierp",
+                          as.double(si),
+                          as.integer(n),
+                          as.integer(ng),
+                          as.integer(s0ind),
+                          as.integer(ns0),
+                          as.integer(siind),
+                          as.integer(ng-ns0),
+                          si=integer(n*(ng+1)),
+                          as.integer(ng+1),
+                          DUP=FALSE,
+                          PACKAGE="dti")$si,ng+1,n)
+    t2 <- Sys.time()
+    if (verbose) cat( difftime( t2, t1), attr(difftime( t2, t1), "units"), "for", n, "voxel\n")
+    if(mc.cores>1) setCores(mc.cores.old,reprt=FALSE)
+    return(list(si=zz[1:ng,],index=(1:n)[as.logical(zz[ng+1,])]))         
   }
   t2 <- Sys.time()
-  cat(difftime(t2,t1),"for",n,"voxel\n")
+  if (verbose) cat( difftime( t2, t1), attr(difftime( t2, t1), "units"), "for", n, "voxel\n")
   if(mc.cores>1) setCores(mc.cores.old,reprt=FALSE)
   index <- (1:n)[z$index]
   dim(z$si) <- c(ng,dsi[-length(dsi)])
@@ -220,38 +222,39 @@ dtieigen <- function(D,mask,mc.cores=1){
    ev[,mask] <- z$ev
    list(fa=fa,ev=ev,andir=andir)
 }
-dtiind3D <- function(D,mask,mc.cores=1){
-   dimD <- dim(D)[-1]
-   nvox <- prod(dimD)
-   nvox0 <- sum(mask)
-   dim(D) <- c(6,nvox)
-   cat("dtiind3:")
-   if(mc.cores>1){
-   mc.cores.old <- setCores(,reprt=FALSE)
-   setCores(mc.cores)
-   }
-   bary <- andir <- matrix(0,3,nvox)
-   fa <- ga <- md <- numeric(nvox)
-   t1 <- Sys.time()
-   z <- .Fortran("dtiind3D",
-                   as.double(D[,mask]),
-                   as.integer(nvox0),
-                   fa=double(nvox0),
-                   ga=double(nvox0),
-                   md=double(nvox0),
-                   andir=double(3*nvox0),
-                   bary=double(3*nvox0),
-                   DUP=FALSE,
-                   PACKAGE="dti")[c("fa","ga","md","andir","bary")]
-   if(mc.cores>1) setCores(mc.cores.old,reprt=FALSE)
-   t2 <- Sys.time()
-   cat(difftime(t2,t1)," for",nvox0,"voxel\n")
-   fa[mask] <- z$fa
-   ga[mask] <- z$ga
-   md[mask] <- z$md
-   andir[,mask] <- z$andir
-   bary[,mask] <- z$bary
-   list(fa=fa,ga=ga,md=md,andir=andir,bary=bary)
+dtiind3D <- function( D, mask, mc.cores = 1, verbose = TRUE){
+  dimD <- dim(D)[-1]
+  nvox <- prod(dimD)
+  nvox0 <- sum(mask)
+  dim(D) <- c(6,nvox)
+  if (verbose) cat( "dtiind3: entering function")
+  if(mc.cores>1){
+    mc.cores.old <- setCores(,reprt=FALSE)
+    setCores(mc.cores)
+  }
+  bary <- andir <- matrix(0,3,nvox)
+  fa <- ga <- md <- numeric(nvox)
+  t1 <- Sys.time()
+  z <- .Fortran("dtiind3D",
+                as.double(D[ , mask]),
+                as.integer(nvox0),
+                fa      = double(nvox0),
+                ga      = double(nvox0),
+                md      = double(nvox0),
+                andir   = double(3*nvox0),
+                bary    = double(3*nvox0),
+                DUP     = FALSE,
+                PACKAGE = "dti")[c( "fa", "ga", "md", "andir", "bary")]
+  if(mc.cores>1) setCores(mc.cores.old,reprt=FALSE)
+  t2 <- Sys.time()
+  if ( verbose) cat( "dtiind3: calculation took ", difftime( t2, t1), attr(difftime( t2, t1), "units"), " for", nvox0, "voxel\n")
+  fa[mask] <- z$fa
+  ga[mask] <- z$ga
+  md[mask] <- z$md
+  andir[,mask] <- z$andir
+  bary[,mask] <- z$bary
+  if (verbose) cat( "dtiind3: exiting function\n")
+  list( fa = fa, ga = ga, md = md, andir = andir, bary = bary)
 }
 kldist <- function(L,eta1,eta2){
 #
