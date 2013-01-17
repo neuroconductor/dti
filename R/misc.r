@@ -227,7 +227,7 @@ dtiind3D <- function( D, mask, mc.cores = 1, verbose = TRUE){
   nvox <- prod(dimD)
   nvox0 <- sum(mask)
   dim(D) <- c(6,nvox)
-  if (verbose) cat( "dtiind3: entering function")
+  if (verbose) cat( "dtiind3: entering function", format( Sys.time()), "\n")
   if(mc.cores>1){
     mc.cores.old <- setCores(,reprt=FALSE)
     setCores(mc.cores)
@@ -253,7 +253,7 @@ dtiind3D <- function( D, mask, mc.cores = 1, verbose = TRUE){
   md[mask] <- z$md
   andir[,mask] <- z$andir
   bary[,mask] <- z$bary
-  if (verbose) cat( "dtiind3: exiting function\n")
+  if (verbose) cat( "dtiind3: exiting function", format( Sys.time()), "\n")
   list( fa = fa, ga = ga, md = md, andir = andir, bary = bary)
 }
 kldist <- function(L,eta1,eta2){
@@ -603,3 +603,14 @@ vcrossp <- function(a, b) {
      a[3] * b[1] - a[1] * b[3],
      a[1] * b[2] - a[2] * b[1])
 }
+
+showFAColorScale <- function(filename = "FAcolorscale.png") {
+  data("colqFA")
+  png( filename = filename, width = 800, height = 100, bg = "white", pointsize = 16)
+  par( mar = c( 2, 0.5, 0.1, 0.5))
+  image( matrix( seq( 0, 1, length = 256), 256, 1), col = colqFA, yaxt = "n")
+  axis(1, at = seq( 0, 1, by = 0.1))
+  text( 0.1, 0, "FA", pos = 4, cex = 2, font = 2, col = "white")
+  dev.off()
+}
+

@@ -85,6 +85,10 @@ setMethod("dkiTensor", "dtiData",
 
             if ( verbose) cat( "dkiTensor: finished estimation", format( Sys.time()), "\n")	 
 
+            dim(D) <- c( 21, prod(ddim))
+            Dapp <- Tabesh_AD %*% D[ c( 1, 4, 6, 2, 3, 5), ]
+            dim(D) <- c( 21, ddim)
+            
             ## CHECK THESE!
             th0 <- apply( dwiobj@si, 1:3, mean)
             sigma2 <- array( 0, dim = ddim)
@@ -108,7 +112,7 @@ setMethod("dkiTensor", "dtiData",
                            hmax = 1,
                            gradient = object@gradient,
                            bvalue = object@bvalue,
-                           btb   = Tabesh_AD,
+                           btb   = xxx,
                            ngrad = object@ngrad,
                            s0ind = object@s0ind,
                            replind = object@replind,
@@ -150,7 +154,7 @@ setMethod("dkiIndices", "dkiTensor",
 
             ## perform the DTI indices calculations
             D <- object@D
-            z <- dtiind3D( object@D[ 1:6, , , ], object@mask, mc.cores = mc.cores)
+            z <- dtiind3D( object@D[ 1:6, , , ], object@mask, mc.cores = mc.cores, verbose = verbose)
 
             if ( verbose) cat( "dkiTensor: DTI indices calculated", format( Sys.time()), "\n")
 
@@ -187,8 +191,14 @@ setMethod("dkiIndices", "dkiTensor",
             xxx <- dkiDesign( object@gradient[ , ind])
             Tabesh_AD <- xxx[ , 1:6]
             Tabesh_AK <- xxx[ , 7:21]
+            ## Note: the DT entries in D are re-ordered compared to Tabesh_AD for backward comp.
+            ## Maybe we dont need this!
             Dapp <- Tabesh_AD %*% D[ c( 1, 4, 6, 2, 3, 5), ]
-            Kapp <- z$md^2 * (Tabesh_AK %*% D[ 7:21, ] / Dapp^2)
+            Kapp <- (Tabesh_AK %*% D[ 7:21, ]) / Dapp^2
+            ## remove pathological values!
+            Kapp[ Kapp < 0] <- 0
+            Kapp[ Dapp <= 0] <- 0
+            ## define mean kurtosis
             mk <- apply( Kapp, 2, mean)
             
             x1 <- dkiDesign( andir[ , 1, ])
@@ -204,30 +214,9 @@ setMethod("dkiIndices", "dkiTensor",
             w3333 <- numeric( nvox)
             for ( i in 1:nvox) w3333[ i] <- x3[ i, 7:21] %*% D[ 7:21, i]
             
-            k1 <- z$md^2 / lambda[ 1, ]^2 * w1111
-            k2 <- z$md^2 / lambda[ 2, ]^2 * w2222
-            k3 <- z$md^2 / lambda[ 3, ]^2 * w3333
-
-
-            ## old voxelwise test version
-            ##            k1 <- k2 <- k3 <- numeric( nvox)
-
-            ##            if (verbose) pb <- txtProgressBar(0, nvox, style = 3)
-            ##            for ( i in 1:nvox) {
-            ##              if (verbose) setTxtProgressBar(pb, i)
-            ##              xxx <- dkiDesign( andir[ , , i])
-            
-            ##              w1111 <- xxx[ 1, 7:21] %*% D[ 7:21, i]
-            ##              w2222 <- xxx[ 2, 7:21] %*% D[ 7:21, i]
-            ##              w3333 <- xxx[ 3, 7:21] %*% D[ 7:21, i]
-
-            ##              k1[ i] <- z$md[ i]^2 / lambda[ 1, i]^2 * w1111
-            ##              k2[ i] <- z$md[ i]^2 / lambda[ 2, i]^2 * w2222
-            ##              k3[ i] <- z$md[ i]^2 / lambda[ 3, i]^2 * w3333
-            
-            ##            }
-            ##            if (verbose) close(pb)
-            
+            k1 <- w1111 / lambda[ 1, ]^2
+            k2 <- w2222 / lambda[ 2, ]^2
+            k3 <- w3333 / lambda[ 3, ]^2
 
             kbar <- ( k1 + k2 + k3) / 3
             kaxial <- k1
@@ -261,8 +250,6 @@ setMethod("dkiIndices", "dkiTensor",
                            kaxial = kaxial,
                            kradial = kradial,
                            fak = fak,
-                           lambda = lambda,
-                           evec = andir,
                            gradient = object@gradient,
                            bvalue = object@bvalue,
                            btb   = object@btb,
@@ -325,15 +312,5 @@ dkiDesign <- function( gradients) {
   X[ , 21] <- 12 * gradients[ 3, ]^2 * gradients[ 1, ] * gradients[ 2, ] # V_3312
   
   X
-}
-
-showFAColorScale <- function(filename = "FAcolorscale.png") {
-  data("colqFA")
-  png( filename = filename, width = 800, height = 100, bg = "white", pointsize = 16)
-  par( mar = c( 2, 0.5, 0.1, 0.5))
-  image( matrix( seq( 0, 1, length = 256), 256, 1), col = colqFA, yaxt = "n")
-  axis(1, at = seq( 0, 1, by = 0.1))
-  text( 0.1, 0, "FA", pos = 4, cex = 2, font = 2, col = "white")
-  dev.off()
 }
 

@@ -355,9 +355,7 @@ setClass("dkiIndices",
                         mk      = "array",
                         kaxial  = "array",
                         kradial = "array",
-                        fak     = "array",
-                        lambda  = "array",
-                        evec    = "array"),
+                        fak     = "array"),
          contains=c("list","dwi"),
          validity=function(object){
            if (any(dim(object@fa)!=object@ddim)) {
