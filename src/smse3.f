@@ -541,7 +541,7 @@ C$OMP FLUSH(thn,ni)
       RETURN
       END
       subroutine adsmse3m(y,th,ni,mask,ns,n1,n2,n3,ngrad,lambda,
-     1             ncoils,ncores,ind,w,n,thn,sw,swy,si,thi,minlev)
+     1             ncoils,ncores,ind,w,n,thn,sw,swy,si,fi,thi,minlev)
 C   
 C  Multi-shell version (differs in dimension of th 
 C  KL-distance based on all spheres and Gauss-approximation only
@@ -556,10 +556,11 @@ c   model=2  Gauss-based KL-distance, y ~ Chi, th on same scale, smooth y^2
       integer ns,n1,n2,n3,ngrad,n,ind(5,n),ncoils,ncores
       logical mask(n1,n2,n3)
       real y(n1,n2,n3,ngrad),thn(n1,n2,n3,ngrad),ni(n1,n2,n3,ngrad),
-     1     th(ns,n1,n2,n3,ngrad)
+     1     th(ns,n1,n2,n3,ngrad),fi(ns,ncores)
       real*8 lambda,w(n),sw(ngrad,ncores),swy(ngrad,ncores),df
       integer iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,k
-      real*8 sz,z,nii,thj,a,b,si(ns,ncores),thi(ns,ncores),yj,minlev
+      real*8 sz,z,nii,thj,a,b,si(ns,ncores),thi(ns,ncores),yj,minlev,
+     1       v0,z0
       integer omp_get_thread_num
       real*8 kldisnc1
       external kldisnc1,omp_get_thread_num
@@ -571,9 +572,10 @@ C just to prevent a compiler warning
 C  precompute values of lgamma(corrected df/2) in each voxel
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(n1,n2,n3,ngrad,ncores,mask,y,thn,ni,th,w,sw,swy,
-C$OMP& ind,ncoils,df,n,lambda,ns,thi,si,minlev)
+C$OMP& ind,ncoils,df,n,lambda,ns,thi,si,minlev,fi)
 C$OMP& FIRSTPRIVATE(a,b,nii)
-C$OMP& PRIVATE(iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,z,thj,sz,yj)
+C$OMP& PRIVATE(iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,z,thj,sz,yj,
+C$OMP& v0,z0)
 C$OMP DO SCHEDULE(GUIDED)
       DO iind=1,n1*n2*n3
          thrednr = omp_get_thread_num()+1
@@ -589,16 +591,23 @@ C returns value in 0:(ncores-1)
             swy(i4,thrednr)=0.d0
          END DO
          i4=0
+         v0 = 0.d0
          DO i=1,n
             if(ind(4,i).ne.i4) THEN
 C   by construction ind(4,.) should have same values consequtively
                i4 = ind(4,i)
+               v0 = 0.d0
                DO k=1,ns
-                  z = th(k,i1,i2,i3,i4)
-                  thi(k,thrednr) = z
-                  z = (z+a)**1.5d0
+                  z0 = th(k,i1,i2,i3,i4)
+                  thi(k,thrednr) = z0
+                  z = (z0+a)**1.5d0
                   z = (z/(z+b))
-                  si(k,thrednr) = z*z
+                  z=z*z
+C   thast the approximated standard deviation
+                  si(k,thrednr) = z
+                  z0 = z0-minlev
+                  fi(k,thrednr) = z0/z*z
+                  v0 = v0+z0*z0/z*z
                END DO
                nii = ni(i1,i2,i3,i4)/lambda
             END IF
@@ -614,11 +623,10 @@ C adaptation
             if(lambda.lt.1d10) THEN
                sz=0.d0
                DO k=1,ns
-                  thj=th(k,j1,j2,j3,j4)
-                  z=(thi(k,thrednr)-thj)/si(k,thrednr)
+                  z=fi(k,thrednr)*(thi(k,thrednr)-th(k,j1,j2,j3,j4))
                   sz=sz+z*z
                END DO
-               z=nii*sz
+               z=nii*sz/v0
 C  do not adapt on the sphere !!! 
             ELSE
                z=0.d0
@@ -635,12 +643,18 @@ C  now opposite directions
             if(ind(4,i).ne.i4) THEN
 C   by construction ind(4,.) should have same values consequtively
                i4 = ind(4,i)
+               v0 = 0.d0
                DO k=1,ns
-                  z = th(k,i1,i2,i3,i4)
-                  thi(k,thrednr) = z
-                  z = (z+a)**1.5d0
+                  z0 = th(k,i1,i2,i3,i4)
+                  thi(k,thrednr) = z0
+                  z = (z0+a)**1.5d0
                   z = (z/(z+b))
-                  si(k,thrednr) = z*z
+                  z=z*z
+C   thast the approximated standard deviation
+                  si(k,thrednr) = z
+                  z0 = z0-minlev
+                  fi(k,thrednr) = z0/z*z
+                  v0 = v0+z0*z0/z*z
                END DO
                nii = ni(i1,i2,i3,i4)/lambda
             END IF
@@ -659,11 +673,10 @@ C
             if(lambda.lt.1d10) THEN
                sz=0.d0
                DO k=1,ns
-                  thj=th(k,j1,j2,j3,j4)
-                  z=(thi(k,thrednr)-thj)/si(k,thrednr)
+                  z=fi(k,thrednr)*(thi(k,thrednr)-th(k,j1,j2,j3,j4))
                   sz=sz+z*z
                END DO
-               z=nii*sz
+               z=nii*sz/v0
 C  do not adapt on the sphere !!! 
             ELSE
                z=0.d0

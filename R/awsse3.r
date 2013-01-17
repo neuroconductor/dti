@@ -150,6 +150,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
                 double(ngrad*mc.cores),
                 double(nshell*mc.cores),
                 double(nshell*mc.cores),
+                double(nshell*mc.cores),
                 as.double(minlevel),
                 DUPL=FALSE,
                 PACKAGE="dti")[c("ni","th")]

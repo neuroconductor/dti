@@ -24,7 +24,7 @@ a <- readline("Provide standard deviation in K-space (default: 2400, example in 
 
 sigma <- if(a!="") as.numeric(a) else 2400
 if( is.na(sigma)) sigma <- 2400
-
+set.seed(1)
 
 
 

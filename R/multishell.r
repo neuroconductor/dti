@@ -60,20 +60,23 @@ getnext3g <- function(grad,bv){
 ##
 grad <- grad[,bv>0]
 ng <- dim(grad)[2]
-perm <- matrix(1,ng^2/8,3)
+ng2 <- max(4,ng/6)
+perm <- matrix(1,(ng2-2)*(ng2-1)*ng2/6,3)
 l <- 1
-for(i in 3:(ng/2)){
-for(j in 2:i){
-perm[l,-1] <- c(j,i+1)
+for(k in 1:(ng2-2)){
+for(j in (k+1):(ng2-1)){
+for(i in (j+1):ng2){
+perm[l,] <- c(k,j,i)
 l <- l+1
 }
 }
+}
 dperm <- l-1
-perm <- perm[1:dperm,]
+perm <- perm[2:dperm,]
+#  thats all ordered triples from (1:ng2), without (1,2,3)
 bv <- bv[bv>0]
-ubv <- unique(bv[bv>max(bv)/50])
+ubv <- sort(unique(bv[bv>max(bv)/50]))
 nbv <- length(ubv)
-ng <- dim(grad)[2]
 ind <- array(0,c(nbv,ng,3))
 w <- array(0,c(nbv,ng,3))
 for(i in 1:nbv){
@@ -90,21 +93,32 @@ for(i in 1:nbv){
          d <- abs(t(grad[,k])%*%grad[,indbk])
          od <- order(d,decreasing = TRUE)
          ijk <- indbk[od]
-         cat("k",k,"d",d[od][1:8],"ijk",ijk[1:8],"\n")
+#         cat("k",k,"d",d[od][1:8],"ijk",ijk[1:8],"\n")
          ind[j,k,] <- ijk[1:3]
          if(max(d)>1-1e-6){
             w[j,k,] <- c(1,0,0)
          } else {
             z <- getsphwghts(grad[,k],grad[,ijk[1]],grad[,ijk[2]],grad[,ijk[3]])
-            l <- 1
             ijk1 <- ijk
-            while(z$ierr==1&&l<dperm){
+            l <- 1
+            if(z$ierr==1){
+#  order triplets in perm according
+            dd <- numeric(dperm-1)
+            d <- acos(pmin(1,d))
+            for(l in 1:(dperm-1)){
                ijk1 <- ijk[perm[l,]]
+               dd[l] <- d[ijk1[1]]+d[ijk1[2]]+d[ijk1[3]]
+            }
+            odd <- order(dd)
+            l <- 1
+            }
+            while(z$ierr==1&&l<dperm){
+               ijk1 <- ijk[perm[odd[l],]]
                z <- getsphwghts(grad[,k],grad[,ijk1[1]],grad[,ijk1[2]],grad[,ijk1[3]])
                ind[j,k,] <- ijk1[1:3]
                l<-l+1
             }
-            cat("l",l-1,"ijk1",ijk1[1:3],"w",z$w,"\n")
+#            cat("l",l-1,"ijk1",ijk1[1:3],"w",z$w,"\n")
             w[j,k,] <- z$w
          }
    }
@@ -128,7 +142,12 @@ for(i in 1:n3g$nbv){
       mstheta[i,,,,j] <- theta[,n3g$ind[i,j,]]%*%n3g$w[i,j,] 
    }
 }
-mstheta
+# now inforce monotonicity 
+msthmin <- msthmax <- mstheta
+for(i in 2:n3g$nbv) msthmin[i,,,,] <- pmin(msthmin[i-1,,,,],msthmin[i,,,,])
+for(i in n3g$nbv:2) msthmax[i-1,,,,] <- pmax(msthmax[i-1,,,,],msthmax[i,,,,])
+(msthmin+msthmax)/2
+#mstheta
 }
 
 
