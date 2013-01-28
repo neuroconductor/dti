@@ -1,16 +1,11 @@
 # This file contains the implementation of dti.smooth() for 
-# "dtiData" lines 12--
-# and 
-# "dtiTensor" lines 225--
-# objects. The latter can be done with 
-# "Euclidian Metric" lines 237--
-# "Riemann Metric" lines 414--
+# "dtiData" Adaptive smoothing in SE(3)
 
 dwi.smooth <- function(object, ...) cat("No DTI smoothing defined for this class:",class(object),"\n")
 
 setGeneric("dwi.smooth", function(object, ...) standardGeneric("dwi.smooth"))
 
-setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,ncoils=1,sigma=NULL,level=NULL,minsb=5,vred=4,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE,dist=1,model="Chi2",wghts=NULL){
+setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,ncoils=1,sigma=NULL,level=NULL,vred=4,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE,dist=1,model="Chi2",wghts=NULL){
   args <- sys.call(-1)
   args <- c(object@call,args)
   sdcoef <- object@sdcoef
@@ -98,7 +93,6 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
   }
      th0 <- s0
      ni0 <- array(1,ddim)
-#  mask <- apply(sb,1:3,mean) > minsb
   mask <- s0>(ns0*level/sigma)
   if(multishell){
      gradstats <- getkappasmsh(grad, msstructure,dist=dist)
@@ -151,7 +145,8 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
                 double(nshell*mc.cores),
                 double(nshell*mc.cores),
                 double(nshell*mc.cores),
-                as.double(minlevel),
+#                as.double(minlevel),
+                as.double(0),                
                 DUPL=FALSE,
                 PACKAGE="dti")[c("ni","th")]
        dim(z$th) <- c(ddim,ngrad)
@@ -245,8 +240,8 @@ if(verbose){
 #  back to original scale
 #
   s0factor <- switch(model+1,ns0,ns0,sqrt(ns0))
-  si[,,,1] <-  th0*sigma/s0factor
-  si[,,,-1] <- z$th*sigma
+  si[,,,1] <-  pmax(th0,minlevel0)*sigma/s0factor
+  si[,,,-1] <- pmax(z$th,minlevel0)*sigma
   object@si <- if(model==1) sqrt(si) else si
   object@gradient <- grad <- cbind(c(0,0,0),grad)
   object@bvalue <- c(0,object@bvalue[-object@s0ind])

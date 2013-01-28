@@ -170,7 +170,7 @@ lkfullse3msh <- function(h,kappa,gradstats,vext,n){
       w[nn+1:z$nind] <- z$w
       nn <- nn + z$nind
     }  
-list(h=h,kappa=kappa,ind=ind[,1:nn],w=w,nind=nn)
+list(h=h,kappa=kappa,ind=ind[,1:nn],w=w[1:nn],nind=nn)
 }
 
 gethseqfullse3msh <-

@@ -605,9 +605,10 @@ C   by construction ind(4,.) should have same values consequtively
                   z=z*z
 C   thast the approximated standard deviation
                   si(k,thrednr) = z
-                  z0 = z0-minlev
-                  fi(k,thrednr) = z0/z*z
-                  v0 = v0+z0*z0/z*z
+C                  z0 = z0-minlev
+                  z0 = 1.d0
+                  fi(k,thrednr) = z0
+                  v0 = v0+z0*z0
                END DO
                nii = ni(i1,i2,i3,i4)/lambda
             END IF
@@ -650,11 +651,12 @@ C   by construction ind(4,.) should have same values consequtively
                   z = (z0+a)**1.5d0
                   z = (z/(z+b))
                   z=z*z
-C   thast the approximated standard deviation
+CC   thast the approximated standard deviation
                   si(k,thrednr) = z
-                  z0 = z0-minlev
-                  fi(k,thrednr) = z0/z*z
-                  v0 = v0+z0*z0/z*z
+C                  z0 = z0-minlev
+                  z0 = 1.d0
+                  fi(k,thrednr) = z0
+                  v0 = v0+z0*z0
                END DO
                nii = ni(i1,i2,i3,i4)/lambda
             END IF
@@ -696,6 +698,260 @@ C  do not adapt on the sphere !!!
 C$OMP END DO NOWAIT
 C$OMP END PARALLEL
 C$OMP FLUSH(thn,ni)
+      RETURN
+      END
+      subroutine adsmse3c(y,y0,th,ni,th0,ni0,mask,ns,n1,n2,n3,ngrad,
+     1                    ns0,lambda,ncoils,ncores,ind,w,n,ind0,w0,n0,
+     2                    thn,nin,th0n,ni0n,sw,swy,si,thi,nii)
+C   
+C  Multi-shell version (differs in dimension of th 
+C  KL-distance based on all spheres and Gauss-approximation only
+C
+C   perform adaptive smoothing on SE(3) multishell including s0
+C   y  -  si images
+C   y0 -  mean s0 image
+C   th -  estimated/interpolated \E si on all shells (including 0 shell)
+C   ni -  corresponding sum of weights
+C   th0 -  estimated/interpolated \E s0 and mean_g(\E si) on all other shells  
+C   ni0 -  corresponding sum of weights
+C   mask - head mask
+C   ns   - number of shells (including 0 shell)
+C   n1,n2,n3,ngrad,ns0 - dimensions, number of gradients (bv!=0), number of s0 images
+C   lambda - skale parameter
+C   ncoils - df/2 of \chi distributions
+C   ncores - number of cores
+C   ind    - index vectors for si weighting schemes 
+C   w    - corresponding weights
+C   n    - number of si weights
+C   ind0    - index vectors for s0 weighting schemes 
+C   w0    - corresponding weights
+C   n0    - number of s0 weights
+C   thn   - new estimates of \E si
+C   thn0   - new estimates of \E s0
+C   nin   - new sum of weight for si
+C   ni0n   - new sum of weight for s0
+C...sw,swy,si,thi,nii - working areas
+C   ind(.,i) contains coordinate indormation corresponding to positive
+C   location weights in w(i) for si images
+C   ind(.,i)[1:5] are j1-i1,j2-i2,j3-i3, i4 and j4 respectively 
+C
+      implicit logical (a-z)
+      integer ns,n1,n2,n3,ngrad,ns0,n,n0,ind(5,n),ind0(3,n0),ncoils,
+     1        ncores
+      logical mask(n1,n2,n3)
+      real y(n1,n2,n3,ngrad),y0(n1,n2,n3),th(ns,n1,n2,n3,ngrad),
+     1     ni(ns,n1,n2,n3,ngrad),th0(ns,n1,n2,n3),ni0(ns,n1,n2,n3),
+     2     thn(n1,n2,n3,ngrad),th0n(n1,n2,n3),
+     3     nin(n1,n2,n3,ngrad),ni0n(n1,n2,n3)
+      real*8 w(n),w0(n0),lambda,si(ns,ncores),thi(ns,ncores),
+     4     sw(ngrad,ncores),swy(ngrad,ncores),nii(ns,ncores)
+      integer iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,k
+      real*8 df,sz,z,a,b,z0,sw0,swy0
+      integer omp_get_thread_num
+      external omp_get_thread_num
+      df=2.d0*ncoils
+      a = -0.356536d0+0.003803d0*ncoils-0.701591d0*sqrt(.5*df)
+      b = -0.059703d0+0.029093d0*ncoils+0.098401d0*sqrt(.5*df)
+C just to prevent a compiler warning
+C  precompute values of lgamma(corrected df/2) in each voxel
+C$OMP PARALLEL DEFAULT(NONE)
+C$OMP& SHARED(ns,n1,n2,n3,ngrad,ns0,n,n0,ind,ind0,ncoils,ncores,y,y0,
+C$OMP&       th,ni,th0,ni0,w,w0,thn,th0n,nin,ni0n,si,thi,sw,swy,nii,
+C$OMP&       lambda,mask)
+C$OMP& FIRSTPRIVATE(df,a,b)
+C$OMP& PRIVATE(iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,k,sz,z,z0,
+C$OMP&       sw0,swy0)
+C$OMP DO SCHEDULE(GUIDED)
+C  First si - images
+      DO iind=1,n1*n2*n3
+C         call intpr("iind",4,iind,1)
+         thrednr = omp_get_thread_num()+1
+         if(thrednr.gt.ncores) call intpr("thrednr",7,thrednr,1)
+C returns value in 0:(ncores-1)
+         i1=mod(iind,n1)
+         if(i1.eq.0) i1=n1
+         i2=mod((iind-i1)/n1+1,n2)
+         if(i2.eq.0) i2=n2
+         i3=(iind-i1-(i2-1)*n1)/n1/n2+1         
+         if(.not.mask(i1,i2,i3)) CYCLE
+         DO i4=1,ngrad
+            sw(i4,thrednr)=0.d0
+            swy(i4,thrednr)=0.d0
+         END DO
+         i4=0
+         DO i=1,n
+            if(ind(4,i).ne.i4) THEN
+C   by construction ind(4,.) should have same values consequtively
+               i4 = ind(4,i)
+               DO k=1,ns
+                  z0 = th(k,i1,i2,i3,i4)
+                  thi(k,thrednr) = z0
+                  z = (z0+a)**1.5d0
+                  z = (z/(z+b))
+                  z=z*z
+C   thast the approximated standard deviation
+                  si(k,thrednr) = z
+                  nii(k,thrednr) = ni(k,i1,i2,i3,i4)/lambda
+               END DO
+            END IF
+            j1=i1+ind(1,i)
+            if(j1.le.0.or.j1.gt.n1) CYCLE
+            j2=i2+ind(2,i)
+            if(j2.le.0.or.j2.gt.n2) CYCLE
+            j3=i3+ind(3,i)
+            if(j3.le.0.or.j3.gt.n3) CYCLE
+            if(.not.mask(j1,j2,j3)) CYCLE          
+            j4=ind(5,i)
+C adaptation 
+            if(lambda.lt.1d10) THEN
+               sz=0.d0
+               DO k=1,ns
+                  z=(thi(k,thrednr)-th(k,j1,j2,j3,j4))
+                  sz=sz+nii(k,thrednr)*z*z
+               END DO
+               z=sz
+C  do not adapt on the sphere !!! 
+            ELSE
+               z=0.d0
+            END IF
+            if(z.ge.1.d0) CYCLE
+            z=w(i)*min(1.d0,2.d0-2.d0*z)
+            sw(i4,thrednr)=sw(i4,thrednr)+z
+            swy(i4,thrednr)=swy(i4,thrednr)+z*y(j1,j2,j3,j4)
+         END DO
+C  now opposite directions
+         DO i=1,n
+            if(ind(1,i).eq.0) CYCLE
+            if(ind(4,i).ne.i4) THEN
+C   by construction ind(4,.) should have same values consequtively
+               i4 = ind(4,i)
+               DO k=1,ns
+                  z0 = th(k,i1,i2,i3,i4)
+                  thi(k,thrednr) = z0
+                  z = (z0+a)**1.5d0
+                  z = (z/(z+b))
+                  z=z*z
+C   thast the approximated standard deviation
+                  si(k,thrednr) = z
+                  nii(k,thrednr) = ni(k,i1,i2,i3,i4)/lambda
+               END DO
+            END IF
+C
+C   handle case j1-i1 < 0 which is not contained in ind 
+C   using axial symmetry
+C
+            j1=i1-ind(1,i)
+            if(j1.le.0.or.j1.gt.n1) CYCLE
+            j2=i2-ind(2,i)
+            if(j2.le.0.or.j2.gt.n2) CYCLE
+            j3=i3-ind(3,i)
+            if(j3.le.0.or.j3.gt.n3) CYCLE
+            if(.not.mask(j1,j2,j3)) CYCLE          
+            j4=ind(5,i)
+            if(lambda.lt.1d10) THEN
+               sz=0.d0
+               DO k=1,ns
+                  z=(thi(k,thrednr)-th(k,j1,j2,j3,j4))
+                  sz=sz+nii(k,thrednr)*z*z
+               END DO
+               z=sz
+C  do not adapt on the sphere !!! 
+            ELSE
+               z=0.d0
+            END IF
+            if(z.ge.1.d0) CYCLE
+            z=w(i)*min(1.d0,2.d0-2.d0*z)
+            sw(i4,thrednr)=sw(i4,thrednr)+z
+            swy(i4,thrednr)=swy(i4,thrednr)+z*y(j1,j2,j3,j4)
+         END DO
+         DO i4=1,ngrad
+            thn(i1,i2,i3,i4) = swy(i4,thrednr)/sw(i4,thrednr)
+            nin(i1,i2,i3,i4) = sw(i4,thrednr)
+         END DO
+C      END DO
+C  Now s0 - images
+C      DO iind=1,n1*n2*n3
+C         thrednr = omp_get_thread_num()+1
+C returns value in 0:(ncores-1)
+C         i1=mod(iind,n1)
+C         if(i1.eq.0) i1=n1
+C         i2=mod((iind-i1)/n1+1,n2)
+C         if(i2.eq.0) i2=n2
+C         i3=(iind-i1-(i2-1)*n1)/n1/n2+1         
+C         if(.not.mask(i1,i2,i3)) CYCLE
+         sw0=0.d0
+         swy0=0.d0
+         DO k=1,ns
+            z0 = th0(k,i1,i2,i3)
+            thi(k,thrednr) = z0
+            z = (z0+a)**1.5d0
+            z = (z/(z+b))
+            z=z*z
+C   thast the approximated standard deviation
+            si(k,thrednr) = z
+            nii(k,thrednr) = ni0(k,i1,i2,i3)/lambda
+         END DO
+         DO i=1,n0
+            j1=i1+ind0(1,i)
+            if(j1.le.0.or.j1.gt.n1) CYCLE
+            j2=i2+ind0(2,i)
+            if(j2.le.0.or.j2.gt.n2) CYCLE
+            j3=i3+ind0(3,i)
+            if(j3.le.0.or.j3.gt.n3) CYCLE
+            if(.not.mask(j1,j2,j3)) CYCLE          
+C adaptation 
+            if(lambda.lt.1d10) THEN
+               sz=0.d0
+               DO k=1,ns
+                  z=(thi(k,thrednr)-th0(k,j1,j2,j3))
+                  sz=sz+nii(k,thrednr)*z*z
+               END DO
+               z=sz
+C  do not adapt on the sphere !!! 
+            ELSE
+               z=0.d0
+            END IF
+            if(z.ge.1.d0) CYCLE
+            z=w(i)*min(1.d0,2.d0-2.d0*z)
+            sw0=sw0+z
+            swy0=swy0+z*y0(j1,j2,j3)
+         END DO
+C  now opposite directions
+         DO i=1,n0
+            if(ind0(1,i).eq.0) CYCLE
+C
+C   handle case j1-i1 < 0 which is not contained in ind 
+C   using axial symmetry
+C
+            j1=i1-ind0(1,i)
+            if(j1.le.0.or.j1.gt.n1) CYCLE
+            j2=i2-ind0(2,i)
+            if(j2.le.0.or.j2.gt.n2) CYCLE
+            j3=i3-ind0(3,i)
+            if(j3.le.0.or.j3.gt.n3) CYCLE
+            if(.not.mask(j1,j2,j3)) CYCLE          
+            if(lambda.lt.1d10) THEN
+               sz=0.d0
+               DO k=1,ns
+                  z=(thi(k,thrednr)-th0(k,j1,j2,j3))
+                  sz=sz+nii(k,thrednr)*z*z
+               END DO
+               z=sz
+C  do not adapt on the sphere !!! 
+            ELSE
+               z=0.d0
+            END IF
+            if(z.ge.1.d0) CYCLE
+            z=w(i)*min(1.d0,2.d0-2.d0*z)
+            sw0=sw0+z
+            swy0=swy0+z*y0(j1,j2,j3)
+         END DO
+         th0n(i1,i2,i3) = swy0/sw0
+         ni0n(i1,i2,i3) = sw0
+      END DO
+C$OMP END DO NOWAIT
+C$OMP END PARALLEL
+C$OMP FLUSH(thn,nin,th0n,ni0n)
       RETURN
       END
       subroutine asmse30p(y,th,ni,mask,n1,n2,n3,lambda,ncoils,ind,w,
@@ -1014,6 +1270,45 @@ C         END DO
 C$OMP END DO NOWAIT
 C$OMP END PARALLEL
 C$OMP FLUSH(thn,ni,ni2,th2)
+      RETURN
+      END
+      subroutine lkfuls0(h,vext,ind,wght,n)
+      implicit logical (a-z)
+      integer n,ind(3,n)
+      real*8 h,vext(2),wght(n)
+      integer ih1,ih2,ih3,i,j1,j2,j3
+      real*8 h2,x1,x2,x3,z,z1,vd2,vd3
+      vd2 = vext(1)
+      vd3 = vext(2)
+      ih1 = max(1.d0,5.0d0*h)
+      ih2 = max(1.d0,5.0d0*h/vd2)
+      ih3 = max(1.d0,5.0d0*h/vd3)
+      h2 = h*h
+      i = 1
+      z = 0.d0
+C  just to prevent compiler warnings
+      DO j1 = 0,ih1
+         x1 = j1
+         DO j2 = -ih2,ih2
+            x2 = vd2*j2
+            DO j3 = -ih3,ih3
+               x3 = vd3*j3
+               z1 = z+x1*x1+x2*x2+x3*x3
+               if(z1.gt.h2) CYCLE
+               if(i.gt.n) THEN
+                  call intpr("Exceeded max i",14,i,1)
+                  n = i-1
+                  return
+               END IF
+               wght(i)= (1.d0-z1/h2)
+               ind(1,i) = j1
+               ind(2,i) = j2
+               ind(3,i) = j3
+               i = i+1
+            END DO
+         END DO
+      END DO
+      n = i-1
       RETURN
       END
       
