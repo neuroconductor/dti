@@ -68,7 +68,6 @@ setMethod("dkiTensor", "dtiData",
                 for ( j in 1:ddim[2]) {
                   for ( k in 1:ddim[3]) {
                     ## cat( "voxel", i, j, k, "\n")
-				  
                     ## Tabesh Eq. [12]
                     Tabesh_B <- log( dwiobj@si[ i, j, k, -dwiobj@s0ind] / mean( dwiobj@si[ i, j, k, dwiobj@s0ind]))
                     ## PERFORM SOME TEST BEFORE IT!!
@@ -81,17 +80,15 @@ setMethod("dkiTensor", "dtiData",
                 }
               }
               if (verbose) close(pb)  
-            } ( method == "CLLS-H") {
-						
+            } 
+            if ( method == "CLLS-H") {
               stop( "dkiTensor: CLLS-H not yet implemented, choose CLLP-QP")
-						
-            } ( method == "ULLS") {
-                				
+            }  
+            if ( method == "ULLS") {
               stop( "dkiTensor: ULLS not yet implemented, choose CLLP-QP")
-				
             }
 
-            if ( verbose) cat( "dkiTensor: finished estimation", format( Sys.time()), "\n")	 
+            if ( verbose) cat( "dkiTensor: finished estimation", format( Sys.time()), "\n")
 
             dim(D) <- c( 21, prod(ddim))
             Dapp <- Tabesh_AD %*% D[ c( 1, 4, 6, 2, 3, 5), ]

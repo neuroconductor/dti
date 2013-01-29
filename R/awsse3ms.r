@@ -5,7 +5,7 @@ dwi.smooth.ms <- function(object, ...) cat("No DTI smoothing defined for this cl
 
 setGeneric("dwi.smooth.ms", function(object, ...) standardGeneric("dwi.smooth.ms"))
 
-setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,ncoils=1,sigma=NULL,level=NULL,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE,dist=1,wghts=NULL){
+setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=10,kappa0=.6,ncoils=1,sigma=NULL,level=NULL,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE,wghts=NULL){
   args <- sys.call(-1)
   args <- c(object@call,args)
   sdcoef <- object@sdcoef
@@ -69,10 +69,11 @@ setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=6,kappa0=NULL
 #  th0 <- array(s0,c(ddim,nshell+1))
   ni0 <- array(ns0,ddim)
   mask <- s0>(ns0*level/sigma)
-  gradstats <- getkappasmsh(grad, msstructure,dist=dist)
+  gradstats <- getkappasmsh3(grad, msstructure)
 #     save(gradstats,file="gradstats.rsc")
   hseq <- gethseqfullse3msh(kstar,gradstats,kappa0,vext=vext)
   kappa <- hseq$kappa
+  cat("kappa",kappa,"\n")
   nind <- hseq$n
   hseqi <- hseq$h
   hseq0 <- hseq$h0 <- apply(hseqi,2,mean)
@@ -85,13 +86,13 @@ setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=6,kappa0=NULL
   kinit <- if(lambda<1e10) 1 else kstar
   mc.cores <- setCores(,reprt=FALSE)
   for(k in kinit:kstar){
-    gc()
-    hakt <- hseqi[,k]
-    hakt0 <- hseq0[k]
-       thnimsh <- interpolatesphere0(z$th,z$th0,z$ni,z$ni0,msstructure)
-       param <- lkfullse3msh(hakt,kappa/hakt,gradstats,vext,nind) 
-       param0 <- lkfulls0(hakt0,vext,nind) 
-       z <- .Fortran("adsmse3c",
+     gc()
+     hakt <- hseqi[,k]
+     hakt0 <- hseq0[k]
+     thnimsh <- interpolatesphere0(z$th,z$th0,z$ni,z$ni0,msstructure)
+     param <- lkfullse3msh(hakt,kappa/hakt,gradstats,vext,nind) 
+     param0 <- lkfulls0(hakt0,vext,nind) 
+     z <- .Fortran("adsmse3c",
                 as.single(sb),#y
                 as.single(s0),#y0
                 as.single(thnimsh$mstheta),#th
@@ -125,15 +126,16 @@ setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=6,kappa0=NULL
                 double((nshell+1)*mc.cores),#nii
                 DUPL=FALSE,
                 PACKAGE="dti")[c("ni","th","ni0","th0")]
-       dim(z$th) <- c(ddim,ngrad)
-       dim(z$th0) <- c(ddim)
-       dim(z$ni) <- c(ddim,ngrad)
-       dim(z$ni0) <- c(ddim)
-       gc()
+    dim(z$th) <- c(ddim,ngrad)
+    dim(z$th0) <- c(ddim)
+    dim(z$ni) <- c(ddim,ngrad)
+    dim(z$ni0) <- c(ddim)
+    gc()
 if(verbose){
    dim(z$ni) <- c(prod(ddim),ngrad)
    cat("k:",k,"h_k:",signif(max(hakt),3)," quartiles of ni",signif(quantile(z$ni[mask,]),3),
-  "mean of ni",signif(mean(z$ni[mask,]),3),
+  "mean of ni",signif(mean(z$ni[mask,]),3),"\n              quartiles of ni0",signif(quantile(z$ni0[mask]),3),
+  "mean of ni0",signif(mean(z$ni0[mask]),3),
   " time elapsed:",format(difftime(Sys.time(),prt0),digits=3),"\n")
   } else {
       cat(".")
@@ -200,10 +202,12 @@ mstheta <- msni <- array(0,c(nbv+1,dtheta))
 dim(theta)  <- dim(ni)  <- c(prod(dtheta[1:3]),dtheta[4])
 msth0 <- msni0 <- array(0,c(nbv+1,dth0))
 # first component contains th0
-for(j in 1:dim(theta)[2]){
-   mstheta[1,,,,j] <- th0 
-   msni[1,,,,j] <- ni0
-}
+#for(j in 1:dim(theta)[2]){
+#   mstheta[1,,,,j] <- th0 
+#   msni[1,,,,j] <- ni0
+#}
+mstheta[1,,,,] <- th0 
+msni[1,,,,] <- ni0
 # now the remaining shells
 for(i in 1:nbv){
    for(j in 1:dim(theta)[2]){

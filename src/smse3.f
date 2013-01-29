@@ -238,27 +238,40 @@ C    die spherischen Koordinaten der Gradientenpaare (Parameter der Rotationsmat
       ih3 = max(1.d0,5.0d0*h/vext(2))
       h2 = h*h
       kap2 = kappa*kappa
-      vd2 = vext(1)
-      vd3 = vext(2)
+      vd2 = vext(1)*vext(1)
+      vd3 = vext(2)*vext(2)
       i = 1
       z = 0.d0
 C  just to prevent compiler warnings
       DO j4 = 1,ng
          k4 = k456(1,i4,j4)
-         k5 = k456(2,i4,j4)
-         k6 = k456(3,i4,j4)
-         if(dist.eq.1) z = (k4*k4+k5*k5+abs(k6))/kap2
-         if(dist.eq.2) z = (k4*k4+k5*k5+k6*k6)/kap2
-         if(dist.eq.3) z = k4*k4/kap2
+         IF(dist.lt.3) THEN
+            k5 = k456(2,i4,j4)
+            k6 = k456(3,i4,j4)
+         END IF
+         SELECT CASE (dist)
+            CASE (1) 
+               z = (k4*k4+k5*k5+abs(k6))/kap2
+            CASE (2) 
+               z = (k4*k4+k5*k5+k6*k6)/kap2
+            CASE (3) 
+               z = k4*k4/kap2
+            CASE DEFAULT 
+               z = k4*k4/kap2
+         END SELECT
          if(z.gt.h2) CYCLE
 C   last three komponents already to large
          DO j1 = 0,ih1
             x1 = j1
+            x1 = z + x1*x1
+            if(x1.gt.h2) CYCLE
             DO j2 = -ih2,ih2
-               x2 = vd2*j2
+               x2 = j2
+               x2 = x1 + vd2*x2*x2
+               if(x2.gt.h2) CYCLE
                DO j3 = -ih3,ih3
-                  x3 = vd3*j3
-                  z1 = z+x1*x1+x2*x2+x3*x3
+                  x3 = j3
+                  z1 = x2+vd3*x3*x3
                   if(z1.gt.h2) CYCLE
                   if(i.gt.n) THEN
                      call intpr("Exceeded max i",14,i,1)
@@ -267,7 +280,6 @@ C   last three komponents already to large
                      return
                   END IF
                   wght(i)= (1.d0-z1/h2)
-C   *cb
                   ind(1,i) = j1
                   ind(2,i) = j2
                   ind(3,i) = j3
@@ -299,27 +311,40 @@ C   *cb
       mj3=0
       h2 = h*h
       kap2 = kappa*kappa
-      vd2 = vext(1)
-      vd3 = vext(2)
+      vd2 = vext(1)*vext(1)
+      vd3 = vext(2)*vext(2)
       n = 0
       z = 0.d0
 C  just to prevent compiler warnings
       DO j4 = 1,ng
          k4 = k456(1,i4,j4)
-         k5 = k456(2,i4,j4)
-         k6 = k456(3,i4,j4)
-         if(dist.eq.1) z = (k4*k4+k5*k5+abs(k6))/kap2
-         if(dist.eq.2) z = (k4*k4+k5*k5+k6*k6)/kap2
-         if(dist.eq.3) z = k4*k4/kap2
+         IF(dist.lt.3) THEN
+            k5 = k456(2,i4,j4)
+            k6 = k456(3,i4,j4)
+         END IF
+         SELECT CASE (dist)
+            CASE (1) 
+               z = (k4*k4+k5*k5+abs(k6))/kap2
+            CASE (2) 
+               z = (k4*k4+k5*k5+k6*k6)/kap2
+            CASE (3) 
+               z = k4*k4/kap2
+            CASE DEFAULT 
+               z = k4*k4/kap2
+         END SELECT
          if(z.gt.h2) CYCLE
 C   last three komponents already to large
          DO j1 = 0,ih1
             x1 = j1
+            x1 = z + x1*x1
+            if(x1.gt.h2) CYCLE
             DO j2 = -ih2,ih2
-               x2 = vd2*j2
+               x2 = j2
+               x2 = x1 + vd2*x2*x2
+               if(x2.gt.h2) CYCLE
                DO j3 = -ih3,ih3
-                  x3 = vd3*j3
-                  z1 = z+x1*x1+x2*x2+x3*x3
+                  x3 = j3
+                  z1 = x2+vd2*x3*x3
                   if(z1.gt.h2) CYCLE
                   wght= (1.d0-z1/h2)
 C   if j1>0  (-j1,-j2,-j3) gets the same weight, so count it twice
@@ -766,7 +791,6 @@ C  First si - images
       DO iind=1,n1*n2*n3
 C         call intpr("iind",4,iind,1)
          thrednr = omp_get_thread_num()+1
-         if(thrednr.gt.ncores) call intpr("thrednr",7,thrednr,1)
 C returns value in 0:(ncores-1)
          i1=mod(iind,n1)
          if(i1.eq.0) i1=n1
@@ -809,13 +833,12 @@ C adaptation
                   z=(thi(k,thrednr)-th(k,j1,j2,j3,j4))
                   sz=sz+nii(k,thrednr)*z*z
                END DO
-               z=sz
 C  do not adapt on the sphere !!! 
             ELSE
-               z=0.d0
+               sz=0.d0
             END IF
-            if(z.ge.1.d0) CYCLE
-            z=w(i)*min(1.d0,2.d0-2.d0*z)
+            if(sz.ge.1.d0) CYCLE
+            z=w(i)*min(1.d0,2.d0-2.d0*sz)
             sw(i4,thrednr)=sw(i4,thrednr)+z
             swy(i4,thrednr)=swy(i4,thrednr)+z*y(j1,j2,j3,j4)
          END DO
@@ -854,13 +877,12 @@ C
                   z=(thi(k,thrednr)-th(k,j1,j2,j3,j4))
                   sz=sz+nii(k,thrednr)*z*z
                END DO
-               z=sz
 C  do not adapt on the sphere !!! 
             ELSE
-               z=0.d0
+               sz=0.d0
             END IF
-            if(z.ge.1.d0) CYCLE
-            z=w(i)*min(1.d0,2.d0-2.d0*z)
+            if(sz.ge.1.d0) CYCLE
+            z=w(i)*min(1.d0,2.d0-2.d0*sz)
             sw(i4,thrednr)=sw(i4,thrednr)+z
             swy(i4,thrednr)=swy(i4,thrednr)+z*y(j1,j2,j3,j4)
          END DO
@@ -868,17 +890,7 @@ C  do not adapt on the sphere !!!
             thn(i1,i2,i3,i4) = swy(i4,thrednr)/sw(i4,thrednr)
             nin(i1,i2,i3,i4) = sw(i4,thrednr)
          END DO
-C      END DO
-C  Now s0 - images
-C      DO iind=1,n1*n2*n3
-C         thrednr = omp_get_thread_num()+1
-C returns value in 0:(ncores-1)
-C         i1=mod(iind,n1)
-C         if(i1.eq.0) i1=n1
-C         i2=mod((iind-i1)/n1+1,n2)
-C         if(i2.eq.0) i2=n2
-C         i3=(iind-i1-(i2-1)*n1)/n1/n2+1         
-C         if(.not.mask(i1,i2,i3)) CYCLE
+C    now the s0 image in iind
          sw0=0.d0
          swy0=0.d0
          DO k=1,ns
@@ -906,13 +918,12 @@ C adaptation
                   z=(thi(k,thrednr)-th0(k,j1,j2,j3))
                   sz=sz+nii(k,thrednr)*z*z
                END DO
-               z=sz
 C  do not adapt on the sphere !!! 
             ELSE
-               z=0.d0
+               sz=0.d0
             END IF
-            if(z.ge.1.d0) CYCLE
-            z=w(i)*min(1.d0,2.d0-2.d0*z)
+            if(sz.ge.1.d0) CYCLE
+            z=w0(i)*min(1.d0,2.d0-2.d0*sz)
             sw0=sw0+z
             swy0=swy0+z*y0(j1,j2,j3)
          END DO
@@ -936,13 +947,12 @@ C
                   z=(thi(k,thrednr)-th0(k,j1,j2,j3))
                   sz=sz+nii(k,thrednr)*z*z
                END DO
-               z=sz
 C  do not adapt on the sphere !!! 
             ELSE
-               z=0.d0
+               sz=0.d0
             END IF
-            if(z.ge.1.d0) CYCLE
-            z=w(i)*min(1.d0,2.d0-2.d0*z)
+            if(sz.ge.1.d0) CYCLE
+            z=w0(i)*min(1.d0,2.d0-2.d0*sz)
             sw0=sw0+z
             swy0=swy0+z*y0(j1,j2,j3)
          END DO
