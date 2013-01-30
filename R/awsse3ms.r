@@ -71,7 +71,8 @@ setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=10,kappa0=.6,
   hseq0 <- hseq$h0 <- apply(hseqi,2,mean)
 # make it nonrestrictive for the first step
   ni <- array(1,dim(sb))
-  minlevel <- sqrt(2*ncoils)
+  minlevel <- gamma(ncoils+0.5)/gamma(ncoils)*sqrt(2)
+#  thats the mean of the central chi distribution with 2*ncoils df
   z <- list(th=sb, ni = ni, th0=s0, ni0=ni0)
   prt0 <- Sys.time()
   cat("adaptive smoothing in SE3, kstar=",kstar,if(verbose)"\n" else " ")
@@ -99,6 +100,7 @@ setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=10,kappa0=.6,
                 as.integer(ngrad),#ngrad
                 as.double(lambda),#lambda
                 as.integer(ncoils),#ncoils
+                as.double(minlevel),#minlev 
                 as.integer(mc.cores),#ncores
                 as.integer(param$ind),#ind
                 as.double(param$w),#w
