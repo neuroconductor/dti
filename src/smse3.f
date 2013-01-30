@@ -776,19 +776,19 @@ C
       real*8 w(n),w0(n0),lambda,si(ns,ncores),thi(ns,ncores),
      4     sw(ngrad,ncores),swy(ngrad,ncores),nii(ns,ncores),minlev
       integer iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,k
-      real*8 df,sz,z,a,b,z0,sw0,swy0
+      real*8 df,sz,z,a,b,z0,sw0,swy0,minlev2
       integer omp_get_thread_num
       external omp_get_thread_num
       df=2.d0*ncoils
+      minlev2 = sqrt(df-minlev*minlev)
+C  thats the sd of central chi distribution which provides the lower limit in si
       a = -0.356536d0+0.003803d0*ncoils-0.701591d0*sqrt(.5*df)
       b = -0.059703d0+0.029093d0*ncoils+0.098401d0*sqrt(.5*df)
-C just to prevent a compiler warning
-C  precompute values of lgamma(corrected df/2) in each voxel
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(ns,n1,n2,n3,ngrad,n,n0,ind,ind0,ncoils,ncores,y,y0,
 C$OMP&       th,ni,th0,ni0,w,w0,thn,th0n,nin,ni0n,si,thi,sw,swy,nii,
 C$OMP&       lambda,mask,minlev)
-C$OMP& FIRSTPRIVATE(df,a,b)
+C$OMP& FIRSTPRIVATE(df,a,b,minlev2)
 C$OMP& PRIVATE(iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,k,sz,z,z0,
 C$OMP&       sw0,swy0)
 C$OMP DO SCHEDULE(GUIDED)
@@ -813,11 +813,11 @@ C returns value in 0:(ncores-1)
 C   by construction ind(4,.) should have same values consequtively
                i4 = ind(4,i)
                DO k=1,ns
-                  z0 = max(minlev,th(k,i1,i2,i3,i4))
+                  z0 = th(k,i1,i2,i3,i4)
                   thi(k,thrednr) = z0
-                  z = (z0+a)**1.5d0
+                  z = (max(z0,minlev)+a)**1.5d0
                   z = (z/(z+b))
-                  z=z*z
+                  z=max(minlev2,z*z)
 C   thast the approximated standard deviation
                   si(k,thrednr) = z
                   nii(k,thrednr) = ni(k,i1,i2,i3,i4)/lambda
@@ -854,11 +854,11 @@ C  now opposite directions
 C   by construction ind(4,.) should have same values consequtively
                i4 = ind(4,i)
                DO k=1,ns
-                  z0 = max(minlev,th(k,i1,i2,i3,i4))
+                  z0 = th(k,i1,i2,i3,i4)
                   thi(k,thrednr) = z0
-                  z = (z0+a)**1.5d0
+                  z = (max(z0,minlev)+a)**1.5d0
                   z = (z/(z+b))
-                  z=z*z
+                  z=max(minlev2,z*z)
 C   thast the approximated standard deviation
                   si(k,thrednr) = z
                   nii(k,thrednr) = ni(k,i1,i2,i3,i4)/lambda
@@ -899,11 +899,11 @@ C    now the s0 image in iind
          sw0=0.d0
          swy0=0.d0
          DO k=1,ns
-            z0 = max(minlev,th0(k,i1,i2,i3))
+            z0 = th0(k,i1,i2,i3)
             thi(k,thrednr) = z0
-            z = (z0+a)**1.5d0
+            z = (max(z0,minlev)+a)**1.5d0
             z = (z/(z+b))
-            z=z*z
+            z=max(minlev2,z*z)
 C   thast the approximated standard deviation
             si(k,thrednr) = z
             nii(k,thrednr) = ni0(k,i1,i2,i3)/lambda
