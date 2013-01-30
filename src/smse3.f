@@ -242,6 +242,8 @@ C    die spherischen Koordinaten der Gradientenpaare (Parameter der Rotationsmat
       vd3 = vext(2)*vext(2)
       i = 1
       z = 0.d0
+      k5 = 0.d0
+      k6 = 0.d0
 C  just to prevent compiler warnings
       DO j4 = 1,ng
          k4 = k456(1,i4,j4)
@@ -315,6 +317,8 @@ C   last three komponents already to large
       vd3 = vext(2)*vext(2)
       n = 0
       z = 0.d0
+      k5 = 0.d0
+      k6 = 0.d0
 C  just to prevent compiler warnings
       DO j4 = 1,ng
          k4 = k456(1,i4,j4)
@@ -726,7 +730,7 @@ C$OMP FLUSH(thn,ni)
       RETURN
       END
       subroutine adsmse3c(y,y0,th,ni,th0,ni0,mask,ns,n1,n2,n3,ngrad,
-     1                    ns0,lambda,ncoils,ncores,ind,w,n,ind0,w0,n0,
+     1                    lambda,ncoils,ncores,ind,w,n,ind0,w0,n0,
      2                    thn,nin,th0n,ni0n,sw,swy,si,thi,nii)
 C   
 C  Multi-shell version (differs in dimension of th 
@@ -741,7 +745,7 @@ C   th0 -  estimated/interpolated \E s0 and mean_g(\E si) on all other shells
 C   ni0 -  corresponding sum of weights
 C   mask - head mask
 C   ns   - number of shells (including 0 shell)
-C   n1,n2,n3,ngrad,ns0 - dimensions, number of gradients (bv!=0), number of s0 images
+C   n1,n2,n3,ngrad - dimensions, number of gradients (bv!=0)
 C   lambda - skale parameter
 C   ncoils - df/2 of \chi distributions
 C   ncores - number of cores
@@ -761,7 +765,7 @@ C   location weights in w(i) for si images
 C   ind(.,i)[1:5] are j1-i1,j2-i2,j3-i3, i4 and j4 respectively 
 C
       implicit logical (a-z)
-      integer ns,n1,n2,n3,ngrad,ns0,n,n0,ind(5,n),ind0(3,n0),ncoils,
+      integer ns,n1,n2,n3,ngrad,n,n0,ind(5,n),ind0(3,n0),ncoils,
      1        ncores
       logical mask(n1,n2,n3)
       real y(n1,n2,n3,ngrad),y0(n1,n2,n3),th(ns,n1,n2,n3,ngrad),
@@ -780,7 +784,7 @@ C
 C just to prevent a compiler warning
 C  precompute values of lgamma(corrected df/2) in each voxel
 C$OMP PARALLEL DEFAULT(NONE)
-C$OMP& SHARED(ns,n1,n2,n3,ngrad,ns0,n,n0,ind,ind0,ncoils,ncores,y,y0,
+C$OMP& SHARED(ns,n1,n2,n3,ngrad,n,n0,ind,ind0,ncoils,ncores,y,y0,
 C$OMP&       th,ni,th0,ni0,w,w0,thn,th0n,nin,ni0n,si,thi,sw,swy,nii,
 C$OMP&       lambda,mask)
 C$OMP& FIRSTPRIVATE(df,a,b)

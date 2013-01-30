@@ -24,15 +24,6 @@ setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=10,kappa0=.6,
   sigma <- median(sigma)
  cat("using median estimated sigma",sigma,"\n")
   }
-  model <- 2
-#
-#  Chi2 uses approx of noncentral Chi^2 by rescaled central Chi^2 with adjusted DF 
-#        and smoothes Y^2
-#  Chi uses approx of noncentral Chi^2 by rescaled central Chi^2 with adjusted DF  
-#        and smoothes Y
-#   uses approximation of noncentral Chi by a Gaussian (with correct mean and variance)
-#        and smoothes Y
-
 #
   if(!(is.null(xind)&is.null(yind)&is.null(zind))){
   if(is.null(xind)) xind <- 1:object@ddim[1]
@@ -63,12 +54,13 @@ setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=10,kappa0=.6,
   s0 <- s0/sigma
   if(ns0>1){
      dim(s0) <- c(prod(ddim),ns0)
-     s0 <- s0%*%rep(1,ns0)
+     s0 <- s0%*%rep(1/sqrt(ns0),ns0)
+#  make sure linear combination of s0 has same variance as original 
      dim(s0) <- ddim
   }
 #  th0 <- array(s0,c(ddim,nshell+1))
-  ni0 <- array(ns0,ddim)
-  mask <- s0>(ns0*level/sigma)
+  ni0 <- array(1,ddim)
+  mask <- s0>(sqrt(ns0)*level/sigma)
   gradstats <- getkappasmsh3(grad, msstructure)
 #     save(gradstats,file="gradstats.rsc")
   hseq <- gethseqfullse3msh(kstar,gradstats,kappa0,vext=vext)
@@ -105,7 +97,6 @@ setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=10,kappa0=.6,
                 as.integer(ddim[2]),#n2
                 as.integer(ddim[3]),#n3
                 as.integer(ngrad),#ngrad
-                as.integer(ns0),#ns0
                 as.double(lambda),#lambda
                 as.integer(ncoils),#ncoils
                 as.integer(mc.cores),#ncores
@@ -146,10 +137,10 @@ if(verbose){
 #
 #  back to original scale
 #
-  s0factor <- switch(model+1,ns0,ns0,sqrt(ns0))
-  si[,,,1] <-  pmax(z$th0,minlevel)*sigma/s0factor
+  si[,,,1] <-  pmax(z$th0/sqrt(ns0),minlevel)*sigma
+#  go back to original s0 scale
   si[,,,-1] <- pmax(z$th,minlevel)*sigma
-  object@si <- if(model==1) sqrt(si) else si
+  object@si <-  si
   object@gradient <- grad <- cbind(c(0,0,0),grad)
   object@bvalue <- c(0,object@bvalue[-object@s0ind])
   object@btb <- create.designmatrix.dti(grad)
