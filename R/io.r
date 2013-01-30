@@ -229,7 +229,7 @@ readDWIdata <- function(gradient, dirlist,
       if (is.null(zind)) zind <- 1:nslice
       delta <- dd@pixdim[2:4]
       imageOrientationPatient <- diag(3)
-      if ( dim( dd)[ 4] == 1) dim( dd) <- dim( dd)[ 1:3]
+      if (length( dim( dd)) == 4) if ( dim( dd)[ 4] == 1) dim( dd) <- dim( dd)[ 1:3]
     } else if (format == "AFNI") {
       dd <- readAFNI(ff)
       nslice <- dim(dd)[3]
