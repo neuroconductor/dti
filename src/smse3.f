@@ -835,7 +835,7 @@ C adaptation
             if(lambda.lt.1d10) THEN
                sz=0.d0
                DO k=1,ns
-                  z=(thi(k,thrednr)-th(k,j1,j2,j3,j4))
+                  z=(thi(k,thrednr)-th(k,j1,j2,j3,j4))/si(k,thrednr)
                   sz=sz+nii(k,thrednr)*z*z
                END DO
 C  do not adapt on the sphere !!! 
@@ -879,7 +879,7 @@ C
             if(lambda.lt.1d10) THEN
                sz=0.d0
                DO k=1,ns
-                  z=(thi(k,thrednr)-th(k,j1,j2,j3,j4))
+                  z=(thi(k,thrednr)-th(k,j1,j2,j3,j4))/si(k,thrednr)
                   sz=sz+nii(k,thrednr)*z*z
                END DO
 C  do not adapt on the sphere !!! 
@@ -920,7 +920,7 @@ C adaptation
             if(lambda.lt.1d10) THEN
                sz=0.d0
                DO k=1,ns
-                  z=(thi(k,thrednr)-th0(k,j1,j2,j3))
+                  z=(thi(k,thrednr)-th0(k,j1,j2,j3))/si(k,thrednr)
                   sz=sz+nii(k,thrednr)*z*z
                END DO
 C  do not adapt on the sphere !!! 
@@ -949,7 +949,7 @@ C
             if(lambda.lt.1d10) THEN
                sz=0.d0
                DO k=1,ns
-                  z=(thi(k,thrednr)-th0(k,j1,j2,j3))
+                  z=(thi(k,thrednr)-th0(k,j1,j2,j3))/si(k,thrednr)
                   sz=sz+nii(k,thrednr)*z*z
                END DO
 C  do not adapt on the sphere !!! 
