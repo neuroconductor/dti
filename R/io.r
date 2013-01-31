@@ -4,13 +4,15 @@
 #                                                              #
 ################################################################
 
-dtiData <- function(gradient,imagefile,ddim,bvalue=NULL,xind=NULL,yind=NULL,zind=NULL,level=0,mins0value=0,maxvalue=32000,voxelext=c(1,1,1),orientation=c(0,2,5),rotation=diag(3)) {
+dtiData <- function(gradient,imagefile,ddim,bvalue=NULL,xind=NULL,yind=NULL,zind=NULL,level=0,mins0value=1,maxvalue=32000,voxelext=c(1,1,1),orientation=c(0,2,5),rotation=diag(3)) {
   args <- list(sys.call())
   if (any(sort((orientation)%/%2) != 0:2)) stop("invalid orientation \n")
   if (dim(gradient)[2]==3) gradient <- t(gradient)
   if (dim(gradient)[1]!=3) stop("Not a valid gradient matrix")
   ngrad <- dim(gradient)[2]
   s0ind <- (1:ngrad)[apply(abs(gradient),2,max)==0] 
+  d <- diag(t(gradient[,-s0ind])%*%gradient[,-s0ind])
+  gradient[,-s0ind] <- t(t(gradient[,-s0ind])/sqrt(d))
   if (is.null(bvalue)){
      bvalue <- rep(1,ngrad)
      bvalue[s0ind] <- 0
@@ -119,7 +121,7 @@ readDWIdata <- function(gradient, dirlist,
                         format = c("DICOM", "NIFTI", "ANALYZE", "AFNI"), 
                         nslice = NULL, order = NULL, bvalue = NULL,
                         xind = NULL, yind = NULL, zind = NULL,
-                        level = 0, mins0value = 0, maxvalue = 32000,
+                        level = 0, mins0value = 1, maxvalue = 32000,
                         voxelext = NULL, orientation = c(0L, 2L, 5L), rotation = NULL,
                         SPM = FALSE, 
                         verbose = FALSE) {
@@ -136,6 +138,8 @@ readDWIdata <- function(gradient, dirlist,
   ngrad <- dim(gradient)[2]
   s0ind <- (1:ngrad)[apply(abs(gradient), 2, max) == 0]
   if (length(s0ind) < 1) stop("readDWIdata: No b0 gradients found.")
+  d <- diag(t(gradient[,-s0ind])%*%gradient[,-s0ind])
+  gradient[,-s0ind] <- t(t(gradient[,-s0ind])/sqrt(d))
   if (is.null(bvalue)){
      bvalue <- rep(1,ngrad)
      bvalue[s0ind] <- 0
@@ -207,8 +211,8 @@ readDWIdata <- function(gradient, dirlist,
       gradx <- dd$hdr[which((dd$hdr[, 1] == "0019") & (dd$hdr[, 2] == "10BB"))[1], 6]
       grady <- dd$hdr[which((dd$hdr[, 1] == "0019") & (dd$hdr[, 2] == "10BC"))[1], 6]
       gradz <- dd$hdr[which((dd$hdr[, 1] == "0019") & (dd$hdr[, 2] == "10BD"))[1], 6]
-      bvalueDCM <- as.numeric(unlist(strsplit(dd$hdr[which((dd$hdr[, 1] == "0043") & (dd$hdr[, 2] == "1039"))[1], 6], " ")))[1]
-      if (verbose) cat("diffusion gradient", gradx, grady, gradz, "b-value", bvalueDCM, "\n")
+      bvalue <- as.numeric(unlist(strsplit(dd$hdr[which((dd$hdr[, 1] == "0043") & (dd$hdr[, 2] == "1039"))[1], 6], " ")))[1]
+      if (verbose) cat("diffusion gradient", gradx, grady, gradz, "b-value", bvalue, "\n")
 #      ## WORKAROUND!!
 #      dd$img <- aperm(dd$img, c(2, 1))
 #      ## END WORKAROUND!!
@@ -229,7 +233,6 @@ readDWIdata <- function(gradient, dirlist,
       if (is.null(zind)) zind <- 1:nslice
       delta <- dd@pixdim[2:4]
       imageOrientationPatient <- diag(3)
-      if (length( dim( dd)) == 4) if ( dim( dd)[ 4] == 1) dim( dd) <- dim( dd)[ 1:3]
     } else if (format == "AFNI") {
       dd <- readAFNI(ff)
       nslice <- dim(dd)[3]
