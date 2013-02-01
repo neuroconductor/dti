@@ -8,7 +8,7 @@ dtiTensor <- function(object,  ...) cat("No DTI tensor calculation defined for t
 
 setGeneric("dtiTensor", function(object,  ...) standardGeneric("dtiTensor"))
 
-setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="replicates",varmodel="local",mc.cores=getOption("mc.cores", 1L)) {
+setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="replicates",varmodel="local",mc.cores=setCores(,reprt=FALSE)) {
 #  available methods are 
 #  "linear" - use linearized model (log-transformed)
 #  "nonlinear" - use nonlinear model with parametrization according to Koay et.al. (2006)
@@ -245,7 +245,7 @@ dtiIndices <- function(object, ...) cat("No DTI indices calculation defined for 
 setGeneric("dtiIndices", function(object, ...) standardGeneric("dtiIndices"))
 
 setMethod("dtiIndices","dtiTensor",
-function(object, which, mc.cores=getOption("mc.cores", 2L)) {
+function(object, which, mc.cores=setCores(,reprt=FALSE)) {
   args <- sys.call(-1)
   args <- c(object@call,args)
   ddim <- object@ddim

@@ -1,4 +1,4 @@
-pmatrix <- function(x, FUN, ..., mc.cores = getOption("mc.cores", 2L)){
+pmatrix <- function(x, FUN, ..., mc.cores = setCores(,reprt=FALSE)){
      require(parallel)
      cl <- makeCluster(mc <- mc.cores)
 #
@@ -9,7 +9,7 @@ pmatrix <- function(x, FUN, ..., mc.cores = getOption("mc.cores", 2L)){
      z
 }
 
-plmatrix <- function(x, FUN, ..., mc.cores = getOption("mc.cores", 2L)){
+plmatrix <- function(x, FUN, ..., mc.cores = setCores(,reprt=FALSE)){
 dx <- dim(x)[2]
 if(mc.cores>dx) mc.cores <- dx
 n <- trunc((dx-1)/mc.cores)+1

@@ -16,7 +16,7 @@ setGeneric("dkiTensor", function( object, ...) standardGeneric( "dkiTensor"))
 setMethod("dkiTensor", "dtiData",
           function(object, 
                    method = c( "ULLS", "CLLS-QP", "CLLS-H") , 
-                   mc.cores = getOption( "mc.cores", 1L),
+                   mc.cores = setCores(,reprt=FALSE),
                    verbose = FALSE) {
             
             if ( verbose) cat( "dkiTensor: entering function", format( Sys.time()), "\n")
@@ -144,7 +144,7 @@ setGeneric( "dkiIndices", function( object, ...) standardGeneric( "dkiIndices"))
 
 setMethod("dkiIndices", "dkiTensor",
           function(object, 
-                   mc.cores = getOption( "mc.cores", 2L),
+                   mc.cores = setCores(,reprt=FALSE),
                    verbose = FALSE) {
 			 
             if ( verbose) cat( "dkiTensor: entering function", format( Sys.time()), "\n")

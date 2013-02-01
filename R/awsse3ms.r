@@ -5,7 +5,7 @@ dwi.smooth.ms <- function(object, ...) cat("No DTI smoothing defined for this cl
 
 setGeneric("dwi.smooth.ms", function(object, ...) standardGeneric("dwi.smooth.ms"))
 
-setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=10,kappa0=.6,ncoils=1,sigma=NULL,level=NULL,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE,wghts=NULL){
+setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=15,kappa0=.9,ncoils=1,sigma=NULL,ws0=1,level=NULL,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE,wghts=NULL){
   args <- sys.call(-1)
   args <- c(object@call,args)
   sdcoef <- object@sdcoef
@@ -99,6 +99,7 @@ setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=10,kappa0=.6,
                 as.integer(ddim[3]),#n3
                 as.integer(ngrad),#ngrad
                 as.double(lambda),#lambda
+                as.double(ws0),# wghts0 rel. weight for s0 image
                 as.integer(ncoils),#ncoils
                 as.double(minlevel),#minlev 
                 as.integer(mc.cores),#ncores

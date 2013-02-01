@@ -730,8 +730,8 @@ C$OMP FLUSH(thn,ni)
       RETURN
       END
       subroutine adsmse3c(y,y0,th,ni,th0,ni0,mask,ns,n1,n2,n3,ngrad,
-     1                    lambda,ncoils,minlev,ncores,ind,w,n,ind0,w0,
-     2                    n0,thn,nin,th0n,ni0n,sw,swy,si,thi,nii)
+     1                lambda,ws0,ncoils,minlev,ncores,ind,w,n,ind0,w0,
+     2                n0,thn,nin,th0n,ni0n,sw,swy,si,thi,nii)
 C   
 C  Multi-shell version (differs in dimension of th 
 C  KL-distance based on all spheres and Gauss-approximation only
@@ -747,6 +747,7 @@ C   mask - head mask
 C   ns   - number of shells (including 0 shell)
 C   n1,n2,n3,ngrad - dimensions, number of gradients (bv!=0)
 C   lambda - skale parameter
+C   ws0  - relative weight for information from s0 images (should be in [0,1])
 C   ncoils - df/2 of \chi distributions
 C   minlev - expectation of central chi distr. (needed in variance estimates)
 C   ncores - number of cores
@@ -773,7 +774,7 @@ C
      1     ni(ns,n1,n2,n3,ngrad),th0(ns,n1,n2,n3),ni0(ns,n1,n2,n3),
      2     thn(n1,n2,n3,ngrad),th0n(n1,n2,n3),
      3     nin(n1,n2,n3,ngrad),ni0n(n1,n2,n3)
-      real*8 w(n),w0(n0),lambda,si(ns,ncores),thi(ns,ncores),
+      real*8 w(n),w0(n0),lambda,si(ns,ncores),thi(ns,ncores),ws0,
      4     sw(ngrad,ncores),swy(ngrad,ncores),nii(ns,ncores),minlev
       integer iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,k
       real*8 df,sz,z,a,b,z0,sw0,swy0,minlev2
@@ -787,7 +788,7 @@ C  thats the sd of central chi distribution which provides the lower limit in si
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(ns,n1,n2,n3,ngrad,n,n0,ind,ind0,ncoils,ncores,y,y0,
 C$OMP&       th,ni,th0,ni0,w,w0,thn,th0n,nin,ni0n,si,thi,sw,swy,nii,
-C$OMP&       lambda,mask,minlev)
+C$OMP&       lambda,mask,minlev,ws0)
 C$OMP& FIRSTPRIVATE(df,a,b,minlev2)
 C$OMP& PRIVATE(iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,k,sz,z,z0,
 C$OMP&       sw0,swy0)
@@ -822,6 +823,9 @@ C   thast the approximated standard deviation
                   si(k,thrednr) = z
                   nii(k,thrednr) = ni(k,i1,i2,i3,i4)/lambda
                END DO
+C  first component corresponds to S0 image, ws0 is used to downweight its influence
+C  when smoothing diffusion weighted data
+               nii(1,thrednr)=ws0*nii(1,thrednr)
             END IF
             j1=i1+ind(1,i)
             if(j1.le.0.or.j1.gt.n1) CYCLE
@@ -863,6 +867,9 @@ C   thast the approximated standard deviation
                   si(k,thrednr) = z
                   nii(k,thrednr) = ni(k,i1,i2,i3,i4)/lambda
                END DO
+               nii(1,thrednr)=ws0*nii(1,thrednr)
+C  first component corresponds to S0 image, ws0 is used to downweight its influence
+C  when smoothing diffusion weighted data
             END IF
 C
 C   handle case j1-i1 < 0 which is not contained in ind 

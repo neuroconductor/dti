@@ -476,7 +476,7 @@ paroforient <- function(dir){
 }
 
 getsiind3 <- function(si,mask,sigma2,grad,vico,th,indth,ev,fa,andir,maxcomp=3,
-maxc=.866,nguess=100,mc.cores = getOption("mc.cores", 2L)){
+maxc=.866,nguess=100,mc.cores = setCores(,reprt=FALSE)){
 # assumes dim(grad) == c(ngrad,3)
 # assumes dim(si) == c(ngrad,n1,n2,n3)
 # SO removed
@@ -747,7 +747,7 @@ dwiMixtensor <- function(object, ...) cat("No dwiMixtensor calculation defined f
 setGeneric("dwiMixtensor", function(object,  ...) standardGeneric("dwiMixtensor"))
 
 setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3, method="mixtensor", reltol=1e-6, maxit=5000,ngc=1000, optmethod="BFGS", nguess=100*maxcomp^2,msc="BIC",pen=NULL,code="C",thinit=NULL, 
-    mc.cores = getOption("mc.cores", 1L)){
+    mc.cores = setCores(,reprt=FALSE)){
 #
 #  uses  S(g)/s_0 = w_0 exp(-l_1) +\sum_{i} w_i exp(-l_2-(l_1-l_2)(g^T d_i)^2)
 #
