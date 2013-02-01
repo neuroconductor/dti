@@ -211,8 +211,8 @@ readDWIdata <- function(gradient, dirlist,
       gradx <- dd$hdr[which((dd$hdr[, 1] == "0019") & (dd$hdr[, 2] == "10BB"))[1], 6]
       grady <- dd$hdr[which((dd$hdr[, 1] == "0019") & (dd$hdr[, 2] == "10BC"))[1], 6]
       gradz <- dd$hdr[which((dd$hdr[, 1] == "0019") & (dd$hdr[, 2] == "10BD"))[1], 6]
-      bvalue <- as.numeric(unlist(strsplit(dd$hdr[which((dd$hdr[, 1] == "0043") & (dd$hdr[, 2] == "1039"))[1], 6], " ")))[1]
-      if (verbose) cat("diffusion gradient", gradx, grady, gradz, "b-value", bvalue, "\n")
+      bvalueDCM <- as.numeric(unlist(strsplit(dd$hdr[which((dd$hdr[, 1] == "0043") & (dd$hdr[, 2] == "1039"))[1], 6], " ")))[1]
+      if (verbose) cat("diffusion gradient", gradx, grady, gradz, "b-value", bvalueDCM, "\n")
 #      ## WORKAROUND!!
 #      dd$img <- aperm(dd$img, c(2, 1))
 #      ## END WORKAROUND!!
@@ -233,6 +233,7 @@ readDWIdata <- function(gradient, dirlist,
       if (is.null(zind)) zind <- 1:nslice
       delta <- dd@pixdim[2:4]
       imageOrientationPatient <- diag(3)
+      if ( length( dim( dd)) == 4) if ( dim( dd)[ 4] == 1) dim( dd) <-  dim( dd)[ 1:3]
     } else if (format == "AFNI") {
       dd <- readAFNI(ff)
       nslice <- dim(dd)[3]
