@@ -1458,6 +1458,34 @@ C$OMP END PARALLEL
 C
 C __________________________________________________________________
 C
+      subroutine sweeps00(si,s0,n,ng,mask,siq)
+C
+C   calculate mean s0 value
+C   generate mask
+C   sweep s0 from si to generate  siq
+C   calculate variance of siq
+C
+      integer n,ng
+      real*8 si(n,ng),s0(n),siq(n,ng)
+      logical mask(n)
+      integer i,j
+C$OMP PARALLEL DEFAULT(NONE)
+C$OMP& SHARED(si,s0,n,ng,siq,mask)
+C$OMP& PRIVATE(i,j)
+C$OMP DO SCHEDULE(GUIDED)
+      DO j=1,ng
+         DO i=1,n
+            if(mask(i)) siq(i,j) = si(i,j)/s0(i)
+         END DO
+      END DO
+C$OMP END DO NOWAIT
+C$OMP END PARALLEL
+C$OMP FLUSH(siq)
+      RETURN
+      END
+C
+C __________________________________________________________________
+C
       subroutine iandir(vico,nvico,andir,nvox,landir,iandi)
       implicit logical(a-z)
       integer nvico,nvox,iandi(nvox)

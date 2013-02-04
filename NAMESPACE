@@ -12,7 +12,7 @@ exportMethods("extract","show3d","tracking","selectFibers","reduceFibers","getma
 export(dtiData,readDWIdata,subsetg,combineDWIdata,awssigmc)
 export(tensor2medinria,medinria2tensor)
 exportMethods("sdpar","getsdofsb")
-exportMethods("dwi.smooth","dwi.smooth.ms")
+exportMethods("dwi.smooth","dwi.smooth.ms","dwi.smooth.msq")
 export(gethseqfullse3msh,getkappasmsh,lkfullse3msh)
 export(gethseqfullse3,getkappas,lkfullse3)
 #export(dtiind3D)
