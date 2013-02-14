@@ -25,7 +25,7 @@ setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="r
   sdcoef <- object@sdcoef
   require(parallel)
   if(all(sdcoef[1:4]==0)) {
-    cat("No parameters for model of error standard deviation found\n estimating these parameters\n You may prefer to run sdpar before calling dtiTensor")
+    cat("No parameters for model of error standard deviation found\n estimating these parameters\n You may prefer to run sdpar before calling dtiTensor\n")
     sdcoef <- sdpar(object,interactive=FALSE)@sdcoef
   }
   z <- sioutlier(object@si,s0ind,mc.cores=mc.cores)
@@ -118,21 +118,43 @@ setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="r
         rss <- z[8,]
         res <- z[8+(1:ngrad),]
      }
+  indr <- NULL
+  if(any(is.na(res))){
+     dim(res) <- c(ngrad,nvox)
+     indr <- (1:nvox)[apply(is.na(res),2,any)]
+     cat("(2) NA's in res in voxel",indr,"\n")
+     res[,indr] <- 0
+  }
+  indD0 <- indD1 <- NULL
+  if(any(is.na(D))|any(abs(D)>1e10)){
+     dim(D) <- c(6,nvox)
+     indD0 <- (1:nvox)[apply(is.na(D),2,any)]
+#     cat("NA's in D in ", length(indD0),"voxel:",indD0,"\n")
+     D[,indD0] <- c(1,0,0,1,0,1)
+     indD1 <- (1:nvox)[apply(abs(D)>1e10,2,any)]
+#     cat("Inf's in D in", length(indD1)," voxel:",indD1,"\n")
+     D[,indD1] <- c(1,0,0,1,0,1)
+  }
      dim(th0) <- ddim
      dim(D) <- c(6,ddim)
      dim(res) <- c(ngrad,ddim)
      dim(rss) <- ddim
-#  handle points where estimation failed
-     n <- prod(ddim)
      dim(mask) <- c(1, ddim)
-     indD <- (1:n)[D[2,,,, drop=FALSE]==0&D[3,,,, drop=FALSE]==0&D[5,,,, drop=FALSE]==0&mask]
+     indD <- (1:nvox)[D[2,,,, drop=FALSE]==0&D[3,,,, drop=FALSE]==0&D[5,,,, drop=FALSE]==0&mask]
+     if(!is.null(indr)) indD <- unique(indD,indr)
+     if(!is.null(indD0)) indD <- unique(indD,indD0)
+     if(!is.null(indD1)) indD <- unique(indD,indD1)
      dim(mask) <- ddim
 # this does not work in case of 2D data: 
      if(length(indD)>0){
-     cat("length of IndD",length(indD),"\n")
-     dim(si) <- c(ngrad,n)
-     dim(D) <- c(6,n)
-     dim(res) <- c(ngrad,n)
+     cat("Problems in ",length(indD)," voxel, using fall back strategy \n ")
+     dim(si) <- c(ngrad,nvox)
+     dim(D) <- c(6,nvox)
+     dim(res) <- c(ngrad,nvox)
+#     D[,unique(indDna,indDInf)] <- c(1,0,0,1,0,1)
+#     res[,unique(indDna,indDInf)] <- 0
+#     rss[unique(indDna,indDInf)] <- 1e10
+#     cat("NA's in D in voxel",unique(indDna,indDInf),"\n")
      if(mc.cores==1||length(indD)<2*mc.cores){
      for(i in indD){
         zz <- optim(c(1,0,0,1,0,1),opttensR,method="BFGS",si=si[-s0ind,i],s0=s0[i],grad=grad[,-s0ind],sdcoef=sdcoef)
@@ -145,14 +167,24 @@ setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="r
      } else {
         zz <- pmatrix(si[,indD],pnltens,grad=grad[,-s0ind],s0ind=s0ind,
                       sdcoef=sdcoef,mc.cores=min(mc.cores,length(indD)))
-        cat(dim(zz),length(zz),"\n")
         dim(zz) <- c(length(zz)/length(indD),length(indD))
+        if(any(is.na(zz))){
+           ind <- (1:length(indD))[apply(is.na(zz),2,any)]
+           print(zz[,ind])
+           print(si[,indD[ind]])
+        }
         D[,indD] <- zz[1:6,]
         th0[indD] <- zz[7,]
         rss[indD] <- zz[8,]
         res[s0ind,indD] <- 0
         res[-s0ind,indD] <- zz[-(1:8),]
      }
+       if(any(is.na(res))){
+     dim(res) <- c(ngrad,nvox)
+     indr <- (1:nvox)[apply(is.na(res),2,any)]
+#     cat("(3) NA's in res in voxel",indr,"\n")
+     res[,indr] <- 0
+  }
      dim(D) <- c(6,ddim)
      dim(res) <- c(ngrad,ddim)
      }
@@ -164,6 +196,23 @@ setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="r
 #
 #   get spatial correlation
 #
+  if(any(is.na(res))){
+     dim(res) <- c(ngrad,nvox)
+     indr <- (1:nvox)[apply(is.na(res),2,any)]
+     cat("NA's in res in voxel",indr,"\n")
+     res[,indr] <- 0
+  }
+  if(any(is.na(D))|any(abs(D)>1e10)){
+     dim(D) <- c(6,nvox)
+     indD <- (1:nvox)[apply(is.na(D),2,any)]
+     cat("NA's in D in ", length(indD),"voxel:",indD,"\n")
+     D[,indD] <- c(1,0,0,1,0,1)
+     mask[indD] <- FALSE
+     indD <- (1:nvox)[apply(abs(D)>1e10,2,any)]
+     cat("Inf's in D in", length(indD)," voxel:",indD,"\n")
+     D[,indD] <- c(1,0,0,1,0,1)
+     mask[indD] <- FALSE
+  }
   scorr <- mcorr(res,mask,ddim,ngrad0,lags=c(5,5,3),mc.cores=mc.cores)
   ev <- dti3Dev(D,mask,mc.cores=mc.cores)
   dim(ev) <- c(3,ddim)   
@@ -202,7 +251,7 @@ setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="r
 })
 
 opttensR <- function(param,si,s0,grad,sdcoef){
-      .Fortran("opttensR",
+     z<- .Fortran("opttensR",
                as.double(param),
                as.double(si),
                as.double(s0),
@@ -212,6 +261,8 @@ opttensR <- function(param,si,s0,grad,sdcoef){
                erg=double(1),
                DUP=FALSE,
                PACKAGE="dti")$erg
+     if(is.na(z)) z <- 1e12
+     z
 }
 tensRres <- function(param,si,s0,grad){
       .Fortran("tensRres",

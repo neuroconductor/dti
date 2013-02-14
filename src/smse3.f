@@ -1251,7 +1251,6 @@ C
             swi(i0)=swi(i0)+w(i)
          END DO
          swi(i0)=swi(i0)/(starts(i0+1)-starts(i0))
-         maxswi=max(swi(i0),maxswi)
       END DO
       maxswi=1.d0
       si = 0.d0

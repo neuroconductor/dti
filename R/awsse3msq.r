@@ -5,7 +5,7 @@ dwi.smooth.msq <- function(object, ...) cat("No DTI smoothing defined for this c
 
 setGeneric("dwi.smooth.msq", function(object, ...) standardGeneric("dwi.smooth.msq"))
 
-setMethod("dwi.smooth.msq", "dtiData", function(object,kstar,lambda=15,kappa0=.9,ncoils=1,sigma=NULL,ws0=1,level=NULL,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE,wghts=NULL){
+setMethod("dwi.smooth.msq", "dtiData", function(object,kstar,lambda=30,kappa0=.9,ncoils=1,sigma=NULL,ws0=1,level=NULL,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE,wghts=NULL){
   args <- sys.call(-1)
   args <- c(object@call,args)
   sdcoef <- object@sdcoef

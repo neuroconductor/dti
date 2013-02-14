@@ -59,10 +59,16 @@ for(i in 1:lindD){
 s0 <- si[s0ind,i]
 sb <- si[-s0ind,i]
 zz <- optim(c(1,0,0,1,0,1),opttensR,method="BFGS",si=sb,s0=s0,grad=grad,sdcoef=sdcoef)
-zmat[1:6,i] <- rho2D(zz$par)
 zmat[7,i] <- s0
+if(zz$convergence>1&&!is.na(zz$value)&&zz$value<1e12){
+zmat[1:6,i] <- rho2D(zz$par)
 zmat[8,i] <- zz$value
 zmat[-(1:8),i] <- tensRres(zz$par,sb,s0,grad)
+} else {
+zmat[1:6,i] <- c(1,0,0,1,0,1)
+zmat[8,i] <- 1e12
+zmat[-(1:8),i] <- rep(0,ngrad)
+}
 }
 zmat
 }

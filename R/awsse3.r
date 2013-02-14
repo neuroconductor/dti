@@ -159,7 +159,6 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
     } else {
        param <- lkfullse3(hakt,kappa/hakt,gradstats,vext,nind) 
        if(length(sigma)==1) {
-       thk <- z$th
        z <- .Fortran("adsmse3p",
                 as.single(sb),
                 as.single(z$th),
@@ -241,7 +240,7 @@ if(verbose){
 #
   s0factor <- switch(model+1,ns0,ns0,sqrt(ns0))
   si[,,,1] <-  pmax(th0,minlevel0)*sigma/s0factor
-  si[,,,-1] <- pmax(z$th,minlevel0)*sigma
+  si[,,,-1] <- pmax(z$th,minlevel)*sigma
   object@si <- if(model==1) sqrt(si) else si
   object@gradient <- grad <- cbind(c(0,0,0),grad)
   object@bvalue <- c(0,object@bvalue[-object@s0ind])
