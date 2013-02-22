@@ -89,7 +89,7 @@ setMethod("dtiTensor","dtiData",function(object, method="nonlinear",varmethod="r
      if(mc.cores==1){
      cat("start nonlinear regression",format(Sys.time()),"\n")
      z <- .Fortran("nlrdtirg",
-                as.integer(si),
+                as.double(si),
                 as.integer(ngrad),
                 as.integer(nvox),
                 as.logical(mask),

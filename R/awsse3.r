@@ -127,9 +127,9 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
 #       save(z,thmsh,param,msstructure,file=paste("thmsh",k,".rsc",sep=""))
        if(length(sigma)==1) {
        z <- .Fortran("adsmse3m",
-                as.single(sb),#y
-                as.single(thmsh),#th
-                ni=as.single(z$ni),#ni
+                as.double(sb),#y
+                as.double(thmsh),#th
+                ni=as.double(z$ni),#ni
                 as.logical(mask),#mask
                 as.integer(nshell),# number of shells
                 as.integer(ddim[1]),#n1
@@ -142,7 +142,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
                 as.integer(param$ind),#ind
                 as.double(param$w),#w
                 as.integer(param$n),#n
-                th=single(prod(ddim)*ngrad),#thn
+                th=double(prod(ddim)*ngrad),#thn
                 double(ngrad*mc.cores),#sw
                 double(ngrad*mc.cores),#swy
                 double(nshell*mc.cores),#si
@@ -161,9 +161,9 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
        param <- lkfullse3(hakt,kappa/hakt,gradstats,vext,nind) 
        if(length(sigma)==1) {
        z <- .Fortran("adsmse3p",
-                as.single(sb),
-                as.single(z$th),
-                ni=as.single(z$ni),
+                as.double(sb),
+                as.double(z$th),
+                ni=as.double(z$ni),
                 as.logical(mask),
                 as.integer(ddim[1]),
                 as.integer(ddim[2]),
@@ -175,8 +175,8 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
                 as.integer(param$ind),
                 as.double(param$w),
                 as.integer(param$n),
-                th=single(prod(ddim)*ngrad),
-                single(prod(ddim)*ngrad),#ldf (to precompute lgamma)
+                th=double(prod(ddim)*ngrad),
+                double(prod(ddim)*ngrad),#ldf (to precompute lgamma)
 #                as.double(sigma),
                 double(ngrad*mc.cores),
                 double(ngrad*mc.cores),

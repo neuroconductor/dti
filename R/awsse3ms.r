@@ -86,12 +86,12 @@ setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=15,kappa0=.9,
      param <- lkfullse3msh(hakt,kappa/hakt,gradstats,vext,nind) 
      param0 <- lkfulls0(hakt0,vext,nind) 
      z <- .Fortran("adsmse3c",
-                as.single(sb),#y
-                as.single(s0),#y0
-                as.single(thnimsh$mstheta),#th
-                as.single(thnimsh$msni),#ni
-                as.single(thnimsh$msth0),#th0
-                as.single(thnimsh$msni0),#ni0
+                as.double(sb),#y
+                as.double(s0),#y0
+                as.double(thnimsh$mstheta),#th
+                as.double(thnimsh$msni),#ni
+                as.double(thnimsh$msth0),#th0
+                as.double(thnimsh$msni0),#ni0
                 as.logical(mask),#mask
                 as.integer(nshell+1),#ns number of shells
                 as.integer(ddim[1]),#n1
@@ -109,10 +109,10 @@ setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=15,kappa0=.9,
                 as.integer(param0$ind),#ind0
                 as.double(param0$w),#w0
                 as.integer(param0$n),#n0
-                th=single(prod(ddim)*ngrad),#thn
-                ni=single(prod(ddim)*ngrad),#nin
-                th0=single(prod(ddim)),#th0n
-                ni0=single(prod(ddim)),#ni0n
+                th=double(prod(ddim)*ngrad),#thn
+                ni=double(prod(ddim)*ngrad),#nin
+                th0=double(prod(ddim)),#th0n
+                ni0=double(prod(ddim)),#ni0n
                 double(ngrad*mc.cores),#sw
                 double(ngrad*mc.cores),#swy
                 double((nshell+1)*mc.cores),#si

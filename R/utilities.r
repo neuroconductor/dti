@@ -873,7 +873,7 @@ setMethod("getmask","dtiData",function(object, level=NULL, prop=.4, size=3){
 if(is.null(level)) level <- object@level
 if(!is.null(level)){ 
 z <- .Fortran("getmask",
-              as.integer(object@si[,,,object@s0ind]),
+              as.double(object@si[,,,object@s0ind]),
               as.integer(object@ddim[1]),
               as.integer(object@ddim[2]),
               as.integer(object@ddim[3]),
@@ -901,7 +901,7 @@ ddim <- dim(object)
 }
 if(!is.null(level)){ 
 z <- .Fortran("getmask",
-              as.integer(object),
+              as.double(object),
               as.integer(ddim[1]),
               as.integer(ddim[2]),
               as.integer(ddim[3]),

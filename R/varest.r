@@ -129,7 +129,7 @@ awssigmc <- function(y,                 # data
     }
     ## extract sum of weigths (see PS) and consider only voxels with ni larger then mean
     ni <- z$ni
-    ind <- (ni > mean(ni[ni>1]))&(z$th>sigma*minlev)
+    ind <- (ni > mean(ni[ni>1]))#&(z$th>sigma*minlev)
     sy <- z$sy[ind]
     th <- z$th
     ## use the maximal mode of estimated local sd parameters, exclude largest values for better precision

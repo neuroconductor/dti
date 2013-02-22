@@ -15,11 +15,12 @@ C  avoid transform to zero for numerical stability
       subroutine ricecorr(si,w,n,nb,sbind,ns0,niter,sw,th,s2,sigma2,
      1                    fw)
       implicit logical (a-z) 
-      integer n,nb,si(nb,n),niter(nb)
+      integer n,nb,niter(nb)
+      real*8 si(nb,n)
       real*8 w(n),th(nb),s2(nb),sigma2,sw,fw(10000)
       logical sbind(nb)
-      integer i,j,k,l,iter,sii,ns0,minsi
-      real*8 z,sth,th2,ss2,thk
+      integer i,j,k,l,iter,ns0
+      real*8 z,sth,th2,ss2,thk,sii,minsi
       iter=1
       DO k=1,nb
          iter=max(iter,niter(k))

@@ -179,8 +179,8 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
        cat("Correction factor for spatial correlation",signif(corrfactor,3),"\n")
     }
      z <- .Fortran("awssidti",
-                as.integer(s0),
-                as.integer(si),
+                as.double(s0),
+                as.double(si),
                 as.logical(mask),
                 as.double(z$D),
                 bi=as.double(z$bi),

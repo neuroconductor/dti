@@ -28,7 +28,7 @@ sioutlier <- function( si, s0ind, mc.cores = 1, verbose = TRUE){
                   as.integer(s0ind),
                   as.integer(siind),
                   as.integer(ns0),
-                  si=integer(n*ng),
+                  si=double(n*ng),
                   index=logical(n),
                   DUP=FALSE,
                   PACKAGE="dti")[c("si","index")]
@@ -41,7 +41,7 @@ sioutlier <- function( si, s0ind, mc.cores = 1, verbose = TRUE){
                           as.integer(ns0),
                           as.integer(siind),
                           as.integer(ng-ns0),
-                          si=integer(n*(ng+1)),
+                          si=double(n*(ng+1)),
                           as.integer(ng+1),
                           DUP=FALSE,
                           PACKAGE="dti")$si,ng+1,n)

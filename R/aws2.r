@@ -160,8 +160,8 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
        cat("Correction factor for spatial correlation",signif(corrfactor,3),"\n")
     }
     z <- .Fortran("awsrgdti",
-                    as.integer(si),
-                    sihat=as.integer(z$sihat), # needed for statistical penalty
+                    as.double(si),
+                    sihat=as.double(z$sihat), # needed for statistical penalty
                     double(ngrad*n),# array for predicted Si's from the tensor model 
                     as.integer(ngrad),
                     as.integer(n1),
@@ -193,7 +193,7 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
                     as.logical(rician), 
                     as.integer(maxnw),# maximum number of positive weights
                     integer(ngrad),# auxiliary for number of iterations
-                    integer(maxnw*ngrad),# auxiliary for aktive data
+                    double(maxnw*ngrad),# auxiliary for aktive data
                     integer(maxnw*3),# auxiliary for index of aktive data
                     double(maxnw),# auxiliary for weights
                     double(ngrad),# auxiliary for variances
@@ -320,7 +320,7 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
             ) else invisible(new("dtiData",
                 list(s2rician=if(rician) z$sigma2r else NULL, ni=z$bi),
                 call = args,
-                si = aperm(array(as.integer(z$sihat),dimsi),c(2:4,1)),
+                si = aperm(array(z$sihat,dimsi),c(2:4,1)),
                 sdcoef = sdcoef,
                 gradient = object@gradient,
                 bvalue = object@bvalue,

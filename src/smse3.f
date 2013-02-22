@@ -408,7 +408,7 @@ c   model=2  Gauss-based KL-distance, y ~ Chi, th on same scale, smooth y^2
       implicit logical (a-z)
       integer n1,n2,n3,ngrad,n,ind(5,n),ncoils,model,ncores
       logical mask(n1,n2,n3)
-      real y(n1,n2,n3,ngrad),thn(n1,n2,n3,ngrad),ni(n1,n2,n3,ngrad),
+      real*8 y(n1,n2,n3,ngrad),thn(n1,n2,n3,ngrad),ni(n1,n2,n3,ngrad),
      1     ldf(n1,n2,n3,ngrad),th(n1,n2,n3,ngrad)
       real*8 lambda,w(n),sw(ngrad,ncores),swy(ngrad,ncores),
      2       lgfi,dgfi,fici,df,minlev
@@ -584,7 +584,7 @@ c   model=2  Gauss-based KL-distance, y ~ Chi, th on same scale, smooth y^2
       implicit logical (a-z)
       integer ns,n1,n2,n3,ngrad,n,ind(5,n),ncoils,ncores
       logical mask(n1,n2,n3)
-      real y(n1,n2,n3,ngrad),thn(n1,n2,n3,ngrad),ni(n1,n2,n3,ngrad),
+      real*8 y(n1,n2,n3,ngrad),thn(n1,n2,n3,ngrad),ni(n1,n2,n3,ngrad),
      1     th(ns,n1,n2,n3,ngrad)
       real*8 lambda,w(n),sw(ngrad,ncores),swy(ngrad,ncores),df
       integer iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,k
@@ -758,7 +758,7 @@ C
       integer ns,n1,n2,n3,ngrad,n,n0,ind(5,n),ind0(3,n0),ncoils,
      1        ncores
       logical mask(n1,n2,n3)
-      real y(n1,n2,n3,ngrad),y0(n1,n2,n3),th(ns,n1,n2,n3,ngrad),
+      real*8 y(n1,n2,n3,ngrad),y0(n1,n2,n3),th(ns,n1,n2,n3,ngrad),
      1     ni(ns,n1,n2,n3,ngrad),th0(ns,n1,n2,n3),ni0(ns,n1,n2,n3),
      2     thn(n1,n2,n3,ngrad),th0n(n1,n2,n3),
      3     nin(n1,n2,n3,ngrad),ni0n(n1,n2,n3)
@@ -1003,7 +1003,7 @@ C
       integer ns,nsp1,n1,n2,n3,ngrad,n,n0,ind(5,n),ind0(3,n0),ncoils,
      1        ncores
       logical mask(n1,n2,n3)
-      real y(n1,n2,n3,ngrad),y0(n1,n2,n3),th(ns,n1,n2,n3,ngrad),
+      real*8 y(n1,n2,n3,ngrad),y0(n1,n2,n3),th(ns,n1,n2,n3,ngrad),
      1    ni(ns,n1,n2,n3,ngrad),th0(nsp1,n1,n2,n3),ni0(nsp1,n1,n2,n3),
      2    thn(n1,n2,n3,ngrad),th0n(n1,n2,n3),
      3    nin(n1,n2,n3,ngrad),ni0n(n1,n2,n3)

@@ -32,7 +32,7 @@ pnlrdtirg <- function(si,btb,sdcoef,s0ind,ngrad){
    s0 <- if(ns0>1) rep(1/ns0,ns0)%*%si[s0ind,] else si[s0ind,]
 #   ngrad <- dim(btb)[2]
    z <- .Fortran("nlrdtirp",
-                 as.integer(si),
+                 as.double(si),
                  as.integer(ngrad),
                  as.integer(nvox),
                  as.double(btb),

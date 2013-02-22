@@ -73,12 +73,12 @@ dtiData <- function(gradient,imagefile,ddim,bvalue=NULL,xind=NULL,yind=NULL,zind
 #   orientation set to radiological convention
 #
   si <- .Fortran("initdata",
-                 si=as.integer(si),
+                 si=as.double(si),
                  as.integer(dimsi[1]),
                  as.integer(dimsi[2]),
                  as.integer(dimsi[3]),
                  as.integer(dimsi[4]),
-                 as.integer(maxvalue),
+                 as.double(maxvalue),
                  PACKAGE="dti")$si
 #  this replaces the content off all voxel with elements <=0 or >maxvalue by 0
      dim(si) <- dimsi
@@ -333,12 +333,12 @@ readDWIdata <- function(gradient, dirlist,
 
   ## this replaces the content off all voxel with elements <=0 or >maxvalue by 0
   si <- .Fortran("initdata",
-                 si = as.integer(si),
+                 si = as.double(si),
                  as.integer(dimsi[1]),
                  as.integer(dimsi[2]),
                  as.integer(dimsi[3]),
                  as.integer(dimsi[4]),
-                 as.integer(maxvalue),
+                 as.double(maxvalue),
                  PACKAGE = "dti")$si
   dim(si) <- dimsi
 

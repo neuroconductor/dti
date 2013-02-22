@@ -1341,7 +1341,8 @@ C   generate mask
 C   sweep s0 from si to generate  siq
 C   calculate variance of siq
 C
-      integer n,ng0,ng1,si(ng1,n),s0(ng0,n),level
+      integer n,ng0,ng1,level
+      real*8si(ng1,n),s0(ng0,n)
       real*8 siq(ng1,n),ms0(n),vsi(n)
       logical mask(n),maskk
       integer i,k
@@ -1400,7 +1401,8 @@ C   generate mask
 C   sweep s0 from si to generate  siq
 C   calculate variance of siq
 C
-      integer n,ng0,ng1,ng2,si(ng1,n),s0(ng0,n),level
+      integer n,ng0,ng1,ng2,level
+      real*8 si(ng1,n),s0(ng0,n)
       real*8 siq(ng2,n)
       logical maskk
       integer i,k

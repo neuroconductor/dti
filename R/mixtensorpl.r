@@ -840,7 +840,7 @@ cat("using th:::",th,"\n")
 #  this does not scale well with openMP
 #
   cat("End search outlier detection at",format(Sys.time()),"\n")
-  si <- array(as.integer(z$si),c(ngrad,ddim))
+  si <- array(z$si,c(ngrad,ddim))
   index <- z$index
   rm(z)
   gc()
@@ -853,8 +853,8 @@ cat("using th:::",th,"\n")
   t1 <- Sys.time()
   if(mc.cores==1||ngrad0>250){
   z <- .Fortran("sweeps0",# mixtens.f
-                as.integer(si[-s0ind,,,,drop=FALSE]),
-                as.integer(si[s0ind,,,,drop=FALSE]),
+                as.double(si[-s0ind,,,,drop=FALSE]),
+                as.double(si[s0ind,,,,drop=FALSE]),
                 as.integer(nvox),
                 as.integer(ns0),
                 as.integer(ngrad0),
@@ -878,8 +878,8 @@ cat("using th:::",th,"\n")
   mc.cores.old <- setCores(,reprt=FALSE)
   setCores(mc.cores)
   z <- matrix(.Fortran("sweeps0p",# mixtens.f
-                as.integer(si[-s0ind,,,,drop=FALSE]),
-                as.integer(si[s0ind,,,,drop=FALSE]),
+                as.double(si[-s0ind,,,,drop=FALSE]),
+                as.double(si[s0ind,,,,drop=FALSE]),
                 as.integer(nvox),
                 as.integer(ns0),
                 as.integer(ngrad0),

@@ -56,8 +56,8 @@ setMethod("dwiMtImprove",c("dwiMixtensor","dtiData"), function(mtobj, dwiobj, ma
 #
   sii <- matrix(dwiobj@si,prod(ddim[1:3]),ngrad)[where,]      
   z <- .Fortran("sweepimp",# mixtens.f
-                as.integer(sii[,-s0ind]),
-                as.integer(sii[,s0ind]),
+                as.double(sii[,-s0ind]),
+                as.double(sii[,s0ind]),
                 as.integer(sum(where)),
                 as.integer(ns0),
                 as.integer(ngrad0),
