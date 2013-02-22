@@ -570,7 +570,7 @@ C$OMP FLUSH(thn,ni)
       RETURN
       END
       subroutine adsmse3m(y,th,ni,mask,ns,n1,n2,n3,ngrad,lambda,
-     1             ncoils,ncores,ind,w,n,thn,sw,swy,si,fi,thi,minlev)
+     1             ncoils,ncores,ind,w,n,thn,sw,swy,si,thi,minlev)
 C   
 C  Multi-shell version (differs in dimension of th 
 C  KL-distance based on all spheres and Gauss-approximation only
@@ -585,11 +585,10 @@ c   model=2  Gauss-based KL-distance, y ~ Chi, th on same scale, smooth y^2
       integer ns,n1,n2,n3,ngrad,n,ind(5,n),ncoils,ncores
       logical mask(n1,n2,n3)
       real y(n1,n2,n3,ngrad),thn(n1,n2,n3,ngrad),ni(n1,n2,n3,ngrad),
-     1     th(ns,n1,n2,n3,ngrad),fi(ns,ncores)
+     1     th(ns,n1,n2,n3,ngrad)
       real*8 lambda,w(n),sw(ngrad,ncores),swy(ngrad,ncores),df
       integer iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,k
-      real*8 sz,z,nii,thj,a,b,si(ns,ncores),thi(ns,ncores),yj,minlev,
-     1       v0,z0
+      real*8 sz,z,nii,thj,a,b,si(ns,ncores),thi(ns,ncores),minlev
       integer omp_get_thread_num
       real*8 kldisnc1
       external kldisnc1,omp_get_thread_num
@@ -601,10 +600,9 @@ C just to prevent a compiler warning
 C  precompute values of lgamma(corrected df/2) in each voxel
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(n1,n2,n3,ngrad,ncores,mask,y,thn,ni,th,w,sw,swy,
-C$OMP& ind,ncoils,df,n,lambda,ns,thi,si,minlev,fi)
+C$OMP& ind,ncoils,df,n,lambda,ns,thi,si,minlev)
 C$OMP& FIRSTPRIVATE(a,b,nii)
-C$OMP& PRIVATE(iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,z,thj,sz,yj,
-C$OMP& v0,z0)
+C$OMP& PRIVATE(iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,z,thj,sz)
 C$OMP DO SCHEDULE(GUIDED)
       DO iind=1,n1*n2*n3
          thrednr = omp_get_thread_num()+1
@@ -613,31 +611,26 @@ C returns value in 0:(ncores-1)
          if(i1.eq.0) i1=n1
          i2=mod((iind-i1)/n1+1,n2)
          if(i2.eq.0) i2=n2
-         i3=(iind-i1-(i2-1)*n1)/n1/n2+1         
+         i3=(iind-i1-(i2-1)*n1)/n1/n2+1 
          if(.not.mask(i1,i2,i3)) CYCLE
          DO i4=1,ngrad
             sw(i4,thrednr)=0.d0
             swy(i4,thrednr)=0.d0
          END DO
          i4=0
-         v0 = 0.d0
          DO i=1,n
             if(ind(4,i).ne.i4) THEN
 C   by construction ind(4,.) should have same values consequtively
                i4 = ind(4,i)
-               v0 = 0.d0
                DO k=1,ns
-                  z0 = th(k,i1,i2,i3,i4)
-                  thi(k,thrednr) = z0
-                  z = (z0+a)**1.5d0
+                  z = th(k,i1,i2,i3,i4)
+                  thi(k,thrednr) = z
+                  z = max(z,minlev)
+                  z = (z+a)**1.5d0
                   z = (z/(z+b))
                   z=z*z
 C   thast the approximated standard deviation
                   si(k,thrednr) = z
-C                  z0 = z0-minlev
-                  z0 = 1.d0
-                  fi(k,thrednr) = z0
-                  v0 = v0+z0*z0
                END DO
                nii = ni(i1,i2,i3,i4)/lambda
             END IF
@@ -653,10 +646,11 @@ C adaptation
             if(lambda.lt.1d10) THEN
                sz=0.d0
                DO k=1,ns
-                  z=fi(k,thrednr)*(thi(k,thrednr)-th(k,j1,j2,j3,j4))
+                  z=thi(k,thrednr)-th(k,j1,j2,j3,j4)
+                  z=z/si(k,thrednr)
                   sz=sz+z*z
                END DO
-               z=nii*sz/v0
+               z=nii*sz
 C  do not adapt on the sphere !!! 
             ELSE
                z=0.d0
@@ -664,8 +658,7 @@ C  do not adapt on the sphere !!!
             if(z.ge.1.d0) CYCLE
             z=w(i)*min(1.d0,2.d0-2.d0*z)
             sw(i4,thrednr)=sw(i4,thrednr)+z
-            yj = y(j1,j2,j3,j4)
-            swy(i4,thrednr)=swy(i4,thrednr)+z*yj*yj
+            swy(i4,thrednr)=swy(i4,thrednr)+z*y(j1,j2,j3,j4)
          END DO
 C  now opposite directions
          DO i=1,n
@@ -673,19 +666,15 @@ C  now opposite directions
             if(ind(4,i).ne.i4) THEN
 C   by construction ind(4,.) should have same values consequtively
                i4 = ind(4,i)
-               v0 = 0.d0
                DO k=1,ns
-                  z0 = th(k,i1,i2,i3,i4)
-                  thi(k,thrednr) = z0
-                  z = (z0+a)**1.5d0
+                  z = th(k,i1,i2,i3,i4)
+                  thi(k,thrednr) = z
+                  z = max(z,minlev)
+                  z = (z+a)**1.5d0
                   z = (z/(z+b))
                   z=z*z
 CC   thast the approximated standard deviation
                   si(k,thrednr) = z
-C                  z0 = z0-minlev
-                  z0 = 1.d0
-                  fi(k,thrednr) = z0
-                  v0 = v0+z0*z0
                END DO
                nii = ni(i1,i2,i3,i4)/lambda
             END IF
@@ -704,10 +693,11 @@ C
             if(lambda.lt.1d10) THEN
                sz=0.d0
                DO k=1,ns
-                  z=fi(k,thrednr)*(thi(k,thrednr)-th(k,j1,j2,j3,j4))
+                  z=thi(k,thrednr)-th(k,j1,j2,j3,j4)
+                  z=z/si(k,thrednr)
                   sz=sz+z*z
                END DO
-               z=nii*sz/v0
+               z=nii*sz
 C  do not adapt on the sphere !!! 
             ELSE
                z=0.d0
@@ -715,12 +705,10 @@ C  do not adapt on the sphere !!!
             if(z.ge.1.d0) CYCLE
             z=w(i)*min(1.d0,2.d0-2.d0*z)
             sw(i4,thrednr)=sw(i4,thrednr)+z
-            yj = y(j1,j2,j3,j4)
-            swy(i4,thrednr)=swy(i4,thrednr)+z*yj*yj
+            swy(i4,thrednr)=swy(i4,thrednr)+z*y(j1,j2,j3,j4)
          END DO
          DO i4=1,ngrad
-            thn(i1,i2,i3,i4) = 
-     1           max(sqrt(swy(i4,thrednr)/sw(i4,thrednr)),minlev)
+            thn(i1,i2,i3,i4) = swy(i4,thrednr)/sw(i4,thrednr)
             ni(i1,i2,i3,i4) = sw(i4,thrednr)
          END DO
       END DO
@@ -1531,6 +1519,262 @@ C         END DO
 C$OMP END DO NOWAIT
 C$OMP END PARALLEL
 C$OMP FLUSH(thn,ni,ni2,th2)
+      RETURN
+      END
+      subroutine paramw3(h,vext,ind,w,n)
+C  compute a description of local weights 
+C  h    - bandwidth
+C  vext - vector (length 2) of relative voxel extensions
+C  ind  - integer array dim (3,n) containing relative indices in xyz
+C  w    - vector of corresponding weights
+C  n    - number of positive weights (initial value 
+C         (2 int(h)+1)*(2 int(h/vext(1))+1)*(2 int(h/vext(2))+1)
+      integer n,ind(3,n)
+      real*8 h,vext(2),w(n)
+      integer i,i1,i2,i3,ih1,ih2,ih3
+      real*8 hsq,z1,z2,z3
+      hsq=h*h
+      ih1 = h
+      ih2 = h/vext(1)
+      ih3 = h/vext(2)
+      i=1
+      DO i1=-ih1,ih1
+         z1=i1*i1
+         DO i2=-ih2,ih2
+            z2=i2*vext(1)
+            z2=z1+z2*z2
+            IF(z2.ge.hsq) CYCLE
+            DO i3=-ih3,ih3
+               z3=i3*vext(2)
+               z3=z2+z3*z3
+               IF(z3.ge.hsq) CYCLE
+               ind(1,i)=i1
+               ind(2,i)=i2
+               ind(3,i)=i3
+               w(i)=1.d0-z3/hsq
+               i=i+1
+            END DO
+         END DO
+      END DO
+      n=i-1
+      RETURN
+      END
+      subroutine awsvchi(y,th,ni,mask,n1,n2,n3,ind,w,nw,lambda,
+     1                    sigma,ncoils,thn,sy)
+C   Takes noncentral Chi values in y
+C   perform adaptive smoothing on R^3
+C   th containes previous estimates
+C   ni containes previous sum of weights
+C   mask - logical mask (use if mask==TRUE)
+C   n1,n2,n3 - dimensions
+C   ind  - integer array dim (3,n) containing relative indices in xyz
+C   w    - vector of corresponding location weights
+C   nw   - number of positive weights (initial value 
+C   lambda   - kritical value for pairwise tests
+C   sigma    - actual estimate of sigma
+C   ncoils   - effective number of receiver coils
+C   thn      - new estimate sum_j w_a(j) Y_j
+C   th2      - sum_j w_a(j) Y_j^2
+C   ind(.,i) contains coordinate indormation corresponding to positive
+C   location weights in w(i)
+C   ind(.,i)[1:5] are j1-i1,j2-i2,j3-i3, i4 and j4 respectively 
+C
+      implicit logical (a-z)
+      integer n1,n2,n3,nw,ind(3,nw)
+      logical mask(n1,n2,n3)
+      real*8 y(n1,n2,n3),th(n1,n2,n3),ni(1),thn(1),
+     1       sy(1),lambda,w(nw),sigma,ncoils
+      integer i1,i2,i3,j1,j2,j3,i,j,n
+      real*8 mlev,si,z,z1,z2,df,a,b,sw,sw2,swy,swy2,yj,thi,wj,kval,
+     1       cw
+      real*8 gammaf
+      external gammaf
+      df=2.d0*ncoils
+      n = n1*n2*n3
+      a = -0.356536d0+0.003803d0*ncoils-0.701591d0*sqrt(.5*df)
+      b = -0.059703d0+0.029093d0*ncoils+0.098401d0*sqrt(.5*df)
+      z1 = ncoils+0.5d0
+      z2 = ncoils
+      mlev = sqrt(2.d0)*gammaf(z1)/gammaf(z2)
+C  precompute values of lgamma(corrected df/2) in each voxel
+C$OMP PARALLEL DEFAULT(SHARED)
+C$OMP& PRIVATE(i,j,i1,i2,i3,j1,j2,j3,z,sw,swy,sw2,swy2,thi,si,kval,
+C$OMP& wj,yj,z2,cw)
+C$OMP DO SCHEDULE(GUIDED)
+      DO i=1,n
+         i1=mod(i,n1)
+         if(i1.eq.0) i1=n1
+         i2=mod((i-i1)/n1+1,n2)
+         if(i2.eq.0) i2=n2
+         i3=(i-i1-(i2-1)*n1)/n1/n2+1         
+         if(.not.mask(i1,i2,i3)) CYCLE
+         sw=0.d0
+         swy=0.d0
+         sw2=0.d0
+         swy2=0.d0
+         thi = th(i1,i2,i3)
+         z=max(thi/sigma,mlev)
+         z = (z+a)**1.5d0
+         z = (z/(z+b))
+         si = z*z*sigma
+C   thats the estimated standard deviation of y(i1,i2,i3)
+         kval = lambda/ni(i)*si*si
+         Do j=1,nw
+            j1=i1+ind(1,j)
+            if(j1.le.0.or.j1.gt.n1) CYCLE
+            j2=i2+ind(2,j)
+            if(j2.le.0.or.j2.gt.n2) CYCLE
+            j3=i3+ind(3,j)
+            if(j3.le.0.or.j3.gt.n3) CYCLE
+            wj=w(j)
+            z=thi-th(j1,j2,j3)
+            z=z*z
+            if(z.ge.kval) CYCLE
+            wj=wj*min(1.d0,2.d0-2.d0*z/kval)
+            sw=sw+wj
+            sw2=sw2+wj*wj
+            yj=y(j1,j2,j3)
+            swy=swy+wj*yj
+            swy2=swy2+wj*yj*yj
+         END DO
+         thi = swy/sw
+         z2 = swy2/sw
+C  z2-thi^2  is an estimate of the variance of y(i) 
+         z=max(thi/sigma,mlev)
+         z = (z+a)**1.5d0
+         z = (z/(z+b))
+         si = z*z
+C  (z2-thi^2)/si^2  is an estimate of sigma^2 corrected for non-central chi-bias 
+         cw = 1.d0-sw2/sw/sw
+         IF(cw.gt.0.d0) THEN
+            sy(i) = sqrt((z2-thi*thi)/cw)/si
+C  sy(i)  is an estimate of sigma corrected for 
+C       simultaneously estimating the mean and for non-central chi-bias 
+         ELSE
+            sy(i) = 0.d0
+C  case ni(i) = 1
+         END IF
+         thn(i) = thi
+         ni(i) = sw
+      END DO
+C$OMP END DO NOWAIT
+C$OMP END PARALLEL
+C$OMP FLUSH(thn,ni,sy)
+      RETURN
+      END
+      subroutine awsadchi(y,th,ni,mask,n1,n2,n3,ind,w,nw,lambda,
+     1                    sigma,ncoils,wad,nthreds,thn,sy)
+C   Takes noncentral Chi values in y
+C   perform adaptive smoothing on R^3
+C   th containes previous estimates
+C   ni containes previous sum of weights
+C   mask - logical mask (use if mask==TRUE)
+C   n1,n2,n3 - dimensions
+C   ind  - integer array dim (3,n) containing relative indices in xyz
+C   w    - vector of corresponding location weights
+C   nw   - number of positive weights (initial value 
+C   lambda   - kritical value for pairwise tests
+C   sigma    - actual estimate of sigma
+C   ncoils   - effective number of receiver coils
+C   thn      - new estimate sum_j w_a(j) Y_j
+C   th2      - sum_j w_a(j) Y_j^2
+C   ind(.,i) contains coordinate indormation corresponding to positive
+C   location weights in w(i)
+C   ind(.,i)[1:5] are j1-i1,j2-i2,j3-i3, i4 and j4 respectively 
+C
+      implicit logical (a-z)
+      integer n1,n2,n3,nw,ind(3,nw),nthreds
+      logical mask(n1,n2,n3)
+      real*8 y(n1,n2,n3),th(n1,n2,n3),ni(1),thn(1),
+     1       sy(1),lambda,w(nw),sigma,ncoils,wad(nw,nthreds)
+      integer i1,i2,i3,j1,j2,j3,i,j,n,thrednr
+      real*8 mlev,si,z,z1,z2,df,a,b,sw,sw2,swy,swy2,yj,thi,wj,kval,
+     1       cw
+      integer omp_get_thread_num
+      real*8 gammaf
+      external gammaf,omp_get_thread_num
+      df=2.d0*ncoils
+      n = n1*n2*n3
+      a = -0.356536d0+0.003803d0*ncoils-0.701591d0*sqrt(.5*df)
+      b = -0.059703d0+0.029093d0*ncoils+0.098401d0*sqrt(.5*df)
+      z1 = ncoils+0.5d0
+      z2 = ncoils
+      mlev = sqrt(2.d0)*gammaf(z1)/gammaf(z2)
+C  precompute values of lgamma(corrected df/2) in each voxel
+C$OMP PARALLEL DEFAULT(SHARED)
+C$OMP& PRIVATE(i,j,i1,i2,i3,j1,j2,j3,z,sw,swy,sw2,swy2,thi,si,kval,
+C$OMP& wj,yj,z2,cw,thrednr)
+C$OMP DO SCHEDULE(GUIDED)
+      DO i=1,n
+         i1=mod(i,n1)
+         if(i1.eq.0) i1=n1
+         i2=mod((i-i1)/n1+1,n2)
+         if(i2.eq.0) i2=n2
+         i3=(i-i1-(i2-1)*n1)/n1/n2+1         
+         if(.not.mask(i1,i2,i3)) CYCLE
+         thrednr = omp_get_thread_num()+1
+         sw=0.d0
+         swy=0.d0
+         sw2=0.d0
+         swy2=0.d0
+         thi = th(i1,i2,i3)
+         z=max(thi/sigma,mlev)
+         z = (z+a)**1.5d0
+         z = (z/(z+b))
+         si = z*z*sigma
+C   thats the estimated standard deviation of y(i1,i2,i3)
+         kval = lambda/ni(i)*si*si
+         DO j=1,nw
+            wad(j,thrednr)=0.d0
+            j1=i1+ind(1,j)
+            if(j1.le.0.or.j1.gt.n1) CYCLE
+            j2=i2+ind(2,j)
+            if(j2.le.0.or.j2.gt.n2) CYCLE
+            j3=i3+ind(3,j)
+            if(j3.le.0.or.j3.gt.n3) CYCLE
+            wj=w(j)
+            z=thi-th(j1,j2,j3)
+            z=z*z
+            if(z.ge.kval) CYCLE
+            wj=wj*min(1.d0,2.d0-2.d0*z/kval)
+            wad(j,thrednr)=wj
+            sw=sw+wj
+            sw2=sw2+wj*wj
+            yj=y(j1,j2,j3)
+            swy=swy+wj*yj
+         END DO
+         thi = swy/sw
+         DO j=1,nw
+            wj=wad(j,thrednr)
+            if(wj.le.1d-8) CYCLE
+            j1=i1+ind(1,j)
+            j2=i2+ind(2,j)
+            j3=i3+ind(3,j)
+C no need to test for grid coordinates since wj>0
+            swy2=swy2+wj*abs(thi-y(j1,j2,j3))
+         END DO
+         z2 = swy2/sw/.8d0
+C  z2  is an estimate of the standard deviation of y(i) 
+         z=max(thi/sigma,mlev)
+         z = (z+a)**1.5d0
+         z = (z/(z+b))
+         si = z*z
+C  (z2-thi^2)/si^2  is an estimate of sigma^2 corrected for non-central chi-bias 
+         cw = 1.d0-sw2/sw/sw
+         IF(cw.gt.0.d0) THEN
+            sy(i) = z2/sqrt(cw)/si
+C  sy(i)  is an estimate of sigma corrected for 
+C       simultaneously estimating the mean and for non-central chi-bias 
+         ELSE
+            sy(i) = 0.d0
+C  case ni(i) = 1
+         END IF
+         thn(i) = thi
+         ni(i) = sw
+      END DO
+C$OMP END DO NOWAIT
+C$OMP END PARALLEL
+C$OMP FLUSH(thn,ni,sy)
       RETURN
       END
       subroutine lkfuls0(h,vext,ind,wght,n)

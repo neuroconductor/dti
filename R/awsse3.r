@@ -71,6 +71,20 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
 #
 #  rescale so that we have Chi-distributed values
 #
+  if(ns0>1){
+     dim(s0) <- c(prod(ddim),ns0)
+     if(model==2){
+        s0 <- sqrt(s0^2%*%rep(1,ns0))        
+        mask <- s0 > sqrt(ns0)*level
+     } else {
+        s0 <- s0%*%rep(1,ns0)
+        mask <- s0 > ns0*level
+     }
+# S0 will be noncentral Chi with 2*ns0*ncoils DF for model 1 and 2
+     dim(s0) <- ddim
+  } else {
+        mask <- s0 > level
+  }
   sb <- sb/sigma
   s0 <- s0/sigma
   if(model==1){
@@ -81,19 +95,8 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
      s0 <- s0^2
      sigma <- sigma^2
   }
-  if(ns0>1){
-     dim(s0) <- c(prod(ddim),ns0)
-     if(model==2){
-        s0 <- sqrt(s0^2%*%rep(1,ns0))        
-     } else {
-        s0 <- s0%*%rep(1,ns0)
-     }
-# S0 will be noncentral Chi with 2*ns0*ncoils DF for model 1 and 2
-     dim(s0) <- ddim
-  }
      th0 <- s0
      ni0 <- array(1,ddim)
-  mask <- s0>(ns0*level/sigma)
   if(multishell){
      gradstats <- getkappasmsh(grad, msstructure,dist=dist)
 #     save(gradstats,file="gradstats.rsc")
@@ -103,12 +106,12 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
      hseq <- gethseqfullse3(kstar,gradstats,kappa0,vext=vext)
   }
   kappa <- hseq$kappa
-  nind <- hseq$n
+  nind <- as.integer(hseq$n*1.25)#just to avoid n being to small due to rounding
   hseq <- hseq$h
 # make it nonrestrictive for the first step
   ni <- array(1,dim(sb))
-  minlevel <- if(model==1) 2*ncoils else sqrt(2*ncoils)
-  minlevel0 <- if(model==1) 2*ns0*ncoils else sqrt(2*ns0*ncoils)
+  minlevel <- if(model==1) 2*ncoils else sqrt(2)*gamma(ncoils+.5)/gamma(ncoils)  
+  minlevel0 <- if(model==1) 2*ns0*ncoils else sqrt(2)*gamma(ns0*ncoils+.5)/gamma(ns0*ncoils)
   z <- list(th=pmax(sb,minlevel), ni = ni)
   th0 <- pmax(s0,minlevel0)
   prt0 <- Sys.time()
@@ -120,36 +123,34 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
     hakt <- hseq[,k]
     if(multishell){
        thmsh <- interpolatesphere(z$th,msstructure)
-#       save(z,thmsh,file="thmsh.rsc")
        param <- lkfullse3msh(hakt,kappa/hakt,gradstats,vext,nind) 
+#       save(z,thmsh,param,msstructure,file=paste("thmsh",k,".rsc",sep=""))
        if(length(sigma)==1) {
        z <- .Fortran("adsmse3m",
-                as.single(sb),
-                as.single(thmsh),
-                ni=as.single(z$ni),
-                as.logical(mask),
+                as.single(sb),#y
+                as.single(thmsh),#th
+                ni=as.single(z$ni),#ni
+                as.logical(mask),#mask
                 as.integer(nshell),# number of shells
-                as.integer(ddim[1]),
-                as.integer(ddim[2]),
-                as.integer(ddim[3]),
-                as.integer(ngrad),
-                as.double(lambda),
-                as.integer(ncoils),
-                as.integer(mc.cores),
-                as.integer(param$ind),
-                as.double(param$w),
-                as.integer(param$n),
-                th=single(prod(ddim)*ngrad),
-                double(ngrad*mc.cores),
-                double(ngrad*mc.cores),
-                double(nshell*mc.cores),
-                double(nshell*mc.cores),
-                double(nshell*mc.cores),
-#                as.double(minlevel),
-                as.double(0),                
-                DUPL=FALSE,
+                as.integer(ddim[1]),#n1
+                as.integer(ddim[2]),#n2
+                as.integer(ddim[3]),#n3
+                as.integer(ngrad),#ngrad
+                as.double(lambda),#lambda
+                as.integer(ncoils),#ncoils
+                as.integer(mc.cores),#ncores
+                as.integer(param$ind),#ind
+                as.double(param$w),#w
+                as.integer(param$n),#n
+                th=single(prod(ddim)*ngrad),#thn
+                double(ngrad*mc.cores),#sw
+                double(ngrad*mc.cores),#swy
+                double(nshell*mc.cores),#si
+                double(nshell*mc.cores),#thi
+                as.double(minlevel), # minlevel               
+                DUPL=TRUE,
                 PACKAGE="dti")[c("ni","th")]
-       dim(z$th) <- c(ddim,ngrad)
+       dim(z$th) <- dim(z$ni) <- c(ddim,ngrad)
        gc()
        } else {
        warning("not yet implemented for heterogenious variances\n
@@ -273,6 +274,7 @@ th1 <- r*0.9999953
 }
 th1
 }
+
 lkfullse3 <- function(h,kappa,gradstats,vext,n){
       ngrad <- dim(gradstats$bghat)[2]
       if(length(h)<ngrad) h <- rep(h[1],ngrad)

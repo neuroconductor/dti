@@ -66,7 +66,7 @@ setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=15,kappa0=.9,
   hseq <- gethseqfullse3msh(kstar,gradstats,kappa0,vext=vext)
   kappa <- hseq$kappa
   cat("kappa",kappa,"\n")
-  nind <- hseq$n
+  nind <- as.integer(hseq$n*1.25)
   hseqi <- hseq$h
   hseq0 <- hseq$h0 <- apply(hseqi,2,mean)
 # make it nonrestrictive for the first step

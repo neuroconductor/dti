@@ -8,6 +8,154 @@ awssigmc <- function(y,                 # data
                      mask = NULL,       # data mask, where to do estimation
                      ncoils = 1,        # number of coils for parallel MR image acquisition
                      vext = c( 1, 1),   # voxel extensions
+                     lambda = 30,       # adaptation parameter for PS
+                     h0 = 2,            # initial bandwidth for first step in PS
+                     verbose = FALSE, 
+                     sequence = FALSE,  # return estimated sigma for intermediate steps of PS?
+                     hadj = 1,          # adjust parameter for density() call for mode estimation
+                     q = .25,            # for IQR
+                     method="VAR"  # for variance, alternative "MAD" for mean absolute deviation
+                     ) {
+
+  ## some functions for pilot estimates
+  IQQ <- function (x, q = .25, na.rm = FALSE, type = 7) 
+    diff(quantile(as.numeric(x), c(q, 1-q), na.rm = na.rm, names = FALSE, type = type))
+
+  IQQdiff <- function(y, mask, q = .25) {
+    cq <- qnorm(1-q)*sqrt(2)*2
+    sx <- IQQ( diff(y[mask]), q)/cq
+    sy <- IQQ( diff(aperm(y,c(2,1,3))[aperm(mask,c(2,1,3))]), q)/cq
+    sz <- IQQ( diff(aperm(y,c(3,1,2))[aperm(mask,c(3,1,2))]), q)/cq
+    cat( "Pilot estimates of sigma", sx, sy, sz, "\n")
+    min( sx, sy, sz)
+  }
+  
+  estsigma <- function(y, mask, q, L, sigma){
+    meany <- mean(y[mask]^2)
+    eta <- sqrt(max( 0, meany/sigma^2-2*L))
+    m <- sqrt(pi/2)*gamma(L+1/2)/gamma(L)/gamma(3/2)*hyperg_1F1(-1/2,L,-eta^2/2)
+    v <- max( .01, 2*L+eta^2-m^2)
+    cat( eta, m, v, "\n")
+    IQQdiff( y, mask, q)/sqrt(v)
+  }
+
+  ## dimension and size of cubus
+  ddim <- dim(y)
+  n <- prod(ddim)
+
+  ## test dimension
+  if (length(ddim) != 3) stop("first argument should be a 3-dimentional array")
+
+  ## check mask
+  if (is.null(mask)) mask <- array(TRUE, ddim)
+  if(length(mask) != n) stop("dimensions of data array and mask should coincide")
+
+  ## initial value for sigma_0 
+  # sigma <- sqrt( mean( y[mask]^2) / 2 / ncoils)
+  sigma <- IQQdiff( y, mask, q)
+#  cat( "sigmahat1", sigma, "\n")
+  sigma <- estsigma( y, mask, q, ncoils, sigma)
+#  cat( "sigmahat2", sigma, "\n")
+  sigma <- estsigma( y, mask, q, ncoils, sigma)
+#  cat( "sigmahat3", sigma, "\n")
+  sigma <- estsigma( y, mask, q, ncoils, sigma)
+#  cat( "sigmahat4", sigma,"\n")
+
+  ## define initial arrays for parameter estimates and sum of weights (see PS)
+  th <- array( 1, ddim)
+  ni <- array( 1, ddim)
+#  y <- y/sigma # rescale to avoid passing sigma to awsvchi
+  minlev <- sqrt(2)*gamma(ncoils+.5)/gamma(ncoils)
+  if (sequence) sigmas <- numeric(steps)
+  mc.cores <- setCores(,reprt=FALSE)
+  ## iterate PS starting with bandwidth h0
+  for (i in 1:steps) {
+
+    h <- h0 * 1.25^((i-1)/3)
+    nw <- prod(2*as.integer(h/c(1,1/vext))+1)
+    param <- .Fortran("paramw3",
+                      as.double(h),
+                      as.double(vext),
+                      ind=integer(3*nw),
+                      w=double(nw),
+                      n=as.integer(nw),
+                      DUPL = FALSE,
+                      PACKAGE = "dti")[c("ind","w","n")]
+    nw <- param$n
+    param$ind <- param$ind[1:(3*nw)]
+    dim(param$ind) <- c(3,nw)
+    param$w   <- param$w[1:nw]    
+    ## perform one step PS with bandwidth h
+    if(method=="VAR"){
+    z <- .Fortran("awsvchi",
+                  as.double(y),        # data
+                  as.double(th),       # previous estimates
+                  ni = as.double(ni),
+                  as.logical(mask),
+                  as.integer(ddim[1]),
+                  as.integer(ddim[2]),
+                  as.integer(ddim[3]),
+                  as.integer(param$ind),
+                  as.double(param$w),
+                  as.integer(nw),
+                  as.double(lambda),
+                  as.double(sigma),
+                  as.double(ncoils),
+                  th = double(n),
+                  sy = double(n),
+                  DUPL = FALSE,
+                  PACKAGE = "dti")[c("ni","th","sy")]
+    } else {
+    z <- .Fortran("awsadchi",
+                  as.double(y),        # data
+                  as.double(th),       # previous estimates
+                  ni = as.double(ni),
+                  as.logical(mask),
+                  as.integer(ddim[1]),
+                  as.integer(ddim[2]),
+                  as.integer(ddim[3]),
+                  as.integer(param$ind),
+                  as.double(param$w),
+                  as.integer(nw),
+                  as.double(lambda),
+                  as.double(sigma),
+                  as.double(ncoils),
+                  double(nw*mc.cores),
+                  as.integer(mc.cores),
+                  th = double(n),
+                  sy = double(n),
+                  DUPL = FALSE,
+                  PACKAGE = "dti")[c("ni","th","sy")]       
+    }
+    ## extract sum of weigths (see PS) and consider only voxels with ni larger then mean
+    ni <- z$ni
+    ind <- (ni > mean(ni[ni>1]))&(z$th>sigma*minlev)
+    sy <- z$sy[ind]
+    th <- z$th
+    ## use the maximal mode of estimated local sd parameters, exclude largest values for better precision
+    dsigma <- density( sy[sy>0], n = 4092, adjust = hadj, to = min( max(sy[sy>0]), median(sy[sy>0])*5) )
+    sigma <- dsigma$x[dsigma$y == max(dsigma$y)][1]
+
+    if (sequence) sigmas[i] <- sigma
+
+    if (verbose) {
+      plot(dsigma, main = paste( "estimated sigmas step", i, "h=", signif(h,3)))
+      cat( "step", i, "h=", signif( h, 3), "quantiles of ni", signif( quantile(ni[ind]), 3), "mean", signif( mean(ni[ind]), 3), "\n")
+      cat( "quantiles of sigma", signif( quantile(sy[sy>0]), 3), "mode", signif( sigma, 3), "\n")
+    }
+  }
+  ## END PS iteration
+
+
+  ## this is the result (th is expectation, not the non-centrality parameter !!!)
+  invisible(list(sigma = if(sequence) sigmas else sigma,
+                 theta = th))
+}
+awssigmc0 <- function(y,                 # data
+                     steps,             # number of iteration steps for PS
+                     mask = NULL,       # data mask, where to do estimation
+                     ncoils = 1,        # number of coils for parallel MR image acquisition
+                     vext = c( 1, 1),   # voxel extensions
                      lambda = 10,       # adaptation parameter for PS
                      h0 = 2,            # initial bandwidth for first step in PS
                      verbose = FALSE, 
@@ -109,7 +257,7 @@ awssigmc <- function(y,                 # data
       s2 <- sqrt((m1-sqrt(pmax( 0, m1^2-mu*ncoils)))/p)
 
     ## use the maximal mode of estimated local variance parameters, exclude largest values for better precision
-    dsigma <- density( sigma[sigma>0], n = 4092, adjust = hadj, to = min( max(sigma[sigma>0]), median(sigma[sigma>0])*5) )
+    dsigma <- density( s2[s2>0], n = 4092, adjust = hadj, to = min( max(s2[s2>0]), median(s2[s2>0])*5) )
     sigmaf <- dsigma$x[dsigma$y == max(dsigma$y)][1]
       th <- th/sigmaf
       y <- y/sigmaf 

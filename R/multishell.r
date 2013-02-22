@@ -87,7 +87,7 @@ for(i in 1:nbv){
    w[i,indb,1] <- 1
    w[i,indb,2] <- 0
    w[i,indb,3] <- 0
-   for(j in (1:nbv)[-i])
+   for(j in (1:nbv)[-i]){
       indbk <- (1:ng)[bv==ubv[j]]
       for(k in indb){
          d <- abs(t(grad[,k])%*%grad[,indbk])
@@ -121,6 +121,7 @@ for(i in 1:nbv){
 #            cat("l",l-1,"ijk1",ijk1[1:3],"w",z$w,"\n")
             w[j,k,] <- z$w
          }
+      }
    }
 }   
 #   spheres identified by bvalues in ubv
@@ -143,11 +144,13 @@ for(i in 1:n3g$nbv){
    }
 }
 # now inforce monotonicity 
-msthmin <- msthmax <- mstheta
-for(i in 2:n3g$nbv) msthmin[i,,,,] <- pmin(msthmin[i-1,,,,],msthmin[i,,,,])
-for(i in n3g$nbv:2) msthmax[i-1,,,,] <- pmax(msthmax[i-1,,,,],msthmax[i,,,,])
-(msthmin+msthmax)/2
-#mstheta
+#msthmin <- msthmax <- mstheta
+#if(n3g$nbv>1){
+#for(i in 2:n3g$nbv) msthmin[i,,,,] <- pmin(msthmin[i-1,,,,],msthmin[i,,,,])
+#for(i in n3g$nbv:2) msthmax[i-1,,,,] <- pmax(msthmax[i-1,,,,],msthmax[i,,,,])
+#(msthmin+msthmax)/2
+#}
+mstheta
 }
 
 
