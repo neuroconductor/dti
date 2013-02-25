@@ -496,6 +496,41 @@ C$OMP FLUSH(andir)
       END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 C
+C    Compute all(!) DTI-eigenvectors for a volume 
+C
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+      subroutine dti3DevAll( D, n, andir, evalues)
+      implicit logical (a-z)
+      integer n
+      real*8 D( 6, n), andir( 9, n), evalues( 3, n)
+      integer i, ierr
+      real*8 lambda( 3), evec( 3, 3)
+C$OMP PARALLEL DEFAULT(NONE)
+C$OMP& SHARED(D,n,andir,evalues)
+C$OMP& PRIVATE(i,lambda,evec,ierr)
+C$OMP DO SCHEDULE(STATIC)
+      DO i=1,n
+         call eigen3(D(1,i),lambda,evec,ierr)
+         andir( 1, i) = evec( 1, 3)
+         andir( 2, i) = evec( 2, 3)
+         andir( 3, i) = evec( 3, 3)
+         andir( 4, i) = evec( 1, 2)
+         andir( 5, i) = evec( 2, 2)
+         andir( 6, i) = evec( 3, 2)
+         andir( 7, i) = evec( 1, 1)
+         andir( 8, i) = evec( 2, 1)
+         andir( 9, i) = evec( 3, 1)
+         evalues( 1, i) = lambda( 3)
+         evalues( 2, i) = lambda( 2)
+         evalues( 3, i) = lambda( 1)
+      END DO
+C$OMP END DO NOWAIT
+C$OMP END PARALLEL
+C$OMP FLUSH(andir)
+      RETURN
+      END
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+C
 C    Regularize tensors bu setting eigenvalues to zero
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC

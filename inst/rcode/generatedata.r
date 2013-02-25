@@ -148,7 +148,7 @@ project.cylinder <- function(obj,radius,phi=(1:1000)*2*pi/1000){
 s0offa <- read.table(system.file("dat/S0ofFA.txt",package="dti"))
 s0 <- scalefs0*s0offa[as.integer(as.vector(ind)*500+1),2]
 dim(s0) <- dim(ind)
-s0 <- array(as.integer(32000),dim(ind))
+#s0 <- array(as.integer(32000),dim(ind))
 for( i in 1:64) for (j in 1:64){
   if(max(ind[i,j,])==0&&((i-32.5)^2+(j-32.5)^2>26^2)) s0[i,j,]<-0
 }

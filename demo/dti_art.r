@@ -15,7 +15,7 @@ cat("---> using",method,"tensor estimation!\n")
 a <- readline("Mask small non-diffusion weighted values ? (y/n)?")
 
 if (toupper(a) == "N") {
-  mins0value <- 0
+  mins0value <- 1
 } else {
   mins0value <- 100
 }
