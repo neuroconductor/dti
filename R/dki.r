@@ -34,7 +34,8 @@ setMethod("dkiTensor", "dtiData",
             ## define the design matrix of the estimation problem
             ind <- object@bvalue != 0
             xxx <- dkiDesign( object@gradient[ , ind])
-            ## WHAT HAPPENS, IF BVALUE IS NOT ZERO, CAN WE EXTENT THE DESIGN MATRIX?
+            ## WHAT HAPPENS, IF BVALUE IS NOT ZERO?
+            ## --> use object@s0ind
             
             ## Tabesh Eq. [11, 14, 15]
             Tabesh_AD <- xxx[ , 1:6]
@@ -67,9 +68,8 @@ setMethod("dkiTensor", "dtiData",
                 if (verbose) setTxtProgressBar(pb, i)
                 for ( j in 1:ddim[2]) {
                   for ( k in 1:ddim[3]) {
-                    ## cat( "voxel", i, j, k, "\n")
                     ## Tabesh Eq. [12]
-                    Tabesh_B <- log( dwiobj@si[ i, j, k, -dwiobj@s0ind] / mean( dwiobj@si[ i, j, k, dwiobj@s0ind]))
+                    Tabesh_B <- log( object@si[ i, j, k, -object@s0ind] / mean( object@si[ i, j, k, object@s0ind]))
                     ## PERFORM SOME TEST BEFORE IT!!
                     
                     ## QP solution
@@ -82,7 +82,109 @@ setMethod("dkiTensor", "dtiData",
               if (verbose) close(pb)  
             } 
             if ( method == "CLLS-H") {
-              stop( "dkiTensor: CLLS-H not yet implemented, choose CLLP-QP")
+
+              ## these are the distinct bvalues
+              bv <- unique( bvalues[ -object@s0ind])
+              bv <- bv[ order( bv)]
+              if ( length( bv) != 2) stop( "Need exactly two shells for CLLS-H method, choose other method!")
+              ## now we have bv[ 1] < bv[ 2] 
+              
+              inds0 <- rep( FALSE, length( bvalues))
+              inds0[ object@s0ind] <- TRUE
+              indbv1 <- bvalues == bv[ 1] # smaller b-value
+              indbv2 <- bvalues == bv[ 2] # larger b-value
+              if ( (ngrad <- sum( indbv1)) != sum( indbv2)) stop( "Need same number of gradients vectors for both shells!")
+
+              ## we must have two shell data and the gradient direction coincide for both shells
+              ## TODO: check this! probably re-order indbv1 and indbv2
+              ##       problem, what if there is only approximate matching (ECC, random, ...)?
+
+              ## We need only a reduced design, as the gradient directions coincide
+              xxx <- dkiDesign( object@gradient[ , indbv1])
+              Tabesh_AD <- xxx[ , 1:6]
+              Tabesh_AK <- xxx[ , 7:21]
+              
+              ## some hard-coded constraints, see Tabesh Eq. [6] ff. 
+              Kmin <- 0
+              ## Tabesh Eq. [6]
+              C <- 3
+              ## TODO: Do we want this as user defined arguments?
+              
+              ## for all voxel
+              ## TODO: Make this more efficient matrix operation!
+              if (verbose) pb <- txtProgressBar(0, ddim[1], style = 3)
+              for ( j in 1:ddim[1]) {
+                if (verbose) setTxtProgressBar(pb, j)
+                for ( k in 1:ddim[2]) {
+                  for ( m in 1:ddim[3]) {
+                    
+                    ## Tabesh Eq. [20]
+                    D1 <- - log( object@si[ j, k, m, indbv1] / mean( object@si[ j, k, m, object@s0ind])) / bv[ 1]
+                    D2 <- - log( object@si[ j, k, m, indbv2] / mean( object@si[ j, k, m, object@s0ind])) / bv[ 2]
+                    
+                    ## Tabesh Eq. [18]
+                    Di <- ( bv[2] * D1 - bv[1] * D2) / ( bv[ 2] - bv[ 1])
+                    
+                    ## Tabesh Eq. [19] CHECK!!!
+                    Ki <-  6 * ( D1 - D2) / ( bv[ 2] - bv[ 1]) / Di^2 
+                    
+                    ## now we apply some constraints Tabesh
+                    ## TODO: make this more efficient
+                    for ( i in 1:ngrad) {
+                      if ( Di[ i] < 0) { # D1
+                        Di[ i] <- 0
+                      } else {
+                        if ( D1[ i] < 0) { # D2
+                          Di[ i] <- 0
+                        } else {
+                          if ( ( Di[ i] > 0) & ( Ki[ i] < Kmin)) { # D3
+                            if ( Kmin == 0) {
+                              Di[ i] = D1[ i]
+                            } else {
+                              x <- -Kmin * bv[ 1] / 3 
+                              Di[ i] = ( sqrt( 1 + 2 * x * D1[ i]) - 1) / x
+                            }
+                          } else {
+                            Kmax <- C / bv[ 2] / Di[ i] ## CHECK AGAIN!
+                            if ( ( Di[ i] > 0) & ( Ki[ i] > Kmax)) {
+                              Di[ i] <- D1[ i] / ( 1 - C * bv[1] / 6 / bv[ 2])
+                            }
+                          }
+                        }
+                      }
+                    }
+                    
+                    ## estimate D tensor! Tabesh Eq. [21]
+                    ## TODO: Use QR here, or lm
+                    D[ c( 1, 4, 5, 2, 6, 3), j, k, m] <- solve( t( Tabesh_AD) %*% Tabesh_AD) %*% t( Tabesh_AD) %*% Di
+                    
+                    ## re-estimate Di: Tabesh Eq. [22]
+                    DiR <- Tabesh_AD %*% D[ c( 1, 4, 5, 2, 6, 3), j, k, m]
+                    
+                    ## constraints for the KT estimation step
+                    KiR = Ki
+                    for ( i in 1:ngrad) {
+                      ## Tabesh Eq. [23]
+                      if ( DiR[ i] > 0) {
+                        KiR[ i] =  6 * ( DiR[ i] - D2[ i]) / bv[ 2] / DiR[ i]^2
+                      } else {
+                        KiR[ i] = 0
+                      }
+                    }
+                    for ( i in 1:ngrad) {
+                      Kmax <- C / bv[ 2] / DiR[ i] ## CHECK AGAIN!
+                      if ( KiR[ i] > Kmax) KiR[ i] <- Kmax  # K1
+                      if ( KiR[ i] < Kmin) KiR[ i] <- Kmin  # K2             
+                    }
+                    
+                    ## estimate KT Tabesh Eq. [24] WITHOUT MD^2 cf. CLLS-QP
+                    ## TODO: Use QR here, or lm
+                    D[ 7:21, j, k, m] <- solve( t( Tabesh_AK) %*% Tabesh_AK) %*% t( Tabesh_AK) %*% ( DiR^2 * KiR)
+                    
+                    
+                  }
+                }
+              }
             }  
             if ( method == "ULLS") {
               stop( "dkiTensor: ULLS not yet implemented, choose CLLP-QP")
@@ -95,7 +197,7 @@ setMethod("dkiTensor", "dtiData",
             dim(D) <- c( 21, ddim)
             
             ## CHECK THESE!
-            th0 <- apply( dwiobj@si, 1:3, mean)
+            th0 <- apply( object@si, 1:3, mean)
             sigma2 <- array( 0, dim = ddim)
             scorr <- array( 0, dim =c(3,3,3))
             bw <- c( 0, 0, 0)
@@ -209,8 +311,10 @@ setMethod("dkiIndices", "dkiTensor",
             ## define mean kurtosis
             mk <- apply( Kapp, 2, mean)
             
+            ## START 
             ## Mean Kurtosis definition following Tabesh et al. (2011), this should be exact
             ## Note, these values already contain MD^2 as factor!
+            ## Tabesh Eq. [26] needed for Tabesh Eq. [25]
             Wtilde1111 <- rotateKurtosis( andir, Tabesh_AK, 1, 1, 1, 1) 
             Wtilde2222 <- rotateKurtosis( andir, Tabesh_AK, 2, 2, 2, 2) 
             Wtilde3333 <- rotateKurtosis( andir, Tabesh_AK, 3, 3, 3, 3) 
@@ -218,16 +322,18 @@ setMethod("dkiIndices", "dkiTensor",
             Wtilde1133 <- rotateKurtosis( andir, Tabesh_AK, 1, 1, 3, 3) 
             Wtilde2233 <- rotateKurtosis( andir, Tabesh_AK, 2, 2, 3, 3) 
 
+            ## Tabesh Eq. [25]
             mk2 <- kurtosisFunctionF1( lambda[ 1, ], lambda[ 2, ], lambda[ 3, ]) * Wtilde1111 
                    + kurtosisFunctionF1( lambda[ 2, ], lambda[ 1, ], lambda[ 3, ]) * Wtilde2222 
                    + kurtosisFunctionF1( lambda[ 2, ], lambda[ 2, ], lambda[ 1, ]) * Wtilde3333
                    + kurtosisFunctionF2( lambda[ 1, ], lambda[ 2, ], lambda[ 3, ]) * Wtilde2233 
                    + kurtosisFunctionF2( lambda[ 2, ], lambda[ 1, ], lambda[ 3, ]) * Wtilde1133 
                    + kurtosisFunctionF2( lambda[ 3, ], lambda[ 2, ], lambda[ 1, ]) * Wtilde1122
+            ## END
             
-            
+
+            ## START
             ## Fractional kurtosis following Hui et al. (2008), this might be not useful!
-            
             x1 <- dkiDesign( andir[ , 1, ])
             x2 <- dkiDesign( andir[ , 2, ])
             x3 <- dkiDesign( andir[ , 3, ])
@@ -249,7 +355,9 @@ setMethod("dkiIndices", "dkiTensor",
             kaxial <- k1
             kradial <- ( k2 + k3) / 2
             fak <- sqrt( 3/2 *( (k1-kbar)^2 + (k2-kbar)^2 + (k3-kbar)^2) / ( k1^2 + k2^2 + k3^2))
+            ## END
 
+            
             ## we finally got k1, k2, k3, kaxial, kradial, mk, fak
             dim( k1) <- ddim
             dim( k2) <- ddim
