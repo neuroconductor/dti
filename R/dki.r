@@ -315,12 +315,12 @@ setMethod("dkiIndices", "dkiTensor",
             ## Mean Kurtosis definition following Tabesh et al. (2011), this should be exact
             ## Note, these values already contain MD^2 as factor!
             ## Tabesh Eq. [26] needed for Tabesh Eq. [25]
-            Wtilde1111 <- rotateKurtosis( andir, Tabesh_AK, 1, 1, 1, 1) 
-            Wtilde2222 <- rotateKurtosis( andir, Tabesh_AK, 2, 2, 2, 2) 
-            Wtilde3333 <- rotateKurtosis( andir, Tabesh_AK, 3, 3, 3, 3) 
-            Wtilde1122 <- rotateKurtosis( andir, Tabesh_AK, 1, 1, 2, 2) 
-            Wtilde1133 <- rotateKurtosis( andir, Tabesh_AK, 1, 1, 3, 3) 
-            Wtilde2233 <- rotateKurtosis( andir, Tabesh_AK, 2, 2, 3, 3) 
+            Wtilde1111 <- rotateKurtosis( andir, D[ 7:21, ], 1, 1, 1, 1) 
+            Wtilde2222 <- rotateKurtosis( andir, D[ 7:21, ], 2, 2, 2, 2) 
+            Wtilde3333 <- rotateKurtosis( andir, D[ 7:21, ], 3, 3, 3, 3) 
+            Wtilde1122 <- rotateKurtosis( andir, D[ 7:21, ], 1, 1, 2, 2) 
+            Wtilde1133 <- rotateKurtosis( andir, D[ 7:21, ], 1, 1, 3, 3) 
+            Wtilde2233 <- rotateKurtosis( andir, D[ 7:21, ], 2, 2, 3, 3) 
 
             ## Tabesh Eq. [25]
             mk2 <- kurtosisFunctionF1( lambda[ 1, ], lambda[ 2, ], lambda[ 3, ]) * Wtilde1111 
