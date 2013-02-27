@@ -1560,11 +1560,11 @@ C         (2 int(h)+1)*(2 int(h/vext(1))+1)*(2 int(h/vext(2))+1)
       RETURN
       END
       subroutine awsvchi(y,th,ni,mask,n1,n2,n3,ind,w,nw,lambda,
-     1                    sigma,ncoils,thn,sy)
+     1                    sigma,thn,sy)
 C   Takes noncentral Chi values in y
 C   perform adaptive smoothing on R^3
 C   th containes previous estimates
-C   ni containes previous sum of weights
+C   ni containes previous sum of weights divided by variance of Chi(2,th/sigma)
 C   mask - logical mask (use if mask==TRUE)
 C   n1,n2,n3 - dimensions
 C   ind  - integer array dim (3,n) containing relative indices in xyz
@@ -1572,7 +1572,6 @@ C   w    - vector of corresponding location weights
 C   nw   - number of positive weights (initial value 
 C   lambda   - kritical value for pairwise tests
 C   sigma    - actual estimate of sigma
-C   ncoils   - effective number of receiver coils
 C   thn      - new estimate sum_j w_a(j) Y_j
 C   th2      - sum_j w_a(j) Y_j^2
 C   ind(.,i) contains coordinate indormation corresponding to positive
@@ -1583,23 +1582,14 @@ C
       integer n1,n2,n3,nw,ind(3,nw)
       logical mask(n1,n2,n3)
       real*8 y(n1,n2,n3),th(n1,n2,n3),ni(1),thn(1),
-     1       sy(1),lambda,w(nw),sigma,ncoils
+     1       sy(1),lambda,w(nw),sigma
       integer i1,i2,i3,j1,j2,j3,i,j,n
-      real*8 mlev,si,z,z1,z2,df,a,b,sw,sw2,swy,swy2,yj,thi,wj,kval,
-     1       cw
-      real*8 gammaf
-      external gammaf
-      df=2.d0*ncoils
+      real*8 z,sw,sw2,swy,swy2,yj,thi,wj,kval,cw
       n = n1*n2*n3
-      a = -0.356536d0+0.003803d0*ncoils-0.701591d0*sqrt(.5*df)
-      b = -0.059703d0+0.029093d0*ncoils+0.098401d0*sqrt(.5*df)
-      z1 = ncoils+0.5d0
-      z2 = ncoils
-      mlev = sqrt(2.d0)*gammaf(z1)/gammaf(z2)
 C  precompute values of lgamma(corrected df/2) in each voxel
 C$OMP PARALLEL DEFAULT(SHARED)
-C$OMP& PRIVATE(i,j,i1,i2,i3,j1,j2,j3,z,sw,swy,sw2,swy2,thi,si,kval,
-C$OMP& wj,yj,z2,cw)
+C$OMP& PRIVATE(i,j,i1,i2,i3,j1,j2,j3,z,sw,swy,sw2,swy2,thi,kval,
+C$OMP& wj,yj,cw)
 C$OMP DO SCHEDULE(GUIDED)
       DO i=1,n
          i1=mod(i,n1)
@@ -1613,12 +1603,8 @@ C$OMP DO SCHEDULE(GUIDED)
          sw2=0.d0
          swy2=0.d0
          thi = th(i1,i2,i3)
-         z=max(thi/sigma,mlev)
-         z = (z+a)**1.5d0
-         z = (z/(z+b))
-         si = z*z*sigma
 C   thats the estimated standard deviation of y(i1,i2,i3)
-         kval = lambda/ni(i)*si*si
+         kval = lambda/ni(i)*sigma*sigma
          Do j=1,nw
             j1=i1+ind(1,j)
             if(j1.le.0.or.j1.gt.n1) CYCLE
@@ -1638,16 +1624,11 @@ C   thats the estimated standard deviation of y(i1,i2,i3)
             swy2=swy2+wj*yj*yj
          END DO
          thi = swy/sw
-         z2 = swy2/sw
+         z = swy2/sw
 C  z2-thi^2  is an estimate of the variance of y(i) 
-         z=max(thi/sigma,mlev)
-         z = (z+a)**1.5d0
-         z = (z/(z+b))
-         si = z*z
-C  (z2-thi^2)/si^2  is an estimate of sigma^2 corrected for non-central chi-bias 
          cw = 1.d0-sw2/sw/sw
          IF(cw.gt.0.d0) THEN
-            sy(i) = sqrt((z2-thi*thi)/cw)/si
+            sy(i) = sqrt((z-thi*thi)/cw)
 C  sy(i)  is an estimate of sigma corrected for 
 C       simultaneously estimating the mean and for non-central chi-bias 
          ELSE
@@ -1663,7 +1644,7 @@ C$OMP FLUSH(thn,ni,sy)
       RETURN
       END
       subroutine awsadchi(y,th,ni,mask,n1,n2,n3,ind,w,nw,lambda,
-     1                    sigma,ncoils,wad,nthreds,thn,sy)
+     1                    sigma,wad,nthreds,thn,sy)
 C   Takes noncentral Chi values in y
 C   perform adaptive smoothing on R^3
 C   th containes previous estimates
@@ -1675,7 +1656,6 @@ C   w    - vector of corresponding location weights
 C   nw   - number of positive weights (initial value 
 C   lambda   - kritical value for pairwise tests
 C   sigma    - actual estimate of sigma
-C   ncoils   - effective number of receiver coils
 C   thn      - new estimate sum_j w_a(j) Y_j
 C   th2      - sum_j w_a(j) Y_j^2
 C   ind(.,i) contains coordinate indormation corresponding to positive
@@ -1686,24 +1666,16 @@ C
       integer n1,n2,n3,nw,ind(3,nw),nthreds
       logical mask(n1,n2,n3)
       real*8 y(n1,n2,n3),th(n1,n2,n3),ni(1),thn(1),
-     1       sy(1),lambda,w(nw),sigma,ncoils,wad(nw,nthreds)
+     1       sy(1),lambda,w(nw),sigma,wad(nw,nthreds)
       integer i1,i2,i3,j1,j2,j3,i,j,n,thrednr
-      real*8 mlev,si,z,z1,z2,df,a,b,sw,sw2,swy,swy2,yj,thi,wj,kval,
-     1       cw
+      real*8 z,sw,sw2,swy,swy2,yj,thi,wj,kval,cw
       integer omp_get_thread_num
-      real*8 gammaf
-      external gammaf,omp_get_thread_num
-      df=2.d0*ncoils
+      external omp_get_thread_num
       n = n1*n2*n3
-      a = -0.356536d0+0.003803d0*ncoils-0.701591d0*sqrt(.5*df)
-      b = -0.059703d0+0.029093d0*ncoils+0.098401d0*sqrt(.5*df)
-      z1 = ncoils+0.5d0
-      z2 = ncoils
-      mlev = sqrt(2.d0)*gammaf(z1)/gammaf(z2)
 C  precompute values of lgamma(corrected df/2) in each voxel
 C$OMP PARALLEL DEFAULT(SHARED)
-C$OMP& PRIVATE(i,j,i1,i2,i3,j1,j2,j3,z,sw,swy,sw2,swy2,thi,si,kval,
-C$OMP& wj,yj,z2,cw,thrednr)
+C$OMP& PRIVATE(i,j,i1,i2,i3,j1,j2,j3,z,sw,swy,sw2,swy2,thi,kval,
+C$OMP& wj,yj,cw,thrednr)
 C$OMP DO SCHEDULE(GUIDED)
       DO i=1,n
          i1=mod(i,n1)
@@ -1718,12 +1690,8 @@ C$OMP DO SCHEDULE(GUIDED)
          sw2=0.d0
          swy2=0.d0
          thi = th(i1,i2,i3)
-         z=max(thi/sigma,mlev)
-         z = (z+a)**1.5d0
-         z = (z/(z+b))
-         si = z*z*sigma
 C   thats the estimated standard deviation of y(i1,i2,i3)
-         kval = lambda/ni(i)*si*si
+         kval = lambda/ni(i)*sigma*sigma
          DO j=1,nw
             wad(j,thrednr)=0.d0
             j1=i1+ind(1,j)
@@ -1753,16 +1721,11 @@ C   thats the estimated standard deviation of y(i1,i2,i3)
 C no need to test for grid coordinates since wj>0
             swy2=swy2+wj*abs(thi-y(j1,j2,j3))
          END DO
-         z2 = swy2/sw/.8d0
-C  z2  is an estimate of the standard deviation of y(i) 
-         z=max(thi/sigma,mlev)
-         z = (z+a)**1.5d0
-         z = (z/(z+b))
-         si = z*z
-C  (z2-thi^2)/si^2  is an estimate of sigma^2 corrected for non-central chi-bias 
+         z = swy2/sw/.8d0
+C  z  is an estimate of the standard deviation of y(i) 
          cw = 1.d0-sw2/sw/sw
          IF(cw.gt.0.d0) THEN
-            sy(i) = z2/sqrt(cw)/si
+            sy(i) = z/sqrt(cw)
 C  sy(i)  is an estimate of sigma corrected for 
 C       simultaneously estimating the mean and for non-central chi-bias 
          ELSE

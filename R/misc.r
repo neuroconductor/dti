@@ -294,6 +294,53 @@ replind <- function(gradient){
   as.integer(replind)
 }
 
+sofmchi <- function(L){
+minlev <- sqrt(2)*gamma(L+.5)/gamma(L)
+x <- seq(0,50,.01)
+mu <- sqrt(pi/2)*gamma(L+1/2)/gamma(1.5)/gamma(L)*hyperg_1F1(-0.5,L, -x^2/2, give=FALSE, strict=TRUE)
+s2 <- 2*L+x^2-mu^2
+s <- sqrt(s2)
+## return list containing values of noncentrality parameter (ncp),
+## mean (mu), standard deviation (sd) and variance (s2) to be used
+## in variance modeling
+list(ncp=x,mu=mu,s=s,s2=s2,minlev=minlev,L=L)
+}
+
+fncchis <- function(mu,varstats){
+mu <- pmax(varstats$minlev,mu)
+ind <- 
+findInterval(mu, varstats$mu, rightmost.closed = FALSE, all.inside = FALSE)
+varstats$s[ind]
+}
+
+fncchiv <- function(mu,varstats){
+mu <- pmax(varstats$minlev,mu)
+ind <- 
+findInterval(mu, varstats$mu, rightmost.closed = FALSE, all.inside = FALSE)
+varstats$s2[ind]
+}
+
+fncchiL <- function(x,L){
+##
+##  standard deviation of a noncentral chi-distribution with
+##  2*L df and noncentrality-parameter x
+##
+require(gsl)
+x <- pmax(x,sqrt(2)*gamma(L+.5)/gamma(L))
+z <- sqrt(pi/2)*gamma(L+1/2)/gamma(1.5)/gamma(L)*hyperg_1F1(-0.5,L, -x^2/2, give=FALSE, strict=TRUE)
+sqrt(2*L+x^2-z^2)
+}
+fncchiL2 <- function(x,L){
+##
+##  variance of a noncentral chi-distribution with
+##  2*L df and noncentrality-parameter x
+##
+require(gsl)
+x <- pmax(x,sqrt(2)*gamma(L+.5)/gamma(L))
+z <- sqrt(pi/2)*gamma(L+1/2)/gamma(1.5)/gamma(L)*hyperg_1F1(-0.5,L, -x^2/2, give=FALSE, strict=TRUE)
+2*L+x^2-z^2
+}
+
 Spatialvar.gauss<-function(h,h0,d,interv=1){
 #
 #   Calculates the factor of variance reduction obtained for Gaussian Kernel and bandwidth h in 

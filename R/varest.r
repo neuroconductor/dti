@@ -8,12 +8,13 @@ awssigmc <- function(y,                 # data
                      mask = NULL,       # data mask, where to do estimation
                      ncoils = 1,        # number of coils for parallel MR image acquisition
                      vext = c( 1, 1),   # voxel extensions
-                     lambda = 30,       # adaptation parameter for PS
+                     lambda = 20,       # adaptation parameter for PS
                      h0 = 2,            # initial bandwidth for first step in PS
                      verbose = FALSE, 
                      sequence = FALSE,  # return estimated sigma for intermediate steps of PS?
                      hadj = 1,          # adjust parameter for density() call for mode estimation
-                     q = .25,            # for IQR
+                     q = .25,  # for IQR
+                     qni = .8,
                      method="VAR"  # for variance, alternative "MAD" for mean absolute deviation
                      ) {
 
@@ -21,23 +22,25 @@ awssigmc <- function(y,                 # data
   IQQ <- function (x, q = .25, na.rm = FALSE, type = 7) 
     diff(quantile(as.numeric(x), c(q, 1-q), na.rm = na.rm, names = FALSE, type = type))
 
-  IQQdiff <- function(y, mask, q = .25) {
+  IQQdiff <- function(y, mask, q = .25, verbose = FALSE) {
     cq <- qnorm(1-q)*sqrt(2)*2
     sx <- IQQ( diff(y[mask]), q)/cq
     sy <- IQQ( diff(aperm(y,c(2,1,3))[aperm(mask,c(2,1,3))]), q)/cq
     sz <- IQQ( diff(aperm(y,c(3,1,2))[aperm(mask,c(3,1,2))]), q)/cq
-    cat( "Pilot estimates of sigma", sx, sy, sz, "\n")
+    if(verbose) cat( "Pilot estimates of sigma", sx, sy, sz, "\n")
     min( sx, sy, sz)
   }
   
-  estsigma <- function(y, mask, q, L, sigma){
+  estsigma <- function(y, mask, q, L, sigma, verbose=FALSE){
     meany <- mean(y[mask]^2)
     eta <- sqrt(max( 0, meany/sigma^2-2*L))
     m <- sqrt(pi/2)*gamma(L+1/2)/gamma(L)/gamma(3/2)*hyperg_1F1(-1/2,L,-eta^2/2)
     v <- max( .01, 2*L+eta^2-m^2)
-    cat( eta, m, v, "\n")
+    if(verbose) cat( eta, m, v, "\n")
     IQQdiff( y, mask, q)/sqrt(v)
   }
+  
+  varstats <- sofmchi(ncoils)
 
   ## dimension and size of cubus
   ddim <- dim(y)
@@ -52,13 +55,13 @@ awssigmc <- function(y,                 # data
 
   ## initial value for sigma_0 
   # sigma <- sqrt( mean( y[mask]^2) / 2 / ncoils)
-  sigma <- IQQdiff( y, mask, q)
+  sigma <- IQQdiff( y, mask, q, verbose=verbose)
 #  cat( "sigmahat1", sigma, "\n")
   sigma <- estsigma( y, mask, q, ncoils, sigma)
 #  cat( "sigmahat2", sigma, "\n")
   sigma <- estsigma( y, mask, q, ncoils, sigma)
 #  cat( "sigmahat3", sigma, "\n")
-  sigma <- estsigma( y, mask, q, ncoils, sigma)
+  sigma <- estsigma( y, mask, q, ncoils, sigma, verbose=verbose)
 #  cat( "sigmahat4", sigma,"\n")
 
   ## define initial arrays for parameter estimates and sum of weights (see PS)
@@ -66,7 +69,7 @@ awssigmc <- function(y,                 # data
   ni <- array( 1, ddim)
 #  y <- y/sigma # rescale to avoid passing sigma to awsvchi
   minlev <- sqrt(2)*gamma(ncoils+.5)/gamma(ncoils)
-  if (sequence) sigmas <- numeric(steps)
+  if (sequence) sigmas <- lind <- minni <- numeric(steps)
   mc.cores <- setCores(,reprt=FALSE)
   ## iterate PS starting with bandwidth h0
   for (i in 1:steps) {
@@ -85,12 +88,14 @@ awssigmc <- function(y,                 # data
     param$ind <- param$ind[1:(3*nw)]
     dim(param$ind) <- c(3,nw)
     param$w   <- param$w[1:nw]    
+    fncchi <- fncchiv(th/sigma,varstats)
+## correction factor for variance of NC Chi distribution
     ## perform one step PS with bandwidth h
     if(method=="VAR"){
     z <- .Fortran("awsvchi",
                   as.double(y),        # data
                   as.double(th),       # previous estimates
-                  ni = as.double(ni),
+                  ni = as.double(ni/fncchi),
                   as.logical(mask),
                   as.integer(ddim[1]),
                   as.integer(ddim[2]),
@@ -100,7 +105,6 @@ awssigmc <- function(y,                 # data
                   as.integer(nw),
                   as.double(lambda),
                   as.double(sigma),
-                  as.double(ncoils),
                   th = double(n),
                   sy = double(n),
                   DUPL = FALSE,
@@ -109,7 +113,7 @@ awssigmc <- function(y,                 # data
     z <- .Fortran("awsadchi",
                   as.double(y),        # data
                   as.double(th),       # previous estimates
-                  ni = as.double(ni),
+                  ni = as.double(ni/fncchi),
                   as.logical(mask),
                   as.integer(ddim[1]),
                   as.integer(ddim[2]),
@@ -119,7 +123,6 @@ awssigmc <- function(y,                 # data
                   as.integer(nw),
                   as.double(lambda),
                   as.double(sigma),
-                  as.double(ncoils),
                   double(nw*mc.cores),
                   as.integer(mc.cores),
                   th = double(n),
@@ -128,15 +131,21 @@ awssigmc <- function(y,                 # data
                   PACKAGE = "dti")[c("ni","th","sy")]       
     }
     ## extract sum of weigths (see PS) and consider only voxels with ni larger then mean
-    ni <- z$ni
-    ind <- (ni > mean(ni[ni>1]))#&(z$th>sigma*minlev)
-    sy <- z$sy[ind]
     th <- z$th
+    ni <- z$ni
+    ni[!mask]<-1
+    ind <- (ni > .9999*quantile(ni[ni>1],qni))#&(z$th>sigma*minlev)
+## use correction factor for sd of NC Chi distribution
+    sy <- z$sy[ind]/fncchis(th[ind]/sigma,varstats)
     ## use the maximal mode of estimated local sd parameters, exclude largest values for better precision
     dsigma <- density( sy[sy>0], n = 4092, adjust = hadj, to = min( max(sy[sy>0]), median(sy[sy>0])*5) )
     sigma <- dsigma$x[dsigma$y == max(dsigma$y)][1]
 
-    if (sequence) sigmas[i] <- sigma
+    if (sequence) {
+         sigmas[i] <- sigma
+         lind[i] <- sum(ind)
+         minni[i] <- min(ni[ind])
+         }
 
     if (verbose) {
       plot(dsigma, main = paste( "estimated sigmas step", i, "h=", signif(h,3)))
@@ -149,7 +158,9 @@ awssigmc <- function(y,                 # data
 
   ## this is the result (th is expectation, not the non-centrality parameter !!!)
   invisible(list(sigma = if(sequence) sigmas else sigma,
-                 theta = th))
+                 theta = th, 
+                 lind  = if(sequence) lind else sum(ind), 
+                 minni  = if(sequence) minni else min(ni[ind])))
 }
 awssigmc0 <- function(y,                 # data
                      steps,             # number of iteration steps for PS
@@ -518,17 +529,17 @@ awsgsigma2 <- function(y,mask,hobj,tobj,varprop,h0,thmin,thmax){
     theta <- tobj$theta[ind]
     wght <- (tobj$gi[ind]^2-tobj$gi2[ind])/tobj$gi[ind]^2
     coef <- coefficients(lm(absresid~theta,weights=wght^2))
-  gamma <- pmin(tobj$gi/hobj$bi,1)
-  theta <- gamma*tobj$theta+(1-gamma)*hobj$theta
 # force positive variance for positive mean by increasing variance estimate
-  if(coef[2] <0){
-     coef[1] <- coef[1]+(thmax+thmin)/2*coef[2]
+  if(coef[2] < 0){
+     coef[1] <- coefficients(lm(absresid~1,weights=wght^2))
      coef[2] <- 0
   }
   if(coef[1] <0.5){
-     coef[2] <- coef[2]+coef[1]/thmax
-     coef[1] <- 0.5
+     coef[2] <- coefficients(lm(absresid~theta-1,weights=wght^2))
+     coef[1] <- 0
   }
+  gamma <- pmin(tobj$gi/hobj$bi,1)
+  theta <- gamma*tobj$theta+(1-gamma)*hobj$theta
   sigma2 <- (coef[1]+coef[2]*theta)^2
   varquantile <- varprop*mean(sigma2[mask])
   sigma2 <- pmax(sigma2,varquantile)
