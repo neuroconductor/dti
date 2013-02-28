@@ -107,7 +107,7 @@ setMethod("dkiTensor", "dtiData",
               if ( any( gradtest2 != 1)) warning( "dkiTensor: Gradient directions on the two shells are not identical (this might be a numerical problem).\n Proceed, but strange things may happen!")
               ## probably re-order indbv2 according to indbv1
               gradtest2  <- apply(gradtest1, 1, order, decreasing = TRUE)
-              indbv2 <- indbv2[ gradtest2[, 1]] ## re-ordered indices
+              indbv2 <- indbv2[ gradtest2[ 1, ]] ## re-ordered indices
               
               ## We need only a reduced design, as the gradient directions coincide
               xxx <- dkiDesign( object@gradient[ , indbv1])
@@ -140,27 +140,6 @@ setMethod("dkiTensor", "dtiData",
                       Ki <-  6 * ( D1 - D2) / ( bv[ 2] - bv[ 1]) / Di^2 
                       
                       ## now we apply some constraints Tabesh
-                      ## TODO: make this more efficient
-#                       for ( i in 1:ngrad) {
-#                         if ( Di[ i] <= 0) { # D1
-#                           Di[ i] <- 0
-#                         } else if ( D1[ i] < 0) { # D2
-#                           Di[ i] <- 0
-#                         } else if ( ( Di[ i] > 0) & ( Ki[ i] < Kmin)) { # D3
-#                           if ( Kmin == 0) {
-#                             Di[ i] = D1[ i]
-#                           } else {
-#                             x <- -Kmin * bv[ 1] / 3 
-#                             Di[ i] = ( sqrt( 1 + 2 * x * D1[ i]) - 1) / x
-#                           }
-#                         } else {
-#                           Kmax <- C / bv[ 2] / Di[ i] ## CHECK AGAIN!
-#                           if ( ( Di[ i] > 0) & ( Ki[ i] > Kmax)) {
-#                             Di[ i] <- D1[ i] / ( 1 - C * bv[1] / 6 / bv[ 2])
-#                           }
-#                         }
-#                       }
-                      
                       ## D1
                       ind1 <- ( Di <= 0)
                       Di[ ind1] <- 0
@@ -168,7 +147,7 @@ setMethod("dkiTensor", "dtiData",
                       ind2 <- ( !ind1 & ( D1 < 0))
                       Di[ ind2] <- 0
                       ## D3
-                      ind3 <- ( !ind2 & ( Di > 0) & ( Ki < Kmin))
+                      ind3 <- ( !ind1 & !ind2 & ( Di > 0) & ( Ki < Kmin))
                       if ( Kmin == 0) {
                         Di[ ind3] = D1[ ind3]
                       } else {
@@ -179,7 +158,7 @@ setMethod("dkiTensor", "dtiData",
                       Kmax <- numeric( length( Di))
                       dim( Kmax) <- dim( Di)
                       Kmax[ Di > 0] <- C / bv[ 2] / Di[ Di > 0]
-                      ind4 <- ( !ind3 & ( Di > 0) & ( Ki > Kmax))
+                      ind4 <- ( !ind1 & !ind2 & !ind3 & ( Di > 0) & ( Ki > Kmax))
                       Di[ ind4] <- D1[ ind4] / ( 1 - C * bv[1] / 6 / bv[ 2])
                       
                       ## estimate D tensor! Tabesh Eq. [21]
