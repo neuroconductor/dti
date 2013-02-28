@@ -1,23 +1,16 @@
 rotateKurtosis <- function( evec, KT, i = 1, j = 1, k = 1, l = 1) {
   
   if ( ( i < 1) | ( i > 3)) stop( "rotateKurtosis: index i out of range")
-  
   if ( ( j < 1) | ( j > 3)) stop( "rotateKurtosis: index j out of range")
-  
-  if ( ( k < 1) | ( k > 3)) stop( "rotateKurtosis: index k out of range")
-  
+  if ( ( k < 1) | ( k > 3)) stop( "rotateKurtosis: index k out of range")  
   if ( ( l < 1) | ( l > 3)) stop( "rotateKurtosis: index l out of range")
-  
+
   if ( length( dim( evec)) != 3) stop( "rotateKurtosis: dimension of direction array is not 3")
-  
   if ( dim( evec)[1] != 3) stop( "rotateKurtosis: length of direction vector is not 3")
-  
   if ( dim( evec)[2] != 3) stop( "rotateKurtosis: number of direction vectors is not 3")
-  
+
   if ( length( dim( KT)) != 2) stop( "rotateKurtosis: dimension of kurtosis array is not 2")
-  
   if ( dim( KT)[1] != 15) stop( "rotateKurtosis: kurtosis tensor does not have 15 elements")
-  
   if ( dim( KT)[2] != dim( evec)[3]) stop( "rotateKurtosis: number of direction vectors does not match number of kurtosis tensors")
   
   nvox <- dim( KT)[2]
@@ -158,17 +151,37 @@ defineKurtosisTensor <- function( DK) {
 kurtosisFunctionF1 <- function( l1, l2, l3) {
   
   require( gsl)
+  ## Tabesh et al. Eq. [28]
   ## this function is defined without MD^2!!
-  ## consider removable singularities!!
   ( ellint_RF( l1/l2, l1/l3, 1) * sqrt( l2*l3) / l1 + ellint_RD( l1/l2, l1/l3, 1) * ( 3* l1^2 - l1*l2 - l1*l3 - l2*l3) / (3*l1*sqrt(l2*l3)) - 1) / 2 / ( l1-l2) / ( l1-l3)
-  
+
+  ## consider removable singularities!!
+  # ind1: ((l1 == l2) | (l1 == l3)) & !(l2 == l3))
+  # kurtosisFunctionF2( l2, l1, l1) / 2 
+  # kurtosisFunctionF2( l3, l1, l1) / 2 
+
+  # ind2: (l1 == l2 == l3)
+  # 1/5
 }
 
 kurtosisFunctionF2 <- function( l1, l2, l3) {
   
   require( gsl)
+  ## Tabesh et al. Eq. [28]
   ## this function is defined without MD^2!!
-  ## consider removable singularities!!
   3 * ( ellint_RF( l1/l2, l1/l3, 1) * (l2+l3) / sqrt(l2*l3) + ellint_RD( l1/l2, l1/l3, 1) * (2*l1-l2-l3) / 3/sqrt(l2*l3) - 2 ) / (l2 - l3) / (l2 - l3)
+
+  ## consider removable singularities!!
+  # ind1: (!((l1 == l2) | (l1 == l3))) & (l2 == l3))
+  # alpha(x) = 1/sqrt(abs(x)) * atan(sqrt(abs(x)))
+  # 6 (l1+2*l3)^2/144/l3^2/(l1-l3)^2 *(l3*(l1+2*l3)+ l1*(l1-4*l3)*alpha(1-l1/l3))
   
+  # ind2: (l1 == l2 == l3)
+  # 6/15
+  
+}
+
+pseudoinverseSVD <- function( xxx) {
+  svdresult <- svd( xxx)
+  svdresult$v %*% diag( 1 / svdresult$d) %*% t( svdresult$u)
 }

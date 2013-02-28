@@ -581,6 +581,47 @@ setMethod("show3d","dwiFiber", function(obj,add=FALSE,bgcolor="black",box=FALSE,
   invisible(rgl.cur())
 })
 
+## argument which are not yet decided have "???"
+setMethod( "show3d", "dkiTensor", 
+           function( obj,
+                     nx = NULL, ny = NULL, nz = NULL, 
+                     center = NULL,
+                     method = 1, # ???
+                     minfa = .3, # ???
+                     mask = NULL, # ???
+                     fibers = FALSE, # ???
+                     maxangle = 30, # ???
+                     level = 0, # ???
+                     quant = .8, # ??? 
+                     scale = .4,# ???
+                     bgcolor = "black",
+                     add = FALSE, 
+                     subdivide = 2, # ???
+                     maxobjects = 729,
+                     what = c( "DT", "KT"),
+                     odfscale = 1, # ???
+                     minalpha = .25, # ???
+                     normalize = NULL, # ???
+                     box = FALSE, # ???
+                     title = FALSE, # ???
+                     ...){
+             
+             ## first test the OpenGL visualization capabilities! 
+             if( !require( rgl)) stop("Package rgl needs to be installed for 3D visualization")
+             
+             ## open some rgl device
+             if( !add) {
+               open3d()
+               par3d( ...)
+               rgl.bg( color = bgcolor)
+             }
+             
+             invisible(rgl.cur())
+})
+  
+
+
+
 ################################################################
 #                                                              #
 # Section for show3d() functions (misc)                        #

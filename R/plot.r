@@ -388,3 +388,32 @@ function(x, y, ...) {
    invisible(NULL)
 })
 
+setMethod( "plot", "dkiIndices", 
+           function( x, 
+                     y, 
+                     slice = 1, 
+                     view = "axial", 
+                     what = c( "md", "fa", "mk", "mk2"),
+                     method = 1, 
+                     quant = 0, 
+                     minfa = NULL, 
+                     show = TRUE, 
+                     identify = FALSE, 
+                     density = FALSE, 
+                     contrast.enh = 1,
+                     xind = NULL,
+                     yind = NULL,
+                     zind = NULL, 
+                     mar = c( 3, 3, 3, .3),
+                     mgp = c( 2, 1, 0), 
+                     ...) {
+             
+             switch(what,
+                    md = plot( x@md[ , , slice], col = grey( 0:255/255), ...),
+                    fa = plot( x@fa[ , , slice], col = grey( 0:255/255), ...),
+                    mk = plot( x@mk[ , , slice], col = grey( 0:255/255), ...),
+                    mk2 = plot( x@mk2[ , , slice], col = grey( 0:255/255), ...))
+             
+             
+             
+           })
