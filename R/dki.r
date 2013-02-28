@@ -141,47 +141,26 @@ setMethod("dkiTensor", "dtiData",
                       
                       ## now we apply some constraints Tabesh
                       ## TODO: make this more efficient
-#                       for ( i in 1:ngrad) {
-#                         if ( Di[ i] < 0) { # D1
-#                           Di[ i] <- 0
-#                         } else {
-#                           if ( D1[ i] < 0) { # D2
-#                             Di[ i] <- 0
-#                           } else {
-#                             if ( ( Di[ i] > 0) & ( Ki[ i] < Kmin)) { # D3
-#                               if ( Kmin == 0) {
-#                                 Di[ i] = D1[ i]
-#                               } else {
-#                                 x <- -Kmin * bv[ 1] / 3 
-#                                 Di[ i] = ( sqrt( 1 + 2 * x * D1[ i]) - 1) / x
-#                               }
-#                             } else {
-#                               Kmax <- C / bv[ 2] / Di[ i] ## CHECK AGAIN!
-#                               if ( ( Di[ i] > 0) & ( Ki[ i] > Kmax)) {
-#                                 Di[ i] <- D1[ i] / ( 1 - C * bv[1] / 6 / bv[ 2])
-#                               }
-#                             }
-#                           }
-#                         }
-#                       }
-                      
-                      ## now we apply some constraints Tabesh D1, D2, D3, D4(?)
-                      ## TODO: Check!!
-                      Di <- pmax( Di, 0) # D1
-                      Di[ D1 < 0] <- 0 # D2
-                      ind <- ( Di > 0) & ( Ki < Kmin) # D3
-                      if ( Kmin == 0) {
-                        Di[ ind] = D1[ ind]
-                      } else {
-                        x <- - Kmin * bv[ 1] / 3 
-                        Di[ ind] = ( sqrt( 1 + 2 * x * D1[ ind]) - 1) / x
+                      for ( i in 1:ngrad) {
+                        if ( Di[ i] <= 0) { # D1
+                          Di[ i] <- 0
+                        } else if ( D1[ i] < 0) { # D2
+                          Di[ i] <- 0
+                        } else if ( ( Di[ i] > 0) & ( Ki[ i] < Kmin)) { # D3
+                          if ( Kmin == 0) {
+                            Di[ i] = D1[ i]
+                          } else {
+                            x <- -Kmin * bv[ 1] / 3 
+                            Di[ i] = ( sqrt( 1 + 2 * x * D1[ i]) - 1) / x
+                          }
+                        } else {
+                          Kmax <- C / bv[ 2] / Di[ i] ## CHECK AGAIN!
+                          if ( ( Di[ i] > 0) & ( Ki[ i] > Kmax)) {
+                            Di[ i] <- D1[ i] / ( 1 - C * bv[1] / 6 / bv[ 2])
+                          }
+                        }
                       }
-                      Kmax <- C / bv[ 2] / Di # this is a vector of length ngrad
-                      ind <- ( Di > 0) & ( Ki > Kmax)
-                      Di[ ind] <- D1[ ind] / ( 1 - C * bv[1] / 6 / bv[ 2])
- 
-                      
-                      
+                                            
                       ## estimate D tensor! Tabesh Eq. [21]
                       D[ c( 1, 4, 5, 2, 6, 3), j, k, m] <- pseudoinverseSVD( Tabesh_AD) %*% Di
                       
