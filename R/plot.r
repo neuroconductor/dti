@@ -409,10 +409,10 @@ setMethod( "plot", "dkiIndices",
                      ...) {
              
              switch(what,
-                    md = plot( x@md[ , , slice], col = grey( 0:255/255), ...),
-                    fa = plot( x@fa[ , , slice], col = grey( 0:255/255), ...),
-                    mk = plot( x@mk[ , , slice], col = grey( 0:255/255), ...),
-                    mk2 = plot( x@mk2[ , , slice], col = grey( 0:255/255), ...))
+                    md = image( x@md[ , , slice], col = grey( 0:255/255), ...),
+                    fa = image( x@fa[ , , slice], col = grey( 0:255/255), ...),
+                    mk = image( x@mk[ , , slice], col = grey( 0:255/255), ...),
+                    mk2 = image( x@mk2[ , , slice], col = grey( 0:255/255), ...))
              
              
              

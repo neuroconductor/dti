@@ -22,22 +22,16 @@ rotateKurtosis <- function( evec, KT, i = 1, j = 1, k = 1, l = 1) {
   Wtilde <- rep( 0, nvox)
   
   for ( ii in 1:3) {
-    
     for ( jj in 1:3) {
-      
       for ( kk in 1:3) {
-        
         for ( ll in 1:3) {
           
-          ## I am not sure about the order of i and ii, should it be evec[ i, ii, n]? Same for j, k, l
+          ## TODO: I am not sure about the order of i and ii, should it be evec[ i, ii, n]? Same for j, k, l
           Wtilde <- Wtilde + evec[ ii, i, ] * evec[ jj, j, ] * evec[ kk, k, ] * evec[ ll, l, ] * W[ ii, jj, kk, ll, ]   
           
         }
-        
       }
-      
     }
-    
   }
   
   invisible( Wtilde)

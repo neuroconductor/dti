@@ -141,26 +141,47 @@ setMethod("dkiTensor", "dtiData",
                       
                       ## now we apply some constraints Tabesh
                       ## TODO: make this more efficient
-                      for ( i in 1:ngrad) {
-                        if ( Di[ i] <= 0) { # D1
-                          Di[ i] <- 0
-                        } else if ( D1[ i] < 0) { # D2
-                          Di[ i] <- 0
-                        } else if ( ( Di[ i] > 0) & ( Ki[ i] < Kmin)) { # D3
-                          if ( Kmin == 0) {
-                            Di[ i] = D1[ i]
-                          } else {
-                            x <- -Kmin * bv[ 1] / 3 
-                            Di[ i] = ( sqrt( 1 + 2 * x * D1[ i]) - 1) / x
-                          }
-                        } else {
-                          Kmax <- C / bv[ 2] / Di[ i] ## CHECK AGAIN!
-                          if ( ( Di[ i] > 0) & ( Ki[ i] > Kmax)) {
-                            Di[ i] <- D1[ i] / ( 1 - C * bv[1] / 6 / bv[ 2])
-                          }
-                        }
+#                       for ( i in 1:ngrad) {
+#                         if ( Di[ i] <= 0) { # D1
+#                           Di[ i] <- 0
+#                         } else if ( D1[ i] < 0) { # D2
+#                           Di[ i] <- 0
+#                         } else if ( ( Di[ i] > 0) & ( Ki[ i] < Kmin)) { # D3
+#                           if ( Kmin == 0) {
+#                             Di[ i] = D1[ i]
+#                           } else {
+#                             x <- -Kmin * bv[ 1] / 3 
+#                             Di[ i] = ( sqrt( 1 + 2 * x * D1[ i]) - 1) / x
+#                           }
+#                         } else {
+#                           Kmax <- C / bv[ 2] / Di[ i] ## CHECK AGAIN!
+#                           if ( ( Di[ i] > 0) & ( Ki[ i] > Kmax)) {
+#                             Di[ i] <- D1[ i] / ( 1 - C * bv[1] / 6 / bv[ 2])
+#                           }
+#                         }
+#                       }
+                      
+                      ## D1
+                      ind1 <- ( Di <= 0)
+                      Di[ ind1] <- 0
+                      ## D2
+                      ind2 <- ( !ind1 & ( D1 < 0))
+                      Di[ ind2] <- 0
+                      ## D3
+                      ind3 <- ( !ind2 & ( Di > 0) & ( Ki < Kmin))
+                      if ( Kmin == 0) {
+                        Di[ ind3] = D1[ ind3]
+                      } else {
+                        x <- -Kmin * bv[ 1] / 3 
+                        Di[ ind3] = ( sqrt( 1 + 2 * x * D1[ ind3]) - 1) / x
                       }
-                                            
+                      ## D4
+                      Kmax <- numeric( length( Di))
+                      dim( Kmax) <- dim( Di)
+                      Kmax[ Di > 0] <- C / bv[ 2] / Di[ Di > 0]
+                      ind4 <- ( !ind3 & ( Di > 0) & ( Ki > Kmax))
+                      Di[ ind4] <- D1[ ind4] / ( 1 - C * bv[1] / 6 / bv[ 2])
+                      
                       ## estimate D tensor! Tabesh Eq. [21]
                       D[ c( 1, 4, 5, 2, 6, 3), j, k, m] <- pseudoinverseSVD( Tabesh_AD) %*% Di
                       
@@ -168,20 +189,20 @@ setMethod("dkiTensor", "dtiData",
                       DiR <- Tabesh_AD %*% D[ c( 1, 4, 5, 2, 6, 3), j, k, m]
                       
                       ## constraints for the KT estimation step
-                      KiR = Ki
-                      for ( i in 1:ngrad) {
-                        ## Tabesh Eq. [23]
-                        if ( DiR[ i] > 0) {
-                          KiR[ i] =  6 * ( DiR[ i] - D2[ i]) / bv[ 2] / DiR[ i]^2
-                        } else {
-                          KiR[ i] = 0
-                        }
-                      }
-                      for ( i in 1:ngrad) {
-                        Kmax <- C / bv[ 2] / DiR[ i] ## CHECK AGAIN!
-                        if ( KiR[ i] > Kmax) KiR[ i] <- Kmax  # K1
-                        if ( KiR[ i] < Kmin) KiR[ i] <- Kmin  # K2             
-                      }
+                      KiR = numeric( length( Ki))
+                      ## Tabesh Eq. [23]
+                      ind <- ( DiR > 0)
+                      KiR[ ind] = 6 * ( DiR[ ind] - D2[ ind]) / bv[ 2] / DiR[ ind]^2
+
+                      ## K1 and K2
+                      Kmax <- numeric( length( DiR))
+                      dim( Kmax) <- dim( DiR)
+                      Kmax[ DiR > 0] <- C / bv[ 2] / DiR[ DiR > 0]
+                      ind <- ( KiR > Kmax)
+                      KiR[ ind] <- Kmax[ ind]
+                      ind <- ( KiR < Kmin)
+                      KiR[ ind] <- Kmin
+                      
                       
                       ## estimate KT Tabesh Eq. [24] WITHOUT MD^2 cf. CLLS-QP
                       D[ 7:21, j, k, m] <- pseudoinverseSVD( Tabesh_AK) %*% ( DiR^2 * KiR)
@@ -190,6 +211,7 @@ setMethod("dkiTensor", "dtiData",
                   }
                 }
               }
+              if (verbose) close(pb)  
             }  
             if ( method == "ULLS") {
               stop( "dkiTensor: ULLS not yet implemented, choose CLLP-QP or CLLS-H")
