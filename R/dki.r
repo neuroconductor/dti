@@ -90,13 +90,13 @@ setMethod("dkiTensor", "dtiData",
             if ( method == "CLLS-H") {
 
               ## these are the distinct bvalues
-              bv <- unique( bvalues[ -object@s0ind])
+              bv <- unique( object@bvalue[ -object@s0ind])
               bv <- bv[ order( bv)]
               if ( length( bv) != 2) stop( "Need exactly two shells for CLLS-H method, choose other method!")
               ## now we have bv[ 1] < bv[ 2] 
               
-              indbv1 <- (1:length(bvalues))[ bvalues == bv[ 1]] # smaller b-value
-              indbv2 <- (1:length(bvalues))[ bvalues == bv[ 2]] # larger b-value
+              indbv1 <- (1:length(object@bvalue))[ object@bvalue == bv[ 1]] # smaller b-value
+              indbv2 <- (1:length(object@bvalue))[ object@bvalue == bv[ 2]] # larger b-value
               if ( (ngrad <- length( indbv1)) != length( indbv2)) stop( "Need same number of gradients vectors for both shells!")
 
               ## we must have two shell data and the gradient direction coincide for both shells
