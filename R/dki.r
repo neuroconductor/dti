@@ -136,7 +136,7 @@ setMethod("dkiTensor", "dtiData",
                       ## Tabesh Eq. [18]
                       Di <- ( bv[2] * D1 - bv[1] * D2) / ( bv[ 2] - bv[ 1])
                       
-                      ## Tabesh Eq. [19] CHECK!!!
+                      ## Tabesh Eq. [19]
                       Ki <-  6 * ( D1 - D2) / ( bv[ 2] - bv[ 1]) / Di^2 
                       
                       ## now we apply some constraints Tabesh
