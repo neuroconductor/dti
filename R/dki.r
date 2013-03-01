@@ -162,10 +162,10 @@ setMethod("dkiTensor", "dtiData",
                       Di[ ind4] <- D1[ ind4] / ( 1 - C * bv[1] / 6 / bv[ 2])
                       
                       ## estimate D tensor! Tabesh Eq. [21]
-                      D[ c( 1, 4, 5, 2, 6, 3), j, k, m] <- pseudoinverseSVD( Tabesh_AD) %*% Di
+                      D[ c( 1, 4, 6, 2, 3, 5), j, k, m] <- pseudoinverseSVD( Tabesh_AD) %*% Di
                       
                       ## re-estimate Di: Tabesh Eq. [22]
-                      DiR <- Tabesh_AD %*% D[ c( 1, 4, 5, 2, 6, 3), j, k, m]
+                      DiR <- Tabesh_AD %*% D[ c( 1, 4, 6, 2, 3, 5), j, k, m]
                       
                       ## constraints for the KT estimation step
                       KiR = numeric( length( Ki))
