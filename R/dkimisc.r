@@ -140,61 +140,57 @@ defineKurtosisTensor <- function( DK) {
   invisible( W)
 }
 
-
 ## for efficiency we should combine both functions
-kurtosisFunctionF1 <- function( l1, l2, l3) {
+kurtosisFunctionF1<- function( l1, l2, l3) {
   
   require( gsl)
-  ## Tabesh et al. Eq. [28]
-  ## this function is defined without MD^2!!
-  ( ellint_RF( l1/l2, l1/l3, 1) * sqrt( l2*l3) / l1 + ellint_RD( l1/l2, l1/l3, 1) * ( 3* l1^2 - l1*l2 - l1*l3 - l2*l3) / (3*l1*sqrt( l2*l3)) - 1) / 2 / ( l1-l2) / ( l1-l3)
+  ## Tabesh et al. Eq. [28], [A9, A12]
+  ## this function is defined without 9*MD^2!!
   
-#   ## consider removable singularities!! 
-#   F1 <- numeric( length( l1))
-#   ind <- (l1 != l2) & (l1 != l3)
-#   F1[ ind] <- ( ellint_RF( l1[ ind]/l2[ ind], l1[ ind]/l3[ ind], 1) * sqrt( l2[ ind]*l3[ ind]) / l1[ ind] + ellint_RD( l1[ ind]/l2[ ind], l1[ ind]/l3[ ind], 1) * ( 3* l1[ ind]^2 - l1[ ind]*l2[ ind] - l1[ ind]*l3[ ind] - l2[ ind]*l3[ ind]) / (3*l1[ ind]*sqrt( l2[ ind]*l3[ ind])) - 1) / 2 / ( l1[ ind]-l2[ ind]) / ( l1[ ind]-l3[ ind])
-#   ind1 <- (l1 == l2) & (l1 != l3)
-#   F1[ ind1] <- kurtosisFunctionF2( l2[ ind1], l1[ ind1], l1[ ind1]) / 2 
-#   ind2 <- (l1 != l2) & (l1 == l3)
-#   F1[ ind2] <- kurtosisFunctionF2( l3[ ind2], l1[ ind2], l1[ ind2]) / 2 
-#   ind3 <- (l1 == l2) & (l1 == l3)
-#   F1[ ind3] <- 3/5/( l1[ ind3] + l2[ ind3] + l3[ ind3])^2
-#   
-#   F1
-  # ind1: ((l1 == l2) | (l1 == l3)) & !(l2 == l3))
-  # kurtosisFunctionF2( l2, l1, l1) / 2 
-  # kurtosisFunctionF2( l3, l1, l1) / 2 
+  ## consider removable singularities!! 
+  F1 <- numeric( length( l1))
   
-  # ind2: (l1 == l2 == l3)
-  # 1/5
+  ind12 <- abs( l1 - l2) > 1e-10 ## l1 != l2
+  ind13 <- abs( l1 - l3) > 1e-10 ## l1 != l3
+  
+  ind <- ( ind12) & ( ind13)
+  if ( any( ind)) F1[ ind] <- ( ellint_RF( l1[ ind]/l2[ ind], l1[ ind]/l3[ ind], 1) * sqrt( l2[ ind]*l3[ ind]) / l1[ ind] + ellint_RD( l1[ ind]/l2[ ind], l1[ ind]/l3[ ind], 1) * ( 3* l1[ ind]^2 - l1[ ind]*l2[ ind] - l1[ ind]*l3[ ind] - l2[ ind]*l3[ ind]) / (3*l1[ ind]*sqrt( l2[ ind]*l3[ ind])) - 1) / 2 / ( l1[ ind]-l2[ ind]) / ( l1[ ind]-l3[ ind])
+  
+  ind1 <- ( !ind12) & ( ind13)
+  if ( any( ind1)) F1[ ind1] <- kurtosisFunctionF2( l2[ ind1], l1[ ind1], l1[ ind1]) / 2 
+  
+  ind2 <- ( ind12) & ( !ind13)
+  if ( any( ind2)) F1[ ind2] <- kurtosisFunctionF2( l3[ ind2], l1[ ind2], l1[ ind2]) / 2 
+  
+  ind3 <- ( !ind12) & ( !ind13)
+  if ( any( ind3)) F1[ ind3] <- 9/5/( l1[ ind3] + l2[ ind3] + l3[ ind3])^2
+  
+  F1
 }
 
 kurtosisFunctionF2 <- function( l1, l2, l3) {
   
   require( gsl)
-  ## Tabesh et al. Eq. [28]
-  ## this function is defined without MD^2!!
-  3 * ( ellint_RF( l1/l2, l1/l3, 1) * (l2+l3) / sqrt( l2*l3) + ellint_RD( l1/l2, l1/l3, 1) * (2*l1-l2-l3) / 3/sqrt( l2*l3) - 2 ) / (l2 - l3) / (l2 - l3)
+  ## Tabesh et al. Eq. [28], [A10, A11, A12]
+  ## this function is defined without 9 * MD^2!!
   
-#   alpha <- function(x) 1/sqrt(abs(x)) * atan(sqrt(abs(x)))
-#   
-#   ## consider removable singularities!!
-#   F2 <- numeric( length( l1))
-#   ind <- (l2 != l3)
-#   F2[ ind] <- 3 * ( ellint_RF( l1[ ind]/l2[ ind], l1[ ind]/l3[ ind], 1) * (l2[ ind]+l3[ ind]) / sqrt( l2[ ind]*l3[ ind]) + ellint_RD( l1[ ind]/l2[ ind], l1[ ind]/l3[ ind], 1) * (2*l1[ ind]-l2[ ind]-l3[ ind]) / 3/sqrt( l2[ ind]*l3[ ind]) - 2 ) / (l2[ ind] - l3[ ind]) / (l2[ ind] - l3[ ind])
-#   ind1 <- (l2 == l3) & (l1 != l2)
-#   F2[ ind1] <- 18 * (l1[ ind1]+2*l3[ ind1])^2/144/l3[ ind1]^2/(l1[ ind1]-l3[ ind1])^2 *(l3[ ind1]*(l1[ ind1]+2*l3[ ind1])+ l1[ ind1]*(l1[ ind1]-4*l3[ ind1])*alpha(1-l1[ ind1]/l3[ ind1]))/( l1[ ind2] + l2[ ind2] + l3[ ind2])^2
-#   ind2 <- (l2 == l3) & (l1 == l2)
-#   F2[ ind2] <- 18/15/( l1[ ind2] + l2[ ind2] + l3[ ind2])^2
-#   
-#   F2
-  # ind1: (!((l1 == l2) | (l1 == l3))) & (l2 == l3))
-  # alpha(x) = 1/sqrt(abs(x)) * atan(sqrt(abs(x)))
-  # 6 (l1+2*l3)^2/144/l3^2/(l1-l3)^2 *(l3*(l1+2*l3)+ l1*(l1-4*l3)*alpha(1-l1/l3))
+  alpha <- function(x) 1/sqrt(abs(x)) * atan(sqrt(abs(x)))
   
-  # ind2: (l1 == l2 == l3)
-  # 6/15
+  ## consider removable singularities!!
+  F2 <- numeric( length( l1))
   
+  ind23 <- abs( l2 - l3) > 1e-10 ## l2 != l3
+  ind12 <- abs( l1 - l2) > 1e-10 ## l1 != l2
+  
+  if ( any( ind23)) F2[ ind23] <- 3 * ( ellint_RF( l1[ ind23]/l2[ ind23], l1[ ind23]/l3[ ind23], 1) * (l2[ ind23]+l3[ ind23]) / sqrt( l2[ ind23]*l3[ ind23]) + ellint_RD( l1[ ind23]/l2[ ind23], l1[ ind23]/l3[ ind23], 1) * (2*l1[ ind23]-l2[ ind23]-l3[ ind23]) / 3/sqrt( l2[ ind23]*l3[ ind23]) - 2 ) / (l2[ ind23] - l3[ ind23]) / (l2[ ind23] - l3[ ind23])
+  
+  ind1 <- ( !ind23) & ( ind12)
+  if ( any( ind1)) F2[ ind1] <- 54 * (l1[ ind1]+2*l3[ ind1])^2/144/l3[ ind1]^2/(l1[ ind1]-l3[ ind1])^2 *(l3[ ind1]*(l1[ ind1]+2*l3[ ind1])+ l1[ ind1]*(l1[ ind1]-4*l3[ ind1])*alpha(1-l1[ ind1]/l3[ ind1]))/( l1[ ind1] + l2[ ind1] + l3[ ind1])^2
+  
+  ind2 <- ( !ind23) & ( !ind12)
+  if ( any( ind2)) F2[ ind2] <- 54/15/( l1[ ind2] + l2[ ind2] + l3[ ind2])^2
+  
+  F2
 }
 
 pseudoinverseSVD <- function( xxx) {
