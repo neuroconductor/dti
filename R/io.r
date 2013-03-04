@@ -123,7 +123,7 @@ readDWIdata <- function(gradient, dirlist,
                         xind = NULL, yind = NULL, zind = NULL,
                         level = 0, mins0value = 1, maxvalue = 32000,
                         voxelext = NULL, orientation = c(0L, 2L, 5L), rotation = NULL,
-                        SPM = FALSE, 
+                        pattern = NULL,
                         verbose = FALSE) {
 
   args <- list(sys.call())
@@ -149,7 +149,8 @@ readDWIdata <- function(gradient, dirlist,
   }   
   ## generate file list in specified order
   filelist <- NULL
-  for (dd in dirlist) filelist <- c(filelist, paste(dd, list.files(dd), sep = .Platform$file.sep))
+  for (dd in dirlist) filelist <- c(filelist, list.files(dd, full.names = TRUE, pattern = pattern))
+  if ( length( filelist) == 0) stop( "readDWIdata: empty directories or directories do not exist!")
   if (format == "DICOM") {
     if (is.null(zind)) zind <- 1:nslice
     if (length(filelist) != ngrad * nslice)
@@ -168,8 +169,9 @@ readDWIdata <- function(gradient, dirlist,
     if (format == "ANALYZE") filelist <- unlist(strsplit(filelist[regexpr("\\.hdr$", filelist) != -1], "\\.hdr"))
     if (format == "AFNI") filelist <- filelist[regexpr("\\.HEAD$", filelist) != -1]
     if (format == "NIFTI") {
+      if ((length(filelist) == 2 * ngrad)) filelist <- unlist(strsplit(filelist[regexpr("\\.hdr$", filelist) != -1], "\\.hdr"))
       if ((length(filelist) != ngrad) & (length(filelist) != 1))
-        stop("readDWIdata: Number of found NIfTI files (", length(filelist),") does not match ngrad and is larger then 1\nPlease provide each gradient cube in a separate file or one 4D file.")
+        stop("readDWIdata: Number of files (", length(filelist),") does not match ngrad and is larger then 1\n Please provide each gradient cube in a separate file or one 4D file or use pattern to select.\n")
         if (length(filelist) == ngrad) {
           if (is.null(order)) {
              order <- 1:ngrad
@@ -223,12 +225,7 @@ readDWIdata <- function(gradient, dirlist,
       delta <- dd@pixdim[2:4]
       imageOrientationPatient <- t(matrix(c(dd@srow_x[1:3]/dd@pixdim[2:4], dd@srow_y[1:3]/dd@pixdim[2:4], dd@srow_z[1:3]/dd@pixdim[2:4]), 3, 3))
     } else if (format == "ANALYZE") {
-  #    dd <- readANALYZE(ff)
-      dd <- readANALYZE(ff, SPM = SPM)
-  ## this is an SPM hack, as it uses funused1 as scaling factor:
-  ## if (dd@funused1 != 0) dd@.Data <- dd@.Data * dd@funused1
-  ## END HACK. Hope, typically funused is either 1 or 0!
-  ## no longer needed since oro.nifti version 0.3.5
+      dd <- readANALYZE(ff)
       nslice <- dim(dd)[3]
       if (is.null(zind)) zind <- 1:nslice
       delta <- dd@pixdim[2:4]

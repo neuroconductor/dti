@@ -12,7 +12,7 @@ dtiData(gradient, imagefile, ddim, bvalue = NULL, xind = NULL, yind = NULL, zind
 readDWIdata(gradient, dirlist, format = c("DICOM", "NIFTI", "ANALYZE", "AFNI"), nslice = NULL, order = NULL, bvalue = NULL,
         xind = NULL, yind = NULL, zind = NULL, level = 0, mins0value = 0, 
         maxvalue = 32000, voxelext = NULL, orientation = c(0, 2, 5), 
-        rotation = NULL, verbose = FALSE)
+        rotation = NULL, pattern = NULL, verbose = FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -33,6 +33,7 @@ readDWIdata(gradient, dirlist, format = c("DICOM", "NIFTI", "ANALYZE", "AFNI"), 
   \item{voxelext}{ voxel extensions in coordinate directions }
   \item{orientation}{ orientations of data as coded in AFNI }
   \item{rotation}{ optional rotation matrix for the coordinate system.}
+  \item{pattern}{ pattern for file matching in the directories \code{dirlist}.}
   \item{verbose}{ some progress reports if TRUE }
 }
 \details{
