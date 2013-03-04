@@ -331,7 +331,7 @@ setMethod("dkiIndices", "dkiTensor",
             mk2[ object@mask] <- 
               kurtosisFunctionF1( lambda[ 1, object@mask], lambda[ 2, object@mask], lambda[ 3, object@mask]) * Wtilde1111 
             + kurtosisFunctionF1( lambda[ 2, object@mask], lambda[ 1, object@mask], lambda[ 3, object@mask]) * Wtilde2222 
-            + kurtosisFunctionF1( lambda[ 2, object@mask], lambda[ 2, object@mask], lambda[ 1, object@mask]) * Wtilde3333
+            + kurtosisFunctionF1( lambda[ 3, object@mask], lambda[ 2, object@mask], lambda[ 1, object@mask]) * Wtilde3333
             + kurtosisFunctionF2( lambda[ 1, object@mask], lambda[ 2, object@mask], lambda[ 3, object@mask]) * Wtilde2233 
             + kurtosisFunctionF2( lambda[ 2, object@mask], lambda[ 1, object@mask], lambda[ 3, object@mask]) * Wtilde1133 
             + kurtosisFunctionF2( lambda[ 3, object@mask], lambda[ 2, object@mask], lambda[ 1, object@mask]) * Wtilde1122
