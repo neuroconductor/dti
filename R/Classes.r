@@ -293,53 +293,54 @@ setClass("dwiMixtensor",
          )
 
 setClass("dkiTensor",
-   		 representation(method = "character",
-					 D      = "array",
-						 th0    = "array",
-						 sigma  = "array",
-						 scorr  = "array",
-						 bw     = "numeric",
-						 mask   = "array",
-						 hmax   = "numeric",
-						 outlier = "numeric",
-						 scale  = "numeric"),
-				 contains=c("list","dwi"),
-				 validity=function(object){
-					 if (any(dim(object@D)!=c(21,object@ddim))) {
-						 cat("invalid dimension of tensor array D \n")
-						 return(invisible(FALSE))
-					 }
-#					 if (any(dim(object@th0)!=object@ddim)) {
-#						 cat("invalid dimension of array th0\n")
-#						 return(invisible(FALSE))
-#					 }
-#					 if (object@method=="linear"&any(dim(object@sigma)!=object@ddim)) {
-#						 cat("invalid dimension of array sigma\n")
-#						 return(invisible(FALSE))
-#					 }
-#					 if (any(dim(object@mask)!=object@ddim)) {
-#						 cat("dimension of mask:",dim(object@mask),"\n")
-#						 cat("should be:",object@ddim,"\n")
-#						 cat("invalid dimension of array mask\n")
-#						 return(invisible(FALSE))
-#					 }
-#					 if (!is.logical(object@mask)) {
-#						 cat("invalid type of array mask, should be logical\n")
-#						 return(invisible(FALSE))
-#					 }
-#					 if (length(dim(object@scorr))!=3) {
-#						 cat("invalid dimension of scorr\n")
-#						 return(invisible(FALSE))
-#					 }
-#					 if (length(object@bw)!=3) {
-#						 cat("invalid length of bw\n")
-#						 return(invisible(FALSE))
-#					 }
-#					 if (!(object@method %in% c("linear","nonlinear","unknown"))) {
-#						 cat("method should specify either linear or nonlinear or unknown\n")
-#						 return(invisible(FALSE))
-#					 }
-				 }
+         representation(method = "character",
+                        D      = "array",
+                        W      = "array",
+                        th0    = "array",
+                        sigma  = "array",
+                        scorr  = "array",
+                        bw     = "numeric",
+                        mask   = "array",
+                        hmax   = "numeric",
+                        outlier = "numeric",
+                        scale  = "numeric"),
+         contains=c("list","dwi"),
+         validity=function(object){
+           if (any(dim(object@D)!=c(6,object@ddim))) {
+             cat("invalid dimension of tensor array D \n")
+             return(invisible(FALSE))
+           }
+           #					 if (any(dim(object@th0)!=object@ddim)) {
+           #						 cat("invalid dimension of array th0\n")
+           #						 return(invisible(FALSE))
+           #					 }
+           #					 if (object@method=="linear"&any(dim(object@sigma)!=object@ddim)) {
+           #						 cat("invalid dimension of array sigma\n")
+           #						 return(invisible(FALSE))
+           #					 }
+           #					 if (any(dim(object@mask)!=object@ddim)) {
+           #						 cat("dimension of mask:",dim(object@mask),"\n")
+           #						 cat("should be:",object@ddim,"\n")
+           #						 cat("invalid dimension of array mask\n")
+           #						 return(invisible(FALSE))
+           #					 }
+           #					 if (!is.logical(object@mask)) {
+           #						 cat("invalid type of array mask, should be logical\n")
+           #						 return(invisible(FALSE))
+           #					 }
+           #					 if (length(dim(object@scorr))!=3) {
+           #						 cat("invalid dimension of scorr\n")
+           #						 return(invisible(FALSE))
+           #					 }
+           #					 if (length(object@bw)!=3) {
+           #						 cat("invalid length of bw\n")
+           #						 return(invisible(FALSE))
+           #					 }
+           #					 if (!(object@method %in% c("linear","nonlinear","unknown"))) {
+           #						 cat("method should specify either linear or nonlinear or unknown\n")
+           #						 return(invisible(FALSE))
+           #					 }
+         }
 )
 	 
 setClass("dkiIndices",

@@ -36,7 +36,8 @@ setMethod("dkiTensor", "dtiData",
             
             ## container for estimation results
             ddim <- object@ddim  
-            D <- array( 0, dim = c( 21, ddim))
+            D <- array( 0, dim = c( 6, ddim))
+            W <- array( 0, dim = c( 15, ddim))
             
             ## we need the mean s0 image and a mask
             s0 <- drop( apply( object@si[ , , , object@s0ind, drop = FALSE], 1:3, mean))
@@ -80,7 +81,10 @@ setMethod("dkiTensor", "dtiData",
                       ## QP solution
                       dvec <- E * as.vector( t( Tabesh_A) %*% Tabesh_B)
                       resQP <- solve.QP( Dmat, dvec, Amat)
-                      D[ , i, j, k] <- E * resQP$solution[ c( 1, 4, 5, 2, 6, 3, 7:21)] # re-order DT estimate to comply with dtiTensor
+                      D[ , i, j, k] <- E * resQP$solution[ c( 1, 4, 5, 2, 6, 3)] # re-order DT estimate to comply with dtiTensor
+
+                      ## Tabesh Eq. [9]
+                      W[ , i, j, k] <- E * resQP$solution[ 7:21] / ( sum( E * resQP$solution[ 1:3])/3)^2 # kurtosis tensor
                     }
                   }
                 }
@@ -183,8 +187,8 @@ setMethod("dkiTensor", "dtiData",
                       KiR[ ind] <- Kmin
                       
                       
-                      ## estimate KT Tabesh Eq. [24] WITHOUT MD^2 cf. CLLS-QP
-                      D[ 7:21, j, k, m] <- pseudoinverseSVD( Tabesh_AK) %*% ( DiR^2 * KiR)
+                      ## estimate KT Tabesh Eq. [24]
+                      W[ , j, k, m] <- pseudoinverseSVD( Tabesh_AK) %*% ( DiR^2 * KiR) / ( sum( D[ c( 1, 4, 6), j, k, m]) / 3)^2
                       
                     }    
                   }
@@ -193,14 +197,43 @@ setMethod("dkiTensor", "dtiData",
               if (verbose) close(pb)  
             }  
             if ( method == "ULLS") {
-              stop( "dkiTensor: ULLS not yet implemented, choose CLLP-QP or CLLS-H")
+
+              ## Tabesh Eq. [11, 14, 15]
+              Tabesh_AD <- xxx[ , 1:6]
+              Tabesh_AK <- xxx[ , 7:21]
+              
+              ## Tabesh Eq. [10]
+              Tabesh_A <- cbind(sweep( Tabesh_AD, 1, - object@bvalue[ - object@s0ind], "*"),
+                                sweep( Tabesh_AK, 1, object@bvalue[ - object@s0ind]^2/6, "*"))
+              
+              ## go through the dataset
+              if (verbose) pb <- txtProgressBar(0, ddim[1], style = 3)
+              for ( i in 1:ddim[1]) {
+                if (verbose) setTxtProgressBar(pb, i)
+                for ( j in 1:ddim[2]) {
+                  for ( k in 1:ddim[3]) {
+                    if ( mask[ i, j, k]) {
+                      
+                      ## TODO: make this for all voxel
+                      Tabesh_B <- log( object@si[ i, j, k, -object@s0ind] / s0[ i, j, k])
+              
+                      ## TODO: correct assignment! Check matrix dimensions!
+                      Tabesh_X <- pseudoinverseSVD( Tabesh_A) %*% Tabesh_B
+                      D[ c( 1, 4, 6, 2, 3, 5), i, j, k] <- Tabesh_X[ 1:6]
+                      W[ , i, j, k] <- Tabesh_X[ 7:21] / ( sum( Tabesh_X[ 1:3]) / 3)^2
+                      # D, W  <- pseudoinverseSVD( Tabesh_A) %*% Tabesh_B
+                    }
+                  }
+                }
+              }
+            
             }
 
             if ( verbose) cat( "dkiTensor: finished estimation", format( Sys.time()), "\n")
 
-            dim(D) <- c( 21, prod(ddim))
-            Dapp <- Tabesh_AD %*% D[ c( 1, 4, 6, 2, 3, 5), ]
-            dim(D) <- c( 21, ddim)
+#             dim(D) <- c( 6, prod(ddim))
+#             Dapp <- Tabesh_AD %*% D[ c( 1, 4, 6, 2, 3, 5), ]
+#             dim(D) <- c( 6, ddim)
             
             ## TODO: CHECK THESE!
             sigma2 <- array( 0, dim = ddim)
@@ -215,6 +248,7 @@ setMethod("dkiTensor", "dtiData",
             invisible( new("dkiTensor",
                            call  = args,
                            D     = D,
+                           W     = W,
                            th0   = s0,
                            sigma = sigma2,
                            scorr = scorr, 
@@ -265,7 +299,8 @@ setMethod("dkiIndices", "dkiTensor",
 
             ## perform the DTI indices calculations
             D <- object@D
-            z <- dtiind3D( object@D[ 1:6, , , ], object@mask, mc.cores = mc.cores, verbose = verbose)
+            W <- object@W
+            z <- dtiind3D( object@D, object@mask, mc.cores = mc.cores, verbose = verbose)
 
             if ( verbose) cat( "dkiTensor: DTI indices calculated", format( Sys.time()), "\n")
 
@@ -276,14 +311,15 @@ setMethod("dkiIndices", "dkiTensor",
               setCores( mc.cores)
             }
             
-            dim( D) <- c( 21, nvox)
+            dim( D) <- c( 6, nvox)
+            dim( W) <- c( 15, nvox)
             andir <- matrix( 0, 9, nvox)
             lambda <- matrix( 1e20, 3, nvox)
             
             t1 <- Sys.time()
 
             zz <- .Fortran("dti3DevAll",
-                           as.double( D[ 1:6, object@mask]),
+                           as.double( D[ , object@mask]),
                            as.integer( nvox0),
                            andir = double( 9*nvox0),
                            evalues = double( 3*nvox0),
@@ -307,7 +343,7 @@ setMethod("dkiIndices", "dkiTensor",
             ## Note: the DT entries in D are re-ordered compared to Tabesh_AD for backward comp.
             ## Maybe we dont need this!
             Dapp <- Tabesh_AD %*% D[ c( 1, 4, 6, 2, 3, 5), object@mask]
-            Kapp <- (Tabesh_AK %*% D[ 7:21, object@mask]) / Dapp^2
+            Kapp <- (Tabesh_AK %*% W[ , object@mask]) / Dapp^2
             ## remove pathological values!
             Kapp[ Kapp < 0] <- 0
             Kapp[ Dapp <= 0] <- 0
@@ -319,12 +355,12 @@ setMethod("dkiIndices", "dkiTensor",
             ## Mean Kurtosis definition following Tabesh et al. (2011), this should be exact
             ## Note, these values already contain MD^2 as factor!
             ## Tabesh Eq. [26] needed for Tabesh Eq. [25]
-            Wtilde1111 <- rotateKurtosis( andir[ , , object@mask], D[ 7:21, object@mask], 1, 1, 1, 1) 
-            Wtilde2222 <- rotateKurtosis( andir[ , , object@mask], D[ 7:21, object@mask], 2, 2, 2, 2) 
-            Wtilde3333 <- rotateKurtosis( andir[ , , object@mask], D[ 7:21, object@mask], 3, 3, 3, 3) 
-            Wtilde1122 <- rotateKurtosis( andir[ , , object@mask], D[ 7:21, object@mask], 1, 1, 2, 2) 
-            Wtilde1133 <- rotateKurtosis( andir[ , , object@mask], D[ 7:21, object@mask], 1, 1, 3, 3) 
-            Wtilde2233 <- rotateKurtosis( andir[ , , object@mask], D[ 7:21, object@mask], 2, 2, 3, 3) 
+            Wtilde1111 <- rotateKurtosis( andir[ , , object@mask], W[ , object@mask], 1, 1, 1, 1) 
+            Wtilde2222 <- rotateKurtosis( andir[ , , object@mask], W[ , object@mask], 2, 2, 2, 2) 
+            Wtilde3333 <- rotateKurtosis( andir[ , , object@mask], W[ , object@mask], 3, 3, 3, 3) 
+            Wtilde1122 <- rotateKurtosis( andir[ , , object@mask], W[ , object@mask], 1, 1, 2, 2) 
+            Wtilde1133 <- rotateKurtosis( andir[ , , object@mask], W[ , object@mask], 1, 1, 3, 3) 
+            Wtilde2233 <- rotateKurtosis( andir[ , , object@mask], W[ , object@mask], 2, 2, 3, 3) 
 
             ## Tabesh Eq. [25]
             mk2 <- array( 0, ddim)
@@ -347,11 +383,11 @@ setMethod("dkiIndices", "dkiTensor",
             ## cannot allocate memory for the following:
             ## w1111 <- diag( x1[ , 7:21] %*% D[ 7:21, ])
             w1111 <- numeric( nvox)
-            for ( i in 1:nvox) if (object@mask[ i]) w1111[ i] <- x1[ i, 7:21] %*% D[ 7:21, i]
+            for ( i in 1:nvox) if (object@mask[ i]) w1111[ i] <- x1[ i, 7:21] %*% W[ , i]
             w2222 <- numeric( nvox)
-            for ( i in 1:nvox) if (object@mask[ i]) w2222[ i] <- x2[ i, 7:21] %*% D[ 7:21, i]
+            for ( i in 1:nvox) if (object@mask[ i]) w2222[ i] <- x2[ i, 7:21] %*% W[ , i]
             w3333 <- numeric( nvox)
-            for ( i in 1:nvox) if (object@mask[ i]) w3333[ i] <- x3[ i, 7:21] %*% D[ 7:21, i]
+            for ( i in 1:nvox) if (object@mask[ i]) w3333[ i] <- x3[ i, 7:21] %*% W[ , i]
             
             k1 <- w1111 / lambda[ 1, ]^2
             k2 <- w2222 / lambda[ 2, ]^2
