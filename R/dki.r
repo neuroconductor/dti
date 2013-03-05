@@ -226,7 +226,8 @@ setMethod("dkiTensor", "dtiData",
                   }
                 }
               }
-            
+              if (verbose) close(pb)  
+              
             }
 
             if ( verbose) cat( "dkiTensor: finished estimation", format( Sys.time()), "\n")
