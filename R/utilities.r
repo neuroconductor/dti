@@ -393,84 +393,102 @@ setMethod("[","dtiTensor",function(x, i, j, k, drop=FALSE){
                 method = x@method)
             )
 })
-setMethod("[","dkiTensor",function(x, i, j, k, drop=FALSE){
-  args <- sys.call(-1)
-  args <- c(x@call,args)
-  if (missing(i)) i <- TRUE
-  if (missing(j)) j <- TRUE
-  if (missing(k)) k <- TRUE
-  if (is.logical(i)) ddimi <- x@ddim[1] else ddimi <- length(i)
-  if (is.logical(j)) ddimj <- x@ddim[2] else ddimj <- length(j)
-  if (is.logical(k)) ddimk <- x@ddim[3] else ddimk <- length(k)
-  swap <- rep(FALSE,3)
-#  if (!is.logical(i)) swap[1] <- i[1] > i[length(i)]
-#  if (!is.logical(j)) swap[2] <- j[1] > j[length(j)]
-#  if (!is.logical(k)) swap[3] <- k[1] > k[length(k)]
-  orientation <- x@orientation
-  gradient <- x@gradient
-  btb <- x@btb
-  D <- x@D
-  W <- x@W
-  if(swap[1]) {
-     orientation[1] <- (orientation[1]+1)%%2
-     gradient[1,] <- -gradient[1,]
-     btb[2:3,] <- - btb[2:3,]
-     D[2:3,,,] <- - D[2:3,,,]
-  }
-  if(swap[2]) {
-     orientation[2] <- (orientation[2]+1)%%2+2
-     gradient[2,] <- -gradient[2,]
-     btb[c(2,5),] <- - btb[c(2,5),]
-     D[c(2,5),,,] <- - D[c(2,5),,,]
-  }
-  if(swap[3]) {
-     orientation[3] <- (orientation[3]+1)%%2+4
-     gradient[3,] <- -gradient[3,]
-     btb[c(3,5),] <- - btb[c(3,5),]
-     D[c(3,5),,,] <- - D[c(3,5),,,]
-  }
-  ind <- 1:prod(x@ddim)
-  if(length(x@outlier)>0){
-    ind <- rep(FALSE,prod(x@ddim))
-    ind[x@outlier] <- TRUE
-    dim(ind) <- x@ddim
-    ind <- ind[i,j,k]
-    outlier <- (1:length(ind))[ind]
-  } else {
-    outlier <- numeric(0)
-  }
 
-  invisible(new("dkiTensor",
-                call  = args, 
-                D     = D[,i,j,k,drop=FALSE],
-                W     = W[,i,j,k,drop=FALSE],
-                th0   = x@th0[i,j,k,drop=FALSE],
-                sigma = if(x@method=="linear") x@sigma[i,j,k,drop=FALSE] else array(1,c(1,1,1)),
-                scorr = x@scorr, 
-                bw = x@bw,
-                mask = x@mask[i,j,k,drop=FALSE],
-                hmax = x@hmax,
-                gradient = gradient,
-                bvalue = x@bvalue,
-                btb   = btb,
-                ngrad = x@ngrad,
-                s0ind = x@s0ind,
-                replind = x@replind,
-                ddim  = c(ddimi,ddimj,ddimk),
-                ddim0 = x@ddim0,
-                xind  = x@xind[i],
-                yind  = x@yind[j],
-                zind  = x@zind[k],
-                voxelext = x@voxelext,
-                level = x@level,
-                orientation = as.integer(orientation),
-                rotation = x@rotation,
-                outlier = outlier,
-                scale = x@scale,
-                source = x@source,
-                method = x@method)
-            )
-})
+setMethod( "[", "dkiTensor",
+           function( x, i, j, k, drop = FALSE) {
+             
+             args <- sys.call( -1)
+             args <- c( x@call, args)
+
+             if ( missing( i)) i <- TRUE
+             if ( missing( j)) j <- TRUE
+             if ( missing( k)) k <- TRUE
+
+             if ( is.logical( i)) ddimi <- x@ddim[ 1] else ddimi <- length( i)
+             if ( is.logical( j)) ddimj <- x@ddim[ 2] else ddimj <- length( j)
+             if ( is.logical( k)) ddimk <- x@ddim[ 3] else ddimk <- length( k)
+             
+             swap <- rep( FALSE, 3)
+             if ( !is.logical( i)) swap[ 1] <- ( i[ 1] > i[ length( i)])
+             if ( !is.logical( j)) swap[ 2] <- ( j[ 1] > j[ length( j)])
+             if ( !is.logical( k)) swap[ 3] <- ( k[ 1] > k[ length( k)])
+             orientation <- x@orientation
+             gradient <- x@gradient
+             btb <- x@btb
+             D <- x@D[ , i, j, k, drop = FALSE]
+             W <- x@W[ , i, j, k, drop = FALSE]
+             if( swap[ 1]) {
+               orientation[ 1] <- (orientation[ 1] + 1) %% 2
+               gradient[ 1, ] <- - gradient[ 1, ]
+               btb[ 2:3, ] <- - btb[ 2:3, ]
+               D[ 2:3, , , ] <- - D[ 2:3, , , ]
+               warning( "[: kurtosis tensor not correctly transformed for reverse order!")
+               ## TODO: determine elements to change!
+               ## W[ c(?), , , ] <- - W[ c(?), , , ] 
+             }
+             if( swap[ 2]) {
+               orientation[ 2] <- (orientation[ 2] + 1) %% 2 + 2
+               gradient[ 2, ] <- - gradient[ 2, ]
+               btb[ c( 2, 5), ] <- - btb[ c( 2, 5), ]
+               D[ c( 2, 5), , , ] <- - D[ c( 2, 5), , , ]
+               warning( "[: kurtosis tensor not correctly transformed for reverse order!")
+               ## TODO: determine elements to change!
+               ## W[ c(?), , , ] <- - W[ c(?), , , ] 
+             }
+             if( swap[ 3]) {
+               orientation[ 3] <- (orientation[ 3] + 1) %% 2 + 4
+               gradient[ 3, ] <- -gradient[ 3, ]
+               btb[ c( 3, 5), ] <- - btb[ c( 3, 5), ]
+               D[ c( 3, 5), , , ] <- - D[ c( 3, 5), , , ]
+               warning( "[: kurtosis tensor not correctly transformed for reverse order!")
+               ## TODO: determine elements to change!
+               ## W[ c(?), , , ] <- - W[ c(?), , , ] 
+             }
+
+             ind <- 1:prod( x@ddim)
+             if ( length( x@outlier) > 0) {
+               ind <- rep( FALSE, prod( x@ddim))
+               ind[ x@outlier] <- TRUE
+               dim( ind) <- x@ddim
+               ind <- ind[ i, j, k]
+               outlier <- ( 1:length(ind))[ ind]
+             } else {
+               outlier <- numeric(0)
+             }
+             
+             invisible( new( "dkiTensor",
+                             call        = args, 
+                             D           = D,
+                             W           = W,
+                             th0         = x@th0[ i, j, k, drop = FALSE],
+                             ## TODO: determination of sigma!
+                             sigma       = if( x@method == "linear") x@sigma[ i, j, k, drop = FALSE] else array( 1, c( 1, 1, 1)),
+                             scorr       = x@scorr, 
+                             bw          = x@bw,
+                             mask        = x@mask[ i, j, k, drop = FALSE],
+                             hmax        = x@hmax,
+                             gradient    = gradient,
+                             bvalue      = x@bvalue,
+                             btb         = btb,
+                             ngrad       = x@ngrad,
+                             s0ind       = x@s0ind,
+                             replind     = x@replind,
+                             ddim        = c( ddimi, ddimj, ddimk),
+                             ddim0       = x@ddim0,
+                             xind        = x@xind[ i],
+                             yind        = x@yind[ j],
+                             zind        = x@zind[ k],
+                             voxelext    = x@voxelext,
+                             level       = x@level,
+                             orientation = as.integer( orientation),
+                             rotation    = x@rotation,
+                             outlier     = outlier,
+                             scale       = x@scale,
+                             source      = x@source,
+                             method      = x@method))
+           })
+
+
 #############
 setMethod("[","dwiMixtensor",function(x, i, j, k, drop=FALSE){
   args <- sys.call(-1)

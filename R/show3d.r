@@ -588,9 +588,7 @@ setMethod( "show3d", "dkiTensor",
                      center = NULL,
                      method = 1, # ???
                      minfa = .3, # ???
-                     mask = NULL, # ???
-                     fibers = FALSE, # ???
-                     maxangle = 30, # ???
+                     mask = NULL,
                      level = 0, # ???
                      quant = .8, # ??? 
                      scale = .4,# ???
@@ -598,8 +596,7 @@ setMethod( "show3d", "dkiTensor",
                      add = FALSE, 
                      subdivide = 2, # ???
                      maxobjects = 729,
-                     what = c( "DT", "KT"),
-                     odfscale = 1, # ???
+                     what = c( "KT", "DT"),
                      minalpha = .25, # ???
                      normalize = NULL, # ???
                      box = FALSE, # ???
@@ -608,6 +605,8 @@ setMethod( "show3d", "dkiTensor",
              
              ## first test the OpenGL visualization capabilities! 
              if( !require( rgl)) stop("Package rgl needs to be installed for 3D visualization")
+             
+             what <- match.arg( what)
              
              data( "polyeders")
              
@@ -661,34 +660,66 @@ setMethod( "show3d", "dkiTensor",
              mask[ -xind, , ] <- FALSE
              mask[ , -yind, ] <- FALSE
              mask[ , , -zind] <- FALSE
-             obj <- obj[xind,yind,zind]
 
+             obj <- obj[ xind, yind, zind]
+             n <- prod( obj@ddim) 
+             
              vext <- obj@voxelext
              center <- center * vext
 
-             tmean <- array( 0, c( 3, obj@ddim))
-             tmean[ 1, , , ] <- ( 1:obj@ddim[1]) * vext[ 1]
-             tmean[ 2, , , ] <- outer( rep( 1, obj@ddim[ 1]), 1:obj@ddim[ 2]) * vext[ 2]
-             tmean[ 3, , , ] <- outer( rep( 1, obj@ddim[ 1]), outer( rep( 1, obj@ddim[ 2]), 1:obj@ddim[ 3])) * vext[ 3]
+             tmean <- array( 0, c( 3, n1, n2, n3))
+             tmean[ 1, , , ] <- ( 1:n1) * vext[ 1]
+             tmean[ 2, , , ] <- outer( rep( 1, n1), 1:n2) * vext[ 2]
+             tmean[ 3, , , ] <- outer( rep( 1, n1), outer( rep( 1, n2), 1:n3)) * vext[ 3]
              dim( tmean) <- c( 3, n)
              
-             n <- prod( obj@ddim) 
-             W <- obj@W
-             dim(W) <- c( 15, n)
+             objind <- dkiIndices( obj)
+             andir <- objind@andir
+             dim( andir) <- c( 3, n)
+             fa <- objind@fa
+             if ( method == 1) {
+               andir <- abs( andir)
+             } else {
+               ind <- ( andir[ 1, ] < 0)
+               andir[ , ind] <- - andir[ , ind]
+               andir[ 2, ] <- ( 1 + andir[ 2, ]) / 2
+               andir[ 3, ] <- ( 1 + andir[ 3, ]) / 2
+             }
+             colorvalues <- rgb( andir[ 1, ], andir[ 2, ], andir[ 3, ])
              
-             xxx <- dkiDesign( polyeder$vertices)[ , 7:21]
+             D <- obj@D
+             dim(D) <- c( 6, n)
              
-             radii <- xxx %*% W
-             radii[ radii < 0] <- 0
-             if(max(radii)>.4*min(vext)) radii <- radii/2.5/max(radii)*min(vext)
-             if(!add) {
-                open3d()
-                par3d(...)
-                rgl.bg(color=bgcolor)
-              }
-             show3dODF( radii, polyeder, centers = tmean, minalpha = 1, ...)
+             xxx <- dkiDesign( polyeder$vertices)
              
+             Dapp <- xxx[ , c( 1, 4, 5, 2, 6, 3)] %*% D
+
+             if ( what == "KT") {
+
+               W <- obj@W
+               dim(W) <- c( 15, n)
              
+               radii <- apply( D[ c( 1, 4, 6),], 2, mean)^2 * ( xxx[ , 7:21] %*% W) / Dapp
+               radii[ radii < 0] <- 0
+
+               radii <- radii / 2.5 / max( radii) * min( vext)
+
+             } else { ## "DT"
+
+               radii <- Dapp
+               radii[ radii < 0] <- 0
+               
+               radii <- radii / 2.5 / max( radii) * min( vext)
+               
+             }
+             
+             if ( !add) {
+               open3d()
+               par3d( ...)
+               rgl.bg( color = bgcolor)
+             }
+             show3dTens( radii, polyeder, centers = tmean, colors = colorvalues, alpha = minalpha + ( 1 - minalpha) * fa, ...)
+                          
              invisible(rgl.cur())
 })
   
