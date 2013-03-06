@@ -77,16 +77,16 @@ perm <- perm[2:dperm,]
 bv <- bv[bv>0]
 ubv <- sort(unique(bv[bv>max(bv)/50]))
 nbv <- length(ubv)
-ind <- array(0,c(nbv,ng,3))
-w <- array(0,c(nbv,ng,3))
+ind <- array(0,c(3,nbv,ng))
+w <- array(0,c(3,nbv,ng))
 for(i in 1:nbv){
    indb <- (1:ng)[bv==ubv[i]]
-   ind[i,indb,1] <- indb
-   ind[i,indb,2] <- indb
-   ind[i,indb,3] <- indb
-   w[i,indb,1] <- 1
-   w[i,indb,2] <- 0
-   w[i,indb,3] <- 0
+   ind[1,i,indb] <- indb
+   ind[2,i,indb] <- indb
+   ind[3,i,indb] <- indb
+   w[1,i,indb] <- 1
+   w[2,i,indb] <- 0
+   w[3,i,indb] <- 0
    for(j in (1:nbv)[-i]){
       indbk <- (1:ng)[bv==ubv[j]]
       for(k in indb){
@@ -94,9 +94,9 @@ for(i in 1:nbv){
          od <- order(d,decreasing = TRUE)
          ijk <- indbk[od]
 #         cat("k",k,"d",d[od][1:8],"ijk",ijk[1:8],"\n")
-         ind[j,k,] <- ijk[1:3]
+         ind[,j,k] <- ijk[1:3]
          if(max(d)>1-1e-6){
-            w[j,k,] <- c(1,0,0)
+            w[,j,k] <- c(1,0,0)
          } else {
             z <- getsphwghts(grad[,k],grad[,ijk[1]],grad[,ijk[2]],grad[,ijk[3]])
             ijk1 <- ijk
@@ -115,11 +115,11 @@ for(i in 1:nbv){
             while(z$ierr==1&&l<dperm){
                ijk1 <- ijk[perm[odd[l],]]
                z <- getsphwghts(grad[,k],grad[,ijk1[1]],grad[,ijk1[2]],grad[,ijk1[3]])
-               ind[j,k,] <- ijk1[1:3]
+               ind[,j,k] <- ijk1[1:3]
                l<-l+1
             }
 #            cat("l",l-1,"ijk1",ijk1[1:3],"w",z$w,"\n")
-            w[j,k,] <- z$w
+            w[,j,k] <- z$w
          }
       }
    }
@@ -140,7 +140,7 @@ mstheta <- array(0,c(n3g$nbv,dtheta))
 dim(theta) <- c(prod(dtheta[1:3]),dtheta[4])
 for(i in 1:n3g$nbv){
    for(j in 1:dim(theta)[2]){
-      mstheta[i,,,,j] <- theta[,n3g$ind[i,j,]]%*%n3g$w[i,j,] 
+      mstheta[i,,,,j] <- theta[,n3g$ind[,i,j]]%*%n3g$w[,i,j] 
    }
 }
 # now inforce monotonicity 

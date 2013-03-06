@@ -413,21 +413,18 @@ c   model=2  Gauss-based KL-distance, y ~ Chi, th on same scale, smooth y^2
       real*8 lambda,w(n),sw(ngrad,ncores),swy(ngrad,ncores),
      2       lgfi,dgfi,fici,df,minlev
       integer iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr
-      real*8 z,thi,nii,thj,ldfi,ldfj,a,b,si,yj
+      real*8 z,thi,nii,thj,ldfi,ldfj,yj
       integer omp_get_thread_num
       real*8 kldisnc1
       external kldisnc1,omp_get_thread_num
       df=2.d0*ncoils
-      a = -0.356536d0+0.003803d0*ncoils-0.701591d0*sqrt(.5*df)
-      b = -0.059703d0+0.029093d0*ncoils+0.098401d0*sqrt(.5*df)
       nii=1.d0
-      si=0.d0
 C just to prevent a compiler warning
 C  precompute values of lgamma(corrected df/2) in each voxel
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(n1,n2,n3,ngrad,ncores,mask,y,thn,ni,ldf,th,w,sw,swy,
 C$OMP& ind,ncoils,model,df,n,lambda,minlev)
-C$OMP& FIRSTPRIVATE(a,b,nii,si)
+C$OMP& FIRSTPRIVATE(nii)
 C$OMP& PRIVATE(iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,z,thi,thj,
 C$OMP& ldfi,ldfj,dgfi,fici,lgfi,yj)
 C$OMP DO SCHEDULE(GUIDED)
@@ -469,11 +466,7 @@ C returns value in 0:(ncores-1)
 C   by construction ind(4,.) should have same values consequtively
                i4 = ind(4,i)
                thi = th(i1,i2,i3,i4)
-               IF(model.eq.2) THEN
-                  si = (thi+a)**1.5d0
-                  si = (si/(si+b))
-                  si = si*si
-               ELSE
+               IF(model.ne.2) THEN
                   ldfi=ldf(i1,i2,i3,i4)
                   call ncstats0(thi,ldfi,df,model,lgfi,dgfi,fici)
                END IF
@@ -490,8 +483,8 @@ C   by construction ind(4,.) should have same values consequtively
 C adaptation 
             if(lambda.lt.1d10) THEN
                thj=th(j1,j2,j3,j4)
-               if(model.eq.2) THEN
-                  z=(thi-thj)/si
+               if(model.ge.2) THEN
+                  z=(thi-thj)
                   z=nii*z*z
                ELSE
                   ldfj=ldf(j1,j2,j3,j4)
@@ -515,11 +508,7 @@ C  now opposite directions
 C   by construction ind(4,.) should have same values consequtively
                i4 = ind(4,i)
                thi = th(i1,i2,i3,i4)
-               IF(model.eq.2) THEN
-                  si = (thi+a)**1.5d0
-                  si = (si/(si+b))
-                  si = si*si
-               ELSE
+               IF(model.ne.2) THEN
                   ldfi=ldf(i1,i2,i3,i4)
                   call ncstats0(thi,ldfi,df,model,lgfi,dgfi,fici)
                END IF
@@ -539,8 +528,8 @@ C
             j4=ind(5,i)
             if(lambda.lt.1d10) THEN
                thj=th(j1,j2,j3,j4)
-               if(model.eq.2) THEN
-                  z=(thi-thj)/si
+               if(model.ge.2) THEN
+                  z=(thi-thj)
                   z=nii*z*z
                ELSE
                   ldfj=ldf(j1,j2,j3,j4)
@@ -569,8 +558,8 @@ C$OMP END PARALLEL
 C$OMP FLUSH(thn,ni)
       RETURN
       END
-      subroutine adsmse3m(y,th,ni,mask,ns,n1,n2,n3,ngrad,lambda,
-     1             ncoils,ncores,ind,w,n,thn,sw,swy,si,thi,minlev)
+      subroutine adsmse3m(y,th,ni,sthi,mask,ns,n1,n2,n3,ngrad,lambda,
+     1             ncoils,ncores,ind,w,n,thn,sw,swy,si,thi)
 C   
 C  Multi-shell version (differs in dimension of th 
 C  KL-distance based on all spheres and Gauss-approximation only
@@ -585,22 +574,18 @@ c   model=2  Gauss-based KL-distance, y ~ Chi, th on same scale, smooth y^2
       integer ns,n1,n2,n3,ngrad,n,ind(5,n),ncoils,ncores
       logical mask(n1,n2,n3)
       real*8 y(n1,n2,n3,ngrad),thn(n1,n2,n3,ngrad),ni(n1,n2,n3,ngrad),
-     1     th(ns,n1,n2,n3,ngrad)
-      real*8 lambda,w(n),sw(ngrad,ncores),swy(ngrad,ncores),df
+     1     th(ns,n1,n2,n3,ngrad),sthi(ns,n1,n2,n3,ngrad)
+      real*8 lambda,w(n),sw(ngrad,ncores),swy(ngrad,ncores)
       integer iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,k
-      real*8 sz,z,nii,thj,a,b,si(ns,ncores),thi(ns,ncores),minlev
+      real*8 sz,z,nii,thj,si(ns,ncores),thi(ns,ncores)
       integer omp_get_thread_num
       real*8 kldisnc1
       external kldisnc1,omp_get_thread_num
       nii=1.d0
-      df=2.d0*ncoils
-      a = -0.356536d0+0.003803d0*ncoils-0.701591d0*sqrt(.5*df)
-      b = -0.059703d0+0.029093d0*ncoils+0.098401d0*sqrt(.5*df)
 C just to prevent a compiler warning
-C  precompute values of lgamma(corrected df/2) in each voxel
 C$OMP PARALLEL DEFAULT(NONE)
-C$OMP& SHARED(n1,n2,n3,ngrad,ncores,mask,y,thn,ni,th,w,sw,swy,
-C$OMP& ind,ncoils,df,n,lambda,ns,thi,si,minlev)
+C$OMP& SHARED(n1,n2,n3,ngrad,ncores,mask,y,thn,ni,th,sthi,w,sw,swy,
+C$OMP& ind,ncoils,n,lambda,ns,thi,si)
 C$OMP& FIRSTPRIVATE(a,b,nii)
 C$OMP& PRIVATE(iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,z,thj,sz)
 C$OMP DO SCHEDULE(GUIDED)
@@ -623,14 +608,9 @@ C returns value in 0:(ncores-1)
 C   by construction ind(4,.) should have same values consequtively
                i4 = ind(4,i)
                DO k=1,ns
-                  z = th(k,i1,i2,i3,i4)
-                  thi(k,thrednr) = z
-                  z = max(z,minlev)
-                  z = (z+a)**1.5d0
-                  z = (z/(z+b))
-                  z=z*z
+                  thi(k,thrednr) = th(k,i1,i2,i3,i4)
 C   thast the approximated standard deviation
-                  si(k,thrednr) = z
+                  si(k,thrednr) = sthi(k,i1,i2,i3,i4)
                END DO
                nii = ni(i1,i2,i3,i4)/lambda
             END IF
@@ -646,8 +626,7 @@ C adaptation
             if(lambda.lt.1d10) THEN
                sz=0.d0
                DO k=1,ns
-                  z=thi(k,thrednr)-th(k,j1,j2,j3,j4)
-                  z=z/si(k,thrednr)
+                  z=(thi(k,thrednr)-th(k,j1,j2,j3,j4))/si(k,thrednr)
                   sz=sz+z*z
                END DO
                z=nii*sz
@@ -667,14 +646,8 @@ C  now opposite directions
 C   by construction ind(4,.) should have same values consequtively
                i4 = ind(4,i)
                DO k=1,ns
-                  z = th(k,i1,i2,i3,i4)
-                  thi(k,thrednr) = z
-                  z = max(z,minlev)
-                  z = (z+a)**1.5d0
-                  z = (z/(z+b))
-                  z=z*z
-CC   thast the approximated standard deviation
-                  si(k,thrednr) = z
+                  thi(k,thrednr) = th(k,i1,i2,i3,i4)
+                  si(k,thrednr) = sthi(k,i1,i2,i3,i4)
                END DO
                nii = ni(i1,i2,i3,i4)/lambda
             END IF
@@ -693,8 +666,7 @@ C
             if(lambda.lt.1d10) THEN
                sz=0.d0
                DO k=1,ns
-                  z=thi(k,thrednr)-th(k,j1,j2,j3,j4)
-                  z=z/si(k,thrednr)
+                  z=(thi(k,thrednr)-th(k,j1,j2,j3,j4))/si(k,thrednr)
                   sz=sz+z*z
                END DO
                z=nii*sz
@@ -718,8 +690,8 @@ C$OMP FLUSH(thn,ni)
       RETURN
       END
       subroutine adsmse3c(y,y0,th,ni,th0,ni0,mask,ns,n1,n2,n3,ngrad,
-     1                lambda,ws0,ncoils,minlev,ncores,ind,w,n,ind0,w0,
-     2                n0,thn,nin,th0n,ni0n,sw,swy,si,thi,nii)
+     1                lambda,ws0,ncores,ind,w,n,ind0,w0,
+     2                n0,thn,nin,th0n,ni0n,sw,swy,thi,nii)
 C   
 C  Multi-shell version (differs in dimension of th 
 C  KL-distance based on all spheres and Gauss-approximation only
@@ -755,30 +727,23 @@ C   location weights in w(i) for si images
 C   ind(.,i)[1:5] are j1-i1,j2-i2,j3-i3, i4 and j4 respectively 
 C
       implicit logical (a-z)
-      integer ns,n1,n2,n3,ngrad,n,n0,ind(5,n),ind0(3,n0),ncoils,
-     1        ncores
+      integer ns,n1,n2,n3,ngrad,n,n0,ind(5,n),ind0(3,n0),ncores
       logical mask(n1,n2,n3)
       real*8 y(n1,n2,n3,ngrad),y0(n1,n2,n3),th(ns,n1,n2,n3,ngrad),
      1     ni(ns,n1,n2,n3,ngrad),th0(ns,n1,n2,n3),ni0(ns,n1,n2,n3),
      2     thn(n1,n2,n3,ngrad),th0n(n1,n2,n3),
      3     nin(n1,n2,n3,ngrad),ni0n(n1,n2,n3)
-      real*8 w(n),w0(n0),lambda,si(ns,ncores),thi(ns,ncores),ws0,
-     4     sw(ngrad,ncores),swy(ngrad,ncores),nii(ns,ncores),minlev
+      real*8 w(n),w0(n0),lambda,thi(ns,ncores),ws0,
+     4     sw(ngrad,ncores),swy(ngrad,ncores),nii(ns,ncores)
       integer iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,k
-      real*8 df,sz,z,a,b,z0,sw0,swy0,minlev2
+      real*8 sz,z,sw0,swy0
       integer omp_get_thread_num
       external omp_get_thread_num
-      df=2.d0*ncoils
-      minlev2 = sqrt(df-minlev*minlev)
-C  thats the sd of central chi distribution which provides the lower limit in si
-      a = -0.356536d0+0.003803d0*ncoils-0.701591d0*sqrt(.5*df)
-      b = -0.059703d0+0.029093d0*ncoils+0.098401d0*sqrt(.5*df)
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(ns,n1,n2,n3,ngrad,n,n0,ind,ind0,ncoils,ncores,y,y0,
-C$OMP&       th,ni,th0,ni0,w,w0,thn,th0n,nin,ni0n,si,thi,sw,swy,nii,
-C$OMP&       lambda,mask,minlev,ws0)
-C$OMP& FIRSTPRIVATE(df,a,b,minlev2)
-C$OMP& PRIVATE(iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,k,sz,z,z0,
+C$OMP&       th,ni,th0,ni0,w,w0,thn,th0n,nin,ni0n,thi,sw,swy,nii,
+C$OMP&       lambda,mask,ws0)
+C$OMP& PRIVATE(iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,k,sz,z,
 C$OMP&       sw0,swy0)
 C$OMP DO SCHEDULE(GUIDED)
 C  First si - images
@@ -802,13 +767,7 @@ C returns value in 0:(ncores-1)
 C   by construction ind(4,.) should have same values consequtively
                i4 = ind(4,i)
                DO k=1,ns
-                  z0 = th(k,i1,i2,i3,i4)
-                  thi(k,thrednr) = z0
-                  z = (max(z0,minlev)+a)**1.5d0
-                  z = (z/(z+b))
-                  z=max(minlev2,z*z)
-C   thast the approximated standard deviation
-                  si(k,thrednr) = z
+                  thi(k,thrednr) = th(k,i1,i2,i3,i4)
                   nii(k,thrednr) = ni(k,i1,i2,i3,i4)/lambda
                END DO
                nii(1,thrednr)=ws0*nii(1,thrednr)
@@ -825,7 +784,7 @@ C adaptation
             if(lambda.lt.1d10) THEN
                sz=0.d0
                DO k=1,ns
-                  z=(thi(k,thrednr)-th(k,j1,j2,j3,j4))/si(k,thrednr)
+                  z=(thi(k,thrednr)-th(k,j1,j2,j3,j4))
                   sz=sz+nii(k,thrednr)*z*z
                END DO
 C  do not adapt on the sphere !!! 
@@ -844,13 +803,7 @@ C  now opposite directions
 C   by construction ind(4,.) should have same values consequtively
                i4 = ind(4,i)
                DO k=1,ns
-                  z0 = th(k,i1,i2,i3,i4)
-                  thi(k,thrednr) = z0
-                  z = (max(z0,minlev)+a)**1.5d0
-                  z = (z/(z+b))
-                  z=max(minlev2,z*z)
-C   thast the approximated standard deviation
-                  si(k,thrednr) = z
+                  thi(k,thrednr) = th(k,i1,i2,i3,i4)
                   nii(k,thrednr) = ni(k,i1,i2,i3,i4)/lambda
                END DO
                nii(1,thrednr)=ws0*nii(1,thrednr)
@@ -872,7 +825,7 @@ C
             if(lambda.lt.1d10) THEN
                sz=0.d0
                DO k=1,ns
-                  z=(thi(k,thrednr)-th(k,j1,j2,j3,j4))/si(k,thrednr)
+                  z=(thi(k,thrednr)-th(k,j1,j2,j3,j4))
                   sz=sz+nii(k,thrednr)*z*z
                END DO
 C  do not adapt on the sphere !!! 
@@ -892,13 +845,7 @@ C    now the s0 image in iind
          sw0=0.d0
          swy0=0.d0
          DO k=1,ns
-            z0 = th0(k,i1,i2,i3)
-            thi(k,thrednr) = z0
-            z = (max(z0,minlev)+a)**1.5d0
-            z = (z/(z+b))
-            z=max(minlev2,z*z)
-C   thast the approximated standard deviation
-            si(k,thrednr) = z
+            thi(k,thrednr) = th0(k,i1,i2,i3)
             nii(k,thrednr) = ni0(k,i1,i2,i3)/lambda
          END DO
          DO i=1,n0
@@ -913,7 +860,7 @@ C adaptation
             if(lambda.lt.1d10) THEN
                sz=0.d0
                DO k=1,ns
-                  z=(thi(k,thrednr)-th0(k,j1,j2,j3))/si(k,thrednr)
+                  z=(thi(k,thrednr)-th0(k,j1,j2,j3))
                   sz=sz+nii(k,thrednr)*z*z
                END DO
 C  do not adapt on the sphere !!! 
@@ -942,7 +889,7 @@ C
             if(lambda.lt.1d10) THEN
                sz=0.d0
                DO k=1,ns
-                  z=(thi(k,thrednr)-th0(k,j1,j2,j3))/si(k,thrednr)
+                  z=(thi(k,thrednr)-th0(k,j1,j2,j3))
                   sz=sz+nii(k,thrednr)*z*z
                END DO
 C  do not adapt on the sphere !!! 
@@ -963,8 +910,8 @@ C$OMP FLUSH(thn,nin,th0n,ni0n)
       RETURN
       END
       subroutine adsmse3q(y,y0,th,ni,th0,ni0,mask,ns,nsp1,n1,n2,n3,
-     1                ngrad,lambda,ncoils,minlev,ncores,ind,w,n,
-     2                ind0,w0,n0,thn,nin,th0n,ni0n,sw,swy,si,thi,nii)
+     1                ngrad,lambda,ncores,ind,w,n,
+     2                ind0,w0,n0,thn,nin,th0n,ni0n,sw,swy,thi,nii)
 C   
 C  Multi-shell version (differs in dimension of th 
 C  KL-distance based on all spheres and Gauss-approximation only
@@ -981,8 +928,6 @@ C   ns   - number of shells
 C   nsp1   - number of shells (including 0 shell)
 C   n1,n2,n3,ngrad - dimensions, number of gradients (bv!=0)
 C   lambda - skale parameter
-C   ncoils - df/2 of \chi distributions
-C   minlev - expectation of central chi distr. (needed in variance estimates)
 C   ncores - number of cores
 C   ind    - index vectors for si weighting schemes 
 C   w    - corresponding weights
@@ -1000,30 +945,23 @@ C   location weights in w(i) for si images
 C   ind(.,i)[1:5] are j1-i1,j2-i2,j3-i3, i4 and j4 respectively 
 C
       implicit logical (a-z)
-      integer ns,nsp1,n1,n2,n3,ngrad,n,n0,ind(5,n),ind0(3,n0),ncoils,
-     1        ncores
+      integer ns,nsp1,n1,n2,n3,ngrad,n,n0,ind(5,n),ind0(3,n0),ncores
       logical mask(n1,n2,n3)
       real*8 y(n1,n2,n3,ngrad),y0(n1,n2,n3),th(ns,n1,n2,n3,ngrad),
      1    ni(ns,n1,n2,n3,ngrad),th0(nsp1,n1,n2,n3),ni0(nsp1,n1,n2,n3),
      2    thn(n1,n2,n3,ngrad),th0n(n1,n2,n3),
      3    nin(n1,n2,n3,ngrad),ni0n(n1,n2,n3)
-      real*8 w(n),w0(n0),lambda,si(nsp1,ncores),thi(nsp1,ncores),s0i,
-     1      sw(ngrad,ncores),swy(ngrad,ncores),nii(nsp1,ncores),minlev
+      real*8 w(n),w0(n0),lambda,thi(nsp1,ncores),s0i,
+     1      sw(ngrad,ncores),swy(ngrad,ncores),nii(nsp1,ncores)
       integer iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,k
-      real*8 df,sz,z,a,b,z0,sw0,swy0,minlev2
+      real*8 sz,z,sw0,swy0
       integer omp_get_thread_num
       external omp_get_thread_num
-      df=2.d0*ncoils
-      minlev2 = sqrt(df-minlev*minlev)
-C  thats the sd of central chi distribution which provides the lower limit in si
-      a = -0.356536d0+0.003803d0*ncoils-0.701591d0*sqrt(.5*df)
-      b = -0.059703d0+0.029093d0*ncoils+0.098401d0*sqrt(.5*df)
 C$OMP PARALLEL DEFAULT(NONE)
-C$OMP& SHARED(ns,nsp1,n1,n2,n3,ngrad,n,n0,ind,ind0,ncoils,ncores,y,y0,
-C$OMP&       th,ni,th0,ni0,w,w0,thn,th0n,nin,ni0n,si,thi,sw,swy,nii,
-C$OMP&       lambda,mask,minlev)
-C$OMP& FIRSTPRIVATE(df,a,b,minlev2)
-C$OMP& PRIVATE(iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,k,sz,z,z0,
+C$OMP& SHARED(ns,nsp1,n1,n2,n3,ngrad,n,n0,ind,ind0,ncores,y,y0,
+C$OMP&       th,ni,th0,ni0,w,w0,thn,th0n,nin,ni0n,thi,sw,swy,nii,
+C$OMP&       lambda,mask)
+C$OMP& PRIVATE(iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,k,sz,z,
 C$OMP&       sw0,swy0,s0i)
 C$OMP DO SCHEDULE(GUIDED)
 C  First si - images
@@ -1048,14 +986,8 @@ C returns value in 0:(ncores-1)
 C   by construction ind(4,.) should have same values consequtively
                i4 = ind(4,i)
                DO k=1,ns
-                  z0 = th(k,i1,i2,i3,i4)
-                  thi(k,thrednr) = z0
-                  z = (max(z0*s0i,minlev)+a)**1.5d0
-                  z = (z/(z+b))
-                  z=max(minlev2,z*z)
-C   thast the approximated standard deviation
-                  si(k,thrednr) = z/s0i
-                  nii(k,thrednr) = ni(k,i1,i2,i3,i4)/lambda
+                  thi(k,thrednr) = th(k,i1,i2,i3,i4)
+                  nii(k,thrednr) = ni(k,i1,i2,i3,i4)/lambda*s0i*s0i
                END DO
             END IF
             j1=i1+ind(1,i)
@@ -1070,7 +1002,7 @@ C adaptation
             if(lambda.lt.1d10) THEN
                sz=0.d0
                DO k=1,ns
-                  z=(thi(k,thrednr)-th(k,j1,j2,j3,j4))/si(k,thrednr)
+                  z=thi(k,thrednr)-th(k,j1,j2,j3,j4)
                   sz=sz+nii(k,thrednr)*z*z
                END DO
 C  do not adapt on the sphere !!! 
@@ -1089,14 +1021,8 @@ C  now opposite directions
 C   by construction ind(4,.) should have same values consequtively
                i4 = ind(4,i)
                DO k=1,ns
-                  z0 = th(k,i1,i2,i3,i4)
-                  thi(k,thrednr) = z0
-                  z = (max(z0*s0i,minlev)+a)**1.5d0
-                  z = (z/(z+b))
-                  z=max(minlev2,z*z)
-C   thast the approximated standard deviation
-                  si(k,thrednr) = z/s0i
-                  nii(k,thrednr) = ni(k,i1,i2,i3,i4)/lambda
+                  thi(k,thrednr) = th(k,i1,i2,i3,i4)
+                  nii(k,thrednr) = ni(k,i1,i2,i3,i4)/lambda*s0i*s0i
                END DO
             END IF
 C
@@ -1114,7 +1040,7 @@ C
             if(lambda.lt.1d10) THEN
                sz=0.d0
                DO k=1,ns
-                  z=(thi(k,thrednr)-th(k,j1,j2,j3,j4))/si(k,thrednr)
+                  z=thi(k,thrednr)-th(k,j1,j2,j3,j4)
                   sz=sz+nii(k,thrednr)*z*z
                END DO
 C  do not adapt on the sphere !!! 
@@ -1134,13 +1060,7 @@ C    now the s0 image in iind
          sw0=0.d0
          swy0=0.d0
          DO k=1,nsp1
-            z0 = th0(k,i1,i2,i3)
-            thi(k,thrednr) = z0
-            z = (max(z0,minlev)+a)**1.5d0
-            z = (z/(z+b))
-            z=max(minlev2,z*z)
-C   thast the approximated standard deviation
-            si(k,thrednr) = z
+            thi(k,thrednr) = th0(k,i1,i2,i3)
             nii(k,thrednr) = ni0(k,i1,i2,i3)/lambda
          END DO
          DO i=1,n0
@@ -1155,7 +1075,7 @@ C adaptation
             if(lambda.lt.1d10) THEN
                sz=0.d0
                DO k=1,nsp1
-                  z=(thi(k,thrednr)-th0(k,j1,j2,j3))/si(k,thrednr)
+                  z=thi(k,thrednr)-th0(k,j1,j2,j3)
                   sz=sz+nii(k,thrednr)*z*z
                END DO
 C  do not adapt on the sphere !!! 
@@ -1184,7 +1104,7 @@ C
             if(lambda.lt.1d10) THEN
                sz=0.d0
                DO k=1,nsp1
-                  z=(thi(k,thrednr)-th0(k,j1,j2,j3))/si(k,thrednr)
+                  z=thi(k,thrednr)-th0(k,j1,j2,j3)
                   sz=sz+nii(k,thrednr)*z*z
                END DO
 C  do not adapt on the sphere !!! 
@@ -1223,7 +1143,7 @@ c   model=2  Gauss-based KL-distance, y ~ Chi, th on same scale, smooth y^2
       real*8 y(n1,n2,n3),th(n1,n2,n3),ni(1),thn(1),minlev,
      1       lambda,w(n),sw0,swy0,swi(nstarts),ldf(n1,n2,n3)
       integer i,i0,i1,i2,i3,j1,j2,j3,l1,l2,l3,nn
-      real*8 z,ldfi,lgfi,dgfi,fici,sc,df,a,b,si,yj,maxswi
+      real*8 z,ldfi,lgfi,dgfi,fici,sc,df,yj,maxswi
       real*8 kldisnc1
       external kldisnc1
       df=2.d0*ncoils
@@ -1241,13 +1161,10 @@ C
          swi(i0)=swi(i0)/(starts(i0+1)-starts(i0))
       END DO
       maxswi=1.d0
-      si = 0.d0
-      a = -0.356536d0+0.003803d0*ncoils-0.701591d0*sqrt(.5*df)
-      b = -0.059703d0+0.029093d0*ncoils+0.098401d0*sqrt(.5*df)
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(n1,n2,n3,nn,ncoils,mask,y,th,ni,thn,ind,ldf,n,nstarts,
 C$OMP& starts,w,swi,df,minlev)
-C$OMP& FIRSTPRIVATE(model,lambda,a,b,si,maxswi)
+C$OMP& FIRSTPRIVATE(model,lambda,maxswi)
 C$OMP& PRIVATE(sw0,swy0,i,i0,i1,i2,i3,j1,j2,j3,l1,l2,l3,z,lgfi,dgfi,
 C$OMP& ldfi,fici,sc,yj)
 C$OMP DO SCHEDULE(GUIDED)
@@ -1277,11 +1194,7 @@ C$OMP DO SCHEDULE(GUIDED)
          sw0=0.d0
          swy0=0.d0
          sc = lambda/ni(i)
-         IF(model.eq.2) THEN
-            si = (th(i1,i2,i3)+a)**1.5d0
-            si = (si/(si+b))
-            si = si*si
-         ELSE
+         IF(model.lt.2) THEN
             call ncstats0(th(i1,i2,i3),ldf(i1,i2,i3),df,
      1                       model,lgfi,dgfi,fici)
          END IF
@@ -1296,8 +1209,8 @@ C$OMP DO SCHEDULE(GUIDED)
             j3=i3+l3
             if(j3.le.0.or.j3.gt.n3) CYCLE
             if(.not.mask(j1,j2,j3)) CYCLE
-            if(model.eq.2) THEN
-               z=(th(i1,i2,i3)-th(j1,j2,j3))/si
+            if(model.ge.2) THEN
+               z=th(i1,i2,i3)-th(j1,j2,j3)
                z=z*z
             ELSE
                z=kldisnc1(lgfi,dgfi,fici,th(j1,j2,j3),
@@ -1325,8 +1238,8 @@ C  this part for negative l1 only (opposite directions)
             j3=i3-l3
             if(j3.le.0.or.j3.gt.n3) CYCLE
             if(.not.mask(j1,j2,j3)) CYCLE
-            if(model.eq.2) THEN
-               z=(th(i1,i2,i3)-th(j1,j2,j3))/si
+            if(model.ge.2) THEN
+               z=th(i1,i2,i3)-th(j1,j2,j3)
                z=z*z
             ELSE
                z=kldisnc1(lgfi,dgfi,fici,th(j1,j2,j3),
@@ -1537,6 +1450,9 @@ C         (2 int(h)+1)*(2 int(h/vext(1))+1)*(2 int(h/vext(2))+1)
       ih1 = h
       ih2 = h/vext(1)
       ih3 = h/vext(2)
+      call intpr("ih1",3,ih1,1)
+      call intpr("ih2",3,ih2,1)
+      call intpr("ih3",3,ih3,1)
       i=1
       DO i1=-ih1,ih1
          z1=i1*i1
@@ -1779,4 +1695,46 @@ C  just to prevent compiler warnings
       n = i-1
       RETURN
       END
-      
+      subroutine ipolsp(theta,th0,ni,ni0,n,ng,gind,gw,nbv,nbvp1,
+     1                    msth,msni)
+C   interpolate values of theta on spheres where it was not observed
+      implicit logical (a-z)
+      integer n,ng,nbv,nbvp1,gind(3,nbv,ng)
+      real*8 theta(n,ng),th0(n),ni(n,ng),ni0(n),gw(3,nbv,ng),
+     1       msth(nbvp1,n,ng),msni(nbvp1,n,ng)
+      integer i,j,k,i1,i2,i3,ip1
+      real*8 w1,w2,w3
+C$OMP PARALLEL DEFAULT(SHARED)
+C$OMP& PRIVATE(i,j,k,w1,w2,w3,i1,i2,i3,ip1)
+C$OMP DO SCHEDULE(GUIDED)
+      DO j=1,ng
+         DO k=1,n
+            msth(1,k,j) = th0(k)
+            msni(1,k,j) = ni0(k)
+            DO i=1,nbv
+               ip1 = i+1
+               i1 = gind(1,i,j)
+               IF(i1.eq.j) THEN
+C  same shell just copy
+                  msth(ip1,k,j) = theta(k,j)
+                  msni(ip1,k,j) = ni(k,j)
+               ELSE
+C  different shell need to interpolate
+                  i2 = gind(2,i,j)
+                  i3 = gind(3,i,j)
+                  w1 = gw(1,i,j)
+                  w2 = gw(2,i,j)
+                  w3 = gw(3,i,j)
+                  msth(ip1,k,j) = theta(k,i1)*w1+theta(k,i2)*w2+
+     1                            theta(k,i3)*w3
+                  msni(ip1,k,j) = 1.d0/
+     1                           (w1/ni(k,i1)+w2/ni(k,i2)+w3/ni(k,i3))
+               END IF
+            END DO
+         END DO
+      END DO
+C$OMP END DO NOWAIT
+C$OMP END PARALLEL
+C$OMP FLUSH(msth,msni)
+      RETURN
+      END

@@ -5,7 +5,9 @@ dwi.smooth <- function(object, ...) cat("No DTI smoothing defined for this class
 
 setGeneric("dwi.smooth", function(object, ...) standardGeneric("dwi.smooth"))
 
-setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,ncoils=1,sigma=NULL,level=NULL,vred=4,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE,dist=1,model="Chi2",wghts=NULL){
+setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,ncoils=1,sigma=NULL,level=NULL,
+vred=4,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE,dist=1,model="Gapprox",
+wghts=NULL){
   args <- sys.call(-1)
   args <- c(object@call,args)
   sdcoef <- object@sdcoef
@@ -24,7 +26,8 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
   sigma <- median(sigma)
  cat("using median estimated sigma",sigma,"\n")
   }
-  model <- switch(model,"Chi2"=1,"Chi"=0,"Gapprox"=2,1)
+  model <- switch(model,"Chi2"=1,"Chi"=0,"Gapprox2"=2,"Gapprox"=3,1)
+  if(model>=2) varstats <- sofmchi(ncoils)
 #
 #  Chi2 uses approx of noncentral Chi^2 by rescaled central Chi^2 with adjusted DF 
 #        and smoothes Y^2
@@ -51,7 +54,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
   if(multishell) {
      msstructure <- getnext3g(grad,bvalues)
 #     save(grad,bvalues,msstructure,file="msstructure.rsc")
-     model <- 2
+     model <- 3
      nshell <- msstructure$nbv
   }
   sb <- object@si[,,,-s0ind]
@@ -73,7 +76,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
 #
   if(ns0>1){
      dim(s0) <- c(prod(ddim),ns0)
-     if(model==2){
+     if(model%in%c(1,2)){
         s0 <- sqrt(s0^2%*%rep(1,ns0))        
         mask <- s0 > sqrt(ns0)*level
      } else {
@@ -130,6 +133,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
                 as.double(sb),#y
                 as.double(thmsh),#th
                 ni=as.double(z$ni),#ni
+                as.double(fncchiv(thmsh,varstats)),#sthi
                 as.logical(mask),#mask
                 as.integer(nshell),# number of shells
                 as.integer(ddim[1]),#n1
@@ -147,7 +151,6 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
                 double(ngrad*mc.cores),#swy
                 double(nshell*mc.cores),#si
                 double(nshell*mc.cores),#thi
-                as.double(minlevel), # minlevel               
                 DUPL=TRUE,
                 PACKAGE="dti")[c("ni","th")]
        dim(z$th) <- dim(z$ni) <- c(ddim,ngrad)
@@ -163,7 +166,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
        z <- .Fortran("adsmse3p",
                 as.double(sb),
                 as.double(z$th),
-                ni=as.double(z$ni),
+                ni=as.double(z$ni/if(model==2) fncchiv(z$th,varstats) else 1),
                 as.logical(mask),
                 as.integer(ddim[1]),
                 as.integer(ddim[2]),
@@ -177,7 +180,6 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=6,kappa0=NULL,nc
                 as.integer(param$n),
                 th=double(prod(ddim)*ngrad),
                 double(prod(ddim)*ngrad),#ldf (to precompute lgamma)
-#                as.double(sigma),
                 double(ngrad*mc.cores),
                 double(ngrad*mc.cores),
                 as.integer(model),
@@ -204,7 +206,7 @@ if(verbose){
      z0 <- .Fortran("asmse30p",
                     as.double(s0),
                     as.double(th0),
-                    ni=as.double(ni0),
+                    ni=as.double(ni0/if(model==2) fncchiv(th0,varstats) else 1),
                     as.logical(mask),
                     as.integer(ddim[1]),
                     as.integer(ddim[2]),

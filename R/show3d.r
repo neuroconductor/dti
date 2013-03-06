@@ -147,7 +147,7 @@ setMethod("show3d","dtiTensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL
   mask[-xind,,] <- FALSE
   mask[,-yind,] <- FALSE
   mask[,,-zind] <- FALSE
-#  obj <- obj[xind,yind,zind]
+  obj <- obj[xind,yind,zind]
   vext <- obj@voxelext
   center <- center*vext
   n <- prod(obj@ddim) 
@@ -661,6 +661,7 @@ setMethod( "show3d", "dkiTensor",
              mask[ -xind, , ] <- FALSE
              mask[ , -yind, ] <- FALSE
              mask[ , , -zind] <- FALSE
+             obj <- obj[xind,yind,zind]
 
              vext <- obj@voxelext
              center <- center * vext
@@ -679,105 +680,14 @@ setMethod( "show3d", "dkiTensor",
              
              radii <- xxx %*% W
              radii[ radii < 0] <- 0
-             
+             if(max(radii)>.4*min(vext)) radii <- radii/2.5/max(radii)*min(vext)
+             if(!add) {
+                open3d()
+                par3d(...)
+                rgl.bg(color=bgcolor)
+              }
              show3dODF( radii, polyeder, centers = tmean, minalpha = 1, ...)
              
-#              W <- D/max(D)
-#              dim(D) <- c(6,n)
-#              mask <- mask & (D[1,]*D[4,]*D[6,]>0)
-#              tmean <- array(0,c(3,obj@ddim))
-#              tmean[1,,,] <- (1:obj@ddim[1])*vext[1]
-#              tmean[2,,,] <- outer(rep(1,obj@ddim[1]),1:obj@ddim[2])*vext[2]
-#              tmean[3,,,] <- outer(rep(1,obj@ddim[1]),outer(rep(1,obj@ddim[2]),1:obj@ddim[3]))*vext[3]
-#              dim(tmean) <- c(3,n)
-#              z <- extract(obj,what=c("andir","fa"))
-#              if(minfa>0) mask <- mask&(z$fa>=minfa)
-#              maxev <- extract(obj,what="evalues",mc.cores=1)$evalues[3,,,,drop=FALSE][mask]
-#              dim(mask) <- NULL
-#              andir <- matrix(z$andir,3,n)[,mask,drop=FALSE]
-#              fa <- z$fa[mask]
-#              if(method==1) {
-#                andir <- abs(andir)
-#              } else {
-#                ind<-andir[1,]<0
-#                andir[,ind] <- - andir[,ind]
-#                andir[2,] <- (1+andir[2,])/2
-#                andir[3,] <- (1+andir[3,])/2
-#              }
-#              colorvalues <- rgb(andir[1,],andir[2,],andir[3,])
-#              D <- D[,mask]
-#              tmean <- tmean[,mask]
-#              n <- sum(mask)
-#              if(is.null(normalize)) normalize <- switch(tolower(what),"tensor"=FALSE,"adc"=TRUE,"odf"=FALSE)
-#              radii <- .Fortran(switch(tolower(what),tensor="ellradii",adc="adcradii",odf="odfradii"),
-#                                as.double(polyeder$vertices),
-#                                as.integer(polyeder$nv),
-#                                as.double(D),
-#                                as.integer(n),
-#                                radii=double(n*polyeder$nv),
-#                                DUP=FALSE,
-#                                PACKAGE="dti")$radii
-#              dim(radii) <- c(polyeder$nv,n)
-#              if(tolower(what)=="odf") normalize <- FALSE
-#              if(normalize){
-#                minradii <- apply(radii,2,min)
-#                maxradii <- apply(radii,2,max)
-#                radii <- sweep(radii,2,minradii,"-")
-#                radii <- sweep(radii,2,maxradii-minradii,"/")*scale
-#              } else {
-#                if (tolower(what)=="odf"){
-#                  #
-#                  #   use a sphere of radius level as baseline for the ODF
-#                  #
-#                  radii <- radii+level
-#                  #
-#                  #   to display results in a form that the volumes are comparable,
-#                  #   need volume elements around vertices that have volume proportional to radii,
-#                  #   i.e. a radial extension of radii^(1/3)
-#                  #   odfscale = 1 corresponds to using radii directly for ODF-values
-#                  #   values inbetween are possible
-#                  #
-#                  radii <- radii^(1/odfscale)
-#                  radii <- radii/quantile(apply(radii,2,max),quant)*scale
-#                } else {
-#                  radii <- (radii+level)/(quantile(apply(radii,2,max),quant)+level)*scale
-#                }
-#              }
-#              if(!add) {
-#                open3d()
-#                par3d(...)
-#                rgl.bg(color=bgcolor)
-#              }
-#              if(tolower(what)=="odf"){
-#                show3dODF(radii,polyeder,centers=tmean,minalpha=minalpha,...)
-#              } else {
-#                show3dTens(radii,polyeder,centers=tmean,colors=colorvalues,alpha=minalpha+(1-minalpha)*fa)
-#              }
-#              if(fibers){
-#                tracks <- tracking(obj,mask=mask,minfa=minfa,maxangle=maxangle)
-#                dd <- tracks@fibers
-#                startind <- tracks@startind
-#                dd <- expandFibers(dd,startind)$fibers
-#                rgl.lines(dd[,1]+vext[1]/2,dd[,2]+vext[2]/2,dd[,3]+vext[3]/2,
-#                          color=rgb(abs(dd[,4]),abs(dd[,5]),abs(dd[,6])),
-#                          size=3)
-#              }  
-#              if(box) bbox3d()
-#              if(is.character(title)) {
-#                title3d(title,color="white",cex=1.5)
-#              } else {
-#                if(title) title3d(switch(tolower(what),"tensor"="estimated tensors","adc"="estimated ADC (tensor)"),color="white",cex=1.5)
-#              }
-#              cat("\n rgl-device",rgl.cur(),switch(tolower(what),"tensor"="estimated tensors","adc"="apparent diffusion coefficients from estimated tensors"),"\n",
-#                  if(obj@hmax>1) paste("smoothed with hmax=",obj@hmax),if(normalize) "normalized","\n")
-#              invisible(rgl.cur())
-             
-             ## open some rgl device
-             if( !add) {
-               open3d()
-               par3d( ...)
-               rgl.bg( color = bgcolor)
-             }
              
              invisible(rgl.cur())
 })

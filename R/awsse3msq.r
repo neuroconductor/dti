@@ -11,6 +11,7 @@ setMethod("dwi.smooth.msq", "dtiData", function(object,kstar,lambda=30,kappa0=.9
   sdcoef <- object@sdcoef
   level <- object@level
   vext <- object@voxelext[2:3]/object@voxelext[1]
+  varstats <- sofmchi(ncoils) # precompute table of mean, sd and var for 
   if(length(sigma)==1) {
      cat("using supplied sigma",sigma,"\n")
   } else {
@@ -61,7 +62,7 @@ setMethod("dwi.smooth.msq", "dtiData", function(object,kstar,lambda=30,kappa0=.9
 #  generate signal decay in th (it's standard deviation is 1/s0)
 #
   mask <- s0>(level/sigma)
-    th <- array(.Fortran("sweeps00",
+  th <- array(.Fortran("sweeps00",
                    as.double(sb),
                    as.double(s0),
                    as.integer(prod(ddim)),
@@ -85,7 +86,7 @@ setMethod("dwi.smooth.msq", "dtiData", function(object,kstar,lambda=30,kappa0=.9
   ni <- array(1,dim(sb))
   minlevel <- gamma(ncoils+0.5)/gamma(ncoils)*sqrt(2)
 #  thats the mean of the central chi distribution with 2*ncoils df
-  z <- list(ni = ni, th0=s0, ni0=ns0*ni0)
+  z <- list(th = sb, ni = ni, th0=s0, ni0=ns0*ni0)
   prt0 <- Sys.time()
   cat("adaptive smoothing in SE3, kstar=",kstar,if(verbose)"\n" else " ")
   kinit <- if(lambda<1e10) 1 else kstar
@@ -96,6 +97,7 @@ setMethod("dwi.smooth.msq", "dtiData", function(object,kstar,lambda=30,kappa0=.9
      hakt0 <- hseq0[k]
 #     save(th,z,msstructure,mask,file=paste("interpolatesphereq_in_",k,".rsc",sep=""))
      thnimsh <- interpolatesphereq(th,z$th0,z$ni,z$ni0,msstructure,mask)
+     mstheta <- interpolatesphereq(z$th,z$th0,z$ni,z$ni0,msstructure,mask)$mstheta
      param <- lkfullse3msh(hakt,kappa/hakt,gradstats,vext,nind) 
      param0 <- lkfulls0(hakt0,vext,nind) 
 #     save(sb,s0,thnimsh,param,param0,file=paste("adsmse3q_in_",k,".rsc",sep=""))
@@ -103,9 +105,9 @@ setMethod("dwi.smooth.msq", "dtiData", function(object,kstar,lambda=30,kappa0=.9
                 as.double(sb),#y
                 as.double(s0),#y0
                 as.double(thnimsh$mstheta),#th
-                as.double(thnimsh$msni),#ni
+                as.double(thnimsh$msni/fncchiv(mstheta,varstats)),#ni/si^2
                 as.double(thnimsh$msth0),#th0
-                as.double(thnimsh$msni0),#ni0
+                as.double(thnimsh$msni0),#ni0, s0-images are assumed to have large nc param
                 as.logical(mask),#mask
                 as.integer(nshell),#ns number of shells
                 as.integer(nshell+1),#ns number of shells +1
@@ -114,8 +116,6 @@ setMethod("dwi.smooth.msq", "dtiData", function(object,kstar,lambda=30,kappa0=.9
                 as.integer(ddim[3]),#n3
                 as.integer(ngrad),#ngrad
                 as.double(lambda),#lambda
-                as.integer(ncoils),#ncoils
-                as.double(minlevel),#minlev 
                 as.integer(mc.cores),#ncores
                 as.integer(param$ind),#ind
                 as.double(param$w),#w
@@ -129,7 +129,6 @@ setMethod("dwi.smooth.msq", "dtiData", function(object,kstar,lambda=30,kappa0=.9
                 ni0=double(prod(ddim)),#ni0n
                 double(ngrad*mc.cores),#sw
                 double(ngrad*mc.cores),#swy
-                double((nshell+1)*mc.cores),#si
                 double((nshell+1)*mc.cores),#thi
                 double((nshell+1)*mc.cores),#nii
                 DUPL=FALSE,
@@ -203,11 +202,11 @@ msth0 <- msni0 <- array(0,c(nbv+1,prod(dth0)))
 # now the remaining shells
 for(i in 1:nbv){
    for(j in 1:dim(theta)[2]){
-      mstheta[i,mask,j] <- theta[mask,n3g$ind[i,j,]]%*%n3g$w[i,j,] 
+      mstheta[i,mask,j] <- theta[mask,n3g$ind[,i,j]]%*%n3g$w[,i,j] 
 #  correct value would be 
 #  msni[1,,,,j] <- 1/(1/(ni[,n3g$ind[i,j,]])%*%(n3g$w[i,j,]^2))
 #  try to be less conservative by ignorin squares in w
-      msni[i,mask,j] <- 1/((1/ni[mask,n3g$ind[i,j,]])%*%n3g$w[i,j,])
+      msni[i,mask,j] <- 1/((1/ni[mask,n3g$ind[,i,j]])%*%n3g$w[,i,j])
    }
 }
 #  now fill vector for s0

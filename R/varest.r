@@ -41,7 +41,7 @@ awssigmc <- function(y,                 # data
   }
   
   varstats <- sofmchi(ncoils)
-
+  if(length(vext)==3) vext <- vext[2:3]/vext[1]
   ## dimension and size of cubus
   ddim <- dim(y)
   n <- prod(ddim)
@@ -75,7 +75,8 @@ awssigmc <- function(y,                 # data
   for (i in 1:steps) {
 
     h <- h0 * 1.25^((i-1)/3)
-    nw <- prod(2*as.integer(h/c(1,1/vext))+1)
+    nw <- prod(2*as.integer(h/c(1,vext))+1)
+    cat("nw=",nw,"h/vext=",h/c(1,1/vext),"ih=",as.integer(h/c(1,1/vext)),"\n")
     param <- .Fortran("paramw3",
                       as.double(h),
                       as.double(vext),

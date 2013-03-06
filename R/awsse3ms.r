@@ -11,6 +11,7 @@ setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=15,kappa0=.9,
   sdcoef <- object@sdcoef
   level <- object@level
   vext <- object@voxelext[2:3]/object@voxelext[1]
+  varstats <- sofmchi(ncoils)
   if(length(sigma)==1) {
      cat("using supplied sigma",sigma,"\n")
   } else {
@@ -82,16 +83,19 @@ setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=15,kappa0=.9,
      gc()
      hakt <- hseqi[,k]
      hakt0 <- hseq0[k]
+     t0 <- Sys.time()
      thnimsh <- interpolatesphere0(z$th,z$th0,z$ni,z$ni0,msstructure,mask)
+     t1 <- Sys.time()
      param <- lkfullse3msh(hakt,kappa/hakt,gradstats,vext,nind) 
      param0 <- lkfulls0(hakt0,vext,nind) 
+     t2 <- Sys.time()
      z <- .Fortran("adsmse3c",
                 as.double(sb),#y
                 as.double(s0),#y0
                 as.double(thnimsh$mstheta),#th
-                as.double(thnimsh$msni),#ni
+                as.double(thnimsh$msni/fncchiv(thnimsh$mstheta,varstats)),#ni/si^2
                 as.double(thnimsh$msth0),#th0
-                as.double(thnimsh$msni0),#ni0
+                as.double(thnimsh$msni0/fncchiv(thnimsh$msth0,varstats)),#ni0/si^2
                 as.logical(mask),#mask
                 as.integer(nshell+1),#ns number of shells
                 as.integer(ddim[1]),#n1
@@ -100,8 +104,6 @@ setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=15,kappa0=.9,
                 as.integer(ngrad),#ngrad
                 as.double(lambda),#lambda
                 as.double(ws0),# wghts0 rel. weight for s0 image
-                as.integer(ncoils),#ncoils
-                as.double(minlevel),#minlev 
                 as.integer(mc.cores),#ncores
                 as.integer(param$ind),#ind
                 as.double(param$w),#w
@@ -115,11 +117,11 @@ setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=15,kappa0=.9,
                 ni0=double(prod(ddim)),#ni0n
                 double(ngrad*mc.cores),#sw
                 double(ngrad*mc.cores),#swy
-                double((nshell+1)*mc.cores),#si
                 double((nshell+1)*mc.cores),#thi
                 double((nshell+1)*mc.cores),#nii
                 DUPL=FALSE,
                 PACKAGE="dti")[c("ni","th","ni0","th0")]
+    t3 <- Sys.time()
     dim(z$th) <- c(ddim,ngrad)
     dim(z$th0) <- c(ddim)
     dim(z$ni) <- c(ddim,ngrad)
@@ -131,6 +133,9 @@ if(verbose){
   "mean of ni",signif(mean(z$ni[mask,]),3),"\n              quartiles of ni0",signif(quantile(z$ni0[mask]),3),
   "mean of ni0",signif(mean(z$ni0[mask]),3),
   " time elapsed:",format(difftime(Sys.time(),prt0),digits=3),"\n")
+  cat("interpolation:",format(difftime(t1,t0),digits=3),
+      "param:",format(difftime(t2,t1),digits=3),
+      "smoothing:",format(difftime(t3,t2),digits=3),"\n")
   } else {
       cat(".")
   }
@@ -192,27 +197,31 @@ ubv <- n3g$ubv
 dtheta <- dim(theta)
 dth0 <- dim(th0)
 ng <- dtheta[4]
-mstheta <- msni <- array(0,c(nbv+1,prod(dtheta[1:3]),dtheta[4]))
-dim(theta)  <- dim(ni)  <- c(prod(dtheta[1:3]),dtheta[4])
-msth0 <- msni0 <- array(0,c(nbv+1,prod(dth0)))
-# first component contains th0
-#for(j in 1:dim(theta)[2]){
-#   mstheta[1,,,,j] <- th0 
-#   msni[1,,,,j] <- ni0
-#}
-mstheta[1,,] <- th0 
-msni[1,,] <- ni0
-# now the remaining shells
-for(i in 1:nbv){
-   for(j in 1:dim(theta)[2]){
-      mstheta[i+1,mask,j] <- theta[mask,n3g$ind[i,j,]]%*%n3g$w[i,j,] 
-#  correct value would be 
-#  msni[1,,,,j] <- 1/(1/(ni[,n3g$ind[i,j,]])%*%(n3g$w[i,j,]^2))
-#  try to be less conservative by ignorin squares in w
-      msni[i+1,mask,j] <- 1/((1/ni[mask,n3g$ind[i,j,]])%*%n3g$w[i,j,])
-   }
-}
+n <- prod(dtheta[1:3])
+nmask <- sum(mask)
+dim(theta)  <- dim(ni)  <- c(n,ng)
+mstheta <- msni <- array(0,c(nbv+1,n,ng))
+t1 <- Sys.time()
+z <- .Fortran("ipolsp",
+              as.double(theta[mask,]),
+              as.double(th0[mask]),
+              as.double(ni[mask,]),
+              as.double(ni0[mask]),
+              as.integer(nmask),
+              as.integer(ng),
+              as.integer(n3g$ind),
+              as.double(n3g$w),
+              as.integer(nbv),
+              as.integer(nbv+1),
+              msth=double((nbv+1)*nmask*ng),
+              msni=double((nbv+1)*nmask*ng),
+              DUPL=FALSE,
+              PACKAGE="dti")[c("msth","msni")]
+cat("time for sb-interpolation", format(difftime(Sys.time(),t1),digits=3),"\n")
+mstheta[,mask,] <- z$msth
+msni[,mask,] <- z$msni
 #  now fill vector for s0
+msth0 <- msni0 <- array(0,c(nbv+1,n))
 msth0[1,] <- th0
 msni0[1,] <- ni0
 for(i in 1:nbv){
