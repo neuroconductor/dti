@@ -698,8 +698,10 @@ setMethod( "show3d", "dkiTensor",
 
                W <- obj@W
                dim(W) <- c( 15, n)
-             
-               radii <- apply( D[ c( 1, 4, 6),], 2, mean)^2 * ( xxx[ , 7:21] %*% W) / Dapp
+
+               MD <- apply( D[ c( 1, 4, 6),], 2, mean)^2
+               
+               radii <- sweep( ( xxx[ , 7:21] %*% W) / Dapp, 2 , MD, "*")
                radii[ radii < 0] <- 0
 
                radii <- radii / 2.5 / max( radii) * min( vext)
