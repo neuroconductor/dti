@@ -76,7 +76,7 @@ awssigmc <- function(y,                 # data
 
     h <- h0 * 1.25^((i-1)/3)
     nw <- prod(2*as.integer(h/c(1,vext))+1)
-    cat("nw=",nw,"h/vext=",h/c(1,1/vext),"ih=",as.integer(h/c(1,1/vext)),"\n")
+#    cat("nw=",nw,"h/vext=",h/c(1,1/vext),"ih=",as.integer(h/c(1,1/vext)),"\n")
     param <- .Fortran("paramw3",
                       as.double(h),
                       as.double(vext),

@@ -56,9 +56,11 @@ setMethod("dkiTensor", "dtiData",
               Tabesh_A <- cbind(sweep( Tabesh_AD, 1, - object@bvalue[ - object@s0ind], "*"),
                                 sweep( Tabesh_AK, 1, object@bvalue[ - object@s0ind]^2/6, "*"))
               
+              ngrad <- object@ngrad - length( object@s0ind)
+              
               ## Tabesh Eq. [13]
-              Tabesh_C <- rbind( cbind( Tabesh_AD, matrix(0, 200, 15)), 
-                                 cbind( matrix(0, 200, 6), Tabesh_AK), 
+              Tabesh_C <- rbind( cbind( Tabesh_AD, matrix(0, ngrad, 15)), 
+                                 cbind( matrix(0, ngrad, 6), Tabesh_AK), 
                                  cbind( 3/max(object@bvalue)*Tabesh_AD, - Tabesh_AK))
 
               ## scaling factor to make it numerically stable
