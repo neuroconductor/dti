@@ -77,12 +77,7 @@ pmixtens <- function(x,meth,optmeth,ngrad0,maxcomp,maxit,pen,grad,reltol,th,penI
 nvox <- length(x)/(ngrad0+3+maxcomp)
 dim(x) <- c(ngrad0+3+maxcomp,nvox)
 z <- .C("mixture2", 
-          as.integer(meth),
-          as.integer(optmeth), 
-          as.integer(1), # n1
-          as.integer(1), # n2
           as.integer(nvox),
-          as.integer(rep(1L,nvox)), 
           as.integer(x[(ngrad0+2):(ngrad0+3+maxcomp),]),  
           as.integer(ngrad0),
           as.integer(maxcomp),

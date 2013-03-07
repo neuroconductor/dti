@@ -963,12 +963,7 @@ if(mc.cores<=1){
   dim(siind) <- c(2+maxcomp,nvox)
   nvoxm <- sum(mask)
   z <- .C("mixture2", 
-          as.integer(meth),
-          as.integer(optmeth), 
-          as.integer(1), 
-          as.integer(1), 
           as.integer(nvoxm),
-          as.integer(rep(1L,nvoxm)), 
           as.integer(siind[,mask]), 
           as.integer(ngrad0),
           as.integer(maxcomp),
