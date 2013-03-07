@@ -94,12 +94,14 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
      rg<-quantile(img,c(.01,.99))
      img[img>rg[2]]<-rg[2]
      img[img<rg[1]]<-rg[1]
+     img <- (img-rg[1])/(rg[2]-rg[1])
      show.image(make.image(img),xaxt="n",yaxt="n")
      title(paste("Dxy: min",signif(min(z$D[2,,,][mask]),3),"max",signif(max(z$D[2,,,][mask]),3)))
      img<-z$D[3,,,slice]
      rg<-quantile(img,c(.01,.99))
      img[img>rg[2]]<-rg[2]
      img[img<rg[1]]<-rg[1]
+     img <- (img-rg[1])/(rg[2]-rg[1])
      show.image(make.image(img),xaxt="n",yaxt="n")
      title(paste("Dxz: min",signif(min(z$D[3,,,][mask]),3),"max",signif(max(z$D[3,,,][mask]),3)))
      show.image(make.image(z$anindex[,,slice]),xaxt="n",yaxt="n")
@@ -114,6 +116,7 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
      rg<-quantile(img,c(.01,.99))
      img[img>rg[2]]<-rg[2]
      img[img<rg[1]]<-rg[1]
+     img <- (img-rg[1])/(rg[2]-rg[1])
      show.image(make.image(img),xaxt="n",yaxt="n")
      title(paste("Dyz: min",signif(min(z$D[5,,,][mask]),3),"max",signif(max(z$D[5,,,][mask]),3)))
      andir2.image(z,slice,quant=quant,minfa=minfa,xaxt="n",yaxt="n")

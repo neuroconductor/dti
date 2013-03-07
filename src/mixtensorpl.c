@@ -380,7 +380,7 @@ mfunplwghts0_ret mfunplwghts0(int param_length, double* param, double* siq){
   return ret_val; 
 }
 
-void mixture2( int* n1, int* siind, int* ngrad0, int* maxcomp, int* maxit, 
+void mixture( int* n1, int* siind, int* ngrad0, int* maxcomp, int* maxit, 
           double* pen, double* grad_in, double* reltol,
           double* th, double* penIC, double* sigma2, double* vert, 
           double* siq_in,

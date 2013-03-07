@@ -76,7 +76,7 @@ zmat
 pmixtens <- function(x,meth,optmeth,ngrad0,maxcomp,maxit,pen,grad,reltol,th,penIC,vert){
 nvox <- length(x)/(ngrad0+3+maxcomp)
 dim(x) <- c(ngrad0+3+maxcomp,nvox)
-z <- .C("mixture2", 
+z <- .C("mixture", 
           as.integer(nvox),
           as.integer(x[(ngrad0+2):(ngrad0+3+maxcomp),]),  
           as.integer(ngrad0),

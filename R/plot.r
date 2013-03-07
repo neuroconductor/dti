@@ -116,12 +116,14 @@ setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, mi
    rg<-quantile(img,qrange)
    img[img>rg[2]]<-rg[2]
    img[img<rg[1]]<-rg[1]
+   img <- (img-rg[1])/(rg[2]-rg[1])
    show.image(make.image(img))
    title(paste("Dxy: min",signif(min(D[2,,][mask]),3),"max",signif(max(D[2,,][mask]),3)))
    img<-D[3,,]
    rg<-quantile(img,qrange)
    img[img>rg[2]]<-rg[2]
    img[img<rg[1]]<-rg[1]
+   img <- (img-rg[1])/(rg[2]-rg[1])
    show.image(make.image(img))
    title(paste("Dxz: min",signif(min(D[3,,][mask]),3),"max",signif(max(D[3,,][mask]),3)))
    show.image(make.image(matrix(z$fa,n1,n2)))
@@ -142,6 +144,7 @@ setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, mi
    rg<-quantile(img,qrange)
    img[img>rg[2]]<-rg[2]
    img[img<rg[1]]<-rg[1]
+   img <- (img-rg[1])/(rg[2]-rg[1])
    show.image(make.image(img))
    title(paste("Dyz: min",signif(min(D[5,,][mask]),3),"max",signif(max(D[5,,][mask]),3)))
    andir.image(matrix(z$fa,n1,n2),array(z$andir,c(3,n1,n2)),quant=quant,minfa=minfa)
