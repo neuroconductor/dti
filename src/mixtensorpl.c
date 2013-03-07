@@ -40,19 +40,11 @@ extern void F77_NAME(mfunpl0g)(double* param, double* siq, double* grad,
             double* result //result dfdpar double(lpar)
          );
 
-extern void F77_NAME(mfunpl0h)(double* param, double* siq, double* grad, int* m,
-                int* lpar, int* ngrad, double* tmp1, 
-                double* tmp2, double* tmp3, double* tmp4,
-                double* result);
 
 extern void F77_NAME(mfunpl0w)(double* param, double* w, double* siq, 
                 double* grad, int* m, int* param_length, 
                 int* ngrad, double* tmp1, double* result);
 
-extern void F77_NAME(mfunpl0h)(double* param, double* siq, double* grad,
-                int* m, int *lpar, int* ngrad, double* tmp1,
-                double* w, double* tmp2, double* tmp3,
-                double* result);
 
 typedef struct
 {
@@ -63,19 +55,6 @@ typedef struct
   int fnscale;
 } optimex;
 
-typedef struct
-{
-  int ngrad;
-  double *siq;
-  double *grad;
-  double *w;
-  double *z;
-  double *qv;
-  double *dqv;
-  double *fv;
-  double *dfv;
-  double *work1;
-} optimexpl;
 
 typedef struct{
   int order;
@@ -101,10 +80,6 @@ public static T[] SubArrayDeepClone<T>(this T[] data, int index, int length){
         return (T[])bf.Deserialize(ms);
     }
     }*/
-
-static R_INLINE int get_ind2d_img(int x, int y){
-  return x + y*dim_x;
-}
 
 
 static R_INLINE int get_ind2d(int x, int y, int dim){
@@ -173,7 +148,7 @@ double mfunpl0(int param_length, double *param, void* ex){
   double* siq = Calloc(ngrad0c,double);
   int i;
   for(i=0;i<ngrad0c;i++){
-    siq[i] = siq_init[get_ind2d_img(i1,i)];
+    siq[i] = siq_init[i+i1*ngrad0c];
   }
 
   F77_CALL(mfunpl0)(param, siq, grad, &m, &param_length, &ngrad0c, 
@@ -193,33 +168,6 @@ double mfunpl0(int param_length, double *param, void* ex){
 }
 
 
-double mfunpl0h(int param_length, double* param, void* ex){
-
-  int m = (param_length-1)/2;
-  double result = 0;
-  int i;
-
-  double* siq = Calloc(ngrad0c, double);
-  for(i=0;i<ngrad0c;i++){
-    siq[i] = siq_init[get_ind2d_img(i1,i)];
-  }
-  
-  double* z =  Calloc(ngrad0c*m, double);
-  double* w =  Calloc(ngrad0c, double);
-  double* b =  Calloc(ngrad0c, double);
-  double* work1 = Calloc(ngrad0c, double);
-  
-  F77_CALL(mfunpl0h)(param, siq, grad, &m, &param_length, &ngrad0c, 
-           z, w, b, work1, &result);
-
-  Free(siq);
-  Free(z);
-  Free(w);
-  Free(b);
-  Free(work1);
-
-  return result;
-}
 
 
 void gmfunpl0(int param_length, double* param, double* result, void* ex){
@@ -247,7 +195,7 @@ void gmfunpl0(int param_length, double* param, double* result, void* ex){
   int i;
   double* siq = Calloc(ngrad0c, double);
   for(i=0;i<ngrad0c;i++){
-   siq[i] = siq_init[get_ind2d_img(i1,i)];
+   siq[i] = siq_init[get_ind2d(i,i1,ngrad0c)];
   }
 
   F77_CALL(mfunpl0g)(param, siq, grad, &m, &param_length, &ngrad0c,
@@ -432,367 +380,6 @@ mfunplwghts0_ret mfunplwghts0(int param_length, double* param, double* siq){
   return ret_val; 
 }
 
-
-mfunplwghts0_ret mfunplwghts0h(int param_length, double* param, double* siq){
-  
-  if(param[0]<0){
-    param[0]=0;
-  }
-
-  int i,j;
-  
-  mfunplwghts0_ret ret_val;
-  int m = (param_length-1)/2;
-  int ord = 0;
-
-  double* param_work = Calloc(param_length, double);
-  double* z = Calloc(ngrad0c*m, double);
-  double* w = Calloc(ngrad0c, double);
-  double* w_red = Calloc(m, double);
-  double* w_red2 = Calloc(m, double);
-  double* b = Calloc(ngrad0c, double);
-  double* work1 = Calloc(ngrad0c, double);
-  double result = 0;
-
-  F77_CALL(mfunpl0h)(param, siq, grad, &m, &param_length, &ngrad0c, z,
-           w, b, work1, &result);
-
-  result *= result;
-
-    //copy param
-  for( i = 0; i < param_length; i++){
-     param_work[i] = param[i];
-  }
-  
-  for(i = 0; i < m; i++){
-    w_red[i] = w[i];
-    w_red2[i] = w[i];
-  }
- 
-  qsort(w_red, m, sizeof(double), compare_doubles);
-  int* o = Calloc(m, int);
-  for(i = 0; i<m; i++){
-   o[i] = -1;
-  }
-
-  for(i=0; i<m; i++){
-    for(j=0; j<m; j++){
-      if(w_red2[j] == w_red[i] && contains_int(o,m,j) == 0){
-      o[i] = j;
-      j = m;
-      }
-    }
-  }
-  
-  double sum_w = 0;
-  for (i = 0; i < m; i++){
-    if(w_red[i] > 0){
-      ord++;
-      sum_w += w_red[i];   
-    }
-  }
-
-
-  /** correct order:
-    * if order == 0, C for-loops wouldn't start
-    * and arrays wouldn't be allocated
-    * R solves this with o <- o[1:ord] = o[1:0] = o[1]
-    * so c_ord will be 1 iff ord == 0, else c_ord = ord
-    **/
-  int c_ord = ord;
-  if (c_ord == 0) c_ord = 1;
-
-  // here ord will not be replaced, because zero-check is important
-  double* mix = (double*) R_alloc(ord, sizeof(double));
-  
-  if(ord > 0){
-   for(i = 0; i < ord; i++){
-      mix[i] = w_red[i]/sum_w;
-   }
-  }else{
-   mix = NULL;
-  }
-  
-  double* or = (double*) R_alloc(2*c_ord, sizeof(double));
-  for(i = 0; i < c_ord; i++){
-   or[get_ind2d(0,i,2)] = param[2*o[i]+1];
-   or[get_ind2d(1,i,2)] = param[2*o[i]+2];
-  }
-
-  for(j = 0; j < c_ord; j++){
-   while (or[get_ind2d(0,j,2)] < 0) {
-      or[get_ind2d(0,j,2)] = or[get_ind2d(0,j,2)] + M_PI;
-   }
-   while (or[get_ind2d(0,j,2)] > M_PI) {
-      or[get_ind2d(0,j,2)] = or[get_ind2d(0,j,2)] - M_PI;
-   }
-   while (or[get_ind2d(1,j,2)] < 0) {
-      or[get_ind2d(1,j,2)] = or[get_ind2d(1,j,2)] + 2 * M_PI;
-   }
-   while (or[get_ind2d(1,j,2)] > 2 * M_PI) {
-      or[get_ind2d(1,j,2)] = or[get_ind2d(1,j,2)] - 2 * M_PI;
-   }
-  }
-  
-  for(i = 0; i < c_ord; i++){       //par[0] stays
-   param[2*i+1] = or[2*i];
-   param[2*i+2] = or[2*i+1];
-   
-  }  
-  
-  ret_val.lev_par = param[0];  //lev[1]
-  ret_val.lev_sum_w = -log(sum_w);   //lev[2]
-  ret_val.order = ord;;
-  ret_val.param = param;
-  ret_val.value = result;
-  ret_val.orient = or;  
-  ret_val.mix = mix;
-// begin einfuegung 
-Free(param_work);
-Free(z);
-Free(w);
-Free(w_red);
-Free(w_red2);
-Free(b);
-Free(work1);
-Free(o);
-// end einfuegung 
-  return ret_val; 
-}
-
-mfunplwghts0_ret mfunwghts(int param_length, double* param, double siq){
-  
-  int m = (param_length-1)/3;
-
-  mfunplwghts0_ret ret_val;
-  int i, j, ord = 0;
-  int lpar = 2*m+1;
-  int w_length = param_length - lpar;
-  double*  w = (double*)Calloc(w_length,double);
-  double* w2 = (double*)Calloc(w_length,double);
-
-  for(i=lpar-1; i<param_length; i++){
-    w[i-(lpar-1)] = param[i];
-   w2[i-(lpar-1)] = param[i];
-  }
-
-
-  qsort(w, w_length, sizeof(double), compare_doubles);
-  int* o = Calloc(w_length, int);
-  for(i = 0; i<w_length; i++){
-   o[i] = -1;
-  }
-
-  for(i=0; i<w_length; i++){
-   for(j=0; j<w_length; j++){
-      if(w2[j] == w[i] && contains_int(o,w_length,j) == 0){
-         o[i] = j;
-         j = w_length;
-      }
-   }
-  }
-  
-  double sum_w = 0;
-  for (i = 0; i < w_length; i++){
-   if(w[i] > 0){
-      ord++;
-      sum_w += w[i];
-   }
-  }
-
-  /** correct order:
-    * if order == 0, C for-loops wouldn't start
-    * and arrays wouldn't be allocated
-    * R solves this with o <- o[1:ord] = o[1:0] = o[1]
-    * so c_ord will be 1 iff ord == 0, else c_ord = ord
-    **/
-  int c_ord = ord;
-  if (c_ord == 0) c_ord = 1;
-
-  Free(w2);
-
-  w2 = (double*) R_alloc(c_ord, sizeof(double));
-  for(i = 0; i < c_ord; i++)
-   w2[i] = w[i];
-
-  // here ord will not be replaced, because zero-check is important
-  double* mix = (double*) R_alloc(ord, sizeof(double));
-  if(ord > 0){
-   for(i = 0; i < ord; i++){
-      mix[i] = w[i]/sum_w;
-   }
-  }else{
-   mix = NULL;
-  }
-
-  double* or = (double*) R_alloc(2*c_ord, sizeof(double));
-  for(i = 0; i < c_ord; i++){
-   or[get_ind2d(0,i,2)] = param[2*o[i]+1];
-   or[get_ind2d(1,i,2)] = param[2*o[i]+2];
-  }
-  
-  for(j = 0; j < c_ord; j++){
-   while (or[get_ind2d(0,j,2)] < 0) {
-      or[get_ind2d(0,j,2)] = or[get_ind2d(0,j,2)] + M_PI;
-   }
-   while (or[get_ind2d(0,j,2)] > M_PI) {
-      or[get_ind2d(0,j,2)] = or[get_ind2d(0,j,2)] - M_PI;
-   }
-   while (or[get_ind2d(1,j,2)] < 0) {
-      or[get_ind2d(1,j,2)] = or[get_ind2d(1,j,2)] + 2 * M_PI;
-   }
-   while (or[get_ind2d(1,j,2)] > 2 * M_PI) {
-      or[get_ind2d(1,j,2)] = or[get_ind2d(1,j,2)] - 2 * M_PI;
-   }
-  }
-
-  
-  
-  for(i = 0; i < c_ord; i++){       //par[0] stays
-   param[2*i+1] = or[2*i];
-   param[2*i+2] = or[2*i+1];
-  }
-
-  ret_val.lev_par = param[0];  //lev[1]
-  ret_val.lev_sum_w = -log(sum_w);   //lev[2]
-  ret_val.order = ord;
-  ret_val.param = param;
-  ret_val.orient = or;  
-  ret_val.mix = mix;
-  ret_val.value = 0.;
-  ret_val.w = w2;
- 
-  Free(o);
-  Free(w);
-
-  return ret_val; 
-}
-
-mfunplwghts0_ret mfunwghtsi(int param_length, double* param, double siq){
-  
-  int m = (param_length-2)/3;
-  double w0 = 1;
-  mfunplwghts0_ret ret_val;
-
-  if (m > 0) {
-   int i, j, ord = 0;
-   int lpar = 2*m+1;
-   int w_length = param_length - lpar -1;
-   double*  w = (double*)Calloc(w_length,double);
-   double* w2 = (double*)Calloc(w_length,double);
-   
-   for(i=lpar; i<param_length; i++){
-       w[i-lpar] = param[i];
-      w2[i-lpar] = param[i];
-   }
-   
-   w0 = param[lpar-1];
-   
-   qsort(w, w_length, sizeof(double), compare_doubles);
-   int* o = Calloc(w_length, int);
-   for(i = 0; i<w_length; i++){
-      o[i] = -1;
-   }
-   
-   for(i=0; i<w_length; i++){
-      for(j=0; j<w_length; j++){
-         if(w2[j] == w[i] && contains_int(o,w_length,j) == 0){
-            o[i] = j;
-            j = w_length;
-         }
-      }
-   }
-   
-   double sum_w = 0.;
-   for (i = 0; i < w_length; i++){
-      if(w[i] > 0){
-         ord++;
-         sum_w += w[i];   
-      }
-   }
-   
-   sum_w += fmax2(w0,0.);
-   
-   /** correct order:
-   * if order == 0, C for-loops wouldn't start
-   * and arrays wouldn't be allocated
-   * R solves this with o <- o[1:ord] = o[1:0] = o[1]
-   * so c_ord will be 1 iff ord == 0, else c_ord = ord
-   **/
-   int c_ord = ord;
-   if (c_ord == 0) c_ord = 1;
-   
-   // here ord will not be replaced, because zero-check is important
-   double* mix = (double*) R_alloc(ord, sizeof(double));
-   if(ord > 0){
-      for(i = 0; i < ord; i++){
-         mix[i] = w[i]/sum_w;
-      }
-   }else{
-      mix = NULL;
-   }
-   
-   double* or = (double*) R_alloc(2*c_ord, sizeof(double));
-   for(i = 0; i < c_ord; i++){
-      or[get_ind2d(0,i,2)] = param[2*o[i]+1];
-      or[get_ind2d(1,i,2)] = param[2*o[i]+2];
-   }
-   
-   for(j = 0; j < m; j++){
-   
-      while (or[get_ind2d(0,j,2)] < 0) {
-         or[get_ind2d(0,j,2)] = or[get_ind2d(0,j,2)] + M_PI;
-      }
-      while (or[get_ind2d(0,j,2)] > M_PI) {
-         or[get_ind2d(0,j,2)] = or[get_ind2d(0,j,2)] - M_PI;
-      }
-      while (or[get_ind2d(1,j,2)] < 0) {
-         or[get_ind2d(1,j,2)] = or[get_ind2d(1,j,2)] + 2 * M_PI;
-      }
-      while (or[get_ind2d(1,j,2)] > 2 * M_PI) {
-         or[get_ind2d(1,j,2)] = or[get_ind2d(1,j,2)] - 2 * M_PI;
-      }
-   }
-   
-   for(i = 0; i < c_ord; i++){       //par[0] stays
-      param[2*i+1] = or[2*i];
-      param[2*i+2] = or[2*i+1];
-   }
-   
-// begin einfuegung 
-//        Free(w2)
-// end einfuegung 
-   w2 = (double*) R_alloc(c_ord+1, sizeof(double));
-
-   for(i = 0; i < c_ord; i++) w2[i+1] = w[i];
-
-   w2[0] = w0;
-
-   ret_val.lev_sum_w = -log(sum_w);   //lev[2]
-   ret_val.order = ord;
-   ret_val.param = param;
-   ret_val.orient = or;  
-   ret_val.mix = mix;
-   ret_val.w = w2;
-   
-   Free(o);
-   Free(w);
-   
-  } else {
-   ret_val.lev_sum_w = 0;   //lev[2]
-   ret_val.order = 0 ;
-   ret_val.param = &param[0];
-   ret_val.orient = NULL;
-   ret_val.mix = NULL;
-   ret_val.w = &w0;
-  }
-
-  ret_val.lev_par = param[0];  //lev[1]
-  ret_val.value = 0.;
-
-  return ret_val; 
-}
-
 void mixture2( int* n1, int* siind, int* ngrad0, int* maxcomp, int* maxit, 
           double* pen, double* grad_in, double* reltol,
           double* th, double* penIC, double* sigma2, double* vert, 
@@ -810,10 +397,9 @@ void mixture2( int* n1, int* siind, int* ngrad0, int* maxcomp, int* maxit,
    int maxcompc = *maxcomp, *mask;
    int trace = 0, nREPORT = 1;
    int fncount = 5, grcount=2;    // number of calls to obj fct in optim
-   int type = 1; // for CG, takes 1, 2 or 3 see R help(optim)
    int ord, iv, i, j, k, l, param_length, param_length_init, tmp_int; 
    double krit, sigma_init, si2new = 0, value = 0;
-   double ttt = 0, abstol = R_NegInf, intol = 1;
+   double ttt = 0, abstol = R_NegInf;
 //   double alpha = 1, beta = 0.5, gamma = 2; //Optim parameters for Nelder Mead
    double angles[2], dir[3];
    double *param = 0, *param_work = 0, *param_last = 0,
@@ -927,7 +513,7 @@ void mixture2( int* n1, int* siind, int* ngrad0, int* maxcomp, int* maxit,
                ret_val.w = NULL;
                
                for(l=0;l<ngrad0c;l++){
-                  siq[l] = siq_init[get_ind2d_img(i1,l)];
+                  siq[l] = siq_init[get_ind2d(l,i1,ngrad0c)];
                }
                
                vmmin(param_length, param_work, &Fmin, mfunpl0, gmfunpl0,

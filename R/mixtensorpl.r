@@ -975,7 +975,7 @@ if(mc.cores<=1){
           as.double(penIC),
           as.double(sigma2[mask]),
           as.double(vert),
-          as.double(t(siq[,mask])),
+          as.double(siq[,mask]),
           sigma2  = double(nvoxm),# error variance 
           orient  = double(2*maxcomp*nvoxm), # phi/theta for all mixture tensors
           order   = integer(nvoxm),   # selected order of mixture

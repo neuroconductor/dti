@@ -89,7 +89,7 @@ z <- .C("mixture2",
           as.double(penIC),
           as.double(x[ngrad0+1,]),
           as.double(vert),
-          as.double(t(x[1:ngrad0,])),
+          as.double(x[1:ngrad0,]),
           sigma2  = double(nvox),# error variance 
           orient  = double(2*maxcomp*nvox), # phi/theta for all mixture tensors
           order   = integer(nvox),   # selected order of mixture
