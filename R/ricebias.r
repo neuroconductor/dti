@@ -33,7 +33,7 @@ x2 <- rnorm(x,0,s)
 sqrt(x1*x1+x2*x2)
 }
 
-ricebiascorr <- function(x,s=1,ncoils=1){
+ricebiascorr0 <- function(x,s=1,ncoils=1){
 xt <- x/s
 if(ncoils==1){
 # define functions needed
@@ -70,6 +70,15 @@ z
 xt[xt<100] <- etasolve(ncoils,xt[xt<100])
 }
 xt*s
+}
+
+ricebiascorr <- function(x,s=1,ncoils=1){
+varstats <- sofmchi(ncoils,50,.002)
+xt <- x/s
+xt <- pmax(varstats$minlev,xt)
+ind <- 
+findInterval(xt, varstats$mu, rightmost.closed = FALSE, all.inside = FALSE)
+varstats$ncp[ind]*s
 }
 
 betaL <- function(L){

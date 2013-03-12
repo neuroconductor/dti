@@ -294,9 +294,9 @@ replind <- function(gradient){
   as.integer(replind)
 }
 
-sofmchi <- function(L){
+sofmchi <- function(L,to=50,delta=.01){
 minlev <- sqrt(2)*gamma(L+.5)/gamma(L)
-x <- seq(0,50,.01)
+x <- seq(0,to,delta)
 mu <- sqrt(pi/2)*gamma(L+1/2)/gamma(1.5)/gamma(L)*hyperg_1F1(-0.5,L, -x^2/2, give=FALSE, strict=TRUE)
 s2 <- 2*L+x^2-mu^2
 s <- sqrt(s2)
@@ -304,6 +304,16 @@ s <- sqrt(s2)
 ## mean (mu), standard deviation (sd) and variance (s2) to be used
 ## in variance modeling
 list(ncp=x,mu=mu,s=s,s2=s2,minlev=minlev,L=L)
+}
+
+fncchir <- function(mu,varstats){
+#
+#  Bias-correction
+#
+mu <- pmax(varstats$minlev,mu)
+ind <- 
+findInterval(mu, varstats$mu, rightmost.closed = FALSE, all.inside = FALSE)
+varstats$s[ind]
 }
 
 fncchis <- function(mu,varstats){
