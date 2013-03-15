@@ -475,7 +475,7 @@ paroforient <- function(dir){
   c(theta, phi)
 }
 
-getsiind3 <- function(si,mask,sigma2,grad,vico,th,indth,ev,fa,andir,maxcomp=3,
+getsiind3 <- function(si,mask,sigma2,grad,bv,vico,th,indth,ev,fa,andir,maxcomp=3,
 maxc=.866,nguess=100,mc.cores = setCores(,reprt=FALSE)){
 # assumes dim(grad) == c(ngrad,3)
 # assumes dim(si) == c(ngrad,n1,n2,n3)
@@ -623,7 +623,7 @@ if(any(failed[mask])){
 list(siind=array(siind,c(maxcomp+2,dim(si)[-1])),
      krit=array(krit,dim(si)[-1]))
 }
-getsiind3iso <- function(si,mask,sigma2,grad,vico,th,indth,ev,fa,andir,maxcomp=3,maxc=.866,nguess=100){
+getsiind3iso <- function(si,mask,sigma2,grad,bv,vico,th,indth,ev,fa,andir,maxcomp=3,maxc=.866,nguess=100){
 # assumes dim(grad) == c(ngrad,3)
 # assumes dim(si) == c(ngrad,n1,n2,n3)
 # SO removed
@@ -766,9 +766,8 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3, method="mixtensor
      code <- "R"
   }
   set.seed(1)
-  bvalue <- object@bvalue
-  bvalue <- bvalue[bvalue>.1*median(bvalue)]
-  if(sd(bvalue)>.1*median(bvalue)){
+  bvalues <- object@bvalue[-object@s0ind]
+  if(sd(bvalues)>.1*median(bvalues)){
      warning("b-values indicate measurements on multiple shells,
          tensor mixtures not yet implemented\n returning original object")
      return(object)
@@ -801,7 +800,7 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3, method="mixtensor
   rm(tensorobj)
   gc()
   fa <- array(z$fa,ddim)
-  ev <- array(z$ev,c(3,ddim))*median(bvalue)
+  ev <- array(z$ev,c(3,ddim))*median(bvalues)
 #
 #  rescale by bvalue to go to implemented scale
 #
@@ -811,7 +810,7 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3, method="mixtensor
 #  nth <- 11
   if(is.null(thinit)){
   nth <- 5
-  th <- ev[1,,,] - (ev[2,,,]+ev[3,,,])/2
+  th <- (ev[1,,,] - (ev[2,,,]+ev[3,,,])/2)
   falevel <- min(quantile(fa[fa>0],.75),.4)
   cat("falevel",falevel,"\n")
   qth <- unique(quantile(th[fa>=falevel&fa<.95],seq(.8,.99,length=nth)))
@@ -931,7 +930,7 @@ cat("using th:::",th,"\n")
 #
 #  compute initial estimates (EV from grid and orientations from icosa3$vertices)
 #
-  siind <- if(method=="mixtensor")  getsiind3(siq,mask,sigma2,grad,t(vert),th,indth,ev,fa,andir,maxcomp,maxc=maxc,nguess=nguess,mc.cores=mc.cores) else getsiind3iso(siq,mask,sigma2,grad,t(vert),th,indth,ev,fa,andir,maxcomp,maxc=maxc,nguess=nguess)
+  siind <- if(method=="mixtensor")  getsiind3(siq,mask,sigma2,grad,bvalues,t(vert),th,indth,ev,fa,andir,maxcomp,maxc=maxc,nguess=nguess,mc.cores=mc.cores) else getsiind3iso(siq,mask,sigma2,grad,bvalues,t(vert),th,indth,ev,fa,andir,maxcomp,maxc=maxc,nguess=nguess)
   krit <- siind$krit # sqrt(sum of squared residuals) for initial estimates
   siind <- siind$siind # components 1: model order 2: 
                        # grid index for EV 2+(1:m) index of orientations
@@ -953,10 +952,6 @@ cat("using th:::",th,"\n")
 #
 #     C-Code
 #
-  if(method=="mixtensor") meth = 1 else meth = 2
-  optmeth <- switch(optmethod, "BFGS" = 1,
-                    "CG" = 2, "Nelder-Mead" = 3, "L-BFGS-B" = 4)
-
 if(mc.cores<=1){
   cat("Starting parameter estimation and model selection (C-code)",format(Sys.time()),"\n")
   dim(siq) <- c(ngrad0,nvox)
@@ -1006,7 +1001,6 @@ if(mc.cores<=1){
   x[ngrad0+2:(3+maxcomp),] <- siind[,mask] 
   res <- matrix(0,4+3*maxcomp,nvox)
   res[,mask] <- plmatrix(x,pmixtens,
-                      meth=meth,optmeth=optmeth,
                       ngrad0=ngrad0,maxcomp=maxcomp,maxit=maxit,
                       pen=pen,grad=grad,reltol=reltol,th=th,
                       penIC=penIC,vert=vert,
