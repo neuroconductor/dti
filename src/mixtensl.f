@@ -388,8 +388,8 @@ C
      1       egrad(ngrad,nv),z(ngrad,ns),mval(nvox),
      2       vsi(nvox),bv(ngrad),alpha,lambda,z0(ngrad)
       logical mask(nvox)
-      integer i,k,ibest,mode,ind(10),l,ii,iw,wind(5),nwi(5)
-      real*8 w(1000),krit,work1(1000),work2(10),erg,msi,m2si,
+      integer i,k,ibest,mode,ind(10),l,ii,iw,wind(6),nwi(6)
+      real*8 w(1000),krit,work1(1000),work2(12),erg,msi,m2si,
      1       z1,dng,albv,lbv
       dng=ngrad
       iw=m
@@ -425,10 +425,12 @@ C  now search for minima of sms (or weighted sms
             krit=mval(i)
             DO k=1,ntry
                call dcopy(ngrad,si(1,i),1,sms,1)
-               call dcopy(ngrad,z0(k),1,z(1,1),1)
+               call dcopy(ngrad,z0,1,z(1,1),1)
                DO l=1,m
                   call dcopy(ngrad,egrad(1,isample(l,k)),1,z(1,l+1),1)
                END DO
+            if(i.eq.16) THEN
+            END IF
             call nnls(z,ngrad,ngrad,m+1,sms,w,erg,work2,work1,ind,mode)
                IF(mode.gt.1) THEN
                   call intpr("mode",4,mode,1)
@@ -438,12 +440,12 @@ C  now search for minima of sms (or weighted sms
                      krit=erg
                      ibest=k
                      iw=0
-                     DO ii=1,m
+                     DO ii=2,m+1
                         if(w(ii).gt.1.d-12) THEN
                            iw=iw+1
-                           wind(iw)=ii
+                           wind(iw)=ii-1
                         ELSE
-                           nwi(ii-iw)=ii
+                           nwi(ii-iw-1)=ii-1
 C   nonactive directions
                         END IF 
                      END DO

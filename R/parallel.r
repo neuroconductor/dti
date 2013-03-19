@@ -99,8 +99,8 @@ z <- .C("mixture",
 rbind(z$order,z$sigma2,matrix(z$lev,2,nvox),matrix(z$mix,maxcomp,nvox),matrix(z$orient,2*maxcomp,nvox))
 }
 pmixtns0 <- function(x,ngrad0,maxcomp,maxit,grad,bv,lambda,alpha,factr,penIC,vert){
-nvox <- length(x)/(ngrad0+3+maxcomp)
-dim(x) <- c(ngrad0+3+maxcomp,nvox)
+nvox <- length(x)/(ngrad0+1+maxcomp)
+dim(x) <- c(ngrad0+1+maxcomp,nvox)
 z <- .C("mixtrl0", 
           as.integer(nvox),#n1
           as.integer(x[(ngrad0+2):(ngrad0+1+maxcomp),]),#siind 
@@ -126,8 +126,8 @@ rbind(z$order,z$sigma2,matrix(lev,2,nvox),matrix(z$mix,maxcomp,nvox),matrix(z$or
 }
 
 pmixtns1 <- function(x,ngrad0,maxcomp,maxit,grad,bv,lambda,alpha,factr,penIC,vert){
-nvox <- length(x)/(ngrad0+3+maxcomp)
-dim(x) <- c(ngrad0+3+maxcomp,nvox)
+nvox <- length(x)/(ngrad0+1+maxcomp)
+dim(x) <- c(ngrad0+1+maxcomp,nvox)
 z <- .C("mixtrl1", 
           as.integer(nvox),#n1
           as.integer(x[(ngrad0+2):(ngrad0+1+maxcomp),]),#siind 
@@ -154,8 +154,8 @@ rbind(z$order,z$sigma2,matrix(lev,2,nvox),matrix(z$mix,maxcomp,nvox),matrix(z$or
 }
 
 pmixtns2 <- function(x,ngrad0,maxcomp,maxit,grad,bv,lambda,alpha,factr,penIC,vert){
-nvox <- length(x)/(ngrad0+3+maxcomp)
-dim(x) <- c(ngrad0+3+maxcomp,nvox)
+nvox <- length(x)/(ngrad0+1+maxcomp)
+dim(x) <- c(ngrad0+1+maxcomp,nvox)
 z <- .C("mixtrl2", 
           as.integer(nvox),#n1
           as.integer(x[(ngrad0+2):(ngrad0+1+maxcomp),]),#siind 

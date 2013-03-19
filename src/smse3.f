@@ -414,14 +414,13 @@ c   model=2  Gauss-based KL-distance, y ~ Chi, th on same scale, smooth y^2
      2       lgfi,dgfi,fici,df,minlev
       integer iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr
       real*8 z,thi,nii,thj,ldfi,ldfj,yj
-#ifdef _OPENMP 
-      integer omp_get_thread_num 
-      external omp_get_thread_num
-#endif
+!$      integer omp_get_thread_num 
+!$      external omp_get_thread_num
       real*8 kldisnc1
       external kldisnc1
       df=2.d0*ncoils
       nii=1.d0
+      thrednr = 1
 C just to prevent a compiler warning
 C  precompute values of lgamma(corrected df/2) in each voxel
 C$OMP PARALLEL DEFAULT(NONE)
@@ -451,11 +450,7 @@ C$OMP END DO
 C$OMP BARRIER
 C$OMP DO SCHEDULE(GUIDED)
       DO iind=1,n1*n2*n3
-         thrednr = 1
-#ifdef _OPENMP
-         thrednr = omp_get_thread_num()+1
-#endif
-C         call intpr("thrednr", 7, thrednr, 1)
+!$         thrednr = omp_get_thread_num()+1
 C returns value in 0:(ncores-1)
          i1=mod(iind,n1)
          if(i1.eq.0) i1=n1
@@ -584,14 +579,13 @@ c   model=2  Gauss-based KL-distance, y ~ Chi, th on same scale, smooth y^2
      1     th(ns,n1,n2,n3,ngrad),sthi(ns,n1,n2,n3,ngrad)
       real*8 lambda,w(n),sw(ngrad,ncores),swy(ngrad,ncores)
       integer iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,k
-      real*8 sz,z,nii,thj,si(ns,ncores),thi(ns,ncores)
-#ifdef _OPENMP 
-      integer omp_get_thread_num
-      external omp_get_thread_num
-#endif
+      real*8 sz,z,nii,thj,si(ns,ncores),thi(ns,ncores) 
+!$      integer omp_get_thread_num
+!$      external omp_get_thread_num
       real*8 kldisnc1
       external kldisnc1
       nii=1.d0
+      thrednr = 1
 C just to prevent a compiler warning
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(n1,n2,n3,ngrad,ncores,mask,y,thn,ni,th,sthi,w,sw,swy,
@@ -600,10 +594,7 @@ C$OMP& FIRSTPRIVATE(a,b,nii)
 C$OMP& PRIVATE(iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,z,thj,sz)
 C$OMP DO SCHEDULE(GUIDED)
       DO iind=1,n1*n2*n3
-         thrednr = 1
-#ifdef _OPENMP 
-         thrednr = omp_get_thread_num()+1
-#endif
+!$       thrednr = omp_get_thread_num()+1
 C returns value in 0:(ncores-1)
          i1=mod(iind,n1)
          if(i1.eq.0) i1=n1
@@ -750,10 +741,10 @@ C
      4     sw(ngrad,ncores),swy(ngrad,ncores),nii(ns,ncores)
       integer iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,k
       real*8 sz,z,sw0,swy0
-#ifdef _OPENMP 
-      integer omp_get_thread_num
-      external omp_get_thread_num
-#endif
+!$      integer omp_get_thread_num
+!$      external omp_get_thread_num
+      thrednr = 1
+
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(ns,n1,n2,n3,ngrad,n,n0,ind,ind0,ncoils,ncores,y,y0,
 C$OMP&       th,ni,th0,ni0,w,w0,thn,th0n,nin,ni0n,thi,sw,swy,nii,
@@ -763,11 +754,7 @@ C$OMP&       sw0,swy0)
 C$OMP DO SCHEDULE(GUIDED)
 C  First si - images
       DO iind=1,n1*n2*n3
-C         call intpr("iind",4,iind,1)
-         thrednr = 1
-#ifdef _OPENMP 
-         thrednr = omp_get_thread_num()+1
-#endif
+!$         thrednr = omp_get_thread_num()+1
 C returns value in 0:(ncores-1)
          i1=mod(iind,n1)
          if(i1.eq.0) i1=n1
@@ -973,10 +960,9 @@ C
      1      sw(ngrad,ncores),swy(ngrad,ncores),nii(nsp1,ncores)
       integer iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,k
       real*8 sz,z,sw0,swy0
-#ifdef _OPENMP 
-      integer omp_get_thread_num
-      external omp_get_thread_num
-#endif
+!$      integer omp_get_thread_num
+!$      external omp_get_thread_num
+      thrednr = 1
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(ns,nsp1,n1,n2,n3,ngrad,n,n0,ind,ind0,ncores,y,y0,
 C$OMP&       th,ni,th0,ni0,w,w0,thn,th0n,nin,ni0n,thi,sw,swy,nii,
@@ -986,11 +972,7 @@ C$OMP&       sw0,swy0,s0i)
 C$OMP DO SCHEDULE(GUIDED)
 C  First si - images
       DO iind=1,n1*n2*n3
-C         call intpr("iind",4,iind,1)
-         thrednr = 1
-#ifdef _OPENMP 
-         thrednr = omp_get_thread_num()+1
-#endif
+!$         thrednr = omp_get_thread_num()+1
 C returns value in 0:(ncores-1)
          i1=mod(iind,n1)
          if(i1.eq.0) i1=n1
@@ -1388,17 +1370,12 @@ C$OMP& PRIVATE(i1,i2,i3,j1,j2,j3,i,z,lgfi,dgfi,fici,kval,w,w0,
 C$OMP& sw,sw2,swy,swy2,yj,z1,z2,z3)
 C$OMP DO SCHEDULE(GUIDED)
       DO i=1,n
-C      DO i1=1,n1
-C         DO i2=1,n2
-C            DO i3=1,n3
          i1=mod(i,n1)
          if(i1.eq.0) i1=n1
          i2=mod((i-i1)/n1+1,n2)
          if(i2.eq.0) i2=n2
          i3=(i-i1-(i2-1)*n1)/n1/n2+1         
-               call lgstats(th(i1,i2,i3),df,1,ldf(i1,i2,i3))
-C            END DO
-C         END DO
+         call lgstats(th(i1,i2,i3),df,1,ldf(i1,i2,i3))
       END DO
 C$OMP END DO
 C$OMP BARRIER
@@ -1409,48 +1386,42 @@ C$OMP DO SCHEDULE(GUIDED)
          i2=mod((i-i1)/n1+1,n2)
          if(i2.eq.0) i2=n2
          i3=(i-i1-(i2-1)*n1)/n1/n2+1         
-C      DO i1=1,n1
-C         DO i2=1,n2
-C           DO i3=1,n3
-               if(.not.mask(i1,i2,i3)) CYCLE
-               sw=0.d0
-               swy=0.d0
-               sw2=0.d0
-               swy2=0.d0
-               kval = lambda/ni(i)
-               call ncstats0(th(i1,i2,i3),ldf(i1,i2,i3),df,
+         if(.not.mask(i1,i2,i3)) CYCLE
+         sw=0.d0
+         swy=0.d0
+         sw2=0.d0
+         swy2=0.d0
+         kval = lambda/ni(i)
+         call ncstats0(th(i1,i2,i3),ldf(i1,i2,i3),df,
      1                       1,lgfi,dgfi,fici)
-               DO j1=max(1,i1-cw1),min(i1+cw1,n1)
-                  z1=j1-i1
-                  z1=z1*z1
-                  DO j2=max(1,i2-cw2),min(i2+cw2,n2)
-                     z2=(j2-i2)*vext(1)
-                     z2=z2*z2
-                     DO j3=max(1,i3-cw3),min(i3+cw3,n3)
-                        if(.not.mask(j1,j2,j3)) CYCLE
-                        z3=(j3-i3)*vext(2)
-                        w0=z1+z2+z3*z3
-                        if(w0.ge.h2) CYCLE
-                        w0=1.d0-w0/h2 
-                        z=kldisnc1(lgfi,dgfi,fici,th(j1,j2,j3),
-     1                             ldf(j1,j2,j3),df,1)
-                        if(z.ge.kval) CYCLE
-                        w=w0*min(1.d0,2.d0-2.d0*z/kval)
-                        sw=sw+w
-                        sw2=sw2+w*w
-                        yj=y(j1,j2,j3)
-                        swy=swy+w*yj
-                        swy2=swy2+w*yj*yj
-                     END DO
-                  END DO
+         DO j1=max(1,i1-cw1),min(i1+cw1,n1)
+            z1=j1-i1
+            z1=z1*z1
+            DO j2=max(1,i2-cw2),min(i2+cw2,n2)
+               z2=(j2-i2)*vext(1)
+               z2=z2*z2
+               DO j3=max(1,i3-cw3),min(i3+cw3,n3)
+                  if(.not.mask(j1,j2,j3)) CYCLE
+                  z3=(j3-i3)*vext(2)
+                  w0=z1+z2+z3*z3
+                  if(w0.ge.h2) CYCLE
+                  w0=1.d0-w0/h2 
+                  z=kldisnc1(lgfi,dgfi,fici,th(j1,j2,j3),
+     1                       ldf(j1,j2,j3),df,1)
+                  if(z.ge.kval) CYCLE
+                  w=w0*min(1.d0,2.d0-2.d0*z/kval)
+                  sw=sw+w
+                  sw2=sw2+w*w
+                  yj=y(j1,j2,j3)
+                  swy=swy+w*yj
+                  swy2=swy2+w*yj*yj
                END DO
-               thn(i) = swy/sw
-               th2(i) = swy2/sw
-               ni(i) = sw
-               ni2(i) = sw2
-C               call rchkusr()
-C            END DO
-C         END DO
+            END DO
+         END DO
+         thn(i) = swy/sw
+         th2(i) = swy2/sw
+         ni(i) = sw
+         ni2(i) = sw2
       END DO
 C$OMP END DO NOWAIT
 C$OMP END PARALLEL
@@ -1473,9 +1444,6 @@ C         (2 int(h)+1)*(2 int(h/vext(1))+1)*(2 int(h/vext(2))+1)
       ih1 = h
       ih2 = h/vext(1)
       ih3 = h/vext(2)
-C      call intpr("ih1",3,ih1,1)
-C      call intpr("ih2",3,ih2,1)
-C      call intpr("ih3",3,ih3,1)
       i=1
       DO i1=-ih1,ih1
          z1=i1*i1
@@ -1608,11 +1576,10 @@ C
      1       sy(1),lambda,w(nw),sigma,wad(nw,nthreds)
       integer i1,i2,i3,j1,j2,j3,i,j,n,thrednr
       real*8 z,sw,sw2,swy,swy2,yj,thi,wj,kval,cw
-#ifdef _OPENMP 
-      integer omp_get_thread_num
-      external omp_get_thread_num
-#endif
+!$      integer omp_get_thread_num
+!$      external omp_get_thread_num
       n = n1*n2*n3
+      thrednr = 1
 C  precompute values of lgamma(corrected df/2) in each voxel
 C$OMP PARALLEL DEFAULT(SHARED)
 C$OMP& PRIVATE(i,j,i1,i2,i3,j1,j2,j3,z,sw,swy,sw2,swy2,thi,kval,
@@ -1625,10 +1592,7 @@ C$OMP DO SCHEDULE(GUIDED)
          if(i2.eq.0) i2=n2
          i3=(i-i1-(i2-1)*n1)/n1/n2+1         
          if(.not.mask(i1,i2,i3)) CYCLE
-         thrednr = 1
-#ifdef _OPENMP 
-         thrednr = omp_get_thread_num()+1
-#endif
+!$         thrednr = omp_get_thread_num()+1
          sw=0.d0
          swy=0.d0
          sw2=0.d0

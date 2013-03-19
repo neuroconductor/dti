@@ -790,6 +790,9 @@ setMethod("extract","dwiMixtensor",function(x, what="andir", xind=TRUE, yind=TRU
      maxorder <- dim(x@mix)[1]
      mix <- x@mix
      dim(mix) <- c(maxorder,n1*n2*n3)     
+     smix <- rep(1,maxorder)%*%mix
+     mix <- sweep(mix,2,smix,"/")
+# the last two lines are needed for models with isotropic compartment
      z$eorder <- array((2*(1:maxorder)-1)%*%mix,x@ddim)
   }
   if("bic" %in% what) {

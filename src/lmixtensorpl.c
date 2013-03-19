@@ -311,7 +311,7 @@ mfunrskml1_ret getparam1(int param_length, double* param, double fmin){
       orient[2*j] = orient[2*j] + M_PI;
    }
    while (orient[2*j] > M_PI) {
-      orient[2*j] = orient[1+2*j] - M_PI;
+      orient[2*j] = orient[2*j] - M_PI;
    }
    while (orient[1+2*j] < 0) {
       orient[1+2*j] = orient[1+2*j] + 2 * M_PI;
