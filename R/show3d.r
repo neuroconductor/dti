@@ -144,9 +144,7 @@ setMethod("show3d","dtiTensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL
       "\n yind=",min(yind),":",max(yind),
       "\n zind=",min(zind),":",max(zind),"\n")
   mask <- if(is.null(mask)) obj@mask else obj@mask&mask
-  mask[-xind,,] <- FALSE
-  mask[,-yind,] <- FALSE
-  mask[,,-zind] <- FALSE
+  mask <- as.vector(mask[xind,yind,zind])
   obj <- obj[xind,yind,zind]
   vext <- obj@voxelext
   center <- center*vext
@@ -243,7 +241,6 @@ setMethod("show3d","dtiTensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL
   if(obj@hmax>1) paste("smoothed with hmax=",obj@hmax),if(normalize) "normalized","\n")
   invisible(rgl.cur())
 })
-
 setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,minfa=.3,minorder=1,mineo=1,fibers=FALSE,maxangle=30,level=0,quant=.8,scale=.4,bgcolor="black",add=FALSE,subdivide=3,maxobjects=729,what="ODF",odfscale=1,minalpha=1,lwd=3,box=FALSE,title=FALSE,...){
   if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
   if(!exists("icosa0")) data("polyeders")
