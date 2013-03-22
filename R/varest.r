@@ -15,9 +15,9 @@ awssigmc <- function(y,                 # data
                      hadj = 1,          # adjust parameter for density() call for mode estimation
                      q = .25,  # for IQR
                      qni = .8,
-                     method="VAR"  # for variance, alternative "MAD" for mean absolute deviation
+                     method=c("VAR","MAD")  # for variance, alternative "MAD" for mean absolute deviation
                      ) {
-
+  method <- match.arg(method)
   ## some functions for pilot estimates
   IQQ <- function (x, q = .25, na.rm = FALSE, type = 7) 
     diff(quantile(as.numeric(x), c(q, 1-q), na.rm = na.rm, names = FALSE, type = type))

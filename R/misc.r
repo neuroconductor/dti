@@ -596,7 +596,7 @@ create.designmatrix.dti <- function(gradient) {
   btb
 }
 
-identify.fa <- function(view,slice,xind,yind,zind){
+identifyFA <- function(view,slice,xind,yind,zind){
 n1 <- switch(view,"sagittal"=length(yind),length(xind))
 n2 <- switch(view,"axial"=length(yind),length(zind))
 x <- as.vector(outer(1:n1,rep(1,n2),"*"))

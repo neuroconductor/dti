@@ -360,7 +360,7 @@ C
 C __________________________________________________________________
 C
       subroutine getsii(si,vsi,ngrad,nvox,m,dgrad,bv,nv,alpha,
-     1        lambda,egrad,isample,ntry,sms,z0,z,siind,mval,mask,ns)
+     1        lambda,egrad,isample,ntry,sms,z0,z,siind,mval,ns)
 C
 C  compute diagnostics for initial estimates in siind
 C  siind(1,i1,i2,i3) will contain the model order 
@@ -387,7 +387,6 @@ C
       real*8 si(ngrad,nvox),sms(ngrad),dgrad(ngrad,nv),
      1       egrad(ngrad,nv),z(ngrad,ns),mval(nvox),
      2       vsi(nvox),bv(ngrad),alpha,lambda,z0(ngrad)
-      logical mask(nvox)
       integer i,k,ibest,mode,ind(10),l,ii,iw,wind(6),nwi(6)
       real*8 w(1000),krit,work1(1000),work2(12),erg,msi,m2si,
      1       z1,dng,albv,lbv
@@ -403,10 +402,6 @@ C
          m2si=0.d0
          z1=vsi(i)
          mval(i)=sqrt(dng*z1)
-         if(.not.mask(i)) THEN
-            siind(1,i)=-1
-            mval(i)=0
-         END IF
       END DO
       call rchkusr()
       DO k=1,ngrad
@@ -419,55 +414,52 @@ C
          END DO
       END DO
       DO i=1,nvox
-         if(mask(i)) THEN
 C  now search for minima of sms (or weighted sms
-            ibest=0
-            krit=mval(i)
-            DO k=1,ntry
-               call dcopy(ngrad,si(1,i),1,sms,1)
-               call dcopy(ngrad,z0,1,z(1,1),1)
-               DO l=1,m
-                  call dcopy(ngrad,egrad(1,isample(l,k)),1,z(1,l+1),1)
-               END DO
-            if(i.eq.16) THEN
-            END IF
-            call nnls(z,ngrad,ngrad,m+1,sms,w,erg,work2,work1,ind,mode)
-               IF(mode.gt.1) THEN
-                  call intpr("mode",4,mode,1)
-                  call intpr("isample",7,isample(1,k),m)
-               ELSE 
-                  IF(erg.lt.krit) THEN
-                     krit=erg
-                     ibest=k
-                     iw=0
-                     DO ii=2,m+1
-                        if(w(ii).gt.1.d-12) THEN
-                           iw=iw+1
-                           wind(iw)=ii-1
-                        ELSE
-                           nwi(ii-iw-1)=ii-1
-C   nonactive directions
-                        END IF 
-                     END DO
-                  END IF  
-               END IF
+         ibest=0
+         krit=mval(i)
+         DO k=1,ntry
+            call dcopy(ngrad,si(1,i),1,sms,1)
+            call dcopy(ngrad,z0,1,z(1,1),1)
+            DO l=1,m
+               call dcopy(ngrad,egrad(1,isample(l,k)),1,z(1,l+1),1)
             END DO
-            if(ibest.gt.0) THEN
-               siind(1,i)=iw
-               IF (iw.ge.1) THEN
-                  DO l=1,iw
-                     siind(l+1,i)=isample(wind(l),ibest)
-                  END DO
-               END IF
-               IF (iw.lt.m) THEN
-                  DO l=1,m-iw
-                     siind(m-l+2,i)=isample(nwi(l),ibest)
-                  END DO
-               END IF
-               mval(i)=krit
-            END IF
+         if(i.eq.16) THEN
          END IF
-         call rchkusr()
+         call nnls(z,ngrad,ngrad,m+1,sms,w,erg,work2,work1,ind,mode)
+            IF(mode.gt.1) THEN
+               call intpr("mode",4,mode,1)
+               call intpr("isample",7,isample(1,k),m)
+            ELSE 
+               IF(erg.lt.krit) THEN
+                  krit=erg
+                  ibest=k
+                  iw=0
+                  DO ii=2,m+1
+                     if(w(ii).gt.1.d-12) THEN
+                        iw=iw+1
+                        wind(iw)=ii-1
+                     ELSE
+                        nwi(ii-iw-1)=ii-1
+C   nonactive directions
+                     END IF 
+                  END DO
+               END IF  
+            END IF
+         END DO
+         if(ibest.gt.0) THEN
+            siind(1,i)=iw
+            IF (iw.ge.1) THEN
+               DO l=1,iw
+                  siind(l+1,i)=isample(wind(l),ibest)
+               END DO
+            END IF
+            IF (iw.lt.m) THEN
+               DO l=1,m-iw
+                  siind(m-l+2,i)=isample(nwi(l),ibest)
+               END DO
+            END IF
+            mval(i)=krit
+         END IF
       END DO
       RETURN
       END

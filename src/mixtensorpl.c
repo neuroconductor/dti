@@ -472,7 +472,7 @@ void mixture( int* n1, int* siind, int* ngrad0, int* maxcomp, int* maxit,
          for(l = 0; l < param_length; l++){
             param_work[l] = param[l];
             param_last[l] = param[l];
-             Rprintf(" %f ", param[l]);
+//             Rprintf(" %f ", param[l]);
          }
          
 //          Rprintf("\n");

@@ -3,13 +3,13 @@
 #   this is also based on an a statistical penalty defined using log-likelihood difference
 #
 dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slice=NULL,quant=.8,
-                         minfa=NULL,hsig=2.5,lseq=NULL,varmethod="residuals",rician=TRUE,niter=5,varmodel="local",result="Tensor"){
+                         minfa=NULL,hsig=2.5,lseq=NULL,rician=TRUE,niter=5,result="Tensor"){
 #
 #     lambda and lseq adjusted for alpha=0.2
 #
   if(!is.null(object$ni)){
      warning("DWI object has been smoothed already, smoothing omitted")
-     return(if(result=="Tensor") dtiTensor(object,method="nonlinear",varmethod=varmethod,varmodel=varmodel) else object)
+     return(if(result=="Tensor") dtiTensor(object,method="nonlinear") else object)
   }
   eps <- 1e-6
   maxnw <- 10000
@@ -26,7 +26,7 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
     sdcoef <- sdpar(object,interactive=FALSE)@sdcoef
     object@sdcoef <- sdcoef
   }
-  dtobject <- dtiTensor(object,method="nonlinear",varmethod=varmethod,varmodel=varmodel)
+  dtobject <- dtiTensor(object,method="nonlinear")
   scale <- dtobject@scale
   mask <- dtobject@mask
   th0 <- dtobject@th0
@@ -279,6 +279,8 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
      show.image(make.image(65535*ni/max(ni)),xaxt="n",yaxt="n")
      title(paste("sum of weights  mean=",signif(mean(z$bi[mask]),3)))
      img<-z$D[6,,,slice]
+     rg<-quantile(img,c(.01,.99))
+     img[img>rg[2]]<-rg[2]
      show.image(make.image(65535*img/max(img)),xaxt="n",yaxt="n")
      title(paste("Dzz: mean",signif(mean(z$D[6,,,][mask]),3),"max",signif(max(z$D[6,,,][mask]),3)))
      }

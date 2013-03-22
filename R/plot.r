@@ -212,7 +212,7 @@ setMethod("plot", "dwiMixtensor", function(x, y, slice=1, view="axial", what="fa
          zind<-(1:x@ddim[3])
          img <- extract.image(img)
          image(1:dim(img)[1],1:dim(img)[2],img,col=grey((0:255)/255))
-         identify.fa(view,slice,xind,yind,zind)
+         identifyFA(view,slice,xind,yind,zind)
       } else {
          par(oldpar)
          invisible(img)
@@ -294,7 +294,7 @@ function(x, y, slice=1, view= "axial", method=1, quant=0, minfa=NULL, show=TRUE,
       andirection <- make.image(andirection,gammatype="ITU")
       if(show) show.image(andirection,...)
       if(identify){
-         identify.fa(view,slice,xind,yind,zind)
+         identifyFA(view,slice,xind,yind,zind)
       } else {
         par(oldpar)
         invisible(andirection)
@@ -303,7 +303,7 @@ function(x, y, slice=1, view= "axial", method=1, quant=0, minfa=NULL, show=TRUE,
       dim(anindex) <- dim(andirection)[2:3]
       image(anindex,...)
       if(identify){
-         identify.fa(view,slice,xind,yind,zind)
+         identifyFA(view,slice,xind,yind,zind)
       } else {
         par(oldpar)
         invisible(NULL)
@@ -315,7 +315,7 @@ function(x, y, slice=1, view= "axial", method=1, quant=0, minfa=NULL, show=TRUE,
       bary <- make.image(aperm(andirection,c(2,3,1)))
       if(show) show.image(bary,...)
       if(identify){
-         identify.fa(view,slice,xind,yind,zind)
+         identifyFA(view,slice,xind,yind,zind)
       } else {
          par(oldpar)
          invisible(bary)
@@ -323,7 +323,7 @@ function(x, y, slice=1, view= "axial", method=1, quant=0, minfa=NULL, show=TRUE,
     } else if(show) {
       image(andirection[1,,],...)
       if(identify){
-         identify.fa(view,slice,xind,yind,zind)
+         identifyFA(view,slice,xind,yind,zind)
       } else {
          par(oldpar)
          invisible(NULL)
@@ -340,7 +340,7 @@ function(x, y, slice=1, view= "axial", method=1, quant=0, minfa=NULL, show=TRUE,
       img.hsi <- make.image(img.hsi.data,gammatype="ITU",xmode="HSI")
       if(show) show.image(img.hsi,...)
       if(identify){
-         identify.fa(view,slice,xind,yind,zind)
+         identifyFA(view,slice,xind,yind,zind)
       } else {
          par(oldpar)
          invisible(img.hsi)
@@ -348,7 +348,7 @@ function(x, y, slice=1, view= "axial", method=1, quant=0, minfa=NULL, show=TRUE,
     } else if(show) {
       image(andirection[1,,],...)
       if(identify){
-         identify.fa(view,slice,xind,yind,zind)
+         identifyFA(view,slice,xind,yind,zind)
       } else {
          par(oldpar)
          invisible(NULL)
@@ -367,7 +367,7 @@ function(x, y, slice=1, view= "axial", method=1, quant=0, minfa=NULL, show=TRUE,
       img <- make.image(img.data, gammatype="ITU")
       if(show) show.image(img, ...)
       if(identify){
-         identify.fa(view,slice,xind,yind,zind)
+         identifyFA(view,slice,xind,yind,zind)
       } else {
          par(oldpar)
          invisible(img)
@@ -375,7 +375,7 @@ function(x, y, slice=1, view= "axial", method=1, quant=0, minfa=NULL, show=TRUE,
     } else if (show) {
       image(anindex, col=colqFA)
       if(identify){
-         identify.fa(view,slice,xind,yind,zind)
+         identifyFA(view,slice,xind,yind,zind)
       } else {
          par(oldpar)
          invisible(NULL)

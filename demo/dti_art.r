@@ -93,7 +93,8 @@ a <- readline("Provide bandwidth for adaptive smoothing (default 4)")
 hmax <- if(!is.null(a)) as.numeric(a) else 4
 if( is.na(hmax) || hmax<1) hmax <- 4
 
-dthat4 <- dti.smooth(dtobj,hmax=hmax,graph=TRUE,lambda=lambda,minfa=0,slice=15,rho=rho,lseq=NULL,method=method)
+dthat4 <- dti.smooth(dtobj,hmax=hmax,graph=TRUE,lambda=lambda,minfa=0,slice=15,rho=rho,
+                    lseq=NULL,method=method)
 
 # Compute indices of estimated smoothed tensors 
 
@@ -133,9 +134,9 @@ if(toupper(z)!="N"){
 dthat1@scale <- dt0@scale
 dthat4@scale <- dt0@scale 
 #  use same scale in all plots
-w1<-show3d(dt0,level=.3,nz=5,center=c(20,20,13),maxobjects=2000,FOV=1,windowRect = c(1, 1, size, size),what="tensor")
-w2<-show3d(dthat1,level=.3,nz=5,center=c(20,20,13),maxobjects=2000,FOV=1,windowRect = c(size+11, 1, 2*size+10, size),what="tensor")
-w3<-show3d(dthat4,level=.3,nz=5,center=c(20,20,13),maxobjects=2000,FOV=1,windowRect = c(2*size+21, 1, 3*size+20, size),what="tensor")
+w1<-show3d(dt0,level=.3,xind=11:30,yind=11:30,zind=11:15,maxobjects=2000,FOV=1,windowRect = c(1, 1, size, size),what="tensor")
+w2<-show3d(dthat1,level=.3,xind=11:30,yind=11:30,zind=11:15,maxobjects=2000,FOV=1,windowRect = c(size+11, 1, 2*size+10, size),what="tensor")
+w3<-show3d(dthat4,level=.3,xind=11:30,yind=11:30,zind=11:15,maxobjects=2000,FOV=1,windowRect = c(2*size+21, 1, 3*size+20, size),what="tensor")
 #
 #  from package rgl::demo(mouseCallbacks)
 #
@@ -150,9 +151,9 @@ cat("Estimated smoothed tensor in device",w3,"\n")
 z <- readline("Visualize smoothed estimated dtiIndex (Y/N) :")
 
 if(toupper(z)!="N"){
-w4<-show3d(dt0aniso,minfa=.3,center=c(32,32,13),lwd=2,FOV=1,windowRect = c(1, size+21, size, 2*size+20))
-w5<-show3d(dthat1aniso,minfa=.3,center=c(32,32,13),lwd=2,FOV=1,windowRect = c(size+11, size+21, 2*size+10, 2*size+20))
-w6<-show3d(dthat4aniso,minfa=.3,center=c(32,32,13),lwd=2,FOV=1,windowRect = c(2*size+21, size+21, 3*size+20, 2*size+20))
+w4<-show3d(dt0aniso,minfa=.3,lwd=2,FOV=1,windowRect = c(1, size+21, size, 2*size+20))
+w5<-show3d(dthat1aniso,minfa=.3,lwd=2,FOV=1,windowRect = c(size+11, size+21, 2*size+10, 2*size+20))
+w6<-show3d(dthat4aniso,minfa=.3,lwd=2,FOV=1,windowRect = c(2*size+21, size+21, 3*size+20, 2*size+20))
 mouseTrackball(dev=c(w4,w5,w6))
 mouseZoom(2,dev=c(w4,w5,w6))
 mouseFOV(3,dev=c(w4,w5,w6))

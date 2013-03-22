@@ -238,3 +238,37 @@ z <- .Fortran("pgtsii31",
          dim(z$siind) <- c(maxcomp+2,nvox)
          rbind(z$krit,z$siind)
 }
+pgetsiind2 <- function(x,grad,bv,nvico,dgrad,dgradi,isample,alpha,lambda,
+                       maxcomp,maxc,nguess){
+#x contains  
+# si:      x[1:nsi,]
+# sigma2:  x[nsi+1,]
+nvox <- dim(x)[2]
+nsi <- dim(x)[1]-1
+siind <- .Fortran("getsii",
+         as.double(x[1:nsi,]),
+         as.double(x[nsi+1,]),
+         as.integer(nsi),
+         as.integer(nvox),
+         as.integer(maxcomp),
+         as.double(dgrad),
+         as.double(bv),
+         as.integer(nvico),
+         as.double(alpha),
+         as.double(lambda),
+         double(nsi*nvico),
+         as.integer(isample),
+         as.integer(nguess),
+         double(nsi),
+         double(nsi),#z0
+         double(nsi*(maxcomp+1)),
+         siind=integer((maxcomp+1)*nvox),
+         krit=double(nvox),
+         as.integer(maxcomp+1),
+         DUP=FALSE,
+         PACKAGE="dti")[c("siind","krit")]
+z <- matrix(0,maxcomp+2,nvox)
+z[-1,] <- siind$siind
+z[1,] <- siind$krit
+z
+}

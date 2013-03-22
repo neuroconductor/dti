@@ -285,10 +285,6 @@ setClass("dwiMixtensor",
             cat("invalid length of bw\n")
             return(invisible(FALSE))
           }
-          if (!(object@method %in% c("mixtensor","mixtensoriso0","mixtensoriso1","mixtensoriso2","Jian","Jian2"))) {
-            cat("method should specify either mixtensor, mixtensoriso0-2, Jian or Jian2\n")
-            return(invisible(FALSE))
-          }
          }
          )
 

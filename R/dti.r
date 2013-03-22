@@ -11,8 +11,6 @@ setGeneric("dtiTensor", function(object,  ...) standardGeneric("dtiTensor"))
 setMethod( "dtiTensor", "dtiData",
            function( object, 
                      method = c( "nonlinear", "linear"),
-                     varmethod = "replicates", 
-                     varmodel = "local",
                      mc.cores = setCores( , reprt = FALSE)) {
 
              ## check method! available are: 
@@ -304,7 +302,7 @@ dtiIndices <- function(object, ...) cat("No DTI indices calculation defined for 
 setGeneric("dtiIndices", function(object, ...) standardGeneric("dtiIndices"))
 
 setMethod("dtiIndices","dtiTensor",
-function(object, which, mc.cores=setCores(,reprt=FALSE)) {
+function(object, mc.cores=setCores(,reprt=FALSE)) {
   args <- sys.call(-1)
   args <- c(object@call,args)
   ddim <- object@ddim
