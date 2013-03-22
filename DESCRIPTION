@@ -7,7 +7,7 @@ Author: Karsten Tabelow <karsten.tabelow@wias-berlin.de>
         Joerg Polzehl <joerg.polzehl@wias-berlin.de>
 Maintainer: Karsten Tabelow <karsten.tabelow@wias-berlin.de>
 Depends: R (>= 2.14.0), methods, awsMethods (>= 1.0-1), adimpro, oro.nifti (>= 0.3.9), oro.dicom, rgl, gsl, parallel
-Suggests: quadprog
+LazyData: TRUE
 Description: Diffusion Weighted Imaging (DWI) is a Magnetic Resonance Imaging
              modality, that measures diffusion of water in tissues like the human brain.
              The package contains R-functions to process diffusion-weighted data. The functionality 
@@ -20,7 +20,7 @@ Description: Diffusion Weighted Imaging (DWI) is a Magnetic Resonance Imaging
              The package provides functionality to manipulate and visualize results in 2D and 3D.
 License: GPL (>= 2)
 Copyright: This package is 
-           Copyright (C) 2005-2012 Weierstrass Institute for 
+           Copyright (C) 2005-2013 Weierstrass Institute for 
                                    Applied Analysis and Stochastics.
 URL: http://www.wias-berlin.de/projects/matheon_a3
 
