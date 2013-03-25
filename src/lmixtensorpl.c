@@ -7,7 +7,6 @@
 #include <stdlib.h>
 
 #include <sys/time.h>
-#include <omp.h>
 #include <time.h>
 
 int dimx = 0, ngradc = 0;
