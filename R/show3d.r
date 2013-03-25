@@ -74,7 +74,7 @@ setMethod("show3d","dtiTensor", function(obj,xind=NULL,yind=NULL,zind=NULL,metho
 ## check what
   what <- tolower(what)
   what <- match.arg(what)
-  if(!exists("icosa0")) data("polyeders")
+  if(!exists("icosa0")) data("polyeders", envir = environment())
   if(subdivide<0||subdivide>4) subdivide <- 3
   cube <- selectCube(xind,yind,zind,obj@ddim,maxobjects)
   xind <- cube$xind
@@ -195,7 +195,7 @@ setMethod("show3d","dwiMixtensor", function(obj,xind=NULL,yind=NULL,zind=NULL,mi
 ## check what
   what <- tolower(what)
   what <- match.arg(what)
-  if(!exists("icosa0")) data("polyeders")
+  if(!exists("icosa0")) data("polyeders", envir = environment())
   if(subdivide<0||subdivide>4) subdivide <- 3
   cube <- selectCube(xind,yind,zind,obj@ddim,maxobjects)
   xind <- cube$xind
@@ -392,7 +392,7 @@ setMethod("show3d","dtiIndices",function(obj, index=c("fa","ga"), xind=NULL, yin
 
 setMethod("show3d","dwiQball", function(obj,xind=NULL, yind=NULL, zind=NULL, level=0, quant=.8, scale=.4, odfscale=1, bgcolor="black", add=FALSE, subdivide=3, maxobjects=729, minalpha=1, box=FALSE, title=FALSE,...){
   if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
-  if(!exists("icosa0")) data("polyeders")
+  if(!exists("icosa0")) data("polyeders", envir = environment())
   if(subdivide<0||subdivide>4) subdivide <- 3
   cube <- selectCube(xind,yind,zind,obj@ddim,maxobjects)
   xind <- cube$xind
@@ -516,7 +516,7 @@ setMethod( "show3d", "dkiTensor",
              
              what <- match.arg( what)
              
-             data( "polyeders")
+             data( "polyeders", envir = environment())
              
              if ( ( subdivide < 0) || ( subdivide > 4)) subdivide <- 2
              polyeder <- switch( subdivide + 1, 

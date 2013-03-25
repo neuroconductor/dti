@@ -200,7 +200,7 @@ cat("using th:::",th,"\n")
 #   determine initial estimates for orientations 
 #
   cat("Start search for initial directions at",format(Sys.time()),"\n")
-  data("polyeders")
+  data("polyeders", envir = environment())
   polyeder <- icosa3
   vert <- polyeder$vertices
 # remove redundant directions

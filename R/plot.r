@@ -355,7 +355,7 @@ function(x, y, slice=1, view= "axial", method=1, quant=0, minfa=NULL, show=TRUE,
       }
     }
   } else if (method==6) {
-    data("colqFA")
+    data("colqFA", envir = environment())
     if (adimpro) {
       colqFA <- col2rgb(colqFA)/255
       img.data <- array(0, dim=c(dim(anindex), 3))
