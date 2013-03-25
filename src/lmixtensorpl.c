@@ -34,6 +34,8 @@ extern void F77_NAME(drskml0)(double* param, int* npar, double* siq,
              double* grad, double* bv, int* ng, double* lambda, 
              double* alpha, double* result);
 
+extern void paroforient(double *dir, double *angles);
+             
 typedef struct
 {
   int ngrad;
