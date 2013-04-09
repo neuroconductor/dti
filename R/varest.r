@@ -296,14 +296,23 @@ awssigmc0 <- function(y,                 # data
 
 
 afsigmc <- function(y,                 # data
-                    mask = NULL,       # data mask, where to do estimation
+                    level = NULL,             # threshold for background separation
+                    mask = NULL,       # data mask, where to do estimation, needs to refer to background if level == NULL
                     ncoils = 1,        # number of coils for parallel MR image acquisition
                     vext = c( 1, 1),   # voxel extensions
-                    h = 2,             # initial bandwidth for first step in PS
+                    h = 2,             # bandwidth for local averaging
                     verbose = FALSE,
-                    hadj = 1           # adjust parameter for density() call for mode estimation
+                    hadj = 1,           # adjust parameter for density() call for mode estimation
+                    method = c("modevn","modem1chi","bkm2chi","bkm1chi")# methods according to table 2 in Aja-Ferbnandez (2009)
                     ) {
-
+#  for method=="modevn"  mask should refer to voxel within the head
+#  for all other methods to the background
+#
+  method <- tolower(method)
+  method <- match.arg(method)
+  if(method!="modevn"&is.null(level)&is.null(mask)) {
+    stop("need information on background using either level or mask")
+  }
   ## dimension and size of cubus
   ddim <- dim(y)
   n <- prod(ddim)
@@ -313,10 +322,19 @@ afsigmc <- function(y,                 # data
 
   ## check mask
   if (is.null(mask)) mask <- array(TRUE, ddim)
+  if(!is.null(level)){
+     if (method=="modevn"){
+        mask[y<level] <- FALSE
+     } else {
+        mask[y>level] <- FALSE
+     }
+  }
   if(length(mask) != n) stop("dimensions of data array and mask should coincide")
 
   ## let FORTRAN do the calculation
-  sigma <- .Fortran("afvarest",
+  if(method%in%c("modevn","modem1chi")){
+  if(method=="modevn"){
+     sigma <- .Fortran("afmodevn",
                     as.double(y),
                     as.integer(ddim[1]),
                     as.integer(ddim[2]),
@@ -327,18 +345,37 @@ afsigmc <- function(y,                 # data
                     sigma = double(n),
                     DUPL = FALSE,
                     PACKAGE = "dti")$sigma
-  sigma <- array( sqrt(sigma), ddim)
-
+     sigma <- array( sqrt(ncoils*sigma), ddim)
+  } else {
+     afactor <- sqrt(ncoils/2)*gamma(ncoils)/gamma(ncoils+.5)
+     sigma <- .Fortran("afmodem1",
+                    as.double(y),
+                    as.integer(ddim[1]),
+                    as.integer(ddim[2]),
+                    as.integer(ddim[3]),
+                    as.logical(mask),
+                    as.double(h),
+                    as.double(vext),
+                    sigma = double(n),
+                    DUPL = FALSE,
+                    PACKAGE = "dti")$sigma
+     sigma <- array( afactor*sigma, ddim)
+  }
   ##  use the maximal mode of estimated local variance parameters, exclude largest values for better precision
   dsigma <- density( sigma[sigma>0], n = 4092, adjust = hadj, to = min( max(sigma[sigma>0]), median(sigma[sigma>0])*5) )
   sigmag <- dsigma$x[dsigma$y == max(dsigma$y)][1]
-
   if(verbose){
     plot(dsigma, main = paste( "estimated sigmas h=", signif( h, 3)))
     cat("quantiles of sigma", signif( quantile(sigma[sigma>0]), 3), "mode", signif( sigmag, 3), "\n")
   }
-
-  ## this is the estimate
+} else {
+  if(method=="bkm2chi"){
+    sigmag <- sqrt(mean(y[mask]^2)/2)
+  } else {
+    sigmag <- mean(y[mask])*sqrt(ncoils/2)*gamma(ncoils)/gamma(ncoils+.5)
+  }
+}
+## this is the estimate
   sigmag
 }
 
