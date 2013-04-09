@@ -82,11 +82,11 @@ setMethod("dkiTensor", "dtiData",
                       
                       ## QP solution
                       dvec <- E * as.vector( t( Tabesh_A) %*% Tabesh_B)
-                      resQP <- solve.QP( Dmat, dvec, Amat)
-                      D[ , i, j, k] <- E * resQP$solution[ c( 1, 4, 5, 2, 6, 3)] # re-order DT estimate to comply with dtiTensor
+                      resQPsolution <- solve.QP( Dmat, dvec, Amat)$solution
+                      D[ , i, j, k] <- E * resQPsolution[ c( 1, 4, 5, 2, 6, 3)] # re-order DT estimate to comply with dtiTensor
 
                       ## Tabesh Eq. [9]
-                      W[ , i, j, k] <- E * resQP$solution[ 7:21] / ( sum( E * resQP$solution[ 1:3])/3)^2 # kurtosis tensor
+                      W[ , i, j, k] <- resQPsolution[ 7:21] / mean(resQPsolution[ 1:3])^2/E # kurtosis tensor
                     }
                   }
                 }
@@ -101,24 +101,29 @@ setMethod("dkiTensor", "dtiData",
               if ( length( bv) != 2) stop( "Need exactly two shells for CLLS-H method, choose other method!")
               ## now we have bv[ 1] < bv[ 2] 
               
-              indbv1 <- (1:length(object@bvalue))[ object@bvalue == bv[ 1]] # smaller b-value
-              indbv2 <- (1:length(object@bvalue))[ object@bvalue == bv[ 2]] # larger b-value
+              indbv1 <- (1:object@ngrad)[ object@bvalue == bv[ 1]] # smaller b-value
+              indbv2 <- (1:object@ngrad)[ object@bvalue == bv[ 2]] # larger b-value
               if ( (ngrad <- length( indbv1)) != length( indbv2)) stop( "Need same number of gradients vectors for both shells!")
 
               ## we must have two shell data and the gradient direction coincide for both shells
-              gradtest <- outer( object@gradient[ , indbv1], object@gradient[ , indbv2], "*")
-              gradtest1 <- apply( apply( gradtest, c( 2, 4), diag), c( 2, 3), sum)
-              gradtest2  <- apply( gradtest1, 2, max)
+              gradtest <- abs(range(object@gradient[ , indbv1], object@gradient[ , indbv2]))
+              gradtest1 <- abs(range(diag(t(object@gradient[ , indbv1])%*%object@gradient[ , indbv2])-1))
+              if (max(gradtest1)>1e-6) warning( "dkiTensor: Gradient directions on the two shells are not identical (this might be a numerical problem).\n Proceed, but strange things may happen!")
+#              gradtest <- outer( object@gradient[ , indbv1], object@gradient[ , indbv2], "*")
+#              gradtest1 <- apply( apply( gradtest, c( 2, 4), diag), c( 2, 3), sum)
+#              gradtest2  <- apply( gradtest1, 2, max)
               ## TODO: This test is actually never false (numerics!)
-              if ( any( gradtest2 != 1)) warning( "dkiTensor: Gradient directions on the two shells are not identical (this might be a numerical problem).\n Proceed, but strange things may happen!")
+#              if ( any( gradtest2 != 1)) warning( "dkiTensor: Gradient directions on the two shells are not identical (this might be a numerical problem).\n Proceed, but strange things may happen!")
               ## probably re-order indbv2 according to indbv1
-              gradtest2  <- apply(gradtest1, 1, order, decreasing = TRUE)
-              indbv2 <- indbv2[ gradtest2[ 1, ]] ## re-ordered indices
+#              gradtest2  <- apply(gradtest1, 1, order, decreasing = TRUE)
+#              indbv2 <- indbv2[ gradtest2[ 1, ]] ## re-ordered indices
               
               ## We need only a reduced design, as the gradient directions coincide
               xxx <- dkiDesign( object@gradient[ , indbv1])
               Tabesh_AD <- xxx[ , 1:6]
               Tabesh_AK <- xxx[ , 7:21]
+              PI_Tabesh_AD <- pseudoinverseSVD( Tabesh_AD)
+              PI_Tabesh_AK <- pseudoinverseSVD( Tabesh_AK)
               
               ## some hard-coded constraints, see Tabesh Eq. [6] ff. 
               Kmin <- 0
@@ -168,20 +173,20 @@ setMethod("dkiTensor", "dtiData",
                       Di[ ind4] <- D1[ ind4] / ( 1 - C * bv[1] / 6 / bv[ 2])
                       
                       ## estimate D tensor! Tabesh Eq. [21]
-                      D[ c( 1, 4, 6, 2, 3, 5), j, k, m] <- pseudoinverseSVD( Tabesh_AD) %*% Di
+                      D[ c( 1, 4, 6, 2, 3, 5), j, k, m] <- Dihat <- PI_Tabesh_AD %*% Di
                       
                       ## re-estimate Di: Tabesh Eq. [22]
-                      DiR <- Tabesh_AD %*% D[ c( 1, 4, 6, 2, 3, 5), j, k, m]
+                      DiR <- Tabesh_AD %*% Dihat
                       
                       ## constraints for the KT estimation step
                       KiR = numeric( length( Ki))
                       ## Tabesh Eq. [23]
                       ind <- ( DiR > 0)
-                      KiR[ ind] = 6 * ( DiR[ ind] - D2[ ind]) / bv[ 2] / DiR[ ind]^2
+                      KiR[ ind] <- 6 * ( DiR[ ind] - D2[ ind]) / bv[ 2] / DiR[ ind]^2
 
                       ## K1 and K2
                       Kmax <- numeric( length( DiR))
-                      dim( Kmax) <- dim( DiR)
+                      dim( Kmax) <- dim( DiR)# DiR is a vector 
                       Kmax[ DiR > 0] <- C / bv[ 2] / DiR[ DiR > 0]
                       ind <- ( KiR > Kmax)
                       KiR[ ind] <- Kmax[ ind]
@@ -190,7 +195,7 @@ setMethod("dkiTensor", "dtiData",
                       
                       
                       ## estimate KT Tabesh Eq. [24]
-                      W[ , j, k, m] <- pseudoinverseSVD( Tabesh_AK) %*% ( DiR^2 * KiR) / ( sum( D[ c( 1, 4, 6), j, k, m]) / 3)^2
+                      W[ , j, k, m] <- PI_Tabesh_AK %*% ( DiR^2 * KiR) / ( mean( Dihat[1:3]))^2
                       
                     }    
                   }
@@ -207,7 +212,10 @@ setMethod("dkiTensor", "dtiData",
               ## Tabesh Eq. [10]
               Tabesh_A <- cbind(sweep( Tabesh_AD, 1, - object@bvalue[ - object@s0ind], "*"),
                                 sweep( Tabesh_AK, 1, object@bvalue[ - object@s0ind]^2/6, "*"))
-              
+              PI_Tabesh_A <- pseudoinverseSVD( Tabesh_A)
+#
+#   this can be written in compact form !!
+#
               ## go through the dataset
               if (verbose) pb <- txtProgressBar(0, ddim[1], style = 3)
               for ( i in 1:ddim[1]) {
@@ -220,9 +228,9 @@ setMethod("dkiTensor", "dtiData",
                       Tabesh_B <- log( object@si[ i, j, k, -object@s0ind] / s0[ i, j, k])
               
                       ## TODO: correct assignment! Check matrix dimensions!
-                      Tabesh_X <- pseudoinverseSVD( Tabesh_A) %*% Tabesh_B
+                      Tabesh_X <- PI_Tabesh_A %*% Tabesh_B
                       D[ c( 1, 4, 6, 2, 3, 5), i, j, k] <- Tabesh_X[ 1:6]
-                      W[ , i, j, k] <- Tabesh_X[ 7:21] / ( sum( Tabesh_X[ 1:3]) / 3)^2
+                      W[ , i, j, k] <- Tabesh_X[ 7:21] / ( mean( Tabesh_X[ 1:3]))^2
                       # D, W  <- pseudoinverseSVD( Tabesh_A) %*% Tabesh_B
                     }
                   }
@@ -385,6 +393,7 @@ setMethod("dkiIndices", "dkiTensor",
 
             ## cannot allocate memory for the following:
             ## w1111 <- diag( x1[ , 7:21] %*% D[ 7:21, ])
+            w1111 <- (x1[ , 7:21]*t(W))%*%rep(1,15)
             w1111 <- numeric( nvox)
             for ( i in 1:nvox) if (object@mask[ i]) w1111[ i] <- x1[ i, 7:21] %*% W[ , i]
             w2222 <- numeric( nvox)

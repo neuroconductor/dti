@@ -143,6 +143,7 @@ defineKurtosisTensor <- function( DK) {
 ##       Many doubled calculations
 ## A strange small discontinuity at singularities for F1 remains
 
+
 kurtosisFunctionF1<- function( l1, l2, l3) {
   
   require( gsl)
@@ -155,18 +156,23 @@ kurtosisFunctionF1<- function( l1, l2, l3) {
   ind13 <- abs( l1 - l3) > 1e-10 ## l1 != l3
   
   ind <- ( ind12) & ( ind13)
+  l1i <- l1[ind]
+  l2i <- l2[ind]
+  l3i <- l3[ind]
   if ( any( ind)) F1[ ind] <- 
-    ( l1[ ind] + l2[ ind] + l3[ ind])^2 / 18 / ( l1[ ind] - l2[ ind]) / ( l1[ ind] - l3[ ind]) *
-    ( ellint_RF( l1[ ind]/l2[ ind], l1[ ind]/l3[ ind], 1) * sqrt( l2[ ind]*l3[ ind]) / l1[ ind] + 
-        ellint_RD( l1[ ind]/l2[ ind], l1[ ind]/l3[ ind], 1) * ( 3* l1[ ind]^2 - l1[ ind]*l2[ ind] - l1[ ind]*l3[ ind] - l2[ ind]*l3[ ind]) / (3*l1[ ind]*sqrt( l2[ ind]*l3[ ind])) 
+    (l1i+l2i+l3i)^2 /18 /(l1i-l2i)/(l1i-l3i) *
+    ( ellint_RF( l1i/l2i, l1i/l3i, 1) * sqrt( l2i*l3i)/l1i + 
+      ellint_RD( l1i/l2i, l1i/l3i, 1) * (3*l1i^2-l1i*l2i-l1i*l3i-l2i*l3i)/(3*l1i*sqrt(l2i*l3i)) 
       - 1) 
-  
   ind1 <- ( !ind12) & ( ind13)
-  if ( any( ind1)) F1[ ind1] <- kurtosisFunctionF2( l2[ ind1], l1[ ind1], l1[ ind1]) / 2 
+  if ( any( ind1)) F1[ ind1] <- kurtosisFunctionF2( l3[ ind1], l1[ ind1], l1[ ind1]) / 2 
   
   ind2 <- ( ind12) & ( !ind13)
-  if ( any( ind2)) F1[ ind2] <- kurtosisFunctionF2( l3[ ind2], l1[ ind2], l1[ ind2]) / 2 
+  if ( any( ind2)) F1[ ind2] <- kurtosisFunctionF2( l2[ ind2], l1[ ind2], l1[ ind2]) / 2 
   
+##  at singularities ind3
+##  we have ellint_RF(1,1,1) = 1, ellint_RD(1,1,1) 
+##  Result should be Inf ???
   ind3 <- ( !ind12) & ( !ind13)
   if ( any( ind3)) F1[ ind3] <- 1/5
   
@@ -178,32 +184,47 @@ kurtosisFunctionF2 <- function( l1, l2, l3) {
   require( gsl)
   ## Tabesh et al. Eq. [28], [A10, A11, A12]
   
-  alpha <- function(x) 1/sqrt(abs(x)) * atan(sqrt(abs(x)))
+  alpha <- function(x) {
+     z <- rep(1,length(x))
+     z[x>0] <- 1/sqrt(x[x>0]) * atanh(sqrt(x[x>0]))
+     z[x<0] <- 1/sqrt(-x[x<0]) * atan(sqrt(-x[x<0]))
+     z
+     }
   
   ## consider removable singularities!!
   F2 <- numeric( length( l1))
   
   ind23 <- abs( l2 - l3) > 1e-10 ## l2 != l3
   ind12 <- abs( l1 - l2) > 1e-10 ## l1 != l2
-  
-  if ( any( ind23)) F2[ ind23] <- 
-    ( l1[ ind23] + l2[ ind23] + l3[ ind23])^2 / (l2[ ind23] - l3[ ind23]) / (l2[ ind23] - l3[ ind23]) / 3 * 
-    ( ellint_RF( l1[ ind23]/l2[ ind23], l1[ ind23]/l3[ ind23], 1) * ( l2[ ind23] + l3[ ind23]) / sqrt( l2[ ind23]*l3[ ind23]) + 
-        ellint_RD( l1[ ind23]/l2[ ind23], l1[ ind23]/l3[ ind23], 1) * ( 2*l1[ ind23] - l2[ ind23] - l3[ ind23]) / 3 / sqrt( l2[ ind23]*l3[ ind23]) 
+  if ( any( ind23)){
+    l1i <- l1[ind23]
+    l2i <- l2[ind23]
+    l3i <- l3[ind23]  
+    F2[ ind23] <- 
+    ( l1i + l2i + l3i)^2 / (l2i - l3i)^2 / 3 * 
+    ( ellint_RF( l1i/l2i, l1i/l3i, 1) * ( l2i + l3i) / sqrt( l2i*l3i) + 
+        ellint_RD( l1i/l2i, l1i/l3i, 1) * ( 2*l1i - l2i - l3i) / 3 / sqrt( l2i*l3i) 
       - 2 ) 
-  
+  }
   ind1 <- ( !ind23) & ( ind12)
-  if ( any( ind1)) F2[ ind1] <- 
-    6 * ( l1[ ind1] + 2*l3[ ind1])^2 / 144 / l3[ ind1]^2 / ( l1[ ind1] - l3[ ind1])^2 *
-    (l3[ ind1] * ( l1[ ind1] + 2*l3[ ind1]) + l1[ ind1] * ( l1[ ind1] - 4 * l3[ ind1]) * alpha( 1 - l1[ ind1] / l3[ ind1]))
-  
+  if ( any( ind1)) {
+    l1i <- l1[ind1]
+    l2i <- l2[ind1]
+    l3i <- l3[ind1]  
+    F2[ ind1] <- 
+    6 * ( l1i + 2*l3i)^2 / 144 / l3i^2 / ( l1i - l3i)^2 *
+    (l3i * ( l1i + 2*l3i) + l1i * ( l1i - 4 * l3i) * alpha( 1 - l1i / l3i))
+  }
   ind2 <- ( !ind23) & ( !ind12)
   if ( any( ind2)) F2[ ind2] <- 6/15
   
   F2
 }
 
-pseudoinverseSVD <- function( xxx) {
+pseudoinverseSVD <- function( xxx, eps=1e-8) {
   svdresult <- svd( xxx)
-  svdresult$v %*% diag( 1 / svdresult$d) %*% t( svdresult$u)
+  d <-  svdresult$d
+  dinv <- 1/d
+  dinv[abs(d)<eps] <- 0
+  svdresult$v %*% diag( dinv) %*% t( svdresult$u)
 }
