@@ -693,12 +693,14 @@ C$OMP END PARALLEL
 C$OMP FLUSH(thn,ni)
       RETURN
       END
-      subroutine adsmse3c(y,y0,th,ni,th0,ni0,mask,ns,n1,n2,n3,ngrad,
-     1                lambda,ws0,ncores,ind,w,n,ind0,w0,
-     2                n0,thn,nin,th0n,ni0n,sw,swy,thi,nii)
+      subroutine adsmse3c(y,y0,th,ni,th0,ni0,fsi2,fsi02,mask,ns,n1,
+     1                n2,n3,ngrad,lambda,ws0,ncores,ind,w,n,ind0,w0,
+     2                n0,thn,nin,th0n,ni0n,sw,swy,thi,nii,fsi2i)
 C   
 C  Multi-shell version (differs in dimension of th 
 C  KL-distance based on all spheres and Gauss-approximation only
+C  see ~polzehl/latex/1211_simplemetric/Rcode/Figuregaussapprox.r 
+C  for approximative KL-distance between non-central chi distributions
 C
 C   perform adaptive smoothing on SE(3) multishell including s0
 C   y  -  si images
@@ -735,9 +737,9 @@ C
       logical mask(n1,n2,n3)
       real*8 y(n1,n2,n3,ngrad),y0(n1,n2,n3),th(ns,n1,n2,n3,ngrad),
      1     ni(ns,n1,n2,n3,ngrad),th0(ns,n1,n2,n3),ni0(ns,n1,n2,n3),
-     2     thn(n1,n2,n3,ngrad),th0n(n1,n2,n3),
-     3     nin(n1,n2,n3,ngrad),ni0n(n1,n2,n3)
-      real*8 w(n),w0(n0),lambda,thi(ns,ncores),ws0,
+     2     thn(n1,n2,n3,ngrad),th0n(n1,n2,n3),fsi2(ns,n1,n2,n3,ngrad),
+     3     nin(n1,n2,n3,ngrad),ni0n(n1,n2,n3),fsi02(ns,n1,n2,n3)
+      real*8 w(n),w0(n0),lambda,thi(ns,ncores),ws0,fsi2i(ns,ncores),
      4     sw(ngrad,ncores),swy(ngrad,ncores),nii(ns,ncores)
       integer iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,k
       real*8 sz,z,sw0,swy0
@@ -748,7 +750,7 @@ C
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(ns,n1,n2,n3,ngrad,n,n0,ind,ind0,ncoils,ncores,y,y0,
 C$OMP&       th,ni,th0,ni0,w,w0,thn,th0n,nin,ni0n,thi,sw,swy,nii,
-C$OMP&       lambda,mask,ws0)
+C$OMP&       lambda,mask,ws0,fsi2,fsi02,fsi2i)
 C$OMP& PRIVATE(iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,k,sz,z,
 C$OMP&       sw0,swy0)
 C$OMP DO SCHEDULE(GUIDED)
@@ -772,6 +774,7 @@ C returns value in 0:(ncores-1)
 C   by construction ind(4,.) should have same values consequtively
                i4 = ind(4,i)
                DO k=1,ns
+                  fsi2i(k,thrednr)=fsi2(k,i1,i2,i3,i4)
                   thi(k,thrednr) = th(k,i1,i2,i3,i4)
                   nii(k,thrednr) = ni(k,i1,i2,i3,i4)/lambda
                END DO
@@ -790,7 +793,8 @@ C adaptation
                sz=0.d0
                DO k=1,ns
                   z=(thi(k,thrednr)-th(k,j1,j2,j3,j4))
-                  sz=sz+nii(k,thrednr)*z*z
+                  sz=sz+nii(k,thrednr)*z*z/
+     1                        (fsi2(k,j1,j2,j3,j4)+fsi2i(k,thrednr))
                END DO
 C  do not adapt on the sphere !!! 
             ELSE
@@ -808,6 +812,7 @@ C  now opposite directions
 C   by construction ind(4,.) should have same values consequtively
                i4 = ind(4,i)
                DO k=1,ns
+                  fsi2i(k,thrednr)=fsi2(k,i1,i2,i3,i4)
                   thi(k,thrednr) = th(k,i1,i2,i3,i4)
                   nii(k,thrednr) = ni(k,i1,i2,i3,i4)/lambda
                END DO
@@ -831,7 +836,8 @@ C
                sz=0.d0
                DO k=1,ns
                   z=(thi(k,thrednr)-th(k,j1,j2,j3,j4))
-                  sz=sz+nii(k,thrednr)*z*z
+                  sz=sz+nii(k,thrednr)*z*z/
+     1                        (fsi2(k,j1,j2,j3,j4)+fsi2i(k,thrednr))
                END DO
 C  do not adapt on the sphere !!! 
             ELSE
@@ -852,6 +858,7 @@ C    now the s0 image in iind
          DO k=1,ns
             thi(k,thrednr) = th0(k,i1,i2,i3)
             nii(k,thrednr) = ni0(k,i1,i2,i3)/lambda
+            fsi2i(k,thrednr)=fsi02(k,i1,i2,i3)
          END DO
          DO i=1,n0
             j1=i1+ind0(1,i)
@@ -866,7 +873,8 @@ C adaptation
                sz=0.d0
                DO k=1,ns
                   z=(thi(k,thrednr)-th0(k,j1,j2,j3))
-                  sz=sz+nii(k,thrednr)*z*z
+                  sz=sz+nii(k,thrednr)*z*z/
+     1                        (fsi02(k,j1,j2,j3)+fsi2i(k,thrednr))
                END DO
 C  do not adapt on the sphere !!! 
             ELSE
@@ -895,7 +903,8 @@ C
                sz=0.d0
                DO k=1,ns
                   z=(thi(k,thrednr)-th0(k,j1,j2,j3))
-                  sz=sz+nii(k,thrednr)*z*z
+                  sz=sz+nii(k,thrednr)*z*z/
+     1                        (fsi02(k,j1,j2,j3)+fsi2i(k,thrednr))
                END DO
 C  do not adapt on the sphere !!! 
             ELSE
@@ -1464,188 +1473,6 @@ C         (2 int(h)+1)*(2 int(h/vext(1))+1)*(2 int(h/vext(2))+1)
          END DO
       END DO
       n=i-1
-      RETURN
-      END
-      subroutine awsvchi(y,th,ni,mask,n1,n2,n3,ind,w,nw,lambda,
-     1                    sigma,thn,sy)
-C   Takes noncentral Chi values in y
-C   perform adaptive smoothing on R^3
-C   th containes previous estimates
-C   ni containes previous sum of weights divided by variance of Chi(2,th/sigma)
-C   mask - logical mask (use if mask==TRUE)
-C   n1,n2,n3 - dimensions
-C   ind  - integer array dim (3,n) containing relative indices in xyz
-C   w    - vector of corresponding location weights
-C   nw   - number of positive weights (initial value 
-C   lambda   - kritical value for pairwise tests
-C   sigma    - actual estimate of sigma
-C   thn      - new estimate sum_j w_a(j) Y_j
-C   th2      - sum_j w_a(j) Y_j^2
-C   ind(.,i) contains coordinate indormation corresponding to positive
-C   location weights in w(i)
-C   ind(.,i)[1:5] are j1-i1,j2-i2,j3-i3, i4 and j4 respectively 
-C
-      implicit logical (a-z)
-      integer n1,n2,n3,nw,ind(3,nw)
-      logical mask(n1,n2,n3)
-      real*8 y(n1,n2,n3),th(n1,n2,n3),ni(1),thn(1),
-     1       sy(1),lambda,w(nw),sigma
-      integer i1,i2,i3,j1,j2,j3,i,j,n
-      real*8 z,sw,sw2,swy,swy2,yj,thi,wj,kval,cw
-      n = n1*n2*n3
-C  precompute values of lgamma(corrected df/2) in each voxel
-C$OMP PARALLEL DEFAULT(SHARED)
-C$OMP& PRIVATE(i,j,i1,i2,i3,j1,j2,j3,z,sw,swy,sw2,swy2,thi,kval,
-C$OMP& wj,yj,cw)
-C$OMP DO SCHEDULE(GUIDED)
-      DO i=1,n
-         i1=mod(i,n1)
-         if(i1.eq.0) i1=n1
-         i2=mod((i-i1)/n1+1,n2)
-         if(i2.eq.0) i2=n2
-         i3=(i-i1-(i2-1)*n1)/n1/n2+1         
-         if(.not.mask(i1,i2,i3)) CYCLE
-         sw=0.d0
-         swy=0.d0
-         sw2=0.d0
-         swy2=0.d0
-         thi = th(i1,i2,i3)
-C   thats the estimated standard deviation of y(i1,i2,i3)
-         kval = lambda/ni(i)*sigma*sigma
-         Do j=1,nw
-            j1=i1+ind(1,j)
-            if(j1.le.0.or.j1.gt.n1) CYCLE
-            j2=i2+ind(2,j)
-            if(j2.le.0.or.j2.gt.n2) CYCLE
-            j3=i3+ind(3,j)
-            if(j3.le.0.or.j3.gt.n3) CYCLE
-            wj=w(j)
-            z=thi-th(j1,j2,j3)
-            z=z*z
-            if(z.ge.kval) CYCLE
-            wj=wj*min(1.d0,2.d0-2.d0*z/kval)
-            sw=sw+wj
-            sw2=sw2+wj*wj
-            yj=y(j1,j2,j3)
-            swy=swy+wj*yj
-            swy2=swy2+wj*yj*yj
-         END DO
-         thi = swy/sw
-         z = swy2/sw
-C  z2-thi^2  is an estimate of the variance of y(i) 
-         cw = 1.d0-sw2/sw/sw
-         IF(cw.gt.0.d0) THEN
-            sy(i) = sqrt((z-thi*thi)/cw)
-C  sy(i)  is an estimate of sigma corrected for 
-C       simultaneously estimating the mean and for non-central chi-bias 
-         ELSE
-            sy(i) = 0.d0
-C  case ni(i) = 1
-         END IF
-         thn(i) = thi
-         ni(i) = sw
-      END DO
-C$OMP END DO NOWAIT
-C$OMP END PARALLEL
-C$OMP FLUSH(thn,ni,sy)
-      RETURN
-      END
-      subroutine awsadchi(y,th,ni,mask,n1,n2,n3,ind,w,nw,lambda,
-     1                    sigma,wad,nthreds,thn,sy)
-C   Takes noncentral Chi values in y
-C   perform adaptive smoothing on R^3
-C   th containes previous estimates
-C   ni containes previous sum of weights
-C   mask - logical mask (use if mask==TRUE)
-C   n1,n2,n3 - dimensions
-C   ind  - integer array dim (3,n) containing relative indices in xyz
-C   w    - vector of corresponding location weights
-C   nw   - number of positive weights (initial value 
-C   lambda   - kritical value for pairwise tests
-C   sigma    - actual estimate of sigma
-C   thn      - new estimate sum_j w_a(j) Y_j
-C   th2      - sum_j w_a(j) Y_j^2
-C   ind(.,i) contains coordinate indormation corresponding to positive
-C   location weights in w(i)
-C   ind(.,i)[1:5] are j1-i1,j2-i2,j3-i3, i4 and j4 respectively 
-C
-      implicit logical (a-z)
-      integer n1,n2,n3,nw,ind(3,nw),nthreds
-      logical mask(n1,n2,n3)
-      real*8 y(n1,n2,n3),th(n1,n2,n3),ni(1),thn(1),
-     1       sy(1),lambda,w(nw),sigma,wad(nw,nthreds)
-      integer i1,i2,i3,j1,j2,j3,i,j,n,thrednr
-      real*8 z,sw,sw2,swy,swy2,yj,thi,wj,kval,cw
-!$      integer omp_get_thread_num
-!$      external omp_get_thread_num
-      n = n1*n2*n3
-      thrednr = 1
-C  precompute values of lgamma(corrected df/2) in each voxel
-C$OMP PARALLEL DEFAULT(SHARED)
-C$OMP& PRIVATE(i,j,i1,i2,i3,j1,j2,j3,z,sw,swy,sw2,swy2,thi,kval,
-C$OMP& wj,yj,cw,thrednr)
-C$OMP DO SCHEDULE(GUIDED)
-      DO i=1,n
-         i1=mod(i,n1)
-         if(i1.eq.0) i1=n1
-         i2=mod((i-i1)/n1+1,n2)
-         if(i2.eq.0) i2=n2
-         i3=(i-i1-(i2-1)*n1)/n1/n2+1         
-         if(.not.mask(i1,i2,i3)) CYCLE
-!$         thrednr = omp_get_thread_num()+1
-         sw=0.d0
-         swy=0.d0
-         sw2=0.d0
-         swy2=0.d0
-         thi = th(i1,i2,i3)
-C   thats the estimated standard deviation of y(i1,i2,i3)
-         kval = lambda/ni(i)*sigma*sigma
-         DO j=1,nw
-            wad(j,thrednr)=0.d0
-            j1=i1+ind(1,j)
-            if(j1.le.0.or.j1.gt.n1) CYCLE
-            j2=i2+ind(2,j)
-            if(j2.le.0.or.j2.gt.n2) CYCLE
-            j3=i3+ind(3,j)
-            if(j3.le.0.or.j3.gt.n3) CYCLE
-            wj=w(j)
-            z=thi-th(j1,j2,j3)
-            z=z*z
-            if(z.ge.kval) CYCLE
-            wj=wj*min(1.d0,2.d0-2.d0*z/kval)
-            wad(j,thrednr)=wj
-            sw=sw+wj
-            sw2=sw2+wj*wj
-            yj=y(j1,j2,j3)
-            swy=swy+wj*yj
-         END DO
-         thi = swy/sw
-         DO j=1,nw
-            wj=wad(j,thrednr)
-            if(wj.le.1d-8) CYCLE
-            j1=i1+ind(1,j)
-            j2=i2+ind(2,j)
-            j3=i3+ind(3,j)
-C no need to test for grid coordinates since wj>0
-            swy2=swy2+wj*abs(thi-y(j1,j2,j3))
-         END DO
-         z = swy2/sw/.8d0
-C  z  is an estimate of the standard deviation of y(i) 
-         cw = 1.d0-sw2/sw/sw
-         IF(cw.gt.0.d0) THEN
-            sy(i) = z/sqrt(cw)
-C  sy(i)  is an estimate of sigma corrected for 
-C       simultaneously estimating the mean and for non-central chi-bias 
-         ELSE
-            sy(i) = 0.d0
-C  case ni(i) = 1
-         END IF
-         thn(i) = thi
-         ni(i) = sw
-      END DO
-C$OMP END DO NOWAIT
-C$OMP END PARALLEL
-C$OMP FLUSH(thn,ni,sy)
       RETURN
       END
       subroutine lkfuls0(h,vext,ind,wght,n)

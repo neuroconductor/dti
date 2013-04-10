@@ -1,3 +1,187 @@
+      subroutine awsvchi(y,th,ni,fns,mask,n1,n2,n3,ind,w,nw,lambda,
+     1                    sigma,thn,sy)
+C   Takes noncentral Chi values in y
+C   perform adaptive smoothing on R^3
+C   th containes previous estimates
+C   ni containes previous sum of weights divided by variance of Chi(2,th/sigma)
+C   mask - logical mask (use if mask==TRUE)
+C   n1,n2,n3 - dimensions
+C   ind  - integer array dim (3,n) containing relative indices in xyz
+C   w    - vector of corresponding location weights
+C   nw   - number of positive weights (initial value 
+C   lambda   - kritical value for pairwise tests
+C   sigma    - actual estimate of sigma
+C   thn      - new estimate sum_j w_a(j) Y_j
+C   th2      - sum_j w_a(j) Y_j^2
+C   ind(.,i) contains coordinate indormation corresponding to positive
+C   location weights in w(i)
+C   ind(.,i)[1:5] are j1-i1,j2-i2,j3-i3, i4 and j4 respectively 
+C
+      implicit logical (a-z)
+      integer n1,n2,n3,nw,ind(3,nw)
+      logical mask(n1,n2,n3)
+      real*8 y(n1,n2,n3),th(n1,n2,n3),ni(1),thn(1),
+     1       sy(1),lambda,w(nw),sigma,fns(n1,n2,n3)
+      integer i1,i2,i3,j1,j2,j3,i,j,n
+      real*8 z,sw,sw2,swy,swy2,yj,thi,wj,kval,cw,fnsi
+      n = n1*n2*n3
+C  precompute values of lgamma(corrected df/2) in each voxel
+C$OMP PARALLEL DEFAULT(SHARED)
+C$OMP& PRIVATE(i,j,i1,i2,i3,j1,j2,j3,z,sw,swy,sw2,swy2,thi,kval,
+C$OMP& wj,yj,cw,fnsi)
+C$OMP DO SCHEDULE(GUIDED)
+      DO i=1,n
+         i1=mod(i,n1)
+         if(i1.eq.0) i1=n1
+         i2=mod((i-i1)/n1+1,n2)
+         if(i2.eq.0) i2=n2
+         i3=(i-i1-(i2-1)*n1)/n1/n2+1         
+         if(.not.mask(i1,i2,i3)) CYCLE
+         sw=0.d0
+         swy=0.d0
+         sw2=0.d0
+         swy2=0.d0
+         thi = th(i1,i2,i3)
+         fnsi = fns(i1,i2,i3)
+C   thats the estimated standard deviation of y(i1,i2,i3)
+         kval = lambda/ni(i)*sigma*sigma
+         Do j=1,nw
+            j1=i1+ind(1,j)
+            if(j1.le.0.or.j1.gt.n1) CYCLE
+            j2=i2+ind(2,j)
+            if(j2.le.0.or.j2.gt.n2) CYCLE
+            j3=i3+ind(3,j)
+            if(j3.le.0.or.j3.gt.n3) CYCLE
+            wj=w(j)
+            z=thi-th(j1,j2,j3)
+            z=z*z/(fnsi+fns(j1,j2,j3))
+            if(z.ge.kval) CYCLE
+            wj=wj*min(1.d0,2.d0-2.d0*z/kval)
+            sw=sw+wj
+            sw2=sw2+wj*wj
+            yj=y(j1,j2,j3)
+            swy=swy+wj*yj
+            swy2=swy2+wj*yj*yj
+         END DO
+         thi = swy/sw
+         z = swy2/sw
+C  z2-thi^2  is an estimate of the variance of y(i) 
+         cw = 1.d0-sw2/sw/sw
+         IF(cw.gt.0.d0) THEN
+            sy(i) = sqrt((z-thi*thi)/cw)
+C  sy(i)  is an estimate of sigma corrected for 
+C       simultaneously estimating the mean and for non-central chi-bias 
+         ELSE
+            sy(i) = 0.d0
+C  case ni(i) = 1
+         END IF
+         thn(i) = thi
+         ni(i) = sw
+      END DO
+C$OMP END DO NOWAIT
+C$OMP END PARALLEL
+C$OMP FLUSH(thn,ni,sy)
+      RETURN
+      END
+      subroutine awsadchi(y,th,ni,fns,mask,n1,n2,n3,ind,w,nw,lambda,
+     1                    sigma,wad,nthreds,thn,sy)
+C   Takes noncentral Chi values in y
+C   perform adaptive smoothing on R^3
+C   th containes previous estimates
+C   ni containes previous sum of weights
+C   mask - logical mask (use if mask==TRUE)
+C   n1,n2,n3 - dimensions
+C   ind  - integer array dim (3,n) containing relative indices in xyz
+C   w    - vector of corresponding location weights
+C   nw   - number of positive weights (initial value 
+C   lambda   - kritical value for pairwise tests
+C   sigma    - actual estimate of sigma
+C   thn      - new estimate sum_j w_a(j) Y_j
+C   th2      - sum_j w_a(j) Y_j^2
+C   ind(.,i) contains coordinate indormation corresponding to positive
+C   location weights in w(i)
+C   ind(.,i)[1:5] are j1-i1,j2-i2,j3-i3, i4 and j4 respectively 
+C
+      implicit logical (a-z)
+      integer n1,n2,n3,nw,ind(3,nw),nthreds
+      logical mask(n1,n2,n3)
+      real*8 y(n1,n2,n3),th(n1,n2,n3),ni(1),thn(1),fns(n1,n2,n3),
+     1       sy(1),lambda,w(nw),sigma,wad(nw,nthreds)
+      integer i1,i2,i3,j1,j2,j3,i,j,n,thrednr
+      real*8 z,sw,sw2,swy,swy2,yj,thi,wj,kval,cw,fnsi
+!$      integer omp_get_thread_num
+!$      external omp_get_thread_num
+      n = n1*n2*n3
+      thrednr = 1
+C  precompute values of lgamma(corrected df/2) in each voxel
+C$OMP PARALLEL DEFAULT(SHARED)
+C$OMP& PRIVATE(i,j,i1,i2,i3,j1,j2,j3,z,sw,swy,sw2,swy2,thi,kval,
+C$OMP& wj,yj,cw,thrednr,fnsi)
+C$OMP DO SCHEDULE(GUIDED)
+      DO i=1,n
+         i1=mod(i,n1)
+         if(i1.eq.0) i1=n1
+         i2=mod((i-i1)/n1+1,n2)
+         if(i2.eq.0) i2=n2
+         i3=(i-i1-(i2-1)*n1)/n1/n2+1         
+         if(.not.mask(i1,i2,i3)) CYCLE
+!$         thrednr = omp_get_thread_num()+1
+         sw=0.d0
+         swy=0.d0
+         sw2=0.d0
+         swy2=0.d0
+         thi = th(i1,i2,i3)
+         fnsi = fns(i1,i2,i3)
+C   thats the estimated standard deviation of y(i1,i2,i3)
+         kval = lambda/ni(i)*sigma*sigma
+         DO j=1,nw
+            wad(j,thrednr)=0.d0
+            j1=i1+ind(1,j)
+            if(j1.le.0.or.j1.gt.n1) CYCLE
+            j2=i2+ind(2,j)
+            if(j2.le.0.or.j2.gt.n2) CYCLE
+            j3=i3+ind(3,j)
+            if(j3.le.0.or.j3.gt.n3) CYCLE
+            wj=w(j)
+            z=thi-th(j1,j2,j3)
+            z=z*z/(fnsi+fns(j1,j2,j3))
+            if(z.ge.kval) CYCLE
+            wj=wj*min(1.d0,2.d0-2.d0*z/kval)
+            wad(j,thrednr)=wj
+            sw=sw+wj
+            sw2=sw2+wj*wj
+            yj=y(j1,j2,j3)
+            swy=swy+wj*yj
+         END DO
+         thi = swy/sw
+         DO j=1,nw
+            wj=wad(j,thrednr)
+            if(wj.le.1d-8) CYCLE
+            j1=i1+ind(1,j)
+            j2=i2+ind(2,j)
+            j3=i3+ind(3,j)
+C no need to test for grid coordinates since wj>0
+            swy2=swy2+wj*abs(thi-y(j1,j2,j3))
+         END DO
+         z = swy2/sw/.8d0
+C  z  is an estimate of the standard deviation of y(i) 
+         cw = 1.d0-sw2/sw/sw
+         IF(cw.gt.0.d0) THEN
+            sy(i) = z/sqrt(cw)
+C  sy(i)  is an estimate of sigma corrected for 
+C       simultaneously estimating the mean and for non-central chi-bias 
+         ELSE
+            sy(i) = 0.d0
+C  case ni(i) = 1
+         END IF
+         thn(i) = thi
+         ni(i) = sw
+      END DO
+C$OMP END DO NOWAIT
+C$OMP END PARALLEL
+C$OMP FLUSH(thn,ni,sy)
+      RETURN
+      END
       subroutine afmodevn(y,n1,n2,n3,mask,h,vext,sigma)
 C
 C   Aja-Fernandez Mode Vn (6)

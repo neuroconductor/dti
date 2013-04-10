@@ -96,7 +96,8 @@ awssigmc <- function(y,                 # data
     z <- .Fortran("awsvchi",
                   as.double(y),        # data
                   as.double(th),       # previous estimates
-                  ni = as.double(ni/fncchi),
+                  ni = as.double(ni),
+                  as.double(fncchi/2),
                   as.logical(mask),
                   as.integer(ddim[1]),
                   as.integer(ddim[2]),
@@ -114,7 +115,8 @@ awssigmc <- function(y,                 # data
     z <- .Fortran("awsadchi",
                   as.double(y),        # data
                   as.double(th),       # previous estimates
-                  ni = as.double(ni/fncchi),
+                  ni = as.double(ni),
+                  as.double(fncchi/2),
                   as.logical(mask),
                   as.integer(ddim[1]),
                   as.integer(ddim[2]),
@@ -345,7 +347,7 @@ afsigmc <- function(y,                 # data
                     sigma = double(n),
                     DUPL = FALSE,
                     PACKAGE = "dti")$sigma
-     sigma <- array( sqrt(ncoils*sigma), ddim)
+     sigma <- array( sqrt(sigma), ddim)
   } else {
      afactor <- sqrt(ncoils/2)*gamma(ncoils)/gamma(ncoils+.5)
      sigma <- .Fortran("afmodem1",

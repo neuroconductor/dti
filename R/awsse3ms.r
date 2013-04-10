@@ -93,9 +93,11 @@ setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=15,kappa0=.9,
                 as.double(sb),#y
                 as.double(s0),#y0
                 as.double(thnimsh$mstheta),#th
-                as.double(thnimsh$msni/fncchiv(thnimsh$mstheta,varstats)),#ni/si^2
+                as.double(thnimsh$msni),#ni/si^2
                 as.double(thnimsh$msth0),#th0
-                as.double(thnimsh$msni0/fncchiv(thnimsh$msth0,varstats)),#ni0/si^2
+                as.double(thnimsh$msni0),#ni0/si^2
+                as.double(fncchiv(thnimsh$mstheta,varstats)/2),#si^2/2
+                as.double(fncchiv(thnimsh$msth0,varstats)/2),#si^2/2 for s0
                 as.logical(mask),#mask
                 as.integer(nshell+1),#ns number of shells
                 as.integer(ddim[1]),#n1
@@ -119,6 +121,7 @@ setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=15,kappa0=.9,
                 double(ngrad*mc.cores),#swy
                 double((nshell+1)*mc.cores),#thi
                 double((nshell+1)*mc.cores),#nii
+                double((nshell+1)*mc.cores),#fsi2                
                 DUPL=FALSE,
                 PACKAGE="dti")[c("ni","th","ni0","th0")]
     t3 <- Sys.time()
