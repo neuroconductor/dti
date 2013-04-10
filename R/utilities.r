@@ -8,128 +8,133 @@ sdpar <- function(object,  ...) cat("No method defined for class:",class(object)
 
 setGeneric("sdpar", function(object,  ...) standardGeneric("sdpar"))
 
-setMethod("sdpar","dtiData",function(object,level=NULL,sdmethod="sd",interactive=TRUE,threshfactor=1){
-  # determine interval of linearity
-  if(!(sdmethod%in%c("sd","mad"))){
-    warning("sdmethod needs to be either 'sd' or 'mad'")
-    return(object)
-  }
-  if(prod(object@ddim)==1){
-    warning("you need more than one voxel to model variances")
-    return(object)
-  }
-  sdcoef <- object@sdcoef
-  level0 <- if(is.null(level)) object@level else max(0,level)
-  s0ind<-object@s0ind
-  s0 <- object@si[,,,s0ind,drop=FALSE]
-  ls0ind <- length(s0ind)
-  A0 <- level0
-  if(ls0ind>1) {
-    dim(s0) <- c(prod(object@ddim),ls0ind)
-    s0mean <- s0%*%rep(1/ls0ind,ls0ind)
-    A1 <- quantile(s0mean[s0mean>0],.98)
-    dim(s0mean) <- object@ddim
-  } else {
-    dim(s0) <- object@ddim
-    A1 <- quantile(s0[s0>0],.98)
-  }
-  if(interactive) {
-    oldpar <- par( mfrow = c( 1, 3), mar = c( 3, 3, 3, 1), mgp = c( 2, 1, 0))
-    img <- if(ls0ind>1) s0mean[,,(object@ddim[3]-1)%/%2+1] else s0[,,(object@ddim[3]-1)%/%2+1]
-    maximg <- max(img)
-    accept <- FALSE
-    ddim <- object@ddim
-    ddm1 <- ddim-1
-    bw <- min(bw.nrd(if(ls0ind>1) s0mean[s0mean>0] else s0[s0>0]),diff(range(if(ls0ind>1) s0mean else s0))/256)
-    z <- density(if(ls0ind>1) s0mean[s0mean>0&s0mean<A1] else s0[s0>0&s0<A1],bw = max(bw,.01),,n=1024)
-    indx1 <- trunc(0.05*ddm1[1]):trunc(0.95*ddm1[1])+1
-    indx2 <- trunc(0.1*ddm1[1]):trunc(0.9*ddm1[1])+1
-    indx3 <- trunc(0.15*ddm1[1]):trunc(0.85*ddm1[1])+1
-    indy1 <- trunc(0.05*ddm1[2]):trunc(0.95*ddm1[2])+1
-    indy2 <- trunc(0.1*ddm1[2]):trunc(0.9*ddm1[2])+1
-    indy3 <- trunc(0.15*ddm1[2]):trunc(0.85*ddm1[2])+1
-    indz1 <- trunc(0.05*ddm1[3]):trunc(0.95*ddm1[3])+1
-    indz2 <- trunc(0.1*ddm1[3]):trunc(0.9*ddm1[3])+1
-    indz3 <- trunc(0.15*ddm1[3]):trunc(0.85*ddm1[3])+1
-    z1 <- density(if(ls0ind>1) s0mean[indx1,indy1,indz1][s0mean[indx1,indy1,indz1]>0] else s0[indx1,indy1,indz1][s0[indx1,indy1,indz1]>0],bw=bw,n=1024)
-    z2 <- density(if(ls0ind>1) s0mean[indx2,indy2,indz2][s0mean[indx2,indy2,indz2]>0] else s0[indx2,indy2,indz2][s0[indx2,indy2,indz2]>0],bw=bw,n=1024)
-    z3 <- density(if(ls0ind>1) s0mean[indx3,indy3,indz3][s0mean[indx3,indy3,indz3]>0] else s0[indx3,indy3,indz3][s0[indx3,indy3,indz3]>0],bw=bw,n=1024)
-    n <- prod(ddim)
-    n1 <- length(indx1)*length(indy1)*length(indz1)
-    n2 <- length(indx2)*length(indy2)*length(indz2)
-    n3 <- length(indx3)*length(indy3)*length(indz3)
-    ylim <- range(z$y,z1$y*n1/n,z2$y*n2/n,z3$y*n3/n)
-    while(!accept){
-      plot(z,type="l",main="Density of S0 values and cut off point",ylim=ylim)
-      lines(z1$x,z1$y*n1/n,col=2)
-      lines(z2$x,z2$y*n2/n,col=3)
-      lines(z3$x,z3$y*n3/n,col=4)
-      lines(c(A0,A0),c(0,max(z$y)/2),col=2,lwd=2)
-      legend(min(A0,0.25*max(z$x)),ylim[2],c("Full cube",paste("Central",(n1*100)%/%n,"%"),
-      paste("Central",(n2*100)%/%n,"%"),paste("Central",(n3*100)%/%n,"%")),col=1:4,lwd=rep(1,4))
-      cat("A good cut off point should be left of support of the density of grayvalues within the head\n")
-      show.image(make.image(img/maximg))
-      title("Central slice: Intensity values")
-      show.image(make.image((img<A0)))
-      title("Central slice: voxel not in mask")
-      a <- readline(paste("Accept current cut off point",A0," (Y/N):"))
-      if (toupper(a) == "N") {
-        cutpoint <-  readline("Provide value for cut off point:")
-        cutpoint <- if(!is.null(cutpoint)) as.numeric(cutpoint) else A0
-        if(!is.na(cutpoint)) {
-          level0 <-A0 <- cutpoint
-        }
-      } else {
-        accept <- TRUE
-      }
-    }
-	par( oldpar)
-  } else {
-    if(is.null(level)){
-    ddim <- object@ddim
-    indx1 <- trunc(0.4*ddim[1]):trunc(0.6*ddim[1])
-    indy1 <- trunc(0.4*ddim[2]):trunc(0.6*ddim[2])
-    indz1 <- trunc(0.7*ddim[3]):trunc(0.7*ddim[3])
-    A0a <- quantile(if(ls0ind>1) s0mean[indx1,indy1,indz1][s0mean[indx1,indy1,indz1]>1] else s0[indx1,indy1,indz1][s0[indx1,indy1,indz1]>1],.01)/(1+1/length(object@s0ind))
-#  A0a provides a guess for a threshold based on lower quantiles of intensities
-#  in a central cube (probably contained within the head)
-#  the last factor adjusts for increased accuracy with replicated s0-values
-    indx1 <- c(1:trunc(0.15*ddim[1]),trunc(0.85*ddim[1]):ddim[1])
-    indy1 <- c(1:trunc(0.15*ddim[2]),trunc(0.85*ddim[2]):ddim[2])
-    indz1 <- c(1:trunc(0.15*ddim[3]),trunc(0.85*ddim[3]):ddim[3])
-    A0b <- quantile(if(ls0ind>1) s0mean[indx1,indy1,indz1] else s0[indx1,indy1,indz1],.99)
-#  A0a provides a guess for a threshold based on upper quantiles of intensities
-#  in cubes located at the edges (probably only containing noise
-    level0 <- A0 <- min(A0a,A0b)*threshfactor
-  } 
-  }
-  # determine parameters for linear relation between standard deviation and mean
-  if(ls0ind>1) {
-    s0sd <- apply(s0,1,sdmethod)
-    ind <- s0mean>A0&s0mean<A1
-    if(length(ind)<2){
-         warning("you need more than one voxel to model variances choice of A0/A1 to restrictive")
-         return(object)
-         }
-    sdcoef0 <- coefficients(lm(s0sd[ind]~s0mean[ind]))
-    if(sdcoef0[1]<0){
-       sdcoef0 <- numeric(2)
-       sdcoef0[1] <- .25  # this is an arbitrary (small) value to avaoid zero variances
-       sdcoef0[2] <- coefficients(lm(s0sd[ind]~s0mean[ind]-1))
-       }
-    if(sdcoef0[2]<0){
-       sdcoef0 <- numeric(2)
-       sdcoef0[1] <- max(0.25,mean(s0sd[ind]))
-       sdcoef0[2] <- 0
-       }
-  } else {
-    sdcoef0 <- awslinsd(s0,hmax=5,mask=NULL,A0=A0,A1=A1)$vcoef
-  }
-  object@level <- level0
-  object@sdcoef[1:4] <- c(sdcoef0,A0,A1)
-  cat("Estimated parameters:",signif(sdcoef0[1:2],3),"Interval of linearity",signif(A0,3),"-",signif(A1,3),"\n")
-  object
-})
+setMethod("sdpar", "dtiData",
+          function(object,
+                   level = NULL,
+                   sdmethod = "sd",
+                   interactive = TRUE,
+                   threshfactor = 1) {
+            # determine interval of linearity
+            if(!(sdmethod%in%c("sd","mad"))){
+              warning("sdmethod needs to be either 'sd' or 'mad'")
+              return(object)
+            }
+            if(prod(object@ddim)==1){
+              warning("you need more than one voxel to model variances")
+              return(object)
+            }
+            sdcoef <- object@sdcoef
+            level0 <- if(is.null(level)) object@level else max(0,level)
+            s0ind<-object@s0ind
+            s0 <- object@si[,,,s0ind,drop=FALSE]
+            ls0ind <- length(s0ind)
+            A0 <- level0
+            if(ls0ind>1) {
+              dim(s0) <- c(prod(object@ddim),ls0ind)
+              s0mean <- s0%*%rep(1/ls0ind,ls0ind)
+              A1 <- quantile(s0mean[s0mean>0],.98)
+              dim(s0mean) <- object@ddim
+            } else {
+              dim(s0) <- object@ddim
+              A1 <- quantile(s0[s0>0],.98)
+            }
+            if(interactive) {
+              oldpar <- par( mfrow = c( 1, 3), mar = c( 3, 3, 3, 1), mgp = c( 2, 1, 0))
+              img <- if(ls0ind>1) s0mean[,,(object@ddim[3]-1)%/%2+1] else s0[,,(object@ddim[3]-1)%/%2+1]
+              maximg <- max(img)
+              accept <- FALSE
+              ddim <- object@ddim
+              ddm1 <- ddim-1
+              bw <- min(bw.nrd(if(ls0ind>1) s0mean[s0mean>0] else s0[s0>0]),diff(range(if(ls0ind>1) s0mean else s0))/256)
+              z <- density(if(ls0ind>1) s0mean[s0mean>0&s0mean<A1] else s0[s0>0&s0<A1],bw = max(bw,.01),,n=1024)
+              indx1 <- trunc(0.05*ddm1[1]):trunc(0.95*ddm1[1])+1
+              indx2 <- trunc(0.1*ddm1[1]):trunc(0.9*ddm1[1])+1
+              indx3 <- trunc(0.15*ddm1[1]):trunc(0.85*ddm1[1])+1
+              indy1 <- trunc(0.05*ddm1[2]):trunc(0.95*ddm1[2])+1
+              indy2 <- trunc(0.1*ddm1[2]):trunc(0.9*ddm1[2])+1
+              indy3 <- trunc(0.15*ddm1[2]):trunc(0.85*ddm1[2])+1
+              indz1 <- trunc(0.05*ddm1[3]):trunc(0.95*ddm1[3])+1
+              indz2 <- trunc(0.1*ddm1[3]):trunc(0.9*ddm1[3])+1
+              indz3 <- trunc(0.15*ddm1[3]):trunc(0.85*ddm1[3])+1
+              z1 <- density(if(ls0ind>1) s0mean[indx1,indy1,indz1][s0mean[indx1,indy1,indz1]>0] else s0[indx1,indy1,indz1][s0[indx1,indy1,indz1]>0],bw=bw,n=1024)
+              z2 <- density(if(ls0ind>1) s0mean[indx2,indy2,indz2][s0mean[indx2,indy2,indz2]>0] else s0[indx2,indy2,indz2][s0[indx2,indy2,indz2]>0],bw=bw,n=1024)
+              z3 <- density(if(ls0ind>1) s0mean[indx3,indy3,indz3][s0mean[indx3,indy3,indz3]>0] else s0[indx3,indy3,indz3][s0[indx3,indy3,indz3]>0],bw=bw,n=1024)
+              n <- prod(ddim)
+              n1 <- length(indx1)*length(indy1)*length(indz1)
+              n2 <- length(indx2)*length(indy2)*length(indz2)
+              n3 <- length(indx3)*length(indy3)*length(indz3)
+              ylim <- range(z$y,z1$y*n1/n,z2$y*n2/n,z3$y*n3/n)
+              while(!accept){
+                plot(z,type="l",main="Density of S0 values and cut off point",ylim=ylim)
+                lines(z1$x,z1$y*n1/n,col=2)
+                lines(z2$x,z2$y*n2/n,col=3)
+                lines(z3$x,z3$y*n3/n,col=4)
+                lines(c(A0,A0),c(0,max(z$y)/2),col=2,lwd=2)
+                legend(min(A0,0.25*max(z$x)),ylim[2],c("Full cube",paste("Central",(n1*100)%/%n,"%"),
+                                                       paste("Central",(n2*100)%/%n,"%"),paste("Central",(n3*100)%/%n,"%")),col=1:4,lwd=rep(1,4))
+                cat("A good cut off point should be left of support of the density of grayvalues within the head\n")
+                show.image(make.image(img/maximg))
+                title("Central slice: Intensity values")
+                show.image(make.image((img<A0)))
+                title("Central slice: voxel not in mask")
+                a <- readline(paste("Accept current cut off point",A0," (Y/N):"))
+                if (toupper(a) == "N") {
+                  cutpoint <-  readline("Provide value for cut off point:")
+                  cutpoint <- if(!is.null(cutpoint)) as.numeric(cutpoint) else A0
+                  if(!is.na(cutpoint)) {
+                    level0 <-A0 <- cutpoint
+                  }
+                } else {
+                  accept <- TRUE
+                }
+              }
+              par( oldpar)
+            } else {
+              if(is.null(level)){
+                ddim <- object@ddim
+                indx1 <- trunc(0.4*ddim[1]):trunc(0.6*ddim[1])
+                indy1 <- trunc(0.4*ddim[2]):trunc(0.6*ddim[2])
+                indz1 <- trunc(0.7*ddim[3]):trunc(0.7*ddim[3])
+                A0a <- quantile(if(ls0ind>1) s0mean[indx1,indy1,indz1][s0mean[indx1,indy1,indz1]>1] else s0[indx1,indy1,indz1][s0[indx1,indy1,indz1]>1],.01)/(1+1/length(object@s0ind))
+                #  A0a provides a guess for a threshold based on lower quantiles of intensities
+                #  in a central cube (probably contained within the head)
+                #  the last factor adjusts for increased accuracy with replicated s0-values
+                indx1 <- c(1:trunc(0.15*ddim[1]),trunc(0.85*ddim[1]):ddim[1])
+                indy1 <- c(1:trunc(0.15*ddim[2]),trunc(0.85*ddim[2]):ddim[2])
+                indz1 <- c(1:trunc(0.15*ddim[3]),trunc(0.85*ddim[3]):ddim[3])
+                A0b <- quantile(if(ls0ind>1) s0mean[indx1,indy1,indz1] else s0[indx1,indy1,indz1],.99)
+                #  A0a provides a guess for a threshold based on upper quantiles of intensities
+                #  in cubes located at the edges (probably only containing noise
+                level0 <- A0 <- min(A0a,A0b)*threshfactor
+              } 
+            }
+            # determine parameters for linear relation between standard deviation and mean
+            if(ls0ind>1) {
+              s0sd <- apply(s0,1,sdmethod)
+              ind <- s0mean>A0&s0mean<A1
+              if(length(ind)<2){
+                warning("you need more than one voxel to model variances choice of A0/A1 to restrictive")
+                return(object)
+              }
+              sdcoef0 <- coefficients(lm(s0sd[ind]~s0mean[ind]))
+              if(sdcoef0[1]<0){
+                sdcoef0 <- numeric(2)
+                sdcoef0[1] <- .25  # this is an arbitrary (small) value to avaoid zero variances
+                sdcoef0[2] <- coefficients(lm(s0sd[ind]~s0mean[ind]-1))
+              }
+              if(sdcoef0[2]<0){
+                sdcoef0 <- numeric(2)
+                sdcoef0[1] <- max(0.25,mean(s0sd[ind]))
+                sdcoef0[2] <- 0
+              }
+            } else {
+              sdcoef0 <- awslinsd(s0,hmax=5,mask=NULL,A0=A0,A1=A1)$vcoef
+            }
+            object@level <- level0
+            object@sdcoef[1:4] <- c(sdcoef0,A0,A1)
+            cat("Estimated parameters:",signif(sdcoef0[1:2],3),"Interval of linearity",signif(A0,3),"-",signif(A1,3),"\n")
+            object
+          })
 
 getsdofsb <- function(object,  ...) cat("No method defined for class:",class(object),"\n")
 

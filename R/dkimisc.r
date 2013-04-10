@@ -141,7 +141,6 @@ defineKurtosisTensor <- function( DK) {
 
 ## TODO: For efficiency we might combine both functions
 ##       Many doubled calculations
-## A strange small discontinuity at singularities for F1 remains
 
 
 kurtosisFunctionF1<- function( l1, l2, l3) {
@@ -162,7 +161,7 @@ kurtosisFunctionF1<- function( l1, l2, l3) {
   if ( any( ind)) F1[ ind] <- 
     (l1i+l2i+l3i)^2 /18 /(l1i-l2i)/(l1i-l3i) *
     ( ellint_RF( l1i/l2i, l1i/l3i, 1) * sqrt( l2i*l3i)/l1i + 
-      ellint_RD( l1i/l2i, l1i/l3i, 1) * (3*l1i^2-l1i*l2i-l1i*l3i-l2i*l3i)/(3*l1i*sqrt(l2i*l3i)) 
+        ellint_RD( l1i/l2i, l1i/l3i, 1) * (3*l1i^2 - l1i*l2i - l1i*l3i - l2i*l3i)/(3*l1i*sqrt(l2i*l3i)) 
       - 1) 
   ind1 <- ( !ind12) & ( ind13)
   if ( any( ind1)) F1[ ind1] <- kurtosisFunctionF2( l3[ ind1], l1[ ind1], l1[ ind1]) / 2 
@@ -170,9 +169,9 @@ kurtosisFunctionF1<- function( l1, l2, l3) {
   ind2 <- ( ind12) & ( !ind13)
   if ( any( ind2)) F1[ ind2] <- kurtosisFunctionF2( l2[ ind2], l1[ ind2], l1[ ind2]) / 2 
   
-##  at singularities ind3
-##  we have ellint_RF(1,1,1) = 1, ellint_RD(1,1,1) 
-##  Result should be Inf ???
+  ##  at singularities ind3
+  ##  we have ellint_RF(1, 1, 1) = 1, ellint_RD(1, 1, 1) 
+  ##  Result should be Inf ???
   ind3 <- ( !ind12) & ( !ind13)
   if ( any( ind3)) F1[ ind3] <- 1/5
   
@@ -185,11 +184,11 @@ kurtosisFunctionF2 <- function( l1, l2, l3) {
   ## Tabesh et al. Eq. [28], [A10, A11, A12]
   
   alpha <- function(x) {
-     z <- rep(1,length(x))
-     z[x>0] <- 1/sqrt(x[x>0]) * atanh(sqrt(x[x>0]))
-     z[x<0] <- 1/sqrt(-x[x<0]) * atan(sqrt(-x[x<0]))
-     z
-     }
+    z <- rep(1,length(x))
+    z[x>0] <- 1/sqrt(x[x>0]) * atanh(sqrt(x[x>0]))
+    z[x<0] <- 1/sqrt(-x[x<0]) * atan(sqrt(-x[x<0]))
+    z
+  }
   
   ## consider removable singularities!!
   F2 <- numeric( length( l1))
@@ -201,10 +200,10 @@ kurtosisFunctionF2 <- function( l1, l2, l3) {
     l2i <- l2[ind23]
     l3i <- l3[ind23]  
     F2[ ind23] <- 
-    ( l1i + l2i + l3i)^2 / (l2i - l3i)^2 / 3 * 
-    ( ellint_RF( l1i/l2i, l1i/l3i, 1) * ( l2i + l3i) / sqrt( l2i*l3i) + 
-        ellint_RD( l1i/l2i, l1i/l3i, 1) * ( 2*l1i - l2i - l3i) / 3 / sqrt( l2i*l3i) 
-      - 2 ) 
+      ( l1i + l2i + l3i)^2 / (l2i - l3i)^2 / 3 * 
+      ( ellint_RF( l1i/l2i, l1i/l3i, 1) * ( l2i + l3i) / sqrt( l2i*l3i) + 
+          ellint_RD( l1i/l2i, l1i/l3i, 1) * ( 2*l1i - l2i - l3i) / 3 / sqrt( l2i*l3i) 
+        - 2 ) 
   }
   ind1 <- ( !ind23) & ( ind12)
   if ( any( ind1)) {
@@ -212,8 +211,8 @@ kurtosisFunctionF2 <- function( l1, l2, l3) {
     l2i <- l2[ind1]
     l3i <- l3[ind1]  
     F2[ ind1] <- 
-    6 * ( l1i + 2*l3i)^2 / 144 / l3i^2 / ( l1i - l3i)^2 *
-    (l3i * ( l1i + 2*l3i) + l1i * ( l1i - 4 * l3i) * alpha( 1 - l1i / l3i))
+      6 * ( l1i + 2*l3i)^2 / 144 / l3i^2 / ( l1i - l3i)^2 *
+      (l3i * ( l1i + 2*l3i) + l1i * ( l1i - 4 * l3i) * alpha( 1 - l1i / l3i))
   }
   ind2 <- ( !ind23) & ( !ind12)
   if ( any( ind2)) F2[ ind2] <- 6/15
@@ -221,10 +220,10 @@ kurtosisFunctionF2 <- function( l1, l2, l3) {
   F2
 }
 
-pseudoinverseSVD <- function( xxx, eps=1e-8) {
+pseudoinverseSVD <- function( xxx, eps = 1e-8) {
   svdresult <- svd( xxx)
   d <-  svdresult$d
   dinv <- 1/d
-  dinv[abs(d)<eps] <- 0
+  dinv[abs(d) < eps] <- 0
   svdresult$v %*% diag( dinv) %*% t( svdresult$u)
 }

@@ -106,17 +106,8 @@ setMethod("dkiTensor", "dtiData",
               if ( (ngrad <- length( indbv1)) != length( indbv2)) stop( "Need same number of gradients vectors for both shells!")
 
               ## we must have two shell data and the gradient direction coincide for both shells
-              gradtest <- abs(range(object@gradient[ , indbv1], object@gradient[ , indbv2]))
-              gradtest1 <- abs(range(diag(t(object@gradient[ , indbv1])%*%object@gradient[ , indbv2])-1))
-              if (max(gradtest1)>1e-6) warning( "dkiTensor: Gradient directions on the two shells are not identical (this might be a numerical problem).\n Proceed, but strange things may happen!")
-#              gradtest <- outer( object@gradient[ , indbv1], object@gradient[ , indbv2], "*")
-#              gradtest1 <- apply( apply( gradtest, c( 2, 4), diag), c( 2, 3), sum)
-#              gradtest2  <- apply( gradtest1, 2, max)
-              ## TODO: This test is actually never false (numerics!)
-#              if ( any( gradtest2 != 1)) warning( "dkiTensor: Gradient directions on the two shells are not identical (this might be a numerical problem).\n Proceed, but strange things may happen!")
-              ## probably re-order indbv2 according to indbv1
-#              gradtest2  <- apply(gradtest1, 1, order, decreasing = TRUE)
-#              indbv2 <- indbv2[ gradtest2[ 1, ]] ## re-ordered indices
+              gradtest <- abs(range(diag(t(object@gradient[ , indbv1]) %*% object@gradient[ , indbv2]) - 1))
+              if (max(gradtest) > 1e-6) warning( "dkiTensor: Gradient directions on the two shells are not identical (this might be a numerical problem).\n Proceed, but strange things may happen!")
               
               ## We need only a reduced design, as the gradient directions coincide
               xxx <- dkiDesign( object@gradient[ , indbv1])
@@ -231,7 +222,6 @@ setMethod("dkiTensor", "dtiData",
                       Tabesh_X <- PI_Tabesh_A %*% Tabesh_B
                       D[ c( 1, 4, 6, 2, 3, 5), i, j, k] <- Tabesh_X[ 1:6]
                       W[ , i, j, k] <- Tabesh_X[ 7:21] / ( mean( Tabesh_X[ 1:3]))^2
-                      # D, W  <- pseudoinverseSVD( Tabesh_A) %*% Tabesh_B
                     }
                   }
                 }
@@ -241,10 +231,6 @@ setMethod("dkiTensor", "dtiData",
             }
 
             if ( verbose) cat( "dkiTensor: finished estimation", format( Sys.time()), "\n")
-
-#             dim(D) <- c( 6, prod(ddim))
-#             Dapp <- Tabesh_AD %*% D[ c( 1, 4, 6, 2, 3, 5), ]
-#             dim(D) <- c( 6, ddim)
             
             ## TODO: CHECK THESE!
             sigma2 <- array( 0, dim = ddim)
@@ -393,13 +379,15 @@ setMethod("dkiIndices", "dkiTensor",
 
             ## cannot allocate memory for the following:
             ## w1111 <- diag( x1[ , 7:21] %*% D[ 7:21, ])
-            w1111 <- (x1[ , 7:21]*t(W))%*%rep(1,15)
-            w1111 <- numeric( nvox)
-            for ( i in 1:nvox) if (object@mask[ i]) w1111[ i] <- x1[ i, 7:21] %*% W[ , i]
-            w2222 <- numeric( nvox)
-            for ( i in 1:nvox) if (object@mask[ i]) w2222[ i] <- x2[ i, 7:21] %*% W[ , i]
-            w3333 <- numeric( nvox)
-            for ( i in 1:nvox) if (object@mask[ i]) w3333[ i] <- x3[ i, 7:21] %*% W[ , i]
+            w1111 <- (x1[ , 7:21] * t(W)) %*% rep( 1, 15)
+#            w1111 <- numeric( nvox)
+#            for ( i in 1:nvox) if (object@mask[ i]) w1111[ i] <- x1[ i, 7:21] %*% W[ , i]
+            w2222 <- (x2[ , 7:21] * t(W)) %*% rep( 1, 15)
+#            w2222 <- numeric( nvox)
+#            for ( i in 1:nvox) if (object@mask[ i]) w2222[ i] <- x2[ i, 7:21] %*% W[ , i]
+            w3333 <- (x3[ , 7:21] * t(W)) %*% rep( 1, 15)
+#            w3333 <- numeric( nvox)
+#            for ( i in 1:nvox) if (object@mask[ i]) w3333[ i] <- x3[ i, 7:21] %*% W[ , i]
             
             k1 <- w1111 / lambda[ 1, ]^2
             k2 <- w2222 / lambda[ 2, ]^2

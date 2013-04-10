@@ -412,126 +412,129 @@ afsigmc <- function(y,                 # data
 #     default parameters:  see function setawsdefaults
 #       
 awslinsd <- function(y,hmax=NULL,hpre=NULL,h0=NULL,mask=NULL,
-                ladjust=1,wghts=NULL,varprop=.1,A0,A1)
+                     ladjust=1,wghts=NULL,varprop=.1,A0,A1)
 {
-#
-#    first check arguments and initialize
-#
-homogen <- TRUE
-wghts <- NULL
-
-args <- match.call()
-dy<-dim(y)
-if(length(dy)!=3) stop("Image should be 3D")
-#
-#   set appropriate defaults
-#
-if(is.null(wghts)) wghts <- c(1,1,1)
-wghts <- wghts[1]/wghts[2:3]
-cpar<-setawsdefaults(mean(y),ladjust,hmax,wghts)
-if(is.null(mask)) {
+  #
+  #    first check arguments and initialize
+  #
+  homogen <- TRUE
+  wghts <- NULL
+  
+  args <- match.call()
+  dy<-dim(y)
+  if(length(dy)!=3) stop("Image should be 3D")
+  #
+  #   set appropriate defaults
+  #
+  if(is.null(wghts)) wghts <- c(1,1,1)
+  wghts <- wghts[1]/wghts[2:3]
+  cpar<-setawsdefaults(mean(y),ladjust,hmax,wghts)
+  if(is.null(mask)) {
     if(length(dy)==0) mask <- rep(TRUE,length(y)) else mask <- array(TRUE,dy)
-}
-lambda <- cpar$lambda
-maxvol <- cpar$maxvol
-k <- cpar$k
-kstar <- cpar$kstar
-hmax <- cpar$hmax
-n<-length(y)
-# 
-#   family dependent transformations 
-#
-zfamily <- awsgfamily(y,h0,3)
-sigma2 <- zfamily$sigma2
-h0 <- zfamily$h0
-rm(zfamily)
-# now check which procedure is appropriate
-##  this is the version on a grid
-n <- length(y)
-n1 <- dy[1]
-n2 <- dy[2]
-n3 <- dy[3]
-#
-#    Initialize  for the iteration
-#  
-zobj<-list(ai=y, bi= rep(1,n), theta= y, fix=!mask)
-mae<-NULL
-lambda0<-1e50 # that removes the stochstic term for the first step, initialization by kernel estimates
-#
-#   produce a presmoothed estimate to stabilze variance estimates
-#
-if(is.null(hpre)) hpre<-20^(1/3)
-dlw<-(2*trunc(hpre/c(1,wghts))+1)[1:3]
-hobj <- .Fortran("caws03d",as.double(y),
-                       as.logical(mask),
-                       as.integer(n1),
-                       as.integer(n2),
-                       as.integer(n3),
-                       as.double(hpre),
-                       theta=as.double(zobj$theta),
-                       bi=as.double(zobj$bi),
-		       double(prod(dlw)),
-		       as.double(wghts),
-		       PACKAGE="dti",DUP=FALSE)[c("bi","theta")]
-dim(hobj$theta) <- dim(hobj$bi) <- dy
-#
-#   iteratate until maximal bandwidth is reached
-#
-cat("Progress:")
-total <- cumsum(1.25^(1:kstar))/sum(1.25^(1:kstar))
-while (k<=kstar) {
-      hakt0 <- gethani(1,10,1.25^(k-1),c(1,0,0,1,0,1),c(1,wghts),1e-4)
-      hakt <- gethani(1,10,1.25^k,c(1,0,0,1,0,1),c(1,wghts),1e-4)
-dlw<-(2*trunc(hakt/c(1,wghts))+1)[1:3]
-if(any(h0>0)) lambda0<-lambda0*Spatialvar.gauss(hakt0/0.42445/4,h0,3)/Spatialvar.gauss(hakt0/0.42445/4,1e-5,3)
-# Correction for spatial correlation depends on h^{(k)} 
-hakt0<-hakt
-# heteroskedastic Gaussian case
-zobj <- .Fortran("cgaws",as.double(y),
-                       as.logical(mask),
-                       as.double(sigma2),
-                       as.integer(n1),
-                       as.integer(n2),
-                       as.integer(n3),
-                       hakt=as.double(hakt),
-                       hhom=as.double(rep(1,n)),
-                       as.double(lambda0),
-                       as.double(zobj$theta),
-                       bi=as.double(zobj$bi),
-		       gi=double(n),
-		       gi2=double(n),
-                       theta=double(n),
-		       double(prod(dlw)),
-		       as.double(wghts),
-		       PACKAGE="dti",DUP=FALSE)[c("bi","hhom","theta","gi","gi2","hakt")]
-dim(zobj$theta)<-dim(zobj$gi)<-dim(zobj$gi2)<-dim(zobj$bi)<-dy
-hhom <- zobj$hhom
-#
-#    Calculate MAE and MSE if true parameters are given in u 
-#    this is for demonstration and testing for propagation (parameter adjustments) 
-#    only.
-#
-#   Prepare for next iteration
-#
-#
-#   Create new variance estimate
-#
-vobj <- awsgsigma2(y,mask,hobj,zobj,varprop,h0,A0,A1)
-sigma2 <- vobj$sigma2inv
-coef <- vobj$coef
-rm(vobj)
-lambda0<-lambda
-if (max(total) >0) {
-      cat(signif(total[k],2)*100,"% . ",sep="")
-     }
-k <- k+1
-gc()
-}
-cat("\n")
-###                                                                       
-###            end iterations now prepare results                                                  
-###                                 
-list(theta = zobj$theta, vcoef=coef, mask=mask)
+  }
+  lambda <- cpar$lambda
+  maxvol <- cpar$maxvol
+  k <- cpar$k
+  kstar <- cpar$kstar
+  hmax <- cpar$hmax
+  n<-length(y)
+  # 
+  #   family dependent transformations 
+  #
+  zfamily <- awsgfamily(y,h0,3)
+  sigma2 <- zfamily$sigma2
+  h0 <- zfamily$h0
+  rm(zfamily)
+  # now check which procedure is appropriate
+  ##  this is the version on a grid
+  n <- length(y)
+  n1 <- dy[1]
+  n2 <- dy[2]
+  n3 <- dy[3]
+  #
+  #    Initialize  for the iteration
+  #  
+  zobj<-list(ai=y, bi= rep(1,n), theta= y, fix=!mask)
+  mae<-NULL
+  lambda0<-1e50 # that removes the stochstic term for the first step, initialization by kernel estimates
+  #
+  #   produce a presmoothed estimate to stabilze variance estimates
+  #
+  if(is.null(hpre)) hpre<-20^(1/3)
+  dlw<-(2*trunc(hpre/c(1,wghts))+1)[1:3]
+  hobj <- .Fortran("caws03d",as.double(y),
+                   as.logical(mask),
+                   as.integer(n1),
+                   as.integer(n2),
+                   as.integer(n3),
+                   as.double(hpre),
+                   theta=as.double(zobj$theta),
+                   bi=as.double(zobj$bi),
+                   double(prod(dlw)),
+                   as.double(wghts),
+                   PACKAGE="dti",DUP=FALSE)[c("bi","theta")]
+  dim(hobj$theta) <- dim(hobj$bi) <- dy
+  #
+  #   iteratate until maximal bandwidth is reached
+  #
+#  cat("Progress:")
+#  total <- cumsum(1.25^(1:kstar))/sum(1.25^(1:kstar))
+  pb <- txtProgressBar(0, kstar, style = 3)
+  while (k<=kstar) {
+    hakt0 <- gethani(1,10,1.25^(k-1),c(1,0,0,1,0,1),c(1,wghts),1e-4)
+    hakt <- gethani(1,10,1.25^k,c(1,0,0,1,0,1),c(1,wghts),1e-4)
+    dlw<-(2*trunc(hakt/c(1,wghts))+1)[1:3]
+    if(any(h0>0)) lambda0<-lambda0*Spatialvar.gauss(hakt0/0.42445/4,h0,3)/Spatialvar.gauss(hakt0/0.42445/4,1e-5,3)
+    # Correction for spatial correlation depends on h^{(k)} 
+    hakt0<-hakt
+    # heteroskedastic Gaussian case
+    zobj <- .Fortran("cgaws",as.double(y),
+                     as.logical(mask),
+                     as.double(sigma2),
+                     as.integer(n1),
+                     as.integer(n2),
+                     as.integer(n3),
+                     hakt=as.double(hakt),
+                     hhom=as.double(rep(1,n)),
+                     as.double(lambda0),
+                     as.double(zobj$theta),
+                     bi=as.double(zobj$bi),
+                     gi=double(n),
+                     gi2=double(n),
+                     theta=double(n),
+                     double(prod(dlw)),
+                     as.double(wghts),
+                     PACKAGE="dti",DUP=FALSE)[c("bi","hhom","theta","gi","gi2","hakt")]
+    dim(zobj$theta)<-dim(zobj$gi)<-dim(zobj$gi2)<-dim(zobj$bi)<-dy
+    hhom <- zobj$hhom
+    #
+    #    Calculate MAE and MSE if true parameters are given in u 
+    #    this is for demonstration and testing for propagation (parameter adjustments) 
+    #    only.
+    #
+    #   Prepare for next iteration
+    #
+    #
+    #   Create new variance estimate
+    #
+    vobj <- awsgsigma2(y,mask,hobj,zobj,varprop,h0,A0,A1)
+    sigma2 <- vobj$sigma2inv
+    coef <- vobj$coef
+    rm(vobj)
+    lambda0<-lambda
+    setTxtProgressBar(pb, k)
+#    if (max(total) >0) {
+#      cat(signif(total[k],2)*100,"% . ",sep="")
+#    }
+    k <- k+1
+    gc()
+  }
+  close(pb)
+# cat("\n")
+  ###                                                                       
+  ###            end iterations now prepare results                                                  
+  ###                                 
+  list(theta = zobj$theta, vcoef=coef, mask=mask)
 }
 ###########################################################################
 #
