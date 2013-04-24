@@ -124,6 +124,7 @@ readDWIdata <- function(gradient, dirlist,
                         level = 0, mins0value = 1, maxvalue = 32000,
                         voxelext = NULL, orientation = c(0L, 2L, 5L), rotation = NULL,
                         pattern = NULL,
+                        SPM2 = TRUE,
                         verbose = FALSE) {
 
   args <- list(sys.call())
@@ -226,6 +227,7 @@ readDWIdata <- function(gradient, dirlist,
       imageOrientationPatient <- t(matrix(c(dd@srow_x[1:3]/dd@pixdim[2:4], dd@srow_y[1:3]/dd@pixdim[2:4], dd@srow_z[1:3]/dd@pixdim[2:4]), 3, 3))
     } else if (format == "ANALYZE") {
       dd <- readANALYZE(ff)
+      if ( SPM2) dd@.Data <- dd@.Data * dd@funused1
       nslice <- dim(dd)[3]
       if (is.null(zind)) zind <- 1:nslice
       delta <- dd@pixdim[2:4]

@@ -340,7 +340,8 @@ setMethod("dkiIndices", "dkiTensor",
             ## Note: the DT entries in D are re-ordered compared to Tabesh_AD for backward comp.
             ## Maybe we dont need this!
             Dapp <- Tabesh_AD %*% D[ c( 1, 4, 6, 2, 3, 5), object@mask]
-            Kapp <- (Tabesh_AK %*% W[ , object@mask]) / Dapp^2
+            MD2 <- apply( D[ c(1, 4, 6), object@mask], 2, mean)^2
+            Kapp <- sweep((Tabesh_AK %*% W[ , object@mask]) / Dapp^2, 2, MD2, "*")
             ## remove pathological values!
             Kapp[ Kapp < 0] <- 0
             Kapp[ Dapp <= 0] <- 0
@@ -362,12 +363,12 @@ setMethod("dkiIndices", "dkiTensor",
             ## Tabesh Eq. [25]
             mk2 <- array( 0, ddim)
             mk2[ object@mask] <- 
-              kurtosisFunctionF1( lambda[ 1, object@mask], lambda[ 2, object@mask], lambda[ 3, object@mask]) * Wtilde1111 
-            + kurtosisFunctionF1( lambda[ 2, object@mask], lambda[ 1, object@mask], lambda[ 3, object@mask]) * Wtilde2222 
-            + kurtosisFunctionF1( lambda[ 3, object@mask], lambda[ 2, object@mask], lambda[ 1, object@mask]) * Wtilde3333
-            + kurtosisFunctionF2( lambda[ 1, object@mask], lambda[ 2, object@mask], lambda[ 3, object@mask]) * Wtilde2233 
-            + kurtosisFunctionF2( lambda[ 2, object@mask], lambda[ 1, object@mask], lambda[ 3, object@mask]) * Wtilde1133 
-            + kurtosisFunctionF2( lambda[ 3, object@mask], lambda[ 2, object@mask], lambda[ 1, object@mask]) * Wtilde1122
+              kurtosisFunctionF1( lambda[ 1, object@mask], lambda[ 2, object@mask], lambda[ 3, object@mask]) * Wtilde1111 +
+              kurtosisFunctionF1( lambda[ 2, object@mask], lambda[ 1, object@mask], lambda[ 3, object@mask]) * Wtilde2222 +
+              kurtosisFunctionF1( lambda[ 3, object@mask], lambda[ 2, object@mask], lambda[ 1, object@mask]) * Wtilde3333 +
+              kurtosisFunctionF2( lambda[ 1, object@mask], lambda[ 2, object@mask], lambda[ 3, object@mask]) * Wtilde2233 +
+              kurtosisFunctionF2( lambda[ 2, object@mask], lambda[ 1, object@mask], lambda[ 3, object@mask]) * Wtilde1133 +
+              kurtosisFunctionF2( lambda[ 3, object@mask], lambda[ 2, object@mask], lambda[ 1, object@mask]) * Wtilde1122
             ## END
             
 

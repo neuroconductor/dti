@@ -8,19 +8,36 @@ show3d <- function(obj,  ...) cat("3D Visualization not implemented for this cla
 
 setGeneric("show3d", function(obj,  ...) standardGeneric("show3d"))
 
-setMethod("show3d","dtiData", function(obj, xind=NULL, yind=NULL, zind=NULL, quant=.8, scale=.4, bgcolor="black", add=FALSE, maxobjects=729, what=c("adc","data"), minalpha=1, nn=1, normalize=FALSE, box=FALSE, title=FALSE,...){
-## check what
-  what <- tolower(what)
-  what <- match.arg(what)
+setMethod("show3d","dtiData", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,quant=.8,scale=.4,bgcolor="black",add=FALSE,maxobjects=729,what="ADC",minalpha=1,nn=1,normalize=FALSE,box=FALSE,title=FALSE,...){
   if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
-  cube <- selectCube(xind,yind,zind,obj@ddim,maxobjects)
-  xind <- cube$xind
-  yind <- cube$yind
-  zind <- cube$zind
-  n <- cube$n
-  n1 <- cube$n1
-  n2 <- cube$n2
-  n3 <- cube$n3
+  if(is.null(nx)) nx <- obj@ddim[1]
+  if(is.null(ny)) ny <- obj@ddim[2]
+  if(is.null(nz)) nz <- obj@ddim[3]
+  n <- nx*ny*nz
+  if(is.null(center)) center <- floor((obj@ddim+1)/2)
+  if(nx*ny*nz>maxobjects) {
+  cat("size of data cube",n," exceeds maximum of",maxobjects,"\n")
+  if(nz > maxobjects^(1/3)) n3 <- 1 else n3 <- nz
+    n1 <- n2 <- floor(sqrt(maxobjects/n3))
+  } else {
+    n1 <- nx
+    n2 <- ny
+    n3 <- nz
+  }
+  xind <- (center[1]-(n1%/%2)):(center[1]+(n1%/%2))
+  yind <- (center[2]-(n2%/%2)):(center[2]+(n2%/%2))
+  zind <- (center[3]-(n3%/%2)):(center[3]+(n3%/%2))
+  xind <- xind[xind>0&xind<=obj@ddim[1]]
+  yind <- yind[yind>0&yind<=obj@ddim[2]]
+  zind <- zind[zind>0&zind<=obj@ddim[3]]
+  if (obj@orientation[1]==1) xind <- min(xind)+max(xind)-xind
+  if (obj@orientation[2]==3) yind <- min(yind)+max(yind)-yind
+  if (obj@orientation[3]==4) zind <- min(zind)+max(zind)-zind
+  n1 <- length(xind)
+  n2 <- length(yind)
+  n3 <- length(zind)
+  n <- n1*n2*n3
+  if(n==0) stop("Empty cube specified")
   cat(" selected cube specified by \n xind=",min(xind),":",max(xind),
       "\n yind=",min(yind),":",max(yind),
       "\n zind=",min(zind),":",max(zind),"\n")
@@ -35,7 +52,7 @@ setMethod("show3d","dtiData", function(obj, xind=NULL, yind=NULL, zind=NULL, qua
   s0 <- extract(obj,"s0")$s0
   if(length(dim(s0))==4) s0 <- apply(s0,1:3,mean)
   radii <- sweep(radii,1:3,s0,"/")
-  if(what=="adc") radii <- array(pmax(0,-log(radii)),dim(radii))
+  if(what=="ADC") radii <- array(pmax(0,-log(radii)),dim(radii))
 # avoid using negative ADC's caused by random effects 
   ngrad <- dim(radii)[length(dim(radii))]
   dim(radii) <- c(length(radii)/ngrad,ngrad)
@@ -56,40 +73,73 @@ setMethod("show3d","dtiData", function(obj, xind=NULL, yind=NULL, zind=NULL, qua
      par3d(...)
      rgl.bg(color=bgcolor)
      }
+#  if(what=="colorcoded") {
+#     polyeder <- switch(subdivide+1,icosa0,icosa1,icosa2,icosa3,icosa4)
+#     ngrad <- dim(gradient)[2]
+#     n <- dim(radii)[2]
+#     cat("radii",dim(radii))
+#     radii <- matrix(.Fortran("datinter",
+#                        as.double(radii),
+#                        as.integer(n),
+#                        as.double(gradient),
+#                        as.integer(ngrad),
+#                        as.double(polyeder$vertices),
+#                        as.integer(polyeder$nv),
+#                        as.integer(nn),#number of nearest neighbors
+#                        double(nn),#auxiliary 
+#                        integer(nn),#auxiliary 
+#                        polyradii=double(polyeder$nv*n),
+#                        DUP=FALSE,
+#                        PACKAGE="dti")$polyradii,polyeder$nv,n)
+#     cat("newradii",dim(radii))
+#     show3dCdata(radii,polyeder,centers=tmean,minalpha=minalpha,scale=scale,...)
+#  } else {
      show3dData(radii,gradient,centers=tmean,minalpha=minalpha,...)
+#  }
   if(box) bbox3d()
   if(is.character(title)) {
      title3d(title,color="white",cex=1.5)
   } else {
-     if(title) title3d(switch(what,"data"="observed DWI data","adc"="observed ADC"),color="white",cex=1.5)
+     if(title) title3d(switch(tolower(what),"data"="observed DWI data","adc"="observed ADC"),color="white",cex=1.5)
   }
-  cat("\n rgl-device",rgl.cur(),switch(what,"data"="observed diffusion weighted data","adc"="apparent diffusion coefficients from data"),"\n",
+  cat("\n rgl-device",rgl.cur(),switch(tolower(what),"data"="observed diffusion weighted data","adc"="apparent diffusion coefficients from data"),"\n",
   if(normalize) "normalized","\n")
   invisible(rgl.cur())
 })
 ##############
 
-setMethod("show3d","dtiTensor", function(obj,xind=NULL,yind=NULL,zind=NULL,method=1,minfa=.3,mask=NULL,fibers=FALSE,maxangle=30,level=0,quant=.8,scale=.4,bgcolor="black",add=FALSE,subdivide=2,maxobjects=729,what=c("tensor","adc","odf"),odfscale=1,minalpha=.25,normalize=NULL,box=FALSE,title=FALSE,...){
+setMethod("show3d","dtiTensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,method=1,minfa=.3,mask=NULL,fibers=FALSE,maxangle=30,level=0,quant=.8,scale=.4,bgcolor="black",add=FALSE,subdivide=2,maxobjects=729,what="tensor",odfscale=1,minalpha=.25,normalize=NULL,box=FALSE,title=FALSE,...){
   if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
-## check what
-  what <- tolower(what)
-  what <- match.arg(what)
-  if(!exists("icosa0")) data("polyeders", envir = environment())
+  if(!exists("icosa0")) data("polyeders")
   if(subdivide<0||subdivide>4) subdivide <- 3
-  cube <- selectCube(xind,yind,zind,obj@ddim,maxobjects)
-  xind <- cube$xind
-  yind <- cube$yind
-  zind <- cube$zind
-  n <- cube$n
-  n1 <- cube$n1
-  n2 <- cube$n2
-  n3 <- cube$n3
-  cat(" selected cube specified by \n xind=",min(xind),":",max(xind),
-      "\n yind=",min(yind),":",max(yind),
-      "\n zind=",min(zind),":",max(zind),"\n")
+  if(is.null(nx)) nx <- obj@ddim[1]
+  if(is.null(ny)) ny <- obj@ddim[2]
+  if(is.null(nz)) nz <- obj@ddim[3]
+  n <- nx*ny*nz
+  if(is.null(center)) center <- floor((obj@ddim+1)/2)
+  if(nx*ny*nz>maxobjects) {
+  cat("size of data cube",n," exceeds maximum of",maxobjects,"\n")
+  if(nz > maxobjects^(1/3)) n3 <- 1 else n3 <- nz
+    n1 <- n2 <- floor(sqrt(maxobjects/n3))
+  } else {
+    n1 <- nx
+    n2 <- ny
+    n3 <- nz
+  }
+  xind <- (center[1]-(n1%/%2)):(center[1]+(n1%/%2))
+  yind <- (center[2]-(n2%/%2)):(center[2]+(n2%/%2))
+  zind <- (center[3]-(n3%/%2)):(center[3]+(n3%/%2))
+  xind <- xind[xind>0&xind<=obj@ddim[1]]
+  yind <- yind[yind>0&yind<=obj@ddim[2]]
+  zind <- zind[zind>0&zind<=obj@ddim[3]]
   if (obj@orientation[1]==1) xind <- min(xind)+max(xind)-xind
   if (obj@orientation[2]==3) yind <- min(yind)+max(yind)-yind
   if (obj@orientation[3]==4) zind <- min(zind)+max(zind)-zind
+  n1 <- length(xind)
+  n2 <- length(yind)
+  n3 <- length(zind)
+  n <- n1*n2*n3
+  if(n==0) stop("Empty cube specified")
   cat(" selected cube specified by \n xind=",min(xind),":",max(xind),
       "\n yind=",min(yind),":",max(yind),
       "\n zind=",min(zind),":",max(zind),"\n")
@@ -97,15 +147,16 @@ setMethod("show3d","dtiTensor", function(obj,xind=NULL,yind=NULL,zind=NULL,metho
   mask <- as.vector(mask[xind,yind,zind])
   obj <- obj[xind,yind,zind]
   vext <- obj@voxelext
+  center <- center*vext
   n <- prod(obj@ddim) 
   D <- obj@D
   D <- D/max(D)
   dim(D) <- c(6,n)
   mask <- mask & (D[1,]*D[4,]*D[6,]>0)
   tmean <- array(0,c(3,obj@ddim))
-  tmean[1,,,] <- xind*vext[1]
-  tmean[2,,,] <- outer(rep(1,n1),yind)*vext[2]
-  tmean[3,,,] <- outer(rep(1,n1),outer(rep(1,n2),zind))*vext[3]
+  tmean[1,,,] <- (1:obj@ddim[1])*vext[1]
+  tmean[2,,,] <- outer(rep(1,obj@ddim[1]),1:obj@ddim[2])*vext[2]
+  tmean[3,,,] <- outer(rep(1,obj@ddim[1]),outer(rep(1,obj@ddim[2]),1:obj@ddim[3]))*vext[3]
   dim(tmean) <- c(3,n)
   z <- extract(obj,what=c("andir","fa"))
   if(minfa>0) mask <- mask&(z$fa>=minfa)
@@ -125,9 +176,9 @@ setMethod("show3d","dtiTensor", function(obj,xind=NULL,yind=NULL,zind=NULL,metho
   D <- D[,mask]
   tmean <- tmean[,mask]
   n <- sum(mask)
-  if(is.null(normalize)) normalize <- switch(what,"tensor"=FALSE,"adc"=TRUE,"odf"=FALSE)
+  if(is.null(normalize)) normalize <- switch(tolower(what),"tensor"=FALSE,"adc"=TRUE,"odf"=FALSE)
   polyeder <- switch(subdivide+1,icosa0,icosa1,icosa2,icosa3,icosa4)
-  radii <- .Fortran(switch(what,tensor="ellradii",adc="adcradii",odf="odfradii"),
+  radii <- .Fortran(switch(tolower(what),tensor="ellradii",adc="adcradii",odf="odfradii"),
                     as.double(polyeder$vertices),
                     as.integer(polyeder$nv),
                     as.double(D),
@@ -136,14 +187,14 @@ setMethod("show3d","dtiTensor", function(obj,xind=NULL,yind=NULL,zind=NULL,metho
                     DUP=FALSE,
                     PACKAGE="dti")$radii
   dim(radii) <- c(polyeder$nv,n)
-  if(what=="odf") normalize <- FALSE
+  if(tolower(what)=="odf") normalize <- FALSE
   if(normalize){
      minradii <- apply(radii,2,min)
      maxradii <- apply(radii,2,max)
      radii <- sweep(radii,2,minradii,"-")
      radii <- sweep(radii,2,maxradii-minradii,"/")*scale
   } else {
-    if (what=="odf"){
+    if (tolower(what)=="odf"){
 #
 #   use a sphere of radius level as baseline for the ODF
 #
@@ -166,7 +217,7 @@ setMethod("show3d","dtiTensor", function(obj,xind=NULL,yind=NULL,zind=NULL,metho
      par3d(...)
      rgl.bg(color=bgcolor)
      }
-  if(what=="odf"){
+  if(tolower(what)=="odf"){
   show3dODF(radii,polyeder,centers=tmean,minalpha=minalpha,...)
      } else {
   show3dTens(radii,polyeder,centers=tmean,colors=colorvalues,alpha=minalpha+(1-minalpha)*fa)
@@ -184,37 +235,55 @@ setMethod("show3d","dtiTensor", function(obj,xind=NULL,yind=NULL,zind=NULL,metho
   if(is.character(title)) {
      title3d(title,color="white",cex=1.5)
   } else {
-     if(title) title3d(switch(what,"tensor"="estimated tensors","adc"="estimated ADC (tensor)"),color="white",cex=1.5)
+     if(title) title3d(switch(tolower(what),"tensor"="estimated tensors","adc"="estimated ADC (tensor)"),color="white",cex=1.5)
   }
-  cat("\n rgl-device",rgl.cur(),switch(what,"tensor"="estimated tensors","adc"="apparent diffusion coefficients from estimated tensors"),"\n",
+  cat("\n rgl-device",rgl.cur(),switch(tolower(what),"tensor"="estimated tensors","adc"="apparent diffusion coefficients from estimated tensors"),"\n",
   if(obj@hmax>1) paste("smoothed with hmax=",obj@hmax),if(normalize) "normalized","\n")
   invisible(rgl.cur())
 })
-setMethod("show3d","dwiMixtensor", function(obj,xind=NULL,yind=NULL,zind=NULL,minfa=.3,minorder=1,mineo=1,fibers=FALSE,maxangle=30,level=0,quant=.8,scale=.4,bgcolor="black",add=FALSE,subdivide=3,maxobjects=729,what=c("odf","axis","both"),odfscale=1,minalpha=1,lwd=3,box=FALSE,title=FALSE,...){
+setMethod("show3d","dwiMixtensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,minfa=.3,minorder=1,mineo=1,fibers=FALSE,maxangle=30,level=0,quant=.8,scale=.4,bgcolor="black",add=FALSE,subdivide=3,maxobjects=729,what="ODF",odfscale=1,minalpha=1,lwd=3,box=FALSE,title=FALSE,...){
   if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
-## check what
-  what <- tolower(what)
-  what <- match.arg(what)
-  if(!exists("icosa0")) data("polyeders", envir = environment())
+  if(!exists("icosa0")) data("polyeders")
   if(subdivide<0||subdivide>4) subdivide <- 3
-  cube <- selectCube(xind,yind,zind,obj@ddim,maxobjects)
-  xind <- cube$xind
-  yind <- cube$yind
-  zind <- cube$zind
-  n <- cube$n
-  n1 <- cube$n1
-  n2 <- cube$n2
-  n3 <- cube$n3
+  if(is.null(nx)) nx <- obj@ddim[1]
+  if(is.null(ny)) ny <- obj@ddim[2]
+  if(is.null(nz)) nz <- obj@ddim[3]
+  n <- nx*ny*nz
+  if(is.null(center)) center <- floor((obj@ddim+1)/2)
+  if(nx*ny*nz>maxobjects) {
+  cat("size of data cube",n," exceeds maximum of",maxobjects,"\n")
+  if(nz > maxobjects^(1/3)) n3 <- 1 else n3 <- nz
+    n1 <- n2 <- floor(sqrt(maxobjects/n3))
+  } else {
+    n1 <- nx
+    n2 <- ny
+    n3 <- nz
+  }
+  xind <- (center[1]-(n1%/%2)):(center[1]+(n1%/%2))
+  yind <- (center[2]-(n2%/%2)):(center[2]+(n2%/%2))
+  zind <- (center[3]-(n3%/%2)):(center[3]+(n3%/%2))
+  xind <- xind[xind>0&xind<=obj@ddim[1]]
+  yind <- yind[yind>0&yind<=obj@ddim[2]]
+  zind <- zind[zind>0&zind<=obj@ddim[3]]
   if (obj@orientation[1]==1) xind <- min(xind)+max(xind)-xind
   if (obj@orientation[2]==3) yind <- min(yind)+max(yind)-yind
   if (obj@orientation[3]==4) zind <- min(zind)+max(zind)-zind
+  n1 <- length(xind)
+  n2 <- length(yind)
+  n3 <- length(zind)
+  n <- n1*n2*n3
+  if(n==0) stop("Empty cube specified")
   cat(" selected cube specified by \n xind=",min(xind),":",max(xind),
       "\n yind=",min(yind),":",max(yind),
       "\n zind=",min(zind),":",max(zind),"\n")
-  obj <- obj[xind,yind,zind]
   mask <- obj@mask
+  mask[-xind,,] <- FALSE
+  mask[,-yind,] <- FALSE
+  mask[,,-zind] <- FALSE
+#  obj <- obj[xind,yind,zind]
   vext <- obj@voxelext
   scale <- scale*min(vext)
+  center <- center*vext
   order <- obj@order
   ev <- obj@ev
   mix <- obj@mix
@@ -222,9 +291,9 @@ setMethod("show3d","dwiMixtensor", function(obj,xind=NULL,yind=NULL,zind=NULL,mi
   orient <- obj@orient
   n <- prod(obj@ddim) 
   tmean <- array(0,c(3,obj@ddim))
-  tmean[1,,,] <- xind*vext[1]
-  tmean[2,,,] <- outer(rep(1,n1),yind)*vext[2]
-  tmean[3,,,] <- outer(rep(1,n1),outer(rep(1,n2),zind))*vext[3]
+  tmean[1,,,] <- (1:obj@ddim[1])*vext[1]
+  tmean[2,,,] <- outer(rep(1,obj@ddim[1]),1:obj@ddim[2])*vext[2]
+  tmean[3,,,] <- outer(rep(1,obj@ddim[1]),outer(rep(1,obj@ddim[2]),1:obj@ddim[3]))*vext[3]
   if(minfa > 0){
      fa <- extract(obj,"fa")$fa
      mask <- (fa>=minfa)&mask
@@ -247,7 +316,7 @@ setMethod("show3d","dwiMixtensor", function(obj,xind=NULL,yind=NULL,zind=NULL,mi
   }
   gc()
   polyeder <- switch(subdivide+1,icosa0,icosa1,icosa2,icosa3,icosa4)
-  if(what %in% c("odf","both")){
+  if(toupper(what) %in% c("ODF","BOTH")){
   radii <- .Fortran("mixtradi",
                     as.double(polyeder$vertices),
                     as.integer(polyeder$nv),
@@ -275,7 +344,7 @@ setMethod("show3d","dwiMixtensor", function(obj,xind=NULL,yind=NULL,zind=NULL,mi
   radii <- radii^(1/odfscale)
   radii <- radii/quantile(apply(radii,2,max),quant)*scale
   }
-  if(what %in% c("axis","both")){
+  if(toupper(what) %in% c("AXIS","BOTH")){
    colors <- rainbow(1024,end=2/3)
    ranger <- range(fa)
    ind <- 1024-(fa-ranger[1])/(ranger[2]-ranger[1])*1023
@@ -302,8 +371,8 @@ setMethod("show3d","dwiMixtensor", function(obj,xind=NULL,yind=NULL,zind=NULL,mi
      par3d(...)
      rgl.bg(color=bgcolor)
      }
-  if(what %in% c("odf","both")) show3dODF(radii,polyeder,centers=tmean,minalpha=minalpha,...)
-  if(what %in% c("axis","both"))  rgl.lines(lcoord[1,],lcoord[2,],lcoord[3,],color=colorvalues,size=lwd)
+  if(toupper(what) %in% c("ODF","BOTH")) show3dODF(radii,polyeder,centers=tmean,minalpha=minalpha,...)
+  if(toupper(what) %in% c("AXIS","BOTH"))  rgl.lines(lcoord[1,],lcoord[2,],lcoord[3,],color=colorvalues,size=lwd)
   if(fibers){
      tracks <- tracking(obj,mask=mask,minfa=minfa,maxangle=maxangle)
      dd <- tracks@fibers
@@ -317,33 +386,35 @@ setMethod("show3d","dwiMixtensor", function(obj,xind=NULL,yind=NULL,zind=NULL,mi
   if(is.character(title)) {
      title3d(title,color="white",cex=1.5)
   } else {
-     if(title) title3d(switch(what,"odf"="estimated ODF"),color="white",cex=1.5)
+     if(title) title3d(switch(tolower(what),"ODF"="estimated ODF"),color="white",cex=1.5)
   }
-  cat("\n rgl-device",rgl.cur(),switch(what,"odf"="estimated ODF"),"\n")
+  cat("\n rgl-device",rgl.cur(),switch(tolower(what),"ODF"="estimated ODF"),"\n")
   if(obj@hmax>1) paste("smoothed with hmax=",obj@hmax,"\n")
   invisible(rgl.cur())
 })
 ##############
 
-setMethod("show3d","dtiIndices",function(obj, index=c("fa","ga"), xind=NULL, yind=NULL, zind=NULL, method=1, minfa=0, bgcolor="black", add=FALSE, lwd=1,box=FALSE,title=FALSE,...){
-  index <- tolower(index)
-## check index
-  index <- match.arg(index)
+setMethod("show3d","dtiIndices",function(obj, index="FA", nx=NULL, ny=NULL, nz=NULL, center=NULL, method=1, minfa=0, bgcolor="black", add=FALSE, lwd=1,box=FALSE,title=FALSE,...){
   if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
   index <- tolower(index) 
   if(!(index%in%c("fa","ga"))) stop("index should be either 'FA' or 'GA'\n")
-  cube <- selectCube(xind,yind,zind,obj@ddim,prod(obj@ddim))
-  xind <- cube$xind
-  yind <- cube$yind
-  zind <- cube$zind
-  n <- cube$n
-  n1 <- cube$n1
-  n2 <- cube$n2
-  n3 <- cube$n3
-  cat(" selected cube specified by \n xind=",min(xind),":",max(xind),
-      "\n yind=",min(yind),":",max(yind),
-      "\n zind=",min(zind),":",max(zind),"\n")
-  obj <- obj[xind,yind,zind,drop=FALSE]
+  if(is.null(center)) center <- floor((obj@ddim+1)/2)
+  if(is.null(nx)) nx <- obj@ddim[1]
+  if(is.null(ny)) ny <- obj@ddim[2]
+  if(is.null(nz)) nz <- obj@ddim[3]
+  xind <- (center[1]-(nx%/%2)):(center[1]+(nx%/%2))
+  yind <- (center[2]-(ny%/%2)):(center[2]+(ny%/%2))
+  zind <- (center[3]-(nz%/%2)):(center[3]+(nz%/%2))
+  xind <- xind[xind>0&xind<=obj@ddim[1]]
+  yind <- yind[yind>0&yind<=obj@ddim[2]]
+  zind <- zind[zind>0&zind<=obj@ddim[3]]
+  if (obj@orientation[1]==1) xind <- min(xind)+max(xind)-xind
+  if (obj@orientation[2]==3) yind <- min(yind)+max(yind)-yind
+  if (obj@orientation[3]==4) zind <- min(zind)+max(zind)-zind
+  n1 <- length(xind)
+  n2 <- length(yind)
+  n3 <- length(zind)
+  n <- n1*n2*n3
   vext <- obj@voxelext
   ind <- switch(index,"fa"=obj@fa[xind,yind,zind], "ga"=obj@ga[xind,yind,zind])
   ind[ind<minfa] <- 0
@@ -365,7 +436,7 @@ setMethod("show3d","dtiIndices",function(obj, index=c("fa","ga"), xind=NULL, yin
   }
   colorvalues <- rgb(andir[1,],andir[2,],andir[3,])
   dim(andir) <- c(3,n1,n2,n3)
-  andir <- sweep(obj@andir,2:4,ind,"*")
+  andir <- sweep(obj@andir[,xind,yind,zind],2:4,ind,"*")
   lcoord <- array(0,c(3,2,n1,n2,n3))
   lcoord[,1,,,] <-  andir/2+tmean[,,,,drop=FALSE]
   lcoord[,2,,,] <-  -andir/2+tmean[,,,,drop=FALSE]
@@ -390,27 +461,44 @@ setMethod("show3d","dtiIndices",function(obj, index=c("fa","ga"), xind=NULL, yin
 
 ##############
 
-setMethod("show3d","dwiQball", function(obj,xind=NULL, yind=NULL, zind=NULL, level=0, quant=.8, scale=.4, odfscale=1, bgcolor="black", add=FALSE, subdivide=3, maxobjects=729, minalpha=1, box=FALSE, title=FALSE,...){
+setMethod("show3d","dwiQball", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL,level=0,quant=.8,scale=.4,odfscale=1,bgcolor="black",add=FALSE,subdivide=3,maxobjects=729,minalpha=1,box=FALSE,title=FALSE,...){
   if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
-  if(!exists("icosa0")) data("polyeders", envir = environment())
+  if(!exists("icosa0")) data("polyeders")
   if(subdivide<0||subdivide>4) subdivide <- 3
-  cube <- selectCube(xind,yind,zind,obj@ddim,maxobjects)
-  xind <- cube$xind
-  yind <- cube$yind
-  zind <- cube$zind
-  n <- cube$n
-  n1 <- cube$n1
-  n2 <- cube$n2
-  n3 <- cube$n3
+  if(is.null(nx)) nx <- obj@ddim[1]
+  if(is.null(ny)) ny <- obj@ddim[2]
+  if(is.null(nz)) nz <- obj@ddim[3]
+  n <- nx*ny*nz
+  if(is.null(center)) center <- floor((obj@ddim+1)/2)
+  if(nx*ny*nz>maxobjects) {
+  cat("size of data cube",n," exceeds maximum of",maxobjects,"\n")
+  if(nz > maxobjects^(1/3)) n3 <- 1 else n3 <- nz
+    n1 <- n2 <- floor(sqrt(maxobjects/n3))
+  } else {
+    n1 <- nx
+    n2 <- ny
+    n3 <- nz
+  }
+  xind <- (center[1]-(n1%/%2)):(center[1]+(n1%/%2))
+  yind <- (center[2]-(n2%/%2)):(center[2]+(n2%/%2))
+  zind <- (center[3]-(n3%/%2)):(center[3]+(n3%/%2))
+  xind <- xind[xind>0&xind<=obj@ddim[1]]
+  yind <- yind[yind>0&yind<=obj@ddim[2]]
+  zind <- zind[zind>0&zind<=obj@ddim[3]]
   if (obj@orientation[1]==1) xind <- min(xind)+max(xind)-xind
   if (obj@orientation[2]==3) yind <- min(yind)+max(yind)-yind
   if (obj@orientation[3]==4) zind <- min(zind)+max(zind)-zind
+  n1 <- length(xind)
+  n2 <- length(yind)
+  n3 <- length(zind)
+  n <- n1*n2*n3
   if(n==0) stop("Empty cube specified")
   cat(" selected cube specified by \n xind=",min(xind),":",max(xind),
       "\n yind=",min(yind),":",max(yind),
       "\n zind=",min(zind),":",max(zind),"\n")
   obj <- obj[xind,yind,zind]
   vext <- obj@voxelext
+  center <- center*vext
   tmean <- array(0,c(3,n1,n2,n3))
   tmean[1,,,] <- xind*vext[1]
   tmean[2,,,] <- outer(rep(1,n1),yind)*vext[2]
@@ -461,9 +549,9 @@ setMethod("show3d","dwiQball", function(obj,xind=NULL, yind=NULL, zind=NULL, lev
   if(is.character(title)) {
      title3d(title,color="white",cex=1.5)
   } else {
-     if(title) title3d(switch(obj@what,"ODF"="ODF","wODF"="Weighted ODF","aODF"="alternative ODF","adc"="ADC (Sph. Harmonics)"),color="white",cex=1.5)
+     if(title) title3d(switch(tolower(obj@what),"ODF"="ODF","wODF"="Weighted ODF","aODF"="alternative ODF","adc"="ADC (Sph. Harmonics)"),color="white",cex=1.5)
   }
-  cat("\n rgl-device",rgl.cur(),switch(tolower(obj@what),"odf"="Estimated orientation density function (Qball)","aodf"="Estimated orientation density function (Qball)","adc"="estimated apparent diffusion coefficients (sperical harmonics","wodf"="Estimated orientation density function (Aganji et.al. 2009)"),"\n")
+  cat("\n rgl-device",rgl.cur(),switch(tolower(obj@what),"ODF"="Estimated orientation density function (Qball)","aODF"="Estimated orientation density function (Qball)","adc"="estimated apparent diffusion coefficients (sperical harmonics","wODF"="Estimated orientation density function (Aganji et.al. 2009)"),"\n")
   invisible(rgl.cur())
 })
 
@@ -493,7 +581,8 @@ setMethod("show3d","dwiFiber", function(obj,add=FALSE,bgcolor="black",box=FALSE,
 ## argument which are not yet decided have "???"
 setMethod( "show3d", "dkiTensor", 
            function( obj,
-                     xind = NULL, yind = NULL, zind = NULL,
+                     nx = NULL, ny = NULL, nz = NULL, 
+                     center = NULL,
                      method = 1, # ???
                      minfa = .3, # ???
                      mask = NULL,
@@ -516,7 +605,7 @@ setMethod( "show3d", "dkiTensor",
              
              what <- match.arg( what)
              
-             data( "polyeders", envir = environment())
+             data( "polyeders")
              
              if ( ( subdivide < 0) || ( subdivide > 4)) subdivide <- 2
              polyeder <- switch( subdivide + 1, 
@@ -526,33 +615,59 @@ setMethod( "show3d", "dkiTensor",
                                  icosa3, 
                                  icosa4)
              
-  cube <- selectCube(xind,yind,zind,obj@ddim,maxobjects)
-  xind <- cube$xind
-  yind <- cube$yind
-  zind <- cube$zind
-  n <- cube$n
-  n1 <- cube$n1
-  n2 <- cube$n2
-  n3 <- cube$n3
+             if( is.null( nx)) nx <- obj@ddim[1]
+             if( is.null( ny)) ny <- obj@ddim[2]
+             if( is.null( nz)) nz <- obj@ddim[3]
+             n <- nx * ny * nz
+             
+             if ( is.null( center)) center <- floor( ( obj@ddim + 1) / 2)
+             
+             if ( n > maxobjects) {
+               cat( "size of data cube", n, " exceeds maximum of", maxobjects, "\n")
+               n3 <- if ( nz > maxobjects^(1/3)) 1 else nz
+               n1 <- n2 <- floor( sqrt( maxobjects / n3))
+             } else {
+               n1 <- nx
+               n2 <- ny
+               n3 <- nz
+             }
+             xind <- ( center[1] - (n1%/%2)):( center[1] + (n1%/%2))
+             yind <- ( center[2] - (n2%/%2)):( center[2] + (n2%/%2))
+             zind <- ( center[3] - (n3%/%2)):( center[3] + (n3%/%2))
+
+             xind <- xind[ (xind > 0) & (xind <= obj@ddim[ 1])]
+             yind <- yind[ (yind > 0) & (yind <= obj@ddim[ 2])]
+             zind <- zind[ (zind > 0) & (zind <= obj@ddim[ 3])]
 
              if ( obj@orientation[ 1] == 1) xind <- min( xind) + max( xind) - xind
              if ( obj@orientation[ 2] == 3) yind <- min( yind) + max( yind) - yind
              if ( obj@orientation[ 3] == 4) zind <- min( zind) + max( zind) - zind
 
+             n1 <- length( xind)
+             n2 <- length( yind)
+             n3 <- length( zind)
+             
              if ( n1*n2*n3 == 0) stop("Empty cube specified")
              cat(" selected cube specified by \n xind=", min( xind), ":", max( xind),
                  "\n yind=", min( yind), ":", max( yind),
                  "\n zind=", min( zind), ":", max( zind), "\n")
-             obj <- obj[ xind, yind, zind]
              
-             mask <- if( is.null( mask)) obj@mask else (obj@mask & mask[ xind, yind, zind])
+             mask <- if( is.null( mask)) obj@mask else (obj@mask & mask)
+             
+             mask[ -xind, , ] <- FALSE
+             mask[ , -yind, ] <- FALSE
+             mask[ , , -zind] <- FALSE
+
+             obj <- obj[ xind, yind, zind]
+             n <- prod( obj@ddim) 
              
              vext <- obj@voxelext
+             center <- center * vext
 
              tmean <- array( 0, c( 3, n1, n2, n3))
-             tmean[ 1, , , ] <- xind * vext[ 1]
-             tmean[ 2, , , ] <- outer( rep( 1, n1), yind) * vext[ 2]
-             tmean[ 3, , , ] <- outer( rep( 1, n1), outer( rep( 1, n2), zind)) * vext[ 3]
+             tmean[ 1, , , ] <- ( 1:n1) * vext[ 1]
+             tmean[ 2, , , ] <- outer( rep( 1, n1), 1:n2) * vext[ 2]
+             tmean[ 3, , , ] <- outer( rep( 1, n1), outer( rep( 1, n2), 1:n3)) * vext[ 3]
              dim( tmean) <- c( 3, n)
              
              objind <- dkiIndices( obj)
@@ -583,7 +698,7 @@ setMethod( "show3d", "dkiTensor",
 
                MD <- apply( D[ c( 1, 4, 6),], 2, mean)^2
                
-               radii <- sweep( ( xxx[ , 7:21] %*% W) / Dapp, 2 , MD, "*")
+               radii <- sweep( ( xxx[ , 7:21] %*% W) / Dapp^2, 2 , MD, "*")
                radii[ radii < 0] <- 0
 
                radii <- radii / 2.5 / max( radii) * min( vext)
