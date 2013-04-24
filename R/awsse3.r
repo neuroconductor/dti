@@ -258,26 +258,6 @@ if(verbose){
 }
 )
 
-koayinv <- function(r,th0,eps=1e-6){
-eps <- max(max(1e-8,eps))
-if(r<400){
-r <- max(sqrt(pi/(4-pi))+eps,r)
-thsq <- th0*th0
-db <-(2+thsq)*besselI(thsq/4,0,TRUE)+thsq*besselI(thsq/4,1,TRUE)
-ksi <- 2+thsq-pi/8*db*db
-th1 <- sqrt(ksi*(1+r*r)-2)
-while(abs(th0-th1)>eps){
-th0 <- th1
-thsq <- th0*th0
-db <-(2+thsq)*besselI(thsq/4,0,TRUE)+thsq*besselI(thsq/4,1,TRUE)
-ksi <- 2+thsq-pi/8*db*db
-th1 <- sqrt(ksi*(1+r*r)-2)
-}
-} else {
-th1 <- r*0.9999953
-}
-th1
-}
 
 lkfullse3 <- function(h,kappa,gradstats,vext,n){
       ngrad <- dim(gradstats$bghat)[2]

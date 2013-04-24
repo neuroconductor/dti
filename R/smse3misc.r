@@ -20,16 +20,6 @@ matrm <- function(b, g){
          3, 3)
 }
 
-matrn4 <- function(b){
-#  matrix(c(0, tan(b), 0,
-#           -tan(b), 0, -1/cos(b),
-#           0, 1/cos(b), 0),
-#         3, 3)
-  matrix(c(0, sin(b), 0,
-           -sin(b), 0, -1,
-           0, 1, 0),
-         3, 3)
-}
 #
 #
 #
@@ -122,55 +112,9 @@ getkappas <- function(grad, trace = 0, dist = 1){
   }
   list(k456 = kappa456, bghat = zbg$bghat, dist=dist)
 }
-##
-##  Correction for Rician Bias in variance estimates 
-##  see file ~polzehl/R/dti/SE3smooth/adjust_lambda.r 
-##  for parameter selection
-##
-Lhalf <- function(x) (1-x)*besselI(-x/2,0,TRUE) - x*besselI(-x/2,1,TRUE)
 
-ksiofx <- function(x) 2 + x^2 - pi/2*Lhalf(-x^2/2)^2
 
-improvex <- function(x, E, V, par){
-  vcorr <- par[4] + par[3]*(pi/2 + atan(pmax(0, par[1]*x + par[2])^par[5]))/pi
-  sqrt(pmax(0, ksiofx(x)*(1 + E^2/(V*vcorr)) - 2))
-}
 
-sigmaRicecorrected <- function(E, S, par = c(2.3547413, -2.2819829, -0.5873854, 1.5964876, 3.2652531)){
-  xhat <- E/S
-  xold <- 0
-  count <- 100
-  while(abs(xold-xhat) > 1e-10){
-    xold <- xhat
-    xhat <- improvex(xhat, E, S^2, par)
-    count <- count - 1
-    if(count < 0) break
-  }
-  vcorr <- par[4] + par[3]*(pi/2 + atan(pmax(0, par[1]*xhat + par[2])^par[5]))/pi
-  S*sqrt(vcorr/ksiofx(xhat))
-}
-
-lvar <- function(a,mask,L,q=.9){
-#
-#   variance estimates for central \chi^2 with 2L df
-#  Aja-Fernandez (2009) eqn. (32)
-#
-da <- dim(a)
-ind1 <- 2:(da[1]-1)
-ind2 <- 2:(da[2]-1)
-ind3 <- 2:(da[3]-1)
-ma <- ma2 <- array(0,da-2)
-for(i in -1:1) for(j in -1:1) for(k in -1:1){
-ma <- ma + a[ind1+i,ind2+j,ind3+k, drop = FALSE]
-ma2 <- ma2 + a[ind1+i,ind2+j,ind3+k, drop = FALSE]^2
-}
-v <- 27/26*(ma2/27 - (ma/27)^2)
-to <- quantile(v[mask[ind1,ind2,ind3]],q)
-z <- density(v[mask[ind1,ind2,ind3]],to=to,n=1024)
-s <- z$x[z$y==max(z$y)]
-s2 <- 1/(2*L-2*gamma(L+.5)^2/gamma(L)^2)*s
-s2
-}
 
 suggestkappa <- function(grad,vred=1,dist=1){
 #

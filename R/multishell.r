@@ -1,18 +1,3 @@
-sphtrarea <- function(g1,g2,g3){
-##  Compute area of sherical triangle spanned by vectors 
-##  g1,g2,g3 on unit sphere
-##  use absolute values to identify opposite directions with each other
-c12 <- abs(g1%*%g2)
-c13 <- abs(g1%*%g3)
-c23 <- abs(g2%*%g3)
-s12 <- sqrt(1-c12^2)
-s13 <- sqrt(1-c13^2)
-s23 <- sqrt(1-c23^2)
-b1 <- (c23-c12*c13)/s12/s13 
-b2 <- (c13-c12*c23)/s12/s23 
-b3 <- (c12-c23*c13)/s23/s13 
-acos(b1)+acos(b2)+acos(b3)-pi
-}
 
 sphtrarea1 <- function(g1,g2,g3){
 ##  Compute area of sherical triangle spanned by vectors 

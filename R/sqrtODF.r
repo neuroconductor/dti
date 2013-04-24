@@ -43,7 +43,7 @@ setMethod("dwiSqrtODF","dtiData",function(object,what="sqrtODF",order=4,forder=1
   while((order+1)*(order+2)/2*(forder+1) >=ng) order <- order-2
   cat("Using",(order+1)*(order+2)/2,"sperical harmonics\n")
   L <- Lnlm(lambda,forder,order)
-  if(is.null(D0)) D0 <- getD0(siq,bvalue)  ## check ##
+  if(is.null(D0)) D0 <- getD0(siq,bvalue)  ## not yet defined ##
   n <- prod(ddim)
   dim(si) <- c(ng,n)
   nmask <- sum(mask)
