@@ -162,6 +162,7 @@ lkfullse3msh <- function(h,kappa,gradstats,vext,n){
     ind <- matrix(0,5,n)
     w <- numeric(n)
     nn <- 0
+    dist <- 4
     for(i in 1:nbv){
       gshell <- list(k456=gradstats$k456[[i]],bghat=gradstats$bghat[[i]],dist=dist) 
       z <- lkfullse3(h[bvind[[i]]],kappa[bvind[[i]]],gshell,vext,n)
@@ -188,6 +189,7 @@ function (kstar, gradstats, kappa=NULL, vext = c(1, 1))
     ngrad <- gradstats$ngrad
     h <- vr <- matrix(0,ngrad,kstar)
     n <- 0
+    dist <- 4
     for(i in 1:nbv){
        gshell <- list(k456=gradstats$k456[[i]],bghat=gradstats$bghat[[i]],dist=dist)
        z <- gethseqfullse3(kstar, gshell, kappa=kappa, vext=vext)

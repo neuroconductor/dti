@@ -258,40 +258,75 @@ C  just to prevent compiler warnings
                z = (k4*k4+k5*k5+k6*k6)/kap2
             CASE (3) 
                z = k4*k4/kap2
+            CASE (4) 
+               z = k4/kappa
             CASE DEFAULT 
-               z = k4*k4/kap2
+               z = k4/kappa
          END SELECT
-         if(z.gt.h2) CYCLE
+         if(dist.le.3) THEN
+            if(z.gt.h2) CYCLE
 C   last three komponents already to large
-         DO j1 = 0,ih1
-            x1 = j1
-            x1 = z + x1*x1
-            if(x1.gt.h2) CYCLE
-            DO j2 = -ih2,ih2
-               x2 = j2
-               x2 = x1 + vd2*x2*x2
-               if(x2.gt.h2) CYCLE
-               DO j3 = -ih3,ih3
-                  x3 = j3
-                  z1 = x2+vd3*x3*x3
-                  if(z1.gt.h2) CYCLE
-                  if(i.gt.n) THEN
-                     call intpr("Exceeded max i",14,i,1)
-                     call intpr("for i4",6,i4,1)
-                     n = i-1
-                     return
-                  END IF
-                  wght(i)= (1.d0-z1/h2)
-                  ind(1,i) = j1
-                  ind(2,i) = j2
-                  ind(3,i) = j3
-                  ind(4,i) = i4
-                  ind(5,i) = j4
-                  i = i+1
+            DO j1 = 0,ih1
+               x1 = j1
+               x1 = z + x1*x1
+               if(x1.gt.h2) CYCLE
+               DO j2 = -ih2,ih2
+                  x2 = j2
+                  x2 = x1 + vd2*x2*x2
+                  if(x2.gt.h2) CYCLE
+                  DO j3 = -ih3,ih3
+                     x3 = j3
+                     z1 = x2+vd3*x3*x3
+                     if(z1.gt.h2) CYCLE
+                     if(i.gt.n) THEN
+                        call intpr("Exceeded max i",14,i,1)
+                        call intpr("for i4",6,i4,1)
+                        n = i-1
+                        return
+                     END IF
+                     wght(i)= (1.d0-z1/h2)
+                     ind(1,i) = j1
+                     ind(2,i) = j2
+                     ind(3,i) = j3
+                     ind(4,i) = i4
+                     ind(5,i) = j4
+                     i = i+1
+                  END DO
+                  call rchkusr()
                END DO
-               call rchkusr()
             END DO
-         END DO
+         ELSE
+C dist=4 
+            if(z.gt.h) CYCLE
+            DO j1 = 0,ih1
+               x1 = j1
+               x1 = x1*x1
+               DO j2 = -ih2,ih2
+                  x2 = j2
+                  x2 = x1 + vd2*x2*x2
+                  DO j3 = -ih3,ih3
+                     x3 = j3
+                     z1 = x2+vd3*x3*x3
+                     z1=z+sqrt(z1)
+                     if(z1.gt.h) CYCLE
+                     if(i.gt.n) THEN
+                        call intpr("Exceeded max i",14,i,1)
+                        call intpr("for i4",6,i4,1)
+                        n = i-1
+                        return
+                     END IF
+                     wght(i)= (1.d0-z1*z1/h2)
+                     ind(1,i) = j1
+                     ind(2,i) = j2
+                     ind(3,i) = j3
+                     ind(4,i) = i4
+                     ind(5,i) = j4
+                     i = i+1
+                  END DO
+                  call rchkusr()
+               END DO
+            END DO
+         ENDIF
       END DO
       n = i-1
       RETURN
@@ -333,41 +368,78 @@ C  just to prevent compiler warnings
                z = (k4*k4+k5*k5+k6*k6)/kap2
             CASE (3) 
                z = k4*k4/kap2
+            CASE (4) 
+               z = k4/kappa
             CASE DEFAULT 
-               z = k4*k4/kap2
+               z = k4/kappa
          END SELECT
-         if(z.gt.h2) CYCLE
+         if(dist.le.3) THEN
+            if(z.gt.h2) CYCLE
 C   last three komponents already to large
-         DO j1 = 0,ih1
-            x1 = j1
-            x1 = z + x1*x1
-            if(x1.gt.h2) CYCLE
-            DO j2 = -ih2,ih2
-               x2 = j2
-               x2 = x1 + vd2*x2*x2
-               if(x2.gt.h2) CYCLE
-               DO j3 = -ih3,ih3
-                  x3 = j3
-                  z1 = x2+vd2*x3*x3
-                  if(z1.gt.h2) CYCLE
-                  wght= (1.d0-z1/h2)
+            DO j1 = 0,ih1
+               x1 = j1
+               x1 = z + x1*x1
+               if(x1.gt.h2) CYCLE
+               DO j2 = -ih2,ih2
+                  x2 = j2
+                  x2 = x1 + vd2*x2*x2
+                  if(x2.gt.h2) CYCLE
+                  DO j3 = -ih3,ih3
+                     x3 = j3
+                     z1 = x2+vd2*x3*x3
+                     if(z1.gt.h2) CYCLE
+                     wght= (1.d0-z1/h2)
 C   if j1>0  (-j1,-j2,-j3) gets the same weight, so count it twice
-                  if(j1.eq.0) THEN
-                     anz=1.d0
-                  ELSE
-                     anz=2.d0
-                  ENDIF
-                  sw=sw+anz*wght
-                  wght=wght*wght
-                  sw2=sw2+anz*wght
-                  n=n+1
-                  mj1=max(j1,mj1)
-                  mj2=max(abs(j2),mj2)
-                  mj3=max(abs(j3),mj3)
+                     if(j1.eq.0) THEN
+                        anz=1.d0
+                     ELSE
+                        anz=2.d0
+                     ENDIF
+                     sw=sw+anz*wght
+                     wght=wght*wght
+                     sw2=sw2+anz*wght
+                     n=n+1
+                     mj1=max(j1,mj1)
+                     mj2=max(abs(j2),mj2)
+                     mj3=max(abs(j3),mj3)
+                  END DO
+                  call rchkusr()
                END DO
-               call rchkusr()
             END DO
-         END DO
+         ELSE
+            if(z.gt.h) CYCLE
+C   last three komponents already to large
+            DO j1 = 0,ih1
+               x1 = j1
+               x1 = x1*x1
+               DO j2 = -ih2,ih2
+                  x2 = j2
+                  x2 = x1 + vd2*x2*x2
+                  if(x2.gt.h2) CYCLE
+                  DO j3 = -ih3,ih3
+                     x3 = j3
+                     z1 = x2+vd2*x3*x3
+                     z1=z+sqrt(z1)
+                     if(z1.gt.h) CYCLE
+                     wght= (1.d0-z1*z1/h2)
+C   if j1>0  (-j1,-j2,-j3) gets the same weight, so count it twice
+                     if(j1.eq.0) THEN
+                        anz=1.d0
+                     ELSE
+                        anz=2.d0
+                     ENDIF
+                     sw=sw+anz*wght
+                     wght=wght*wght
+                     sw2=sw2+anz*wght
+                     n=n+1
+                     mj1=max(j1,mj1)
+                     mj2=max(abs(j2),mj2)
+                     mj3=max(abs(j3),mj3)
+                  END DO
+                  call rchkusr()
+               END DO
+            END DO
+         END IF
       END DO
       vred = sw*sw/sw2
       rad = max(mj1,max(mj2,mj3))

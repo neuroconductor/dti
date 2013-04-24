@@ -47,45 +47,6 @@ rrician <- function(x, m = 0, s = 1){
   sqrt(x1*x1 + x2*x2)
 }
 
-## this version is currently not used!
-ricebiascorr0 <- function(x,s=1,ncoils=1){
-  xt <- x/s
-  if(ncoils==1){
-    # define functions needed
-    Lhalf <- function(x){
-      (1-x)*besselI(-x/2,0,TRUE) - x*besselI(-x/2,1,TRUE)
-    }
-    fofx <- function(x) {
-      ind <- x<50
-      x[ind] <- sqrt(pi/2)*Lhalf(-x[ind]^2/2)
-      x
-    }
-    xt <- .Fortran("rcstep",xt=as.double(xt),
-                   as.integer(length(xt)),
-                   DUPL=TRUE,
-                   PACKAGE="dti")$xt
-  } else {
-    # define functions needed
-    m1chiL <- function(L,eta){
-      require(gsl)
-      sqrt(pi/2)*poch(L,.5)/factorial(.5)*hyperg_1F1(-.5,L,-eta^2/2)
-    }
-    etasolve <- function(L,m1,eps=.001){
-      maxeta <- max(m1+1e-10)
-      x <- seq(0,maxeta,eps)
-      lx <- length(x)
-      fx <- m1chiL(L,x)
-      m1s[m1s<min(fx)] <- min(fx)
-      ind <- cut(m1+1e-10, breaks = fx, labels=FALSE)
-      ind1 <- pmin(ind+1,length(fx)-1)
-      z <- (x[ind1]*(m1s-fx[ind])+ x[ind]*(fx[ind1]-m1s))/(fx[ind1]-fx[ind])
-      z[is.na(z)] <- m1[is.na(z)]
-      z
-    }
-    xt[xt<100] <- etasolve(ncoils,xt[xt<100])
-  }
-  xt*s
-}
 
 ricebiascorr <- function(x, s = 1, ncoils = 1){
 
