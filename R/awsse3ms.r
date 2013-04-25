@@ -5,7 +5,7 @@ dwi.smooth.ms <- function(object, ...) cat("No DTI smoothing defined for this cl
 
 setGeneric("dwi.smooth.ms", function(object, ...) standardGeneric("dwi.smooth.ms"))
 
-setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=15,kappa0=.9,ncoils=1,sigma=NULL,ws0=1,level=NULL,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE,wghts=NULL){
+setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=15,kappa0=.9,ncoils=1,sigma=NULL,ws0=1,level=NULL,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE,wghts=NULL,usemaxni=TRUE){
   args <- sys.call(-1)
   args <- c(object@call,args)
   sdcoef <- object@sdcoef
@@ -74,7 +74,7 @@ setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=15,kappa0=.9,
   ni <- array(1,dim(sb))
   minlevel <- gamma(ncoils+0.5)/gamma(ncoils)*sqrt(2)
 #  thats the mean of the central chi distribution with 2*ncoils df
-  z <- list(th=sb, ni = ni, th0=s0, ni0=ni0)
+  z <- list(th=sb, th0=s0)
   prt0 <- Sys.time()
   cat("adaptive smoothing in SE3, kstar=",kstar,if(verbose)"\n" else " ")
   kinit <- if(lambda<1e10) 1 else kstar
@@ -84,7 +84,7 @@ setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=15,kappa0=.9,
      hakt <- hseqi[,k]
      hakt0 <- hseq0[k]
      t0 <- Sys.time()
-     thnimsh <- interpolatesphere0(z$th,z$th0,z$ni,z$ni0,msstructure,mask)
+     thnimsh <- interpolatesphere0(z$th,z$th0,ni,ni0,msstructure,mask)
      t1 <- Sys.time()
      param <- lkfullse3msh(hakt,kappa/hakt,gradstats,vext,nind) 
      param0 <- lkfulls0(hakt0,vext,nind) 
@@ -125,16 +125,18 @@ setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=15,kappa0=.9,
                 DUPL=FALSE,
                 PACKAGE="dti")[c("ni","th","ni0","th0")]
     t3 <- Sys.time()
+    ni <- if(usemaxni) pmax(ni,z$ni) else z$ni 
+    ni0 <- if(usemaxni) pmax(ni0,z$ni0) else z$ni0 
     dim(z$th) <- c(ddim,ngrad)
     dim(z$th0) <- c(ddim)
-    dim(z$ni) <- c(ddim,ngrad)
-    dim(z$ni0) <- c(ddim)
+    dim(ni) <- c(ddim,ngrad)
+    dim(ni0) <- c(ddim)
     gc()
 if(verbose){
    dim(z$ni) <- c(prod(ddim),ngrad)
-   cat("k:",k,"h_k:",signif(max(hakt),3)," quartiles of ni",signif(quantile(z$ni[mask,]),3),
-  "mean of ni",signif(mean(z$ni[mask,]),3),"\n              quartiles of ni0",signif(quantile(z$ni0[mask]),3),
-  "mean of ni0",signif(mean(z$ni0[mask]),3),
+   cat("k:",k,"h_k:",signif(max(hakt),3)," quartiles of ni",signif(quantile(ni[mask,]),3),
+  "mean of ni",signif(mean(ni[mask,]),3),"\n              quartiles of ni0",signif(quantile(ni0[mask]),3),
+  "mean of ni0",signif(mean(ni0[mask]),3),
   " time elapsed:",format(difftime(Sys.time(),prt0),digits=3),"\n")
   cat("interpolation:",format(difftime(t1,t0),digits=3),
       "param:",format(difftime(t2,t1),digits=3),
