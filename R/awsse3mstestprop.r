@@ -53,7 +53,7 @@ m1 <- sqrt(pi/2)*gamma(L+1/2)/gamma(1.5)/gamma(L)*hyperg_1F1(-0.5,L, -th1^2/2, g
 #
   s0 <- array(sqrt(rchisq(nvox,df,th0^2)),spatialdim)
   mask <- array(TRUE,spatialdim)
-  if(is.null(sigma)) sigma <- awssigmc(s0,12,mask,ncoils,vext,h0=1.25,verbose=TRUE)$sigma
+  if(is.null(sigma)) sigma <- awssigmc(s0,12,mask,ncoils,vext,h0=1.25,verbose=FALSE)$sigma
   thb <- th0*exp(-bv*D0)
   sb <- aperm(array(sqrt(rchisq(nvox*ngrad,df,thb^2)),c(ngrad,spatialdim)),c(2:4,1))
   level <- 0
@@ -63,6 +63,7 @@ m1 <- sqrt(pi/2)*gamma(L+1/2)/gamma(1.5)/gamma(L)*hyperg_1F1(-0.5,L, -th1^2/2, g
   nshell <- msstructure$nbv
   cat("generated nc-chi data: image size:",spatialdim,"number of gradients:",ngrad,
   "number of shells",nshell,"degrees of freedom:",df,"\n")
+  cat("Noncentrality parameters for shells (bv=0 first)",th0,unique(thb),"\n")
   cat("specified effective number of coils",ncoils,"estimated sigma",sigma,"\n")    
   cat("parameters: lambda=",lambda,"kappa0=",kappa0,"ncoils=",ncoils,"kstar=",kstar,"\n")
   if(is.null(kappa0)){
@@ -146,6 +147,8 @@ m1 <- sqrt(pi/2)*gamma(L+1/2)/gamma(1.5)/gamma(L)*hyperg_1F1(-0.5,L, -th1^2/2, g
     dim(ni) <- c(ddim,ngrad)
     dim(ni0) <- c(ddim)
     gc()
+    nie <- max(ni)
+    nie0 <- max(ni0)
   cat("Step",k,"completet at",format(t3),"\n")
   s0hat <- pmax(z$th0,minlevel)*sigma
   sbhat <- aperm(pmax(z$th,minlevel)*sigma,c(4,1:3))# bring spherical component to front
@@ -155,14 +158,14 @@ m1 <- sqrt(pi/2)*gamma(L+1/2)/gamma(1.5)/gamma(L)*hyperg_1F1(-0.5,L, -th1^2/2, g
   exceedence0[,k] <- .Fortran("exceed",
                            as.double(kldist0),
                            as.integer(length(kldist0)),
-                           as.double(ze/ni),
+                           as.double(ze/nie0),
                            as.integer(nz),
                            exprob=double(nz),
                            PACKAGE="dti",DUP=FALSE)$exprob
   exceedenceb[,k] <- .Fortran("exceed",
                            as.double(kldistb),
                            as.integer(length(kldistb)),
-                           as.double(ze/ni),
+                           as.double(ze/nie),
                            as.integer(nz),
                            exprob=double(nz),
                            PACKAGE="dti",DUP=FALSE)$exprob
