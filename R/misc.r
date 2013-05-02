@@ -313,7 +313,7 @@ fncchir <- function(mu,varstats){
 mu <- pmax(varstats$minlev,mu)
 ind <- 
 findInterval(mu, varstats$mu, rightmost.closed = FALSE, all.inside = FALSE)
-varstats$s[ind]
+varstats$x[ind]
 }
 
 fncchis <- function(mu,varstats){

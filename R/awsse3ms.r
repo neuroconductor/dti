@@ -222,7 +222,7 @@ z <- .Fortran("ipolsp",
               msni=double((nbv+1)*nmask*ng),
               DUPL=FALSE,
               PACKAGE="dti")[c("msth","msni")]
-cat("time for sb-interpolation", format(difftime(Sys.time(),t1),digits=3),"\n")
+#cat("time for sb-interpolation", format(difftime(Sys.time(),t1),digits=3),"\n")
 mstheta[,mask,] <- z$msth
 msni[,mask,] <- z$msni
 #  now fill vector for s0

@@ -160,10 +160,10 @@ setMethod("show3d","dtiTensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL
   dim(tmean) <- c(3,n)
   z <- extract(obj,what=c("andir","fa"))
   if(minfa>0) mask <- mask&(z$fa>=minfa)
-  maxev <- extract(obj,what="evalues",mc.cores=1)$evalues[3,,,,drop=FALSE][mask]
+  maxev <- extract(obj,what="evalues",mc.cores=1)$evalues[3,,,,drop=FALSE][mask,drop=FALSE]
   dim(mask) <- NULL
   andir <- matrix(z$andir,3,n)[,mask,drop=FALSE]
-  fa <- z$fa[mask]
+  fa <- z$fa[mask,drop=FALSE]
   if(method==1) {
     andir <- abs(andir)
   } else {
@@ -173,8 +173,8 @@ setMethod("show3d","dtiTensor", function(obj,nx=NULL,ny=NULL,nz=NULL,center=NULL
     andir[3,] <- (1+andir[3,])/2
   }
   colorvalues <- rgb(andir[1,],andir[2,],andir[3,])
-  D <- D[,mask]
-  tmean <- tmean[,mask]
+  D <- D[,mask,drop=FALSE]
+  tmean <- tmean[,mask,drop=FALSE]
   n <- sum(mask)
   if(is.null(normalize)) normalize <- switch(tolower(what),"tensor"=FALSE,"adc"=TRUE,"odf"=FALSE)
   polyeder <- switch(subdivide+1,icosa0,icosa1,icosa2,icosa3,icosa4)
