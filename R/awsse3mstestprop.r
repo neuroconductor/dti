@@ -1,7 +1,7 @@
 # This file contains the implementation of dti.smooth() for 
 # "dtiData" Adaptive smoothing in SE(3) considering b=0 as an individual shell
 
-dwi.smooth.testprop <-  function(spatialdim,ngrad,bv,D0=1e-3,th0,df,kstar,lambda=15,kappa0=.9,ncoils=1,sigma=NULL,ws0=1,usemaxni=TRUE,seed=1,minlevel=1e-6,maxz=25,diffz=.5){
+dwi.smooth.testprop <-  function(spatialdim,ngrad,bv,D0=1.3e-3,th0,df,kstar,lambda=15,kappa0=.9,ncoils=df/2,sigma=NULL,ws0=1,usemaxni=TRUE,seed=1,minlevel=1e-6,maxz=25,diffz=.5){
 #  spatialdim - spatial dimention of images
 #  ngrad      - number of gradients per shell if length(bv) != ngrad, otherwise total number of gradients
 #  
