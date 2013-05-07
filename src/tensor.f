@@ -1,3 +1,34 @@
+      subroutine tensres(th0,D,s,nvox,nb,b,res,rss)
+C
+C  compute residuals
+C
+      implicit logical (a-z)
+      integer nb,nvox
+      real*8 th0(nvox),D(6,nvox),s(nb,nvox),b(6,nb),res(nb,nvox),
+     1       rss(nvox)
+      integer i,j,k
+      real*8 zrss,z
+C$OMP PARALLEL DEFAULT(NONE)
+C$OMP& SHARED(nb,nvox,th0,D,s,b,res,rss)
+C$OMP& PRIVATE(i,j,k,z,zrss)
+C$OMP DO SCHEDULE(GUIDED)
+      DO i=1,nvox
+         zrss = 0.d0
+         DO j = 1,nb
+            z = 0.d0
+            DO k = 1,6
+               z = z - b(k,j)*D(k,i)
+            END DO
+            z = s(j,i) - th0(i)*dexp(z)
+            res(j,i) = z
+            zrss = zrss + z*z
+         END DO
+         rss(i) = zrss
+      END DO
+C$OMP END DO 
+C$OMP END PARALLEL
+      RETURN
+      END
       subroutine ftensor(par,s,nb,b,vinv,gv,fv)
 C
 C  compute f(par) 

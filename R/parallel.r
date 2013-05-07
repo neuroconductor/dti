@@ -72,6 +72,19 @@ zmat[-(1:8),i] <- rep(0,ngrad)
 }
 zmat
 }
+ptensnl <- function(x,ngrad,btb,sdcoef,maxit=1000,reltol=1e-7){
+   nvox <- dim(x)[2]
+   matrix(.C("dtens",
+          as.integer(nvox),
+          param=as.double(x[1:7,]),
+          as.double(x[-(1:7),]),
+          as.integer(ngrad),
+          as.double(btb),
+          as.double(sdcoef),
+          as.integer(maxit),#maxit
+          as.double(reltol),#reltol
+          PACKAGE="dti",DUP=TRUE)$param,6,nvox)
+}
 
 pmixtens <- function(x,ngrad0,maxcomp,maxit,pen,grad,reltol,th,penIC,vert){
 nvox <- length(x)/(ngrad0+3+maxcomp)
