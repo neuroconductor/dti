@@ -81,9 +81,11 @@ ptensnl <- function(x,ngrad,btb,sdcoef,maxit=1000,reltol=1e-7){
           as.integer(ngrad),
           as.double(btb),
           as.double(sdcoef),
+          as.double(rep(0,ngrad)),#si
+          as.double(rep(1,ngrad)),#var                         
           as.integer(maxit),#maxit
           as.double(reltol),#reltol
-          PACKAGE="dti",DUP=TRUE)$param,6,nvox)
+          PACKAGE="dti",DUP=TRUE)$param,7,nvox)
 }
 
 pmixtens <- function(x,ngrad0,maxcomp,maxit,pen,grad,reltol,th,penIC,vert){

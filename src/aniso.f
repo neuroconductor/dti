@@ -233,9 +233,9 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       DO i=1,n
          if(mask(i)) THEN
             call eigen3(D(1,i),lambda,evec,ierr)
-            a1=lambda(1)
-            a2=lambda(2)
-            a3=lambda(3)
+            a1=dmax1(1d-12,lambda(1))
+            a2=dmax1(1d-12,lambda(2))
+            a3=dmax1(1d-12,lambda(3))
             trc=(a1+a2+a3)/3.d0
             adir(1,i)=evec(1,3)
             adir(2,i)=evec(2,3)
@@ -275,9 +275,9 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       DO i=1,n
          if(mask(i)) THEN
             call eigen3(D(1,i),lambda,evec,ierr)
-            a1=log(lambda(1))
-            a2=log(lambda(2))
-            a3=log(lambda(3))
+            a1=log(dmax1(1d-12,lambda(1)))
+            a2=log(dmax1(1d-12,lambda(2)))
+            a3=log(dmax1(1d-12,lambda(3)))
             trc=(a1+a2+a3)/3.d0
             adir(1,i)=evec(1,3)
             adir(2,i)=evec(2,3)
@@ -319,9 +319,9 @@ C$OMP& PRIVATE(i,ierr,lambda,evec,trc,d1,d2,d3,a1,a2,a3,dd)
 C$OMP DO SCHEDULE(GUIDED)
       DO i=1,n
          call eigen3(D(1,i),lambda,evec,ierr)
-         a1=lambda(1)
-         a2=lambda(2)
-         a3=lambda(3)
+         a1=dmax1(1d-12,lambda(1))
+         a2=dmax1(1d-12,lambda(2))
+         a3=dmax1(1d-12,lambda(3))
          trc=(a1+a2+a3)/3.d0
          md(i)=trc
          d1=a1-trc
@@ -419,9 +419,9 @@ C$OMP& PRIVATE(i,ierr,evec,trc,d1,d2,d3,a1,a2,a3,dd)
 C$OMP DO SCHEDULE(STATIC)
       DO i=1,n
          call eigen3(D(1,i),ev(1,i),evec,ierr)
-         a1=ev(1,i)
-         a2=ev(2,i)
-         a3=ev(3,i)
+         a1=dmax1(1d-12,ev(1,i))
+         a2=dmax1(1d-12,ev(2,i))
+         a3=dmax1(1d-12,ev(3,i))
          trc=(a1+a2+a3)/3.d0
          adir(1,i)=evec(1,3)
          adir(2,i)=evec(2,3)

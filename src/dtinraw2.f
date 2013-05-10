@@ -59,12 +59,12 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       real*8 D(6),rho(6)
       logical negdefin
       call regularD(D,negdefin)
-      rho(1)=sqrt(max(1d-16,D(1)))
+      rho(1)=sqrt(max(1d-12,D(1)))
       rho(2)=D(2)/rho(1)
       rho(3)=D(3)/rho(1)
-      rho(4)=sqrt(max(1d-16,D(4)-rho(2)*rho(2)))
+      rho(4)=sqrt(max(1d-12,D(4)-rho(2)*rho(2)))
       rho(5)=(D(5)-rho(2)*rho(3))/rho(4)
-      rho(6)=sqrt(max(1d-16,D(6)-rho(3)*rho(3)-rho(5)*rho(5)))
+      rho(6)=sqrt(max(1d-12,D(6)-rho(3)*rho(3)-rho(5)*rho(5)))
       RETURN
       END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
@@ -90,10 +90,10 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
             rho(5,i) = 0.d0
             rho(6,i) = 1.d0            
          ELSE         
-            r1=sqrt(max(1d-16,D(1,i)))
+            r1=sqrt(max(1d-12,D(1,i)))
             r2=D(2,i)/r1
             r3=D(3,i)/r1
-            r4=sqrt(max(1d-16,D(4,i)-r2*r2))
+            r4=sqrt(max(1d-12,D(4,i)-r2*r2))
             r5=(D(5,i)-r2*r3)/r4
             rho(6,i)=sqrt(max(1d-16,D(6,i)-r3*r3-r5*r5))
             rho(5,i)=r5
@@ -113,7 +113,7 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine rho2D(rho,D)
       implicit logical(a-z)
       real*8 D(6),rho(6),eps
-      eps=0.d-16
+      eps=0.d-12
       D(1)=rho(1)*rho(1)+eps
       D(2)=rho(1)*rho(2)
       D(3)=rho(1)*rho(3)
@@ -133,7 +133,7 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       integer nvox,i
       real*8 D(6,nvox),rho(6,nvox),eps
       real*8 r1,r2,r3,r4,r5,r6
-      eps=0.d-16
+      eps=0.d-12
       DO i=1,nvox
          r1=rho(1,i)
          r2=rho(2,i)

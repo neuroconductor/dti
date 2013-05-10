@@ -4,11 +4,11 @@
 #                                                              #
 ################################################################
 
-dtiTensor <- function(object,  ...) cat("No DTI tensor calculation defined for this class:",class(object),"\n")
+dtiTensorold <- function(object,  ...) cat("No DTI tensor calculation defined for this class:",class(object),"\n")
 
-setGeneric("dtiTensor", function(object,  ...) standardGeneric("dtiTensor"))
+setGeneric("dtiTensorold", function(object,  ...) standardGeneric("dtiTensorold"))
 
-setMethod( "dtiTensor", "dtiData",
+setMethod( "dtiTensorold", "dtiData",
            function( object, 
                      method = c( "nonlinear", "linear"),
                      mc.cores = setCores( , reprt = FALSE)) {

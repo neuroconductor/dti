@@ -131,7 +131,7 @@ setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, mi
    title(paste("Anisotropy Index  (GA)  range:",signif(min(z$fa[mask]),3),"-",
                 signif(max(z$fa[mask]),3)))
    } else {
-   title(paste("Geodesic Anisotropy (FA)  range:",signif(min(z$fa[mask]),3),"-",
+   title(paste("Fractional Anisotropy (FA)  range:",signif(min(z$fa[mask]),3),"-",
                 signif(max(z$fa[mask]),3)))
    }
    img<-D[4,,]

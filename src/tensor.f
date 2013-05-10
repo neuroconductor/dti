@@ -39,8 +39,14 @@ C
       integer i
       real*8 D(6),th0,rss,res
       th0=par(1)
+C      call dblepr("par",3,par,7)
       call rho2D(par(2),D)
       call sihat(th0,D,b,gv,nb)
+C      call dblepr("th0",3,th0,1)
+C      call dblepr("D",1,D,6)
+C      call dblepr("vinv",4,vinv,6)
+C      call dblepr("gv",2,gv,nb)
+C      call dblepr("si",2,s,nb)
 C
 C   this gives vector  th0*exp(-b g_i^T D g_i) in gv
 C
@@ -50,6 +56,7 @@ C
          rss=rss+res*res*vinv(i)
       END DO
       fv=rss
+C      call dblepr("fv",2,fv,1)
 C
 C   now we have value of the criterion in fv
 C
@@ -72,7 +79,7 @@ C   this gives vector  th0*exp(-b g_i^T D g_i) in gv
 C
       DO i=1,nb
          res=s(i)-gv(i)
-         fv(i)=res*vinv(i)
+         fv(i)=2.d0*res*vinv(i)
       END DO
 C
 C     derivative with respect to theta0
@@ -81,7 +88,7 @@ C
       DO i=1,nb
          z=z+fv(i)*gv(i)
       END DO
-      grad(1)=-2.d0/th0*z
+      grad(1)=-z/th0
 C
 C     derivatives with respect to r
 C
@@ -91,18 +98,19 @@ C
       DO i=1,nb
          z=fv(i)*gv(i)
          z1=2.d0*b(1,i)*par(2)+b(2,i)*par(3)+b(3,i)*par(4)
-         grad(2)=grad(2)-z*z1
+         grad(2)=grad(2)+z*z1
          z1=2.d0*b(4,i)*par(3)+b(2,i)*par(2)+b(5,i)*par(4)
-         grad(3)=grad(3)-z*z1
+         grad(3)=grad(3)+z*z1
          z1=2.d0*b(6,i)*par(4)+b(3,i)*par(2)+b(5,i)*par(3)
-         grad(4)=grad(4)-z*z1
+         grad(4)=grad(4)+z*z1
          z1=2.d0*b(4,i)*par(5)+b(5,i)*par(6)
-         grad(5)=grad(5)-z*z1
+         grad(5)=grad(5)+z*z1
          z1=2.d0*b(6,i)*par(6)+b(5,i)*par(5)
-         grad(6)=grad(6)-z*z1
+         grad(6)=grad(6)+z*z1
          z1=2.d0*b(6,i)*par(7)
-         grad(7)=grad(7)-z*z1         
+         grad(7)=grad(7)+z*z1         
       END DO       
+C      call dblepr("grad",4,grad,7)
 C
 C     We now have the gradient in grad
 C      

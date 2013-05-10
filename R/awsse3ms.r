@@ -133,7 +133,7 @@ setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=15,kappa0=.9,
     dim(ni0) <- c(ddim)
     gc()
 if(verbose){
-   dim(z$ni) <- c(prod(ddim),ngrad)
+   dim(ni) <- c(prod(ddim),ngrad)
    cat("k:",k,"h_k:",signif(max(hakt),3)," quartiles of ni",signif(quantile(ni[mask,]),3),
   "mean of ni",signif(mean(ni[mask,]),3),"\n              quartiles of ni0",signif(quantile(ni0[mask]),3),
   "mean of ni0",signif(mean(ni0[mask]),3),

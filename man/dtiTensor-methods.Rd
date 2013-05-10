@@ -26,7 +26,8 @@
 
   \item{obj = "ANY"}{ Returns a warning. }
 
-  \item{obj = "dtiData"}{ Estimate diffusion tensor from data in each voxel with the different options for the regression type and model for variance estimation.  If \code{method=="linear"} estimates are obtained using a linearization of the tensor model. This was the estimate used in Tabelow et.al. (2008).  \code{method=="nonlinear"} uses a nonlinear regression model with reparametrization that ensures the tensor to be  positive semidefinite, see  Koay et.al. (2006).  If \code{varmethod=="replicates"} the error variance is estimated from replicated gradient directions if possible, otherwise an estimate is obtained from the residual sum of squares.  If \code{varmodel=="global"} a homogeneous variance is assumed and estimated as the median of the local variance estimates. }
+  \item{obj = "dtiData"}{ Estimate diffusion tensor from data in each voxel with the different options for the regression type and model for variance estimation.  If \code{method=="linear"} estimates are obtained using a linearization of the tensor model. This was the estimate used in Tabelow et.al. (2008).  \code{method=="nonlinear"} uses a nonlinear regression model with reparametrization that ensures the tensor to be  positive semidefinite, see  Koay et.al. (2006).  The imlementation is based on R's internal C code for the
+  BFGS optimization. If \code{varmethod=="replicates"} the error variance is estimated from replicated gradient directions if possible, otherwise an estimate is obtained from the residual sum of squares.  If \code{varmodel=="global"} a homogeneous variance is assumed and estimated as the median of the local variance estimates. }
 
 }
 }

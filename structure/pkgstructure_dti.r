@@ -19,9 +19,15 @@ list(funct="summary",infile="io.r",visible=TRUE,callsR=c(NULL),callsF=c(NULL),ca
 list(funct="tensor2medinria",infile="io.r",visible=TRUE,callsR=c(NULL),callsF=c(NULL),callsC=c(NULL),purpose="",moveto=""), 
 list(funct="medinria2tensor",infile="io.r",visible=TRUE,callsR=c(NULL),callsF=c(NULL),callsC=c(NULL),purpose="",moveto=""), 
 #
+#     File dtineu.r
+#
+list(funct="dtiTensor",infile="dtineu.r",visible=TRUE,callsR=c("sdpar","sioutlier","connect.mask","dti3Dreg","D2Rall","plmatrix","ptensnl","R2Dall","mcorr","dti3Dev"),callsF=c("tensres"),callsC=c("dtens"),purpose="",moveto=""), 
+list(funct="D2Rall",infile="dtineu.r",visible=FALSE,callsR=c(NULL),callsF=c("D2Rall"),callsC=c(NULL),purpose="",moveto=""), 
+list(funct="R2Dall",infile="dtineu.r",visible=FALSE,callsR=c(NULL),callsF=c("R2Dall"),callsC=c(NULL),purpose="",moveto=""), 
+#
 #     File dti.r
 #
-list(funct="dtiTensor",infile="dti.r",visible=TRUE,callsR=c("sdpar","sioutlier","connect.mask","dti3Dreg","plmatrix","pnlrdtirg","opttensR","rho2D","tensRres","pmatrix","pnltens","mcorr","dti3Dev"),callsF=c("nlrdtirg"),callsC=c(NULL),purpose="",moveto=""), 
+list(funct="dtiTensorold",infile="dti.r",visible=TRUE,callsR=c("sdpar","sioutlier","connect.mask","dti3Dreg","plmatrix","pnlrdtirg","opttensR","rho2D","tensRres","pmatrix","pnltens","mcorr","dti3Dev"),callsF=c("nlrdtirg"),callsC=c(NULL),purpose="",moveto=""), 
 list(funct="opttensR",infile="dti.r",visible=FALSE,callsR=c(NULL),callsF=c("opttensR"),callsC=c(NULL),purpose="",moveto=""), 
 list(funct="tensRres",infile="dti.r",visible=FALSE,callsR=c(NULL),callsF=c("tensRres"),callsC=c(NULL),purpose="",moveto=""), 
 list(funct="rho2D",infile="dti.r",visible=FALSE,callsR=c(NULL),callsF=c("rho2D0"),callsC=c(NULL),purpose="",moveto=""), 
@@ -174,6 +180,7 @@ list(funct="pmixtns0",infile="parallel.r",visible=FALSE,callsR=c(NULL),callsF=c(
 list(funct="pgetsii30",infile="parallel.r",visible=FALSE,callsR=c(NULL),callsF=c("pgtsii30"),callsC=c(NULL),purpose="",moveto=""), 
 list(funct="pgetsii31",infile="parallel.r",visible=FALSE,callsR=c(NULL),callsF=c("pgtsii31"),callsC=c(NULL),purpose="",moveto=""), 
 list(funct="pgetsiind2",infile="parallel.r",visible=FALSE,callsR=c(NULL),callsF=c("getsii"),callsC=c(NULL),purpose="",moveto=""), 
+list(funct="ptensnl",infile="parallel.r",visible=FALSE,callsR=c(NULL),callsF=c(NULL),callsC=c("dtens"),purpose="",moveto=""), 
 # 
 #   File varest.r
 #
@@ -313,7 +320,10 @@ list(funct="asmse30p",infile="",callsF=c(NULL),callsC=c(NULL),purpose="",moveto=
 list(funct="lkfulse3",infile="",callsF=c(NULL),callsC=c(NULL),purpose="",moveto=""), 
 list(funct="ipolsp",infile="",callsF=c(NULL),callsC=c(NULL),purpose="",moveto=""), 
 list(funct="lkfuls0",infile="",callsF=c(NULL),callsC=c(NULL),purpose="",moveto=""),
-list(funct="exceed",infile="misc.f",callsF=c(NULL),callsC=c(NULL),purpose="",moveto="")))
+list(funct="exceed",infile="misc.f",callsF=c(NULL),callsC=c(NULL),purpose="",moveto=""),
+list(funct="tensres",infile="",callsF=c(NULL),callsC=c(NULL),purpose="",moveto=""),
+list(funct="R2Dall",infile="",callsF=c(NULL),callsC=c(NULL),purpose="",moveto=""),
+list(funct="D2Rall",infile="",callsF=c(NULL),callsC=c(NULL),purpose="",moveto=""))
 
 
 #
@@ -327,7 +337,7 @@ list(funct="mixtrl1",infile="",callsF=c(NULL),callsC=c(NULL),purpose="",moveto="
 list(funct="mixtrl2",infile="",callsF=c(NULL),callsC=c(NULL),purpose="",moveto=""), 
 list(funct="interface_tracking",infile="",callsF=c(NULL),callsC=c(NULL),purpose="",moveto=""), 
 list(funct="interface_tracking_mixtensor",infile="",callsF=c(NULL),callsC=c(NULL),purpose="",moveto=""), 
-list(funct="",infile="",callsF=c(NULL),callsC=c(NULL),purpose="",moveto=""))
+list(funct="dtens",infile="",callsF=c(NULL),callsC=c(NULL),purpose="",moveto=""))
 
 callsofR <- function(funct,struct=Rstructure){
 n <- length(struct)

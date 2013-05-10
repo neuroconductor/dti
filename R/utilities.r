@@ -864,6 +864,7 @@ setMethod("extract","dtiTensor",function(x,
   } else {
     if(needev){
       ev <- array(dti3Dev(x@D,x@mask,mc.cores=mc.cores),c(3,n1,n2,n3))
+      ev[ev<1e-12] <- 1e-12 
       if("fa" %in% what) {
         dd <- apply(ev^2,2:4,sum)
         md <- (ev[1,,,]+ev[2,,,]+ev[3,,,])/3

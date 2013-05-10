@@ -11,7 +11,7 @@
 
 int ngradd = 0;
 double* varinv;
-double* signal, *btb;
+double* sigi, *btb;
 //double *signal, *varinv, *btb;
 
 typedef struct
@@ -49,7 +49,7 @@ double ftens(int param_length, double *param, void* ex){
   }*/
 //  Rprintf("\n");
 // calculate risk for tensor model
-  F77_CALL(ftensor)(param, signal, &ngradd, btb, varinv, gv, &result);
+  F77_CALL(ftensor)(param, sigi, &ngradd, btb, varinv, gv, &result);
   
 //  Free(varinvi);
 //  Free(sigi);
@@ -71,7 +71,7 @@ void gtens(int param_length, double* param, double* result, void* ex){
     sigi[i] = signal[i];
     varinvi[i] = varinv[i];
   }*/
-  F77_CALL(gtensor)(param, signal, &ngradd, btb, varinv, gv, fv, result);
+  F77_CALL(gtensor)(param, sigi, &ngradd, btb, varinv, gv, fv, result);
   
 //  Free(varinvi);
 //  Free(sigi);
@@ -99,9 +99,9 @@ void dtens( int* n1, double* param, double* sig_in, int* ngrad, double* btb_in,
    
    int fail;              // failure code for optim: zero is OK
    double Fmin = 0.;          // minimal value of obj fct in optim 
-   
+   double v0 = *ngrad; // scale factor to avoid large gradients
    //Setting global variables
-   signal = sig_tmp; varinv = vinv_tmp;  ngradd = *ngrad;
+   sigi = sig_tmp; varinv = vinv_tmp;  ngradd = *ngrad;
    Rprintf("ngrad %i \n",ngradd);
    param_length=7;
    dimxx = *n1;
@@ -109,9 +109,6 @@ void dtens( int* n1, double* param, double* sig_in, int* ngrad, double* btb_in,
    low = sdcoef[0]+sdcoef[2]*sdcoef[1];
    up = sdcoef[0]+sdcoef[3]*sdcoef[1];
    // not yet initialized
-//   Rprintf("ngrad %i \n", ngradd);
-   
-//   Rprintf("param_length %i \n", param_length);
    param_work = (double *) R_alloc(param_length, sizeof(double));
    mask = (int *) R_alloc(param_length, sizeof(int));
    for (i = 0; i < param_length; i++) mask[i] = 1;
@@ -120,29 +117,18 @@ void dtens( int* n1, double* param, double* sig_in, int* ngrad, double* btb_in,
    myoptimtens.ngrad = ngradd;
    myoptimtens.btb = btb_in;
    myoptimtens.fnscale = 1;
-//   varinv = varinv;
-   Rprintf("ngrad1 %i \n",ngradd);
-//   signal = sig_tmp;
-   Rprintf("ngrad2 %i \n",ngradd);
-//   varinv = vinv_tmp;
-   Rprintf("ngrad3 %i \n",ngradd);
    for(i2 = 0; i2 < dimxx; i2++){ 
       for(j = 0; j < param_length; j++){
-         param_work[l] = param[j+i2*7];
+         param_work[j] = param[j+i2*7];
       }
-   Rprintf("ngrad3 %i \n",ngradd);
       for(l=0;l<ngradd;l++){
 	  signalg = sig_in[l+i2*ngradd];
-   Rprintf("signalg %f \n",signalg);
-          sig_tmp[l] = signalg;
-   Rprintf("sigl %f \n",sig_tmp[l]);
+          sigi[l] = signalg;
 	  ttt = sdcoef[0]+signalg*sdcoef[1];
-	  if(signal[l]<sdcoef[2]) ttt=low;
-	  if(signal[l]>sdcoef[3]) ttt=up;
-	  vinv_tmp[l] = 1./ttt/ttt;
-   Rprintf("vinvl %f \n",vinv_tmp[l]);
+	  if(signalg<sdcoef[2]) ttt=low;
+	  if(signalg>sdcoef[3]) ttt=up;
+          varinv[l] = 1./ttt/ttt/v0;
       }
-   Rprintf("vari and sigi %f%f",varinv[100],signal[100]);
       vmmin(param_length, param_work, &Fmin, ftens, gtens,
             *maxit, trace, mask, abstol, *reltol, nREPORT,
             &myoptimtens, &fncount, &grcount, &fail);
