@@ -217,9 +217,10 @@ afsigmc <- function(y,                 # data
                     sigma = double(n),
                     DUPL = FALSE,
                     PACKAGE = "dti")$sigma
+     sigma <- sigma/2/(ncoils-gamma(ncoils+.5)^2/gamma(ncoils)^2)
      sigma <- array( sqrt(sigma), ddim)
   } else {
-     afactor <- sqrt(ncoils/2)*gamma(ncoils)/gamma(ncoils+.5)
+     afactor <- sqrt(1/2)*gamma(ncoils)/gamma(ncoils+.5)
      sigma <- .Fortran("afmodem1",
                     as.double(y),
                     as.integer(ddim[1]),
@@ -242,9 +243,9 @@ afsigmc <- function(y,                 # data
   }
 } else {
   if(method=="bkm2chi"){
-    sigmag <- sqrt(mean(y[mask]^2)/2)
+    sigmag <- sqrt(mean(y[mask]^2)/2/ncoils)
   } else {
-    sigmag <- mean(y[mask])*sqrt(ncoils/2)*gamma(ncoils)/gamma(ncoils+.5)
+    sigmag <- mean(y[mask])*sqrt(ncoils/2)*gamma(ncoils)/gamma(ncoils+.5)/sqrt(ncoils)
   }
 }
 ## this is the estimate
