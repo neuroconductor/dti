@@ -39,6 +39,7 @@ setMethod( "dtiTensorold", "dtiData",
              #  this does not scale well with openMP
              #
              si <- array(z$si,c(ngrad,ddim))
+             si[si<.5] <- .5 ## to avoid ceros in log-transform
              index <- z$index
              rm(z)
              gc()

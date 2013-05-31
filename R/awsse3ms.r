@@ -150,9 +150,12 @@ if(verbose){
 #
 #  back to original scale
 #
-  si[,,,1] <-  pmax(z$th0/sqrt(ns0),minlevel)*sigma
+  minlevel <- 1/sigma
+#  si[,,,1] <-  pmax(z$th0/sqrt(ns0),minlevel)*sigma
+  si[,,,1] <-  z$th0/sqrt(ns0)*sigma
 #  go back to original s0 scale
-  si[,,,-1] <- pmax(z$th,minlevel)*sigma
+#  si[,,,-1] <- pmax(z$th,minlevel)*sigma
+  si[,,,-1] <- z$th*sigma
   object@si <-  si
   object@gradient <- grad <- cbind(c(0,0,0),grad)
   object@bvalue <- bvalue <- c(0,object@bvalue[-object@s0ind])

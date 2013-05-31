@@ -138,8 +138,10 @@ awssigmc <- function(y,                 # data
     ni <- z$ni
     ni[!mask]<-1
     ind <- (ni > .9999*quantile(ni[ni>1],qni))#&(z$th>sigma*minlev)
-## use correction factor for sd of NC Chi distribution
-    sy <- z$sy[ind]/fncchis(th[ind]/sigma,varstats)
+## use correction factor for sd of NC Chi distribution 
+    sy <- z$sy[ind]
+    th <- th[ind]
+    sy <- sy/fncchis(th/sigma,varstats)
     ## use the maximal mode of estimated local sd parameters, exclude largest values for better precision
     dsigma <- density( sy[sy>0], n = 4092, adjust = hadj, to = min( max(sy[sy>0]), median(sy[sy>0])*5) )
     sigma <- dsigma$x[dsigma$y == max(dsigma$y)][1]
@@ -283,8 +285,8 @@ awsncoils <- function(y,                 # data
     th <- z$th
     ni <- z$ni
     ni[!mask]<-1
-    ind <- (ni > .9999*quantile(ni[ni>1],qni))&(th<10*sigma)
-    zz <- optimize(kriteffL, interval = c(1,maxL), mhat=th[ind]/sigma,
+    ind <- (ni > .9999*quantile(ni[ni>1],qni))&(th<max(quantile(th,.5),10*sigma))
+    zz <- optimize(kriteffL, interval = c(0.6,maxL), mhat=th[ind]/sigma,
            shat=z$sy[ind]/sigma, tol=1e-4)
     ncoils <- zz$minimum
 
@@ -296,7 +298,7 @@ awsncoils <- function(y,                 # data
 
     if (verbose) {
       cat( "step", i, "h=", signif( h, 3), "quantiles of ni", signif( quantile(ni[ind]), 3), "mean", signif( mean(ni[ind]), 3), "\n")
-      cat( "effective number of coils", signif(ncoils, 3), "\n")
+      cat( "effective number of coils", signif(ncoils, 3),"value",zz$objective, "\n")
     }
   }
   ## END PS iteration
@@ -304,6 +306,153 @@ awsncoils <- function(y,                 # data
 
   ## this is the result (th is expectation, not the non-centrality parameter !!!)
   invisible(list(ncoils = if(sequence) coils else ncoils,
+                 theta = th, 
+                 lind  = if(sequence) lind else sum(ind), 
+                 minni  = if(sequence) minni else min(ni[ind])))
+}
+#
+#
+#      estimate variance parameter in a multicoil system
+#
+#
+awsncoilsigma <- function(y,                 # data
+                     steps,             # number of iteration steps for PS
+                     sigma,             # initial noise standard deviation for parallel MR image acquisition
+                     mask = NULL,       # data mask, where to do estimation
+                     maxL = 8,          # maximal value for number of coils
+                     vext = c( 1, 1),   # voxel extensions
+                     lambda = 20,       # adaptation parameter for PS
+                     h0 = 2,            # initial bandwidth for first step in PS
+                     verbose = FALSE, 
+                     sequence = FALSE,  # return estimated sigma for intermediate steps of PS?
+                     hadj = 1,          # adjust parameter for density() call for mode estimation
+                     q = .25,  # for IQR
+                     qni = .8,
+                     maxsnr =2, # maximum SNR of expected values to be used
+                     method=c("VAR","MAD")  # for variance, alternative "MAD" for mean absolute deviation
+                     ) {
+  method <- match.arg(method)
+  ## some functions for pilot estimates
+  par <- c(sigma,max(1,maxL/4))
+  kriteffLs <- function(par,mhat,shat){
+#
+#  mhat assumed to be standardized by sigma
+#
+     L <- par[2]
+     sigma <- par[1]
+     varstats <- sofmchi(L,to=min(max(mhat/sigma),50))
+     sofL <- fncchis(mhat/sigma,varstats)
+     mean((sofL-shat/sigma)^2)
+  }
+  if(length(vext)==3) vext <- vext[2:3]/vext[1]
+  ## dimension and size of cubus
+  ddim <- dim(y)
+  n <- prod(ddim)
+
+  ## test dimension
+  if (length(ddim) != 3) stop("first argument should be a 3-dimentional array")
+
+  ## check mask
+  if (is.null(mask)) mask <- array(TRUE, ddim)
+  if(length(mask) != n) stop("dimensions of data array and mask should coincide")
+
+
+  ## define initial arrays for parameter estimates and sum of weights (see PS)
+  th <- array( 1, ddim)
+  ni <- array( 1, ddim)
+#  y <- y/sigma # rescale to avoid passing sigma to awsvchi
+  if (sequence) coils <- lind <- minni <- numeric(steps)
+  mc.cores <- setCores(,reprt=FALSE)
+  ## iterate PS starting with bandwidth h0
+  ncoils <- 1
+  for (i in 1:steps) {
+
+    h <- h0 * 1.25^((i-1)/3)
+    nw <- prod(2*as.integer(h/c(1,vext))+1)
+#    cat("nw=",nw,"h/vext=",h/c(1,1/vext),"ih=",as.integer(h/c(1,1/vext)),"\n")
+    param <- .Fortran("paramw3",
+                      as.double(h),
+                      as.double(vext),
+                      ind=integer(3*nw),
+                      w=double(nw),
+                      n=as.integer(nw),
+                      DUPL = FALSE,
+                      PACKAGE = "dti")[c("ind","w","n")]
+    nw <- param$n
+    param$ind <- param$ind[1:(3*nw)]
+    dim(param$ind) <- c(3,nw)
+    param$w   <- param$w[1:nw]    
+    varstats <- sofmchi(ncoils)
+    fncchi <- fncchiv(th/par[1],varstats)
+## correction factor for variance of NC Chi distribution
+    ## perform one step PS with bandwidth h
+    if(method=="VAR"){
+    z <- .Fortran("awsvchi",
+                  as.double(y),        # data
+                  as.double(th),       # previous estimates
+                  ni = as.double(ni),
+                  as.double(fncchi/2),
+                  as.logical(mask),
+                  as.integer(ddim[1]),
+                  as.integer(ddim[2]),
+                  as.integer(ddim[3]),
+                  as.integer(param$ind),
+                  as.double(param$w),
+                  as.integer(nw),
+                  as.double(lambda),
+                  as.double(par[1]),
+                  th = double(n),
+                  sy = double(n),
+                  DUPL = FALSE,
+                  PACKAGE = "dti")[c("ni","th","sy")]
+    } else {
+    z <- .Fortran("awsadchi",
+                  as.double(y),        # data
+                  as.double(th),       # previous estimates
+                  ni = as.double(ni),
+                  as.double(fncchi/2),
+                  as.logical(mask),
+                  as.integer(ddim[1]),
+                  as.integer(ddim[2]),
+                  as.integer(ddim[3]),
+                  as.integer(param$ind),
+                  as.double(param$w),
+                  as.integer(nw),
+                  as.double(lambda),
+                  as.double(par[1]),
+                  double(nw*mc.cores),
+                  as.integer(mc.cores),
+                  th = double(n),
+                  sy = double(n),
+                  DUPL = FALSE,
+                  PACKAGE = "dti")[c("ni","th","sy")]       
+    }
+    ## extract sum of weigths (see PS) and consider only voxels with ni larger then mean
+    th <- z$th
+    ni <- z$ni
+    ni[!mask]<-1
+    ind <- (ni > .9999*quantile(ni[ni>1],qni))
+    zz <- optim(par,kriteffLs, mhat=th[ind],
+           shat=z$sy[ind], method="L-BFGS-B",lower=c(1,.5),upper=c(200,maxL))
+    par <- zz$par
+    if (sequence) {
+         coils[i] <- par[2]
+         sigma[i] <- par[1]
+         lind[i] <- sum(ind)
+         minni[i] <- min(ni[ind])
+         }
+
+    if (verbose) {
+      cat( "step", i, "h=", signif( h, 3), "quantiles of ni", signif( quantile(ni[ind]), 3), "mean", signif( mean(ni[ind]), 3), "\n")
+      cat(" sigma=",par[1],"  ncoils=",par[2],"criterion",zz$value,"\n")
+    }
+  }
+  ## END PS iteration
+
+
+  ## this is the result (th is expectation, not the non-centrality parameter !!!)
+  invisible(list(ncoils = if(sequence) coils else par[2],
+                 sigma = if(sequence) sigma else par[1],
                  theta = th, 
                  lind  = if(sequence) lind else sum(ind), 
                  minni  = if(sequence) minni else min(ni[ind])))
