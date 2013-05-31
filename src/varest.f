@@ -20,8 +20,8 @@ C
       implicit logical (a-z)
       integer n1,n2,n3,nw,ind(3,nw)
       logical mask(n1,n2,n3)
-      real*8 y(n1,n2,n3),th(n1,n2,n3),ni(1),thn(1),
-     1       sy(1),lambda,w(nw),sigma,fns(n1,n2,n3)
+      real*8 y(n1,n2,n3),th(n1,n2,n3),ni(n1*n2*n3),thn(n1*n2*n3),
+     1       sy(n1*n2*n3),lambda,w(nw),sigma,fns(n1,n2,n3)
       integer i1,i2,i3,j1,j2,j3,i,j,n
       real*8 z,sw,sw2,swy,swy2,yj,thi,wj,kval,cw,fnsi
       n = n1*n2*n3
@@ -105,8 +105,8 @@ C
       implicit logical (a-z)
       integer n1,n2,n3,nw,ind(3,nw),nthreds
       logical mask(n1,n2,n3)
-      real*8 y(n1,n2,n3),th(n1,n2,n3),ni(1),thn(1),fns(n1,n2,n3),
-     1       sy(1),lambda,w(nw),sigma,wad(nw,nthreds)
+      real*8 y(n1,n2,n3),th(n1,n2,n3),ni(n1*n2*n3),thn(n1*n2*n3),
+     1  fns(n1,n2,n3),sy(n1*n2*n3),lambda,w(nw),sigma,wad(nw,nthreds)
       integer i1,i2,i3,j1,j2,j3,i,j,n,thrednr
       real*8 z,sw,sw2,swy,swy2,yj,thi,wj,kval,cw,fnsi
 !$      integer omp_get_thread_num
