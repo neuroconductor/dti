@@ -243,7 +243,8 @@ if(verbose){
 #
 #  back to original scale
 #
-  s0factor <- switch(model+1,ns0,ns0,sqrt(ns0))
+  s0factor <- switch(model+1,ns0,sqrt(ns0),sqrt(ns0),ns0)
+#cat("sigma",sigma,"s0factor",s0factor,"minlevel0",minlevel,"maxth0",max(th0),"lth0",length(th0),"\n")
   si[,,,1] <-  pmax(th0,minlevel0)*sigma/s0factor
   si[,,,-1] <- pmax(z$th,minlevel)*sigma
   object@si <- if(model==1) sqrt(si) else si

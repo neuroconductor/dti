@@ -409,19 +409,18 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       implicit logical (a-z)
       integer n,nz
       real*8 x(n),z(nz),exprob(nz)
-      integer i,j,k
+      integer i,j
       real*8 sk,zj
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(n,nz,x,z,exprob)
-C$OMP& PRIVATE(i,j,k,sk,zj)
+C$OMP& PRIVATE(i,j,sk,zj)
 C$OMP DO SCHEDULE(GUIDED)
       DO j=1,nz
-         k=0.d0
+         sk=0.d0
          zj=z(j)
          DO i=1,n
-            if(x(i).gt.zj) k=k+1
+            if(x(i).gt.zj) sk=sk+1
          END DO
-         sk = k
          exprob(j)=sk/n
       END DO
 C$OMP END DO NOWAIT
