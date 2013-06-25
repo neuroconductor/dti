@@ -185,15 +185,15 @@ sortFibers <- function(obj){
    obj
 } 
 
-  compactFibers <- function(fibers,startind){
+compactFibers <- function(fibers,startind){
   n <- dim(fibers)[1]
   endind <- c(startind[-1]-1,n)
   ind <- 1:n
   ind <- ind[ind%%2==1 | ind%in%endind]
   list(fibers=fibers[ind,],startind=(startind-1)/2+1:length(startind))
-  }
+}
 
-  expandFibers <- function(fibers,startind){
+expandFibers <- function(fibers,startind){
   n <- dim(fibers)[1]
   endind <- c(startind[-1]-1,n)
   ind <- rep(2,max(endind))
@@ -202,4 +202,69 @@ sortFibers <- function(obj){
   ind <-  rep(startind,2*(endind-startind))+rep(sequence((endind-startind)+1)-1,ind)
   startind[-1] <- startind[-1]+cumsum(diff(startind)-2)
   list(fibers=fibers[ind,],startind=startind)
-  }
+}
+
+combineFibers <- function(obj1, obj2, ...) cat("No Fiber operations for this class:",class(obj1),class(obj2),"\n")
+
+setGeneric("combineFibers", function(obj1, obj2, ...) standardGeneric("combineFibers"))
+
+setMethod("combineFibers",c("dwiFiber","dwiFiber"), function(obj1,obj2){
+   fibers1 <- obj1@fibers
+   nfs1 <- dim(fibers1)[1]
+   starts1 <- obj1@startind
+   ends1 <- c(starts1[-1]-1,nfs1)
+   fibers2 <- obj2@fibers
+   nfs2 <- dim(fibers2)[1]
+   starts2 <- obj2@startind
+   ends2 <- c(starts2[-1]-1,nfs2)
+   fibers <- rbind(fibers1,fibers2)
+   starts <- c(starts1,nfs1+starts2)
+   ends <- c(ends1,nfs1+ends2)
+   nfs <- nfs1+nfs2
+#
+#  sort fiber array such that longest fibers come first
+#
+   fiberlength <- diff(c(starts,nfs+1))
+   of <- order(fiberlength,decreasing=TRUE)
+   ind <-  rep(starts[of],ends[of]-starts[of]+1)+sequence(ends[of]-starts[of]+1)-1
+   obj1@fibers <- obj1@fibers[ind,]
+   obj1@startind <- as.integer(c(0,cumsum(ends[of]-starts[of]+1))[1:length(starts)]+1)
+   obj1
+} 
+)
+
+touchingFibers <- function(obj1, obj2, ...) cat("No Fiber operations for this class:",class(obj1),class(obj2),"\n")
+
+setGeneric("touchingFibers", function(obj1, obj2, ...) standardGeneric("touchingFibers"))
+
+setMethod("touchingFibers",c("dwiFiber","dwiFiber"), function(obj1,obj2,maxdist=1,combine=FALSE){
+   args <- sys.call(-1)
+   args <- c(obj1@call,args)
+   fibers1 <- obj1@fibers[,1:6]
+   nsegm1 <- dim(fibers1)[1]
+   startf1 <- obj1@startind
+   endf1 <- c(startf1[-1]-1,nsegm1)
+   nfibers1 <- length(startf1)
+   fibers2 <- obj2@fibers[,1:3]
+   nsegm2 <- dim(fibers2)[1]
+   z <- .Fortran("touchfi",
+                    fibers=as.double(t(fibers1)),
+                    nsegm1=as.integer(nsegm1),
+                    startf=as.integer(startf1),
+                    as.integer(endf1),
+                    nfibers=as.integer(nfibers1),
+                    logical(nfibers1),
+                    as.double(t(fibers2)),
+                    as.integer(nsegm2),
+                    as.double(maxdist),
+                    DUP=TRUE,
+                    PACKAGE="dti")[c("fibers","startf","nfibers","nsegm1")]
+    startf <- z$startf[1:z$nfibers]
+    fibers <- t(matrix(z$fibers,6,nsegm1)[,1:z$nsegm1])
+    obj1@call <- args
+    obj1@fibers <- fibers
+    obj1@startind <- startf
+    if(combine) obj1 <- combineFibers(obj1,obj2)
+    obj1
+}
+)
