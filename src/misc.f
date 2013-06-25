@@ -23,7 +23,7 @@ C
 C   replace physically meaningless Si values by mean S0
 C
       implicit logical(a-z)
-      integer n,nb,ls0,s0ind(ls0),siind(1)
+      integer n,nb,ls0,s0ind(ls0),siind(*)
       real*8 si(nb,n),sinew(nb,n)
       logical ind(n)
       integer i,j1,j,ls0m1
@@ -279,7 +279,7 @@ C   assumes that we search for a connected region in segm==.TRUE.
 C   that contains seed voxel (i1,i2,i3)
 C   result: mask == .TRUE. if voxel is connected to seed
       implicit logical (a-z)
-      integer n1,n2,n3,i1,i2,i3,ind1(1),ind2(1),ind3(1)
+      integer n1,n2,n3,i1,i2,i3,ind1(*),ind2(*),ind3(*)
       logical final,mask(n1,n2,n3),segm(n1,n2,n3)
       integer j1,j2,j3,k,l1,l2,l3,lind,lind0,ichecked
 C     first find pixel close to (i1,i2) with segm(j1,j2)=0

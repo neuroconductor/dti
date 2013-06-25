@@ -18,7 +18,7 @@ C
       integer n1,n2,n3
       logical mask(n1,n2,n3)
       real*8 y(n1,n2,n3),theta(n1,n2,n3),bi(n1,n2,n3),wght(2),hakt,
-     1       lwght(1)
+     1       lwght(*)
       integer ih1,ih2,ih3,i1,i2,i3,j1,j2,j3,jind3,jind2,jind,
      1        clw1,clw2,clw3,dlw1,dlw2,dlw3,jw1,jw2,jw3,jwind2,jwind3
       real*8 swj,swjy,z1,z2,z3,wj,hakt2,hmax2
@@ -135,7 +135,7 @@ C
       integer n1,n2,n3
       logical mask(n1,n2,n3)
       real*8 y(n1,n2,n3),theta(n1,n2,n3),bi(n1,n2,n3),
-     1       thetan(n1,n2,n3),lambda,wght(2),hakt,lwght(1),
+     1       thetan(n1,n2,n3),lambda,wght(2),hakt,lwght(*),
      2       si2(n1,n2,n3),spmin,hhom(n1,n2,n3),
      3       gi(n1,n2,n3),gi2(n1,n2,n3)
       integer ih1,ih2,ih3,i1,i2,i3,j1,j2,j3,jw1,jw2,jw3,jwind3,jwind2,

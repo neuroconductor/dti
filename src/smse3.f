@@ -1224,9 +1224,9 @@ c   model=1  Chi^2-based KL-distance, y ~ Chi^2, th on same scale, smooth y
 c   model=2  Gauss-based KL-distance, y ~ Chi, th on same scale, smooth y^2
 
       implicit logical (a-z)
-      integer n1,n2,n3,n,ind(5,n),starts(1),nstarts,ncoils,model
+      integer n1,n2,n3,n,ind(5,n),starts(*),nstarts,ncoils,model
       logical mask(n1,n2,n3)
-      real*8 y(n1,n2,n3),th(n1,n2,n3),ni(1),thn(1),minlev,
+      real*8 y(n1,n2,n3),th(n1,n2,n3),ni(*),thn(*),minlev,
      1       lambda,w(n),sw0,swy0,swi(nstarts),ldf(n1,n2,n3)
       integer i,i0,i1,i2,i3,j1,j2,j3,l1,l2,l3,nn
       real*8 z,ldfi,lgfi,dgfi,fici,sc,df,yj,maxswi
@@ -1429,8 +1429,8 @@ C
       implicit logical (a-z)
       integer n1,n2,n3,ncoils
       logical mask(n1,n2,n3)
-      real*8 y(n1,n2,n3),th(n1,n2,n3),ni(1),thn(1),
-     1       th2(1),ni2(1),lambda,h,vext(2),
+      real*8 y(n1,n2,n3),th(n1,n2,n3),ni(*),thn(*),
+     1       th2(*),ni2(*),lambda,h,vext(2),
      2       ldf(n1,n2,n3)
       integer i1,i2,i3,j1,j2,j3,cw1,cw2,cw3,i,n
       real*8 z,lgfi,dgfi,fici,df,kval,w,w0,h2,sw,sw2,swy,swy2,yj,
