@@ -218,6 +218,7 @@ setMethod("combineFibers",c("dwiFiber","dwiFiber"), function(obj1,obj2){
    starts2 <- obj2@startind
    ends2 <- c(starts2[-1]-1,nfs2)
    fibers <- rbind(fibers1,fibers2)
+   lstarts1 <- length(starts1)
    starts <- c(starts1,nfs1+starts2)
    ends <- c(ends1,nfs1+ends2)
    nfs <- nfs1+nfs2
@@ -227,7 +228,7 @@ setMethod("combineFibers",c("dwiFiber","dwiFiber"), function(obj1,obj2){
    fiberlength <- diff(c(starts,nfs+1))
    of <- order(fiberlength,decreasing=TRUE)
    ind <-  rep(starts[of],ends[of]-starts[of]+1)+sequence(ends[of]-starts[of]+1)-1
-   obj1@fibers <- obj1@fibers[ind,]
+   obj1@fibers <- fibers[ind,]
    obj1@startind <- as.integer(c(0,cumsum(ends[of]-starts[of]+1))[1:length(starts)]+1)
    obj1
 } 
