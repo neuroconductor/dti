@@ -10,7 +10,7 @@ exportClasses("dwi","dtiData","dtiTensor","dtiIndices","dwiQball","dwiMixtensor"
 exportMethods("show","plot","print","summary","dti.smooth","dtiTensor","dtiTensorold","dtiIndices","dwiQball","dwiMixtensor","dwiMtCombine","dwiRiceBias","dwiSqrtODF","dkiTensor","dkiIndices")
 exportMethods("extract","show3d","tracking","selectFibers","reduceFibers","touchingFibers","combineFibers","getmask")
 export(dtiData,readDWIdata,subsetg,combineDWIdata,awssigmc,awslinsd,awsncoils,
-awsncoilsigma)
+awsncoilsigma,dwiExtMt)
 export(tensor2medinria,medinria2tensor)
 exportMethods("sdpar","getsdofsb")
 exportMethods("dwi.smooth")
