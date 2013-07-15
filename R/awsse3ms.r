@@ -5,7 +5,7 @@ dwi.smooth.ms <- function(object, ...) cat("No DTI smoothing defined for this cl
 
 setGeneric("dwi.smooth.ms", function(object, ...) standardGeneric("dwi.smooth.ms"))
 
-setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=15,kappa0=.9,ncoils=1,sigma=NULL,ws0=1,level=NULL,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE,wghts=NULL,usemaxni=TRUE){
+setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=15,kappa0=.9,ncoils=1,sigma=NULL,ws0=1,level=NULL,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE,wghts=NULL,usemaxni=TRUE,resample=FALSE){
   args <- sys.call(-1)
   args <- c(object@call,args)
   sdcoef <- object@sdcoef
@@ -82,6 +82,7 @@ setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=15,kappa0=.9,
   for(k in kinit:kstar){
      gc()
      hakt <- hseqi[,k]
+     if(resample) hakt<-hakt[sample(length(hakt),length(hakt))]
      hakt0 <- hseq0[k]
      t0 <- Sys.time()
      thnimsh <- interpolatesphere0(z$th,z$th0,ni,ni0,msstructure,mask)

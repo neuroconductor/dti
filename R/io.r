@@ -148,9 +148,15 @@ readDWIdata <- function(gradient, dirlist,
      if(length(bvalue)!=ngrad || max(bvalue[s0ind]) > 10*min(bvalue[-s0ind])) 
         stop("invalid b-values")
   }   
+  if(length(dirlist)==1&file.exists(dirlist)){
+  ## dirlist contains a filename rather than a list of directories
+     filelist <- dirlist
+     dirlist <- NULL
+  } else {
   ## generate file list in specified order
-  filelist <- NULL
-  for (dd in dirlist) filelist <- c(filelist, list.files(dd, full.names = TRUE, pattern = pattern))
+     filelist <- NULL
+     for (dd in dirlist) filelist <- c(filelist, list.files(dd, full.names = TRUE, pattern = pattern))
+  }
   if ( length( filelist) == 0) stop( "readDWIdata: empty directories or directories do not exist!")
   if (format == "DICOM") {
     if (is.null(zind)) zind <- 1:nslice

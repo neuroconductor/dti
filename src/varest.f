@@ -192,9 +192,9 @@ C
       logical mask(n1,n2,n3)
       integer i1,i2,i3,j1,j2,j3,ih1,ih2,ih3,ni
       real*8 m1,m2,z
-      ih1=h
-      ih2=h*vext(1)
-      ih3=h*vext(2)
+      ih1=int(h)
+      ih2=int(h*vext(1))
+      ih3=int(h*vext(2))
       Do i1=1+ih1,n1-ih1
          Do i2=1+ih2,n2-ih2
             Do i3=1+ih3,n3-ih3
@@ -240,9 +240,9 @@ C
       logical mask(n1,n2,n3)
       integer i1,i2,i3,j1,j2,j3,ih1,ih2,ih3,ni
       real*8 m1
-      ih1=h
-      ih2=h*vext(1)
-      ih3=h*vext(2)
+      ih1=int(h)
+      ih2=int(h*vext(1))
+      ih3=int(h*vext(2))
       Do i1=1+ih1,n1-ih1
          Do i2=1+ih2,n2-ih2
             Do i3=1+ih3,n3-ih3

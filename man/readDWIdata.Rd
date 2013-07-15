@@ -19,7 +19,7 @@ readDWIdata(gradient, dirlist, format = c("DICOM", "NIFTI", "ANALYZE", "AFNI"), 
   \item{gradient}{ matrix of diffusion gradients (including zero gradients for S0 images) }
   \item{imagefile}{ name of data image file (binary 2Byte integers)}
   \item{ddim}{ dimension of image cube (3D) }
-  \item{dirlist}{ list of directories containing the data files }
+  \item{dirlist}{ list of directories containing the data files or name of a single data file (e.g. 4D NIFTI)}
   \item{format}{ string specifying the medical imaging format, one of ''DICOM'', ''NIFTI'', ''ANALYZE'', or ''AFNI'' }
   \item{nslice}{ number of slices (usually z-direction) }
   \item{order}{ vector, specifying a different order of the data files, i.e. other than alphabetic order in the directories given by \code{dirlist}. If not given, 1:n is used for n data files (no order change). }

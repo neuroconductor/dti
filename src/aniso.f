@@ -137,8 +137,8 @@ C    ia,ie -  rane of x values (restricted to the grid)
          z=sqrt(z)
       END IF
       h1=h/vext(1)
-      ia=-z*h1
-      ie=z*h1
+      ia=int(-z*h1)
+      ie=int(z*h1)
       RETURN
       END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
@@ -180,8 +180,8 @@ C    ia,ie -  rane of x values (restricted to the grid)
          z=sqrt(z)
       END IF
       h2s=h/vext(2)/s
-      ja=(t-z)*h2s
-      je=(t+z)*h2s
+      ja=int((t-z)*h2s)
+      je=int((t+z)*h2s)
       z=z*h2s
       RETURN
       END
@@ -214,8 +214,8 @@ C    ia,ie -  rane of x values (restricted to the grid)
       ELSE 
          z=sqrt(z)
       END IF
-      ka=(t-z)*h3
-      ke=(t+z)*h3
+      ka=int((t-z)*h3)
+      ke=int((t+z)*h3)
       RETURN
       END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC

@@ -38,6 +38,7 @@ setMethod( "dtiTensor", "dtiData",
 #
 #  this does not scale well with openMP
 #
+cat("sioutlier completed\n")
    si <- array(z$si,c(ngrad,ddim))
    index <- z$index
    ngrad0 <- ngrad - length(s0ind)
@@ -50,8 +51,11 @@ setMethod( "dtiTensor", "dtiData",
    }
    mask <- s0 > object@level
    mask <- connect.mask(mask)
-   idsi <- 1:length(dim(si))
-   ttt <- -log(sweep(si,idsi[-1],s0,"/"))
+   dim(si) <- c(ngrad0,prod(ddim))
+   ttt <- array(0,dim(si))
+   ttt[,mask] <- -log(sweep(si[,mask],2,as.vector(s0[mask]),"/"))
+#   idsi <- 1:length(dim(si))
+#   ttt <- -log(sweep(si,idsi[-1],s0,"/"))
    ttt[is.na(ttt)] <- 0
    ttt[(ttt == Inf)] <- 0
    ttt[(ttt == -Inf)] <- 0

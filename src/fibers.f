@@ -20,7 +20,7 @@ C   lengthf(nfibers) -  length(fibers)
          DO j=1,ilen
             DO k=1,3
                j1=istart+j-1
-               ifiber(k,j)=fiber(j1,k)/vext(k)+1
+               ifiber(k,j)=int(fiber(j1,k)/vext(k))+1
             END DO
          END DO
 C  we now have the voxelcoords for this fiber
@@ -223,6 +223,7 @@ C Initialize keep to none
       DO i=1,nfibers1
          keep(i)=.FALSE.
       END DO
+      alength=0
 C check which fibers in fibers1 are to be kept
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(fibers1,nsegm1,startf1,endf1,nfibers1,keep,fibers2,

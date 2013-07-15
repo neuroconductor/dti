@@ -233,9 +233,9 @@ C    die spherischen Koordinaten der Gradientenpaare (Parameter der Rotationsmat
       real*8 h,kappa,k456(3,ng,ng),vext(2),wght(n)
       integer ih1,ih2,ih3,i,j1,j2,j3,j4
       real*8 h2,kap2,x1,x2,x3,k4,k5,k6,z,z1,vd2,vd3
-      ih1 = max(1.d0,5.0d0*h)
-      ih2 = max(1.d0,5.0d0*h/vext(1))
-      ih3 = max(1.d0,5.0d0*h/vext(2))
+      ih1 = int(max(1.d0,5.0d0*h))
+      ih2 = int(max(1.d0,5.0d0*h/vext(1)))
+      ih3 = int(max(1.d0,5.0d0*h/vext(2)))
       h2 = h*h
       kap2 = kappa*kappa
       vd2 = vext(1)*vext(1)
@@ -338,9 +338,9 @@ C dist=4
       integer ih1,ih2,ih3,j1,j2,j3,j4,mj1,mj2,mj3,rad
       real*8 x1,x2,x3,k4,k5,k6,z,z1,
      1       sw,sw2,wght,anz,h2,kap2,vd2,vd3
-      ih1 = max(1.d0,5.0d0*h)
-      ih2 = max(1.d0,5.0d0*h/vext(1))
-      ih3 = max(1.d0,5.0d0*h/vext(2))
+      ih1 = int(max(1.d0,5.0d0*h))
+      ih2 = int(max(1.d0,5.0d0*h/vext(1)))
+      ih3 = int(max(1.d0,5.0d0*h/vext(2)))
       sw=0.d0
       sw2=0.d0
       mj1=0
@@ -1439,9 +1439,9 @@ C
       external kldisnc1
       df=2.d0*ncoils
       h2=h*h
-      cw1=h
-      cw2=h/vext(1)
-      cw3=h/vext(2)
+      cw1=int(h)
+      cw2=int(h/vext(1))
+      cw3=int(h/vext(2))
       n = n1*n2*n3
 C  precompute values of lgamma(corrected df/2) in each voxel
 C$OMP PARALLEL DEFAULT(NONE)
@@ -1522,9 +1522,9 @@ C         (2 int(h)+1)*(2 int(h/vext(1))+1)*(2 int(h/vext(2))+1)
       integer i,i1,i2,i3,ih1,ih2,ih3
       real*8 hsq,z1,z2,z3
       hsq=h*h
-      ih1 = h
-      ih2 = h/vext(1)
-      ih3 = h/vext(2)
+      ih1 = int(h)
+      ih2 = int(h/vext(1))
+      ih3 = int(h/vext(2))
       i=1
       DO i1=-ih1,ih1
          z1=i1*i1
@@ -1555,9 +1555,9 @@ C         (2 int(h)+1)*(2 int(h/vext(1))+1)*(2 int(h/vext(2))+1)
       real*8 h2,x1,x2,x3,z,z1,vd2,vd3
       vd2 = vext(1)
       vd3 = vext(2)
-      ih1 = max(1.d0,5.0d0*h)
-      ih2 = max(1.d0,5.0d0*h/vd2)
-      ih3 = max(1.d0,5.0d0*h/vd3)
+      ih1 = int(max(1.d0,5.0d0*h))
+      ih2 = int(max(1.d0,5.0d0*h/vd2))
+      ih3 = int(max(1.d0,5.0d0*h/vd3))
       h2 = h*h
       i = 1
       z = 0.d0
