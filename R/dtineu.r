@@ -53,7 +53,8 @@ cat("sioutlier completed\n")
    mask <- connect.mask(mask)
    dim(si) <- c(ngrad0,prod(ddim))
    ttt <- array(0,dim(si))
-   ttt[,mask] <- -log(sweep(si[,mask],2,as.vector(s0[mask]),"/"))
+   ttt[,mask] <- -log1p(sweep(si[,mask],2,as.vector(s0[mask]),"/")-1)
+#  suggestion by B. Ripley
 #   idsi <- 1:length(dim(si))
 #   ttt <- -log(sweep(si,idsi[-1],s0,"/"))
    ttt[is.na(ttt)] <- 0

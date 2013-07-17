@@ -112,24 +112,25 @@ awssigmc <- function(y,                 # data
                   DUPL = FALSE,
                   PACKAGE = "dti")[c("ni","th","sy")]
     } else {
+#    cat("n",n,prod(ddim[1:3]),"ly",length(y),"lth",length(th),"lni",length(ni),"lfns",length(fncchi),"lmask",length(mask),"nw",nw,"lind",length(param$ind),"lw",length(param$w),"mc.cores",mc.cores,"\n")
     z <- .Fortran("awsadchi",
-                  as.double(y),        # data
-                  as.double(th),       # previous estimates
-                  ni = as.double(ni),
-                  as.double(fncchi/2),
-                  as.logical(mask),
-                  as.integer(ddim[1]),
-                  as.integer(ddim[2]),
-                  as.integer(ddim[3]),
-                  as.integer(param$ind),
-                  as.double(param$w),
-                  as.integer(nw),
-                  as.double(lambda),
-                  as.double(sigma),
-                  double(nw*mc.cores),
-                  as.integer(mc.cores),
-                  th = double(n),
-                  sy = double(n),
+                  as.double(y),        # y(n1,n2,n3)
+                  as.double(th),       # th(n1,n2,n3)
+                  ni = as.double(ni),  # ni(n1,n2,n3)
+                  as.double(fncchi/2), # fns(n1,n2,n3)
+                  as.logical(mask),    # mask(n1,n2,n3)
+                  as.integer(ddim[1]), # n1
+                  as.integer(ddim[2]), # n2
+                  as.integer(ddim[3]), # n3
+                  as.integer(param$ind), # ind(3,nw)
+                  as.double(param$w), # w(nw)
+                  as.integer(nw), # nw
+                  as.double(lambda), # lambda
+                  as.double(sigma), # sigma
+                  double(nw*mc.cores), # wad(nw,nthreds)
+                  as.integer(mc.cores), # nthreds
+                  th = double(n), # thn(n1*n2*n3)
+                  sy = double(n), # sy(n1*n2*n3)
                   DUPL = FALSE,
                   PACKAGE = "dti")[c("ni","th","sy")]       
     }
@@ -139,11 +140,11 @@ awssigmc <- function(y,                 # data
     ni[!mask]<-1
     ind <- (ni > .9999*quantile(ni[ni>1],qni))#&(z$th>sigma*minlev)
 ## use correction factor for sd of NC Chi distribution 
-    sy <- z$sy[ind]
-    th <- th[ind]
-    sy <- sy/fncchis(th/sigma,varstats)
+    sy1 <- z$sy[ind]
+    th1 <- th[ind]
+    sy1 <- sy1/fncchis(th1/sigma,varstats)
     ## use the maximal mode of estimated local sd parameters, exclude largest values for better precision
-    dsigma <- density( sy[sy>0], n = 4092, adjust = hadj, to = min( max(sy[sy>0]), median(sy[sy>0])*5) )
+    dsigma <- density( sy1[sy1>0], n = 4092, adjust = hadj, to = min( max(sy1[sy1>0]), median(sy1[sy1>0])*5) )
     sigma <- dsigma$x[dsigma$y == max(dsigma$y)][1]
 
     if (sequence) {
@@ -155,7 +156,7 @@ awssigmc <- function(y,                 # data
     if (verbose) {
       plot(dsigma, main = paste( "estimated sigmas step", i, "h=", signif(h,3)))
       cat( "step", i, "h=", signif( h, 3), "quantiles of ni", signif( quantile(ni[ind]), 3), "mean", signif( mean(ni[ind]), 3), "\n")
-      cat( "quantiles of sigma", signif( quantile(sy[sy>0]), 3), "mode", signif( sigma, 3), "\n")
+      cat( "quantiles of sigma", signif( quantile(sy1[sy1>0]), 3), "mode", signif( sigma, 3), "\n")
     }
   }
   ## END PS iteration
