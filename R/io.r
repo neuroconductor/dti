@@ -148,7 +148,7 @@ readDWIdata <- function(gradient, dirlist,
      if(length(bvalue)!=ngrad || max(bvalue[s0ind]) > 10*min(bvalue[-s0ind])) 
         stop("invalid b-values")
   }   
-  if(length(dirlist)==1&!file.info(dirlist)$isdir){
+  if(length(dirlist)==1&!is.na(isdir <- file.info(dirlist)$isdir)&!isdir){
   ## dirlist contains a filename rather than a list of directories
      filelist <- dirlist
      dirlist <- NULL

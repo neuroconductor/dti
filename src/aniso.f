@@ -546,8 +546,8 @@ C$OMP& PRIVATE(i,lam,evec,ierr)
 C$OMP DO SCHEDULE(STATIC)
       DO i=1,n
          call eigen3(D(1,i),lam,evec,ierr)
-         lam(1)=max(0.d0,lam(1))
-         lam(2)=max(0.d0,lam(2))
+         lam(1)=max(1.d-12,lam(1))
+         lam(2)=max(1.d-12,lam(2))
          D(1,i) = lam(1)*evec(1,1)*evec(1,1)+
      1          lam(2)*evec(1,2)*evec(1,2)+lam(3)*evec(1,3)*evec(1,3)
          D(2,i) = lam(1)*evec(1,1)*evec(2,1)+

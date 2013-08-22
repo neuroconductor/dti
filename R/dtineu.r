@@ -85,7 +85,6 @@ cat("sioutlier completed\n")
        param[1,] <- s0[mask]/ms0
        param[-1,] <- D2Rall(D[,mask]*mbv)
 ## use reparametrization D = R^T R
-       sdcoef <- object@sdcoef 
        sdcoef[-2] <- sdcoef[-2]/ms0# effect of rescaling of signal
        cat("start nonlinear regression",format(Sys.time()),"\n")
        if(mc.cores==1){

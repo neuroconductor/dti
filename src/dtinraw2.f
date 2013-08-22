@@ -83,12 +83,12 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       DO i=1,nvox
          call eigen3(D(1,i),ew,ev,ierr)
          if(ew(1).le.1.d-6) THEN
-            rho(1,i) = 1.d0
+            rho(1,i) = 1.d-2
             rho(2,i) = 0.d0
             rho(3,i) = 0.d0
-            rho(4,i) = 1.d0
+            rho(4,i) = 1.d-2
             rho(5,i) = 0.d0
-            rho(6,i) = 1.d0            
+            rho(6,i) = 1.d-2           
          ELSE         
             r1=sqrt(max(1d-12,D(1,i)))
             r2=D(2,i)/r1

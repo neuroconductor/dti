@@ -28,7 +28,7 @@ setMethod("sdpar", "dtiData",
             s0ind<-object@s0ind
             s0 <- object@si[,,,s0ind,drop=FALSE]
             ls0ind <- length(s0ind)
-            A0 <- level0
+            A0 <- level
             if(ls0ind>1) {
               dim(s0) <- c(prod(object@ddim),ls0ind)
               s0mean <- s0%*%rep(1/ls0ind,ls0ind)
@@ -82,7 +82,7 @@ setMethod("sdpar", "dtiData",
                   cutpoint <-  readline("Provide value for cut off point:")
                   cutpoint <- if(!is.null(cutpoint)) as.numeric(cutpoint) else A0
                   if(!is.na(cutpoint)) {
-                    level0 <-A0 <- cutpoint
+                    level0 <- A0 <- cutpoint
                   }
                 } else {
                   accept <- TRUE
@@ -108,7 +108,9 @@ setMethod("sdpar", "dtiData",
                 level0 <- A0 <- min(A0a,A0b)*threshfactor
               } 
             }
-            # determine parameters for linear relation between standard deviation and mean
+            A0 <- max(level0,A1/200,1)
+# avoid A0=0 since this may lead to Inf weights in dtiTensor
+# determine parameters for linear relation between standard deviation and mean
             if(ls0ind>1) {
               s0sd <- apply(s0,1,sdmethod)
               ind <- s0mean>A0&s0mean<A1
