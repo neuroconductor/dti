@@ -84,7 +84,6 @@ for(i in 1:nbv){
             w[,j,k] <- c(1,0,0)
          } else {
             z <- getsphwghts(grad[,k],grad[,ijk[1]],grad[,ijk[2]],grad[,ijk[3]])
-            ijk1 <- ijk
             l <- 1
             if(z$ierr==1){
 #  order triplets in perm according
@@ -163,14 +162,13 @@ list(h=h,kappa=kappa,ind=ind[,1:nn],w=w[1:nn],nind=nn)
 }
 
 gethseqfullse3msh <-
-function (kstar, gradstats, kappa=NULL, vext = c(1, 1)) 
+function (kstar, gradstats, kappa, vext = c(1, 1)) 
 {
 #
 #  generate information on local bandwidths and variance reduction
 #  for smoothing on multiple shells
 #
     nbv <- gradstats$nbv
-    dist <- gradstats$dist
     ngrad <- gradstats$ngrad
     h <- vr <- matrix(0,ngrad,kstar)
     n <- 0
@@ -183,7 +181,7 @@ function (kstar, gradstats, kappa=NULL, vext = c(1, 1))
        n <- n+z$n
     }
         cat("\n total number of positive weights:",n,"mean maximal bandwidth",signif(mean(h[,kstar]),3), "\n")
-    list(h=h,kappa=kappa,vred=vr,n=n)
+    list(h=h,vred=vr,n=n)
 }
 
 

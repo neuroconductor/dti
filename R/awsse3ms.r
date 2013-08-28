@@ -5,7 +5,7 @@ dwi.smooth.ms <- function(object, ...) cat("No DTI smoothing defined for this cl
 
 setGeneric("dwi.smooth.ms", function(object, ...) standardGeneric("dwi.smooth.ms"))
 
-setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=15,kappa0=.9,ncoils=1,sigma=NULL,ws0=1,level=NULL,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE,wghts=NULL,usemaxni=TRUE,resample=FALSE){
+setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=15,kappa0=.5,ncoils=1,sigma=NULL,ws0=1,level=NULL,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE,wghts=NULL,usemaxni=TRUE,resample=FALSE){
   args <- sys.call(-1)
   args <- c(object@call,args)
   sdcoef <- object@sdcoef
@@ -65,14 +65,11 @@ setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=15,kappa0=.9,
   gradstats <- getkappasmsh3(grad, msstructure)
 #     save(gradstats,file="gradstats.rsc")
   hseq <- gethseqfullse3msh(kstar,gradstats,kappa0,vext=vext)
-  kappa <- hseq$kappa
-  cat("kappa",kappa,"\n")
   nind <- as.integer(hseq$n*1.25)
   hseqi <- hseq$h
-  hseq0 <- hseq$h0 <- apply(hseqi,2,mean)
 # make it nonrestrictive for the first step
   ni <- array(1,dim(sb))
-  minlevel <- gamma(ncoils+0.5)/gamma(ncoils)*sqrt(2)
+#  minlevel <- gamma(ncoils+0.5)/gamma(ncoils)*sqrt(2)
 #  thats the mean of the central chi distribution with 2*ncoils df
   z <- list(th=sb, th0=s0)
   prt0 <- Sys.time()
@@ -83,11 +80,11 @@ setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=15,kappa0=.9,
      gc()
      hakt <- hseqi[,k]
      if(resample) hakt<-hakt[sample(length(hakt),length(hakt))]
-     hakt0 <- hseq0[k]
      t0 <- Sys.time()
      thnimsh <- interpolatesphere0(z$th,z$th0,ni,ni0,msstructure,mask)
      t1 <- Sys.time()
-     param <- lkfullse3msh(hakt,kappa/hakt,gradstats,vext,nind) 
+     param <- lkfullse3msh(hakt,kappa0/hakt,gradstats,vext,nind) 
+     hakt0 <- mean(hakt)
      param0 <- lkfulls0(hakt0,vext,nind) 
      t2 <- Sys.time()
      z <- .Fortran("adsmse3c",
@@ -151,7 +148,7 @@ if(verbose){
 #
 #  back to original scale
 #
-  minlevel <- 1/sigma
+#  minlevel <- 1/sigma
 #  si[,,,1] <-  pmax(z$th0/sqrt(ns0),minlevel)*sigma
   si[,,,1] <-  z$th0/sqrt(ns0)*sigma
 #  go back to original s0 scale
@@ -174,9 +171,9 @@ getkappas3 <- function(grad, trace = 0){
 #
   ngrad <- dim(grad)[2]
   kappa456 <- array(0, c(3, ngrad, ngrad))
-  zbg <- betagamma(grad)
+  bghat <- betagamma(grad)
   for(i in 1:ngrad) kappa456[1,i,] <- acos(pmin(1,abs(grad[,i]%*%grad)))
-  list(k456 = kappa456, bghat = zbg$bghat, dist=3)
+  list(k456 = kappa456, bghat = bghat, dist=3)
 }
 getkappasmsh3 <- function(grad, msstructure, trace = 0){
 ngrad <- dim(grad)[2]

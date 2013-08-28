@@ -1,16 +1,16 @@
 betagamma <- function(g){
   dg <- dim(g)
   ngrad <- if(!is.null(dg)) dg[2] else 1
-  z <- .Fortran("bgstats",
+  bghat <- .Fortran("bgstats",
                 as.double(g),
                 as.integer(ngrad),
                 double(2*ngrad),
                 bghat = double(2*ngrad*ngrad),
                 DUPL = FALSE,
-                PACKAGE = "dti")[c("bghat")]
-  dim(z$bghat) <- c(2, ngrad, ngrad)
+                PACKAGE = "dti")$bghat
+  dim(bghat) <- c(2, ngrad, ngrad)
   ## sphaerische Coordinaten fuer Gradienten-Paare
-  z
+  bghat
 }
 
 matrm <- function(b, g){
@@ -51,9 +51,9 @@ getkappas <- function(grad, trace = 0, dist = 1){
   prta <- Sys.time()
   cat("Start computing spherical distances", format(Sys.time()), "\n")
   kappa456 <- kappa456a <- array(0, c(3, ngrad, ngrad))
-  zbg <- betagamma(grad)
+  bghat <- betagamma(grad)
   for (i in 1:ngrad) for (j in 1:ngrad) {
-    bg <- zbg$bghat[, i, j]
+    bg <- bghat[, i, j]
 #   fix for discontinuity
     if(abs(cos(bg[1])) < 1.e-6) bg[1] = pi/2 - 1e-6*sign(cos(bg[1]))
     matm <- matrm(bg[1], bg[2])
@@ -107,10 +107,10 @@ getkappas <- function(grad, trace = 0, dist = 1){
   cat("End computing spherical distances", format(Sys.time()), "\n")
   } else {
       kappa456 <- array(0, c(3, ngrad, ngrad))
-      zbg <- betagamma(grad)
+      bghat <- betagamma(grad)
       for(i in 1:ngrad) kappa456[1,i,] <- acos(pmin(1,abs(grad[,i]%*%grad)))
   }
-  list(k456 = kappa456, bghat = zbg$bghat, dist=dist)
+  list(k456 = kappa456, bghat = bghat, dist=dist)
 }
 
 

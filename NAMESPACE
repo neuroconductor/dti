@@ -1,6 +1,6 @@
 useDynLib(dti)
 
-#exportPattern("^[^\\.]")
+exportPattern("^[^\\.]")
 
 import("methods", "oro.dicom", "awsMethods")
 importFrom(graphics,plot)
