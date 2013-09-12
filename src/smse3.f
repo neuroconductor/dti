@@ -9,11 +9,9 @@ C
       integer ng,i4,kstar,n,dist
       real*8 k456(3,ng,ng),vext(2),
      1       kappa,h(kstar),varred(kstar)
-      logical getkappa
       integer k,n0,maxn
       real*8 hakt,hakt0,vr,ch,chk,vred,v0r
       ch=1.25d0
-      getkappa=.FALSE.
       hakt=1.d0
 C   initialize kappa
 C   loop over steps
@@ -377,6 +375,12 @@ C  just to prevent compiler warnings
             if(z.gt.h2) CYCLE
 C   last three komponents already to large
             DO j1 = 0,ih1
+C   if j1>0  (-j1,-j2,-j3) gets the same weight, so count it twice
+               if(j1.eq.0) THEN
+                  anz=1.d0
+               ELSE
+                  anz=2.d0
+               ENDIF
                x1 = j1
                x1 = z + x1*x1
                if(x1.gt.h2) CYCLE
@@ -386,15 +390,10 @@ C   last three komponents already to large
                   if(x2.gt.h2) CYCLE
                   DO j3 = -ih3,ih3
                      x3 = j3
-                     z1 = x2+vd2*x3*x3
+                     z1 = x2+vd3*x3*x3
+C   corrected from vd2 to vd3 J.P. 29.8.2013
                      if(z1.gt.h2) CYCLE
                      wght= (1.d0-z1/h2)
-C   if j1>0  (-j1,-j2,-j3) gets the same weight, so count it twice
-                     if(j1.eq.0) THEN
-                        anz=1.d0
-                     ELSE
-                        anz=2.d0
-                     ENDIF
                      sw=sw+anz*wght
                      wght=wght*wght
                      sw2=sw2+anz*wght
@@ -410,6 +409,12 @@ C   if j1>0  (-j1,-j2,-j3) gets the same weight, so count it twice
             if(z.gt.h) CYCLE
 C   last three komponents already to large
             DO j1 = 0,ih1
+C   if j1>0  (-j1,-j2,-j3) gets the same weight, so count it twice
+               if(j1.eq.0) THEN
+                  anz=1.d0
+               ELSE
+                  anz=2.d0
+               ENDIF
                x1 = j1
                x1 = x1*x1
                DO j2 = -ih2,ih2
@@ -418,16 +423,10 @@ C   last three komponents already to large
                   if(x2.gt.h2) CYCLE
                   DO j3 = -ih3,ih3
                      x3 = j3
-                     z1 = x2+vd2*x3*x3
+                     z1 = x2+vd3*x3*x3
                      z1=z+sqrt(z1)
                      if(z1.gt.h) CYCLE
                      wght= (1.d0-z1*z1/h2)
-C   if j1>0  (-j1,-j2,-j3) gets the same weight, so count it twice
-                     if(j1.eq.0) THEN
-                        anz=1.d0
-                     ELSE
-                        anz=2.d0
-                     ENDIF
                      sw=sw+anz*wght
                      wght=wght*wght
                      sw2=sw2+anz*wght

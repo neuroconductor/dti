@@ -87,6 +87,7 @@ setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=15,kappa0=.5,
      hakt0 <- mean(hakt)
      param0 <- lkfulls0(hakt0,vext,nind) 
      t2 <- Sys.time()
+     browser()
      z <- .Fortran("adsmse3c",
                 as.double(sb),#y
                 as.double(s0),#y0
