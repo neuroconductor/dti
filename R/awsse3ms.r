@@ -5,7 +5,7 @@ dwi.smooth.ms <- function(object, ...) cat("No DTI smoothing defined for this cl
 
 setGeneric("dwi.smooth.ms", function(object, ...) standardGeneric("dwi.smooth.ms"))
 
-setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=15,kappa0=.5,ncoils=1,sigma=NULL,ws0=1,level=NULL,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE,wghts=NULL,usemaxni=TRUE,resample=FALSE){
+setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=12,kappa0=.5,ncoils=1,sigma=NULL,ws0=1,level=NULL,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE,usemaxni=TRUE){
   args <- sys.call(-1)
   args <- c(object@call,args)
   sdcoef <- object@sdcoef
@@ -26,12 +26,6 @@ setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=15,kappa0=.5,
  cat("using median estimated sigma",sigma,"\n")
   }
 #
-  if(!(is.null(xind)&is.null(yind)&is.null(zind))){
-  if(is.null(xind)) xind <- 1:object@ddim[1]
-  if(is.null(yind)) yind <- 1:object@ddim[2]
-  if(is.null(zind)) zind <- 1:object@ddim[3]
-  object <- object[xind,yind,zind]
-  }
   ngrad <- object@ngrad
   ddim <- object@ddim
   s0ind <- object@s0ind
@@ -59,36 +53,41 @@ setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=15,kappa0=.5,
 #  make sure linear combination of s0 has same variance as original 
      dim(s0) <- ddim
   }
-#  th0 <- array(s0,c(ddim,nshell+1))
-  ni0 <- array(1,ddim)
   mask <- s0>(sqrt(ns0)*level/sigma)
+# determine minimal subcube that contains the mask ore use supplied information
+  if(is.null(xind)) xind <- (1:ddim[1])[apply(mask,1,any)]
+  if(is.null(yind)) yind <- (1:ddim[2])[apply(mask,2,any)]
+  if(is.null(zind)) zind <- (1:ddim[3])[apply(mask,3,any)]
+# reduce everything to this subcube 
+  sb <- sb[xind,yind,zind,]
+  s0 <- s0[xind,yind,zind]
+  mask <- mask[xind,yind,zind]
+  gc()
+  ddim1 <- dim(s0)
   gradstats <- getkappasmsh3(grad, msstructure)
-#     save(gradstats,file="gradstats.rsc")
   hseq <- gethseqfullse3msh(kstar,gradstats,kappa0,vext=vext)
   nind <- as.integer(hseq$n*1.25)
   hseqi <- hseq$h
 # make it nonrestrictive for the first step
-  ni <- array(1,dim(sb))
-#  minlevel <- gamma(ncoils+0.5)/gamma(ncoils)*sqrt(2)
-#  thats the mean of the central chi distribution with 2*ncoils df
   z <- list(th=sb, th0=s0)
+  ni <- array(1,dim(sb))
+  ni0 <- array(1,dim(s0))
   prt0 <- Sys.time()
   cat("adaptive smoothing in SE3, kstar=",kstar,if(verbose)"\n" else " ")
   kinit <- if(lambda<1e10) 1 else kstar
   mc.cores <- setCores(,reprt=FALSE)
+  gc()
   for(k in kinit:kstar){
-     gc()
      hakt <- hseqi[,k]
-     if(resample) hakt<-hakt[sample(length(hakt),length(hakt))]
      t0 <- Sys.time()
-     thnimsh <- interpolatesphere0(z$th,z$th0,ni,ni0,msstructure,mask)
+     thnimsh <- interpolatesphere1(z$th,z$th0,ni,ni0,msstructure,mask)
+     rm(z)
      t1 <- Sys.time()
      param <- lkfullse3msh(hakt,kappa0/hakt,gradstats,vext,nind) 
      hakt0 <- mean(hakt)
      param0 <- lkfulls0(hakt0,vext,nind) 
      t2 <- Sys.time()
-     browser()
-     z <- .Fortran("adsmse3c",
+     z <- .Fortran("adsmse3s",
                 as.double(sb),#y
                 as.double(s0),#y0
                 as.double(thnimsh$mstheta),#th
@@ -99,9 +98,9 @@ setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=15,kappa0=.5,
                 as.double(fncchiv(thnimsh$msth0,varstats)/2),#si^2/2 for s0
                 as.logical(mask),#mask
                 as.integer(nshell+1),#ns number of shells
-                as.integer(ddim[1]),#n1
-                as.integer(ddim[2]),#n2
-                as.integer(ddim[3]),#n3
+                as.integer(ddim1[1]),#n1
+                as.integer(ddim1[2]),#n2
+                as.integer(ddim1[3]),#n3
                 as.integer(ngrad),#ngrad
                 as.double(lambda),#lambda
                 as.double(ws0),# wghts0 rel. weight for s0 image
@@ -112,10 +111,10 @@ setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=15,kappa0=.5,
                 as.integer(param0$ind),#ind0
                 as.double(param0$w),#w0
                 as.integer(param0$n),#n0
-                th=double(prod(ddim)*ngrad),#thn
-                ni=double(prod(ddim)*ngrad),#nin
-                th0=double(prod(ddim)),#th0n
-                ni0=double(prod(ddim)),#ni0n
+                th=double(prod(ddim1)*ngrad),#thn
+                ni=double(prod(ddim1)*ngrad),#nin
+                th0=double(prod(ddim1)),#th0n
+                ni0=double(prod(ddim1)),#ni0n
                 double(ngrad*mc.cores),#sw
                 double(ngrad*mc.cores),#swy
                 double((nshell+1)*mc.cores),#thi
@@ -124,37 +123,36 @@ setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=15,kappa0=.5,
                 DUPL=FALSE,
                 PACKAGE="dti")[c("ni","th","ni0","th0")]
     t3 <- Sys.time()
+    rm(thnimsh)
+    gc()
+    gc()
     ni <- if(usemaxni) pmax(ni,z$ni) else z$ni 
     ni0 <- if(usemaxni) pmax(ni0,z$ni0) else z$ni0 
-    dim(z$th) <- c(ddim,ngrad)
-    dim(z$th0) <- c(ddim)
-    dim(ni) <- c(ddim,ngrad)
-    dim(ni0) <- c(ddim)
-    gc()
-if(verbose){
-   dim(ni) <- c(prod(ddim),ngrad)
-   cat("k:",k,"h_k:",signif(max(hakt),3)," quartiles of ni",signif(quantile(ni[mask,]),3),
-  "mean of ni",signif(mean(ni[mask,]),3),"\n              quartiles of ni0",signif(quantile(ni0[mask]),3),
-  "mean of ni0",signif(mean(ni0[mask]),3),
-  " time elapsed:",format(difftime(Sys.time(),prt0),digits=3),"\n")
-  cat("interpolation:",format(difftime(t1,t0),digits=3),
-      "param:",format(difftime(t2,t1),digits=3),
-      "smoothing:",format(difftime(t3,t2),digits=3),"\n")
-  } else {
+    dim(z$th) <- c(ddim1,ngrad)
+    dim(z$th0) <- c(ddim1)
+    dim(ni) <- c(ddim1,ngrad)
+    dim(ni0) <- c(ddim1)
+    if(verbose){
+      dim(ni) <- c(prod(ddim1),ngrad)
+      cat("k:",k,"h_k:",signif(max(hakt),3)," quartiles of ni",signif(quantile(ni[mask,]),3),
+          "mean of ni",signif(mean(ni[mask,]),3),"\n              quartiles of ni0",signif(quantile(ni0[mask]),3),
+          "mean of ni0",signif(mean(ni0[mask]),3),
+          " time elapsed:",format(difftime(Sys.time(),prt0),digits=3),"\n")
+      cat("interpolation:",format(difftime(t1,t0),digits=3),
+          "param:",format(difftime(t2,t1),digits=3),
+          "smoothing:",format(difftime(t3,t2),digits=3),"\n")
+    } else {
       cat(".")
-  }
+    }
   }
   ngrad <- ngrad+1
   si <- array(0,c(ddim,ngrad))
 #
 #  back to original scale
 #
-#  minlevel <- 1/sigma
-#  si[,,,1] <-  pmax(z$th0/sqrt(ns0),minlevel)*sigma
-  si[,,,1] <-  z$th0/sqrt(ns0)*sigma
+  si[xind,yind,zind,1] <-  z$th0/sqrt(ns0)*sigma
 #  go back to original s0 scale
-#  si[,,,-1] <- pmax(z$th,minlevel)*sigma
-  si[,,,-1] <- z$th*sigma
+  si[xind,yind,zind,-1] <- z$th*sigma
   object@si <-  si
   object@gradient <- grad <- cbind(c(0,0,0),grad)
   object@bvalue <- bvalue <- c(0,object@bvalue[-object@s0ind])
@@ -224,7 +222,7 @@ z <- .Fortran("ipolsp",
               msni=double((nbv+1)*nmask*ng),
               DUPL=FALSE,
               PACKAGE="dti")[c("msth","msni")]
-#cat("time for sb-interpolation", format(difftime(Sys.time(),t1),digits=3),"\n")
+cat("time for sb-interpolation", format(difftime(Sys.time(),t1),digits=3),"\n")
 mstheta[,mask,] <- z$msth
 msni[,mask,] <- z$msni
 #  now fill vector for s0
@@ -243,6 +241,69 @@ for(i in 1:nbv){
 dim(msth0) <- dim(msni0) <- c(nbv+1,dth0)
 dim(mstheta) <- dim(msni) <- c(nbv+1,dtheta)
 list(mstheta=mstheta,msni=msni,msth0=msth0,msni0=msni0)
+}
+
+interpolatesphere1 <- function(theta,th0,ni,ni0,n3g,mask){
+##  interpolate estimated thetas to get values on all spheres
+##  n3g  generated by function  getnext3g
+##  dim(theta) = c(n1,n2,n3,ngrad)
+nbv <- n3g$nbv
+bv <- n3g$bv
+ubv <- n3g$ubv
+dtheta <- dim(theta)
+dth0 <- dim(th0)
+ng <- dtheta[4]
+n <- prod(dtheta[1:3])
+#t1 <- Sys.time()
+z <- .Fortran("ipolsp1",
+              as.double(theta),
+              as.double(th0),
+              as.double(ni),
+              as.double(ni0),
+              as.logical(mask),
+              as.integer(n),
+              as.integer(ng),
+              as.integer(n3g$ind),
+              as.double(n3g$w),
+              as.integer(nbv),
+              as.integer(nbv+1),
+              msth=double((nbv+1)*n*ng),
+              msni=double((nbv+1)*n*ng),
+              DUPL=FALSE,
+              PACKAGE="dti")[c("msth","msni")]
+#cat("time for sb-interpolation", format(difftime(Sys.time(),t1),digits=3),"\n")
+#  now fill vector for s0
+dim(theta)  <- dim(ni)  <- c(n,ng)
+nmask <- sum(mask)
+msth0 <- msni0 <- array(0,c(nbv+1,n))
+msth0[1,] <- th0
+msni0[1,] <- ni0
+for(i in 1:nbv){
+   indi <- (1:ng)[bv==ubv[i]]
+   lindi <- length(indi)
+#   msth0[i+1,mask] <- theta[mask,indi]%*%rep(1/lindi,lindi)
+   msth0[i+1,mask] <- .Fortran("getmsth0",
+                               as.double(theta[mask,indi]),
+                               as.integer(nmask),
+                               as.integer(lindi),
+                               msth0=double(nmask),
+                               DUPL=FALSE,
+                               PACKAGE="dti")$msth0
+#  correct value would be 
+#  msni0[i+1,] <- 1/(1/(ni[,indi])%*%rep(1/lindi,lindi)^2)
+#  try to be less conservative by ignorin squares in w
+#   msni0[i+1,mask] <- 1/((1/ni[mask,indi])%*%rep(1/lindi,lindi))   
+   msni0[i+1,mask] <- .Fortran("getmsni0",
+                               as.double(ni[mask,indi]),
+                               as.integer(nmask),
+                               as.integer(lindi),
+                               msni0=double(nmask),
+                               DUPL=FALSE,
+                               PACKAGE="dti")$msni0
+}
+dim(msth0) <- dim(msni0) <- c(nbv+1,dth0)
+dim(z$msth) <- dim(z$msni) <- c(nbv+1,dtheta)
+list(mstheta=z$msth,msni=z$msni,msth0=msth0,msni0=msni0)
 }
 
 lkfulls0 <- function(h,vext,n){

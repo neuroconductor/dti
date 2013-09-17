@@ -127,13 +127,6 @@ for(i in 1:n3g$nbv){
       mstheta[i,,,,j] <- theta[,n3g$ind[,i,j]]%*%n3g$w[,i,j] 
    }
 }
-# now inforce monotonicity 
-#msthmin <- msthmax <- mstheta
-#if(n3g$nbv>1){
-#for(i in 2:n3g$nbv) msthmin[i,,,,] <- pmin(msthmin[i-1,,,,],msthmin[i,,,,])
-#for(i in n3g$nbv:2) msthmax[i-1,,,,] <- pmax(msthmax[i-1,,,,],msthmax[i,,,,])
-#(msthmin+msthmax)/2
-#}
 mstheta
 }
 
