@@ -230,7 +230,7 @@ dtiind3D <- function( D, mask, mc.cores = 1, verbose = TRUE){
   if (verbose) cat( "dtiind3: entering function", format( Sys.time()), "\n")
   if(mc.cores>1){
     mc.cores.old <- setCores(,reprt=FALSE)
-    setCores(mc.cores)
+    setCores(mc.cores,reprt=verbose)
   }
   bary <- andir <- matrix(0,3,nvox)
   fa <- ga <- md <- numeric(nvox)

@@ -217,5 +217,43 @@ R2Dall <- function(R){
                PACKAGE="dti")$D,6,nvox)
 }
 #############
+#############
+
+dtiIndices <- function(object, ...) cat("No DTI indices calculation defined for this class:",class(object),"\n")
+
+setGeneric("dtiIndices", function(object, ...) standardGeneric("dtiIndices"))
+
+setMethod("dtiIndices","dtiTensor",
+function(object, mc.cores=setCores(,reprt=FALSE)) {
+  args <- sys.call(-1)
+  args <- c(object@call,args)
+  ddim <- object@ddim
+  n <- prod(ddim)
+  z <- dtiind3D(object@D,object@mask,mc.cores=mc.cores)
+  invisible(new("dtiIndices",
+                call = args,
+                fa = array(z$fa,ddim),
+                ga = array(z$ga,ddim),
+                md = array(z$md,ddim),
+                andir = array(z$andir,c(3,ddim)),
+                bary = array(z$bary,c(3,ddim)),
+                gradient = object@gradient,
+                bvalue = object@bvalue,
+                btb   = object@btb,
+                ngrad = object@ngrad, # = dim(btb)[2]
+                s0ind = object@s0ind,
+                ddim  = ddim,
+                ddim0 = object@ddim0,
+                voxelext = object@voxelext,
+                orientation = object@orientation,
+                rotation = object@rotation,
+                xind  = object@xind,
+                yind  = object@yind,
+                zind  = object@zind,
+                method = object@method,
+                level = object@level,
+                source= object@source)
+            )
+})
 
 
