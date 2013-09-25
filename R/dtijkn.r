@@ -206,8 +206,8 @@ cat("sioutlier completed\n")
       sdfa <- sqrt(ergs$vfa)
       faquant <- array(0,c(lcq,2,ddim))
       for(i in 1:lcq){
-         faquant[i,1,,,] <- exp(-exp(array(tfa,ddim)-ergs$bfa-cq[i]*sdfa))
-         faquant[i,2,,,] <- exp(-exp(array(tfa,ddim)-ergs$bfa+cq[i]*sdfa))
+         faquant[i,1,,,] <- exp(-exp(array(tfa,ddim)-ergs$bfa+cq[i]*sdfa))
+         faquant[i,2,,,] <- exp(-exp(array(tfa,ddim)-ergs$bfa-cq[i]*sdfa))
       }
       ergs$faquant <- faquant
       ergs$fa <- exp(-exp(array(tfa,ddim)))

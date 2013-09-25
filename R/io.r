@@ -81,7 +81,9 @@ dtiData <- function(gradient,imagefile,ddim,bvalue=NULL,xind=NULL,yind=NULL,zind
                  as.double(maxvalue),
                  PACKAGE="dti")$si
 #  this replaces the content off all voxel with elements <=0 or >maxvalue by 0
-     dim(si) <- dimsi
+  if(all(si==as.integer(si))) si <- as.integer(si)
+##  reduce memory requirements if possible
+  dim(si) <- dimsi
   level <- max(mins0value,level*mean(si[,,,s0ind][si[,,,s0ind]>0])) # set level to level*mean  of positive s_0 values
   ddim0 <- as.integer(ddim)
   ddim <- as.integer(dim(si)[1:3])
@@ -345,6 +347,8 @@ readDWIdata <- function(gradient, dirlist,
                  as.integer(dimsi[4]),
                  as.double(maxvalue),
                  PACKAGE = "dti")$si
+  if(all(si==as.integer(si))) si <- as.integer(si)
+  ##  reduce memory requirements if possible
   dim(si) <- dimsi
 
   ## set level to level*mean  of positive s_0 values

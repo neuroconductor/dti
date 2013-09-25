@@ -163,14 +163,15 @@ function (kstar, gradstats, kappa, vext = c(1, 1))
 #
     nbv <- gradstats$nbv
     ngrad <- gradstats$ngrad
-    h <- vr <- matrix(0,ngrad,kstar)
+    h <- vr <- matrix(1,ngrad,kstar+1)
     n <- 0
     dist <- 4
     for(i in 1:nbv){
        gshell <- list(k456=gradstats$k456[[i]],bghat=gradstats$bghat[[i]],dist=dist)
        z <- gethseqfullse3(kstar, gshell, kappa=kappa, vext=vext)
-       h[gradstats$bvind[[i]],] <- z$h
-       vr[gradstats$bvind[[i]],] <- z$vred
+       h[gradstats$bvind[[i]],-1] <- z$h
+       vr[gradstats$bvind[[i]],-1] <- z$vred
+       vr[gradstats$bvind[[i]],1] <- vr[gradstats$bvind[[i]],2]/1.25
        n <- n+z$n
     }
         cat("\n total number of positive weights:",n,"mean maximal bandwidth",signif(mean(h[,kstar]),3), "\n")

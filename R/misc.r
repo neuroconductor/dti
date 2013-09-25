@@ -310,24 +310,15 @@ fncchir <- function(mu,varstats){
 #
 #  Bias-correction
 #
-mu <- pmax(varstats$minlev,mu)
-ind <- 
-findInterval(mu, varstats$mu, rightmost.closed = FALSE, all.inside = FALSE)
-varstats$ncp[ind]
+varstats$ncp[findInterval(mu, varstats$mu, all.inside = TRUE)]
 }
 
 fncchis <- function(mu,varstats){
-mu <- pmax(varstats$minlev,mu)
-ind <- 
-findInterval(mu, varstats$mu, rightmost.closed = FALSE, all.inside = FALSE)
-varstats$s[ind]
+varstats$s[findInterval(mu, varstats$mu, all.inside = TRUE)]
 }
 
 fncchiv <- function(mu,varstats){
-mu <- pmax(varstats$minlev,mu)
-ind <- 
-findInterval(mu, varstats$mu, rightmost.closed = FALSE, all.inside = FALSE)
-varstats$s2[ind]
+varstats$s2[findInterval(mu, varstats$mu, all.inside = TRUE)]
 }
 
 fncchiL <- function(x,L){

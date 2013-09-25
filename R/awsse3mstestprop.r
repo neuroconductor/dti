@@ -81,38 +81,40 @@ m1 <- sqrt(pi/2)*gamma(L+1/2)/gamma(1.5)/gamma(L)*hyperg_1F1(-0.5,L, -th1^2/2, g
   gradstats <- getkappasmsh3(grad, msstructure)
 #     save(gradstats,file="gradstats.rsc")
   hseq <- gethseqfullse3msh(kstar,gradstats,kappa0,vext=vext)
-  kappa <- hseq$kappa
   nind <- as.integer(hseq$n*1.25)
-  hseqi <- hseq$h
-  hseq0 <- hseq$h0 <- apply(hseqi,2,mean)
 # make it nonrestrictive for the first step
-  ni <- array(1,dim(sb))
+  z <- list(th=array(1,dim(sb)), th0=array(1,dim(s0)), ni = array(1,dim(sb)), ni0 = array(1,dim(s0)))
+  if(usemaxni){
+     ni <- array(1,dim(sb))
+     ni0 <- array(1,dim(s0))
+     }
   minlevel <- gamma(ncoils+0.5)/gamma(ncoils)*sqrt(2)
 #  thats the mean of the central chi distribution with 2*ncoils df
-  z <- list(th=sb, th0=s0)
   prt0 <- Sys.time()
   cat("adaptive smoothing in SE3, kstar=",kstar,"\n")
-  kinit <- if(lambda<1e10) 1 else kstar
+  kinit <- if(lambda<1e10) 0 else kstar
   mc.cores <- setCores(,reprt=FALSE)
   for(k in kinit:kstar){
      gc()
-     hakt <- hseqi[,k]
-     hakt0 <- hseq0[k]
+     hakt <- hseq$h[,k+1]
+     hakt0 <- mean(hakt)
      t0 <- Sys.time()
      thnimsh <- interpolatesphere0(z$th,z$th0,ni,ni0,msstructure,mask)
      t1 <- Sys.time()
-     param <- lkfullse3msh(hakt,kappa/hakt,gradstats,vext,nind) 
+     param <- lkfullse3msh(hakt,kappa0/hakt,gradstats,vext,nind) 
      param0 <- lkfulls0(hakt0,vext,nind) 
+     vs2 <- varstats$s2[findInterval(thnimsh$mstheta, varstats$mu, all.inside = TRUE)]/2
+     vs02 <- varstats$s2[findInterval(thnimsh$msth0, varstats$mu, all.inside = TRUE)]/2
      t2 <- Sys.time()
-     z <- .Fortran("adsmse3c",
+     z <- .Fortran("adsmse3s",
                 as.double(sb),#y
                 as.double(s0),#y0
                 as.double(thnimsh$mstheta),#th
                 as.double(thnimsh$msni),#ni/si^2
                 as.double(thnimsh$msth0),#th0
                 as.double(thnimsh$msni0),#ni0/si^2
-                as.double(fncchiv(thnimsh$mstheta,varstats)/2),#si^2/2
-                as.double(fncchiv(thnimsh$msth0,varstats)/2),#si^2/2 for s0
+                as.double(vs2),#si^2/2
+                as.double(vs02),#si^2/2 for s0
                 as.logical(mask),#mask
                 as.integer(nshell+1),#ns number of shells
                 as.integer(ddim[1]),#n1
@@ -140,19 +142,23 @@ m1 <- sqrt(pi/2)*gamma(L+1/2)/gamma(1.5)/gamma(L)*hyperg_1F1(-0.5,L, -th1^2/2, g
                 DUPL=FALSE,
                 PACKAGE="dti")[c("ni","th","ni0","th0")]
     t3 <- Sys.time()
-    ni <- if(usemaxni) pmax(ni,z$ni) else z$ni 
-    ni0 <- if(usemaxni) pmax(ni0,z$ni0) else z$ni0 
+    if(usemaxni){
+       ni <- z$ni <- if(usemaxni) pmax(ni,z$ni)
+       ni0 <- z$ni0 <- if(usemaxni) pmax(ni0,z$ni0)
+       nie <- max(ni)
+       nie0 <- max(ni0)
+    } 
+    nie <- max(z$ni)
+    nie0 <- max(z$ni0)
     dim(z$th) <- c(ddim,ngrad)
     dim(z$th0) <- c(ddim)
-    dim(ni) <- c(ddim,ngrad)
-    dim(ni0) <- c(ddim)
+    dim(z$ni) <- c(ddim,ngrad)
+    dim(z$ni0) <- c(ddim)
     gc()
-    nie <- max(ni)
-    nie0 <- max(ni0)
   cat("Step",k,"completet at",format(t3),"\n")
   s0hat <- pmax(z$th0,minlevel)*sigma
   sbhat <- aperm(pmax(z$th,minlevel)*sigma,c(4,1:3))# bring spherical component to front
-  nihat <- aperm(ni,c(4,1:3)) # bring spherical component to front
+  nihat <- aperm(z$ni,c(4,1:3)) # bring spherical component to front
   kldist0 <- kldistnorm1(th0,s0hat,df)
   kldistb <- kldistnorm1(thb,sbhat,df)
   exceedence0[,k] <- .Fortran("exceed",

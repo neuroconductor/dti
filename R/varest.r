@@ -170,7 +170,7 @@ awssigmc <- function(y,                 # data
 }
 #
 #
-#      estimate variance parameter in a multicoil system
+#      estimate degrees of freedom in a multicoil system for given sigma
 #
 #
 awsncoils <- function(y,                 # data
@@ -313,7 +313,7 @@ awsncoils <- function(y,                 # data
 }
 #
 #
-#      estimate variance parameter in a multicoil system
+#   estimate variance and  degrees of freedom in a multicoil system 
 #
 #
 awsncoilsigma <- function(y,                 # data
