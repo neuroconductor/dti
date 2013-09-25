@@ -109,26 +109,28 @@ c("Gapprox","Gapprox2","Chi","Chi2")){
   } else {
      gradstats <- getkappas(grad,dist=dist)
      hseq <- gethseqfullse3(kstar,gradstats,kappa0,vext=vext)
+     hseq$h <- cbind(rep(1,ngrad),hseq$h)
   }
-  kappa <- hseq$kappa
   nind <- as.integer(hseq$n*1.25)#just to avoid n being to small due to rounding
   hseq <- hseq$h
 # make it nonrestrictive for the first step
   ni <- array(1,dim(sb))
   minlevel <- if(model==1) 2*ncoils else sqrt(2)*gamma(ncoils+.5)/gamma(ncoils)  
   minlevel0 <- if(model==1) 2*ns0*ncoils else sqrt(2)*gamma(ns0*ncoils+.5)/gamma(ns0*ncoils)
-  z <- list(th=pmax(sb,minlevel), ni = ni)
-  th0 <- pmax(s0,minlevel0)
+#  z <- list(th=pmax(sb,minlevel), ni = ni)
+  z <- list(th=array(minlevel0,dim(sb)), ni = ni)
+#  th0 <- pmax(s0,minlevel0)
+  th0 <- array(minlevel0,dim(s0))
   prt0 <- Sys.time()
   cat("adaptive smoothing in SE3, kstar=",kstar,if(verbose)"\n" else " ")
-  kinit <- if(lambda<1e10) 1 else kstar
+  kinit <- if(lambda<1e10) 0 else kstar
   mc.cores <- setCores(,reprt=FALSE)
   for(k in kinit:kstar){
     gc()
-    hakt <- hseq[,k]
+    hakt <- hseq[,k+1]
     if(multishell){
        thmsh <- interpolatesphere(z$th,msstructure)
-       param <- lkfullse3msh(hakt,kappa/hakt,gradstats,vext,nind) 
+       param <- lkfullse3msh(hakt,kappa0/hakt,gradstats,vext,nind) 
 #       save(z,thmsh,param,msstructure,file=paste("thmsh",k,".rsc",sep=""))
        if(length(sigma)==1) {
        z <- .Fortran("adsmse3m",
@@ -163,7 +165,7 @@ c("Gapprox","Gapprox2","Chi","Chi2")){
        return(object)
        }
     } else {
-       param <- lkfullse3(hakt,kappa/hakt,gradstats,vext,nind) 
+       param <- lkfullse3(hakt,kappa0/hakt,gradstats,vext,nind) 
        if(length(sigma)==1) {
        z <- .Fortran("adsmse3p",
                 as.double(sb),

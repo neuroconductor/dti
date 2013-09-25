@@ -231,9 +231,9 @@ C    die spherischen Koordinaten der Gradientenpaare (Parameter der Rotationsmat
       real*8 h,kappa,k456(3,ng,ng),vext(2),wght(n)
       integer ih1,ih2,ih3,i,j1,j2,j3,j4
       real*8 h2,kap2,x1,x2,x3,k4,k5,k6,z,z1,vd2,vd3
-      ih1 = int(max(1.d0,5.0d0*h))
-      ih2 = int(max(1.d0,5.0d0*h/vext(1)))
-      ih3 = int(max(1.d0,5.0d0*h/vext(2)))
+      ih1 = int(max(1.d0,h))
+      ih2 = int(max(1.d0,h/vext(1)))
+      ih3 = int(max(1.d0,h/vext(2)))
       h2 = h*h
       kap2 = kappa*kappa
       vd2 = vext(1)*vext(1)
@@ -257,9 +257,9 @@ C  just to prevent compiler warnings
             CASE (3) 
                z = k4*k4/kap2
             CASE (4) 
-               z = k4/kappa
+               z = abs(k4)/kappa
             CASE DEFAULT 
-               z = k4/kappa
+               z = abs(k4)/kappa
          END SELECT
          if(dist.le.3) THEN
             if(z.gt.h2) CYCLE
@@ -333,17 +333,14 @@ C dist=4
       implicit logical (a-z)
       integer ng,n,i4,dist
       real*8 h,kappa,k456(3,ng,ng),vext(2),vred
-      integer ih1,ih2,ih3,j1,j2,j3,j4,mj1,mj2,mj3,rad
+      integer ih1,ih2,ih3,j1,j2,j3,j4
       real*8 x1,x2,x3,k4,k5,k6,z,z1,
      1       sw,sw2,wght,anz,h2,kap2,vd2,vd3
-      ih1 = int(max(1.d0,5.0d0*h))
-      ih2 = int(max(1.d0,5.0d0*h/vext(1)))
-      ih3 = int(max(1.d0,5.0d0*h/vext(2)))
+      ih1 = int(max(1.d0,h))
+      ih2 = int(max(1.d0,h/vext(1)))
+      ih3 = int(max(1.d0,h/vext(2)))
       sw=0.d0
       sw2=0.d0
-      mj1=0
-      mj2=0
-      mj3=0
       h2 = h*h
       kap2 = kappa*kappa
       vd2 = vext(1)*vext(1)
@@ -367,9 +364,9 @@ C  just to prevent compiler warnings
             CASE (3) 
                z = k4*k4/kap2
             CASE (4) 
-               z = k4/kappa
+               z = abs(k4)/kappa
             CASE DEFAULT 
-               z = k4/kappa
+               z = abs(k4)/kappa
          END SELECT
          if(dist.le.3) THEN
             if(z.gt.h2) CYCLE
@@ -398,9 +395,6 @@ C   corrected from vd2 to vd3 J.P. 29.8.2013
                      wght=wght*wght
                      sw2=sw2+anz*wght
                      n=n+1
-                     mj1=max(j1,mj1)
-                     mj2=max(abs(j2),mj2)
-                     mj3=max(abs(j3),mj3)
                   END DO
                   call rchkusr()
                END DO
@@ -431,9 +425,6 @@ C   if j1>0  (-j1,-j2,-j3) gets the same weight, so count it twice
                      wght=wght*wght
                      sw2=sw2+anz*wght
                      n=n+1
-                     mj1=max(j1,mj1)
-                     mj2=max(abs(j2),mj2)
-                     mj3=max(abs(j3),mj3)
                   END DO
                   call rchkusr()
                END DO
@@ -441,11 +432,6 @@ C   if j1>0  (-j1,-j2,-j3) gets the same weight, so count it twice
          END IF
       END DO
       vred = sw*sw/sw2
-      rad = max(mj1,max(mj2,mj3))
-      if(rad.gt.2.d0*h) THEN
-         call dblepr("h",1,h,1)
-         call intpr("radius",6,rad,1)
-      END IF
       RETURN
       END
       subroutine lkfulse3(h,kappa,k456,ng,vext,ind,wght,n,dist)
