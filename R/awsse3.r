@@ -249,12 +249,13 @@ if(verbose){
 #cat("sigma",sigma,"s0factor",s0factor,"minlevel0",minlevel,"maxth0",max(th0),"lth0",length(th0),"\n")
 #  si[,,,1] <-  pmax(th0,minlevel0)*sigma/s0factor
 #  si[,,,-1] <- pmax(z$th,minlevel)*sigma
+  bvalue <- c(0,object@bvalue[-object@s0ind])
   si[,,,1] <-  th0*sigma/s0factor
   si[,,,-1] <- z$th*sigma
   object@si <- if(model==1) sqrt(si) else si
   object@gradient <- grad <- cbind(c(0,0,0),grad)
-  object@bvalue <- c(0,object@bvalue[-object@s0ind])
-  object@btb <- create.designmatrix.dti(grad)
+  object@bvalue <- bvalue
+  object@btb <- sweep(create.designmatrix.dti(grad), 2, bvalue, "*")
   object@s0ind <- as.integer(1)
   object@replind <- as.integer(1:ngrad)
   object@ngrad <- as.integer(ngrad)
