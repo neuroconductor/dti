@@ -118,7 +118,7 @@ c("Gapprox","Gapprox2","Chi","Chi2")){
   minlevel <- if(model==1) 2*ncoils else sqrt(2)*gamma(ncoils+.5)/gamma(ncoils)  
   minlevel0 <- if(model==1) 2*ns0*ncoils else sqrt(2)*gamma(ns0*ncoils+.5)/gamma(ns0*ncoils)
 #  z <- list(th=pmax(sb,minlevel), ni = ni)
-  z <- list(th=array(minlevel0,dim(sb)), ni = ni)
+  z <- list(th=array(minlevel,dim(sb)), ni = ni)
 #  th0 <- pmax(s0,minlevel0)
   th0 <- array(minlevel0,dim(s0))
   prt0 <- Sys.time()
@@ -170,7 +170,7 @@ c("Gapprox","Gapprox2","Chi","Chi2")){
        z <- .Fortran("adsmse3p",
                 as.double(sb),
                 as.double(z$th),
-                ni=as.double(z$ni/if(model==2) fncchiv(z$th,varstats) else 1),
+                ni=as.double(z$ni/if(model>=2) fncchiv(z$th,varstats) else 1),
                 as.logical(mask),
                 as.integer(ddim[1]),
                 as.integer(ddim[2]),
@@ -245,10 +245,12 @@ if(verbose){
 #
 #  back to original scale
 #
-  s0factor <- switch(model+1,ns0,sqrt(ns0),sqrt(ns0),ns0)
+  s0factor <- switch(model+1,ns0,ns0,sqrt(ns0),ns0)
 #cat("sigma",sigma,"s0factor",s0factor,"minlevel0",minlevel,"maxth0",max(th0),"lth0",length(th0),"\n")
-  si[,,,1] <-  pmax(th0,minlevel0)*sigma/s0factor
-  si[,,,-1] <- pmax(z$th,minlevel)*sigma
+#  si[,,,1] <-  pmax(th0,minlevel0)*sigma/s0factor
+#  si[,,,-1] <- pmax(z$th,minlevel)*sigma
+  si[,,,1] <-  th0*sigma/s0factor
+  si[,,,-1] <- z$th*sigma
   object@si <- if(model==1) sqrt(si) else si
   object@gradient <- grad <- cbind(c(0,0,0),grad)
   object@bvalue <- c(0,object@bvalue[-object@s0ind])

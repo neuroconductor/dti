@@ -525,7 +525,7 @@ C returns value in 0:(ncores-1)
 C   by construction ind(4,.) should have same values consequtively
                i4 = ind(4,i)
                thi = th(i1,i2,i3,i4)
-               IF(model.ne.2) THEN
+               IF(model.lt.2) THEN
                   ldfi=ldf(i1,i2,i3,i4)
                   call ncstats0(thi,ldfi,df,model,lgfi,dgfi,fici)
                END IF
@@ -567,7 +567,7 @@ C  now opposite directions
 C   by construction ind(4,.) should have same values consequtively
                i4 = ind(4,i)
                thi = th(i1,i2,i3,i4)
-               IF(model.ne.2) THEN
+               IF(model.lt.2) THEN
                   ldfi=ldf(i1,i2,i3,i4)
                   call ncstats0(thi,ldfi,df,model,lgfi,dgfi,fici)
                END IF
@@ -608,7 +608,8 @@ C  do not adapt on the sphere !!!
          DO i4=1,ngrad
             z=swy(i4,thrednr)/sw(i4,thrednr)
             if(model.eq.2) z=sqrt(z)
-            thn(i1,i2,i3,i4) = max(z,minlev)
+C            thn(i1,i2,i3,i4) = max(z,minlev)
+            thn(i1,i2,i3,i4) = z
             ni(i1,i2,i3,i4) = sw(i4,thrednr)
          END DO
       END DO
@@ -1030,7 +1031,7 @@ C              n1*n2*n3 for y0,th0,ni0,th0n,ni0n,fsi02,mask
 C  * refers to ns*ncores in thi, fsi2i, nii and to
 C              ngrad*cores in sw and swy
       integer iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,k,jind,iind4,
-     1        jind4,n123,n12,sthrednr,gthrednr
+     1        jind4,n123,n12,sthrednr,gthrednr,i4gthnr
       real*8 sz,z,sw0,swy0
 !$      integer omp_get_thread_num
 !$      external omp_get_thread_num
@@ -1043,7 +1044,7 @@ C$OMP&       th,ni,th0,ni0,w,w0,thn,th0n,nin,ni0n,thi,sw,swy,nii,
 C$OMP&       lambda,mask,ws0,fsi2,fsi02,fsi2i)
 C$OMP& FIRSTPRIVATE(n123,n12)
 C$OMP& PRIVATE(iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,k,sz,z,
-C$OMP&       sw0,swy0,jind,iind4,jind4,sthrednr,gthrednr)
+C$OMP&       sw0,swy0,jind,iind4,jind4,sthrednr,gthrednr,i4gthnr)
 C$OMP DO SCHEDULE(GUIDED)
 C  First si - images
       DO iind=1,n1*n2*n3
@@ -1062,10 +1063,12 @@ C returns value in 0:(ncores-1)
             swy(i4+gthrednr)=0.d0
          END DO
          i4=0
+         i4gthnr=gthrednr
          DO i=1,n
             if(ind(4,i).ne.i4) THEN
 C   by construction ind(4,.) should have same values consequtively
                i4 = ind(4,i)
+               i4gthnr=i4+gthrednr
                iind4 = iind+(i4-1)*n123
                DO k=1,ns
                   fsi2i(k+sthrednr)=fsi2(k,iind4)
@@ -1099,8 +1102,8 @@ C  do not adapt on the sphere !!!
             if(sz.ge.1.d0) CYCLE
             z=w(i)
             if(sz.gt.0.5d0) z=z*(2.d0-2.d0*sz)
-            sw(i4+gthrednr)=sw(i4+gthrednr)+z
-            swy(i4+gthrednr)=swy(i4+gthrednr)+z*y(jind4)
+            sw(i4gthnr)=sw(i4gthnr)+z
+            swy(i4gthnr)=swy(i4gthnr)+z*y(jind4)
          END DO
 C  now opposite directions
          DO i=1,n
@@ -1108,6 +1111,7 @@ C  now opposite directions
             if(ind(4,i).ne.i4) THEN
 C   by construction ind(4,.) should have same values consequtively
                i4 = ind(4,i)
+               i4gthnr=i4+gthrednr
                iind4 = iind+(i4-1)*n123
                DO k=1,ns
                   fsi2i(k+sthrednr)=fsi2(k,iind4)
@@ -1146,8 +1150,8 @@ C  do not adapt on the sphere !!!
             if(sz.ge.1.d0) CYCLE
             z=w(i)
             if(sz.gt.0.5d0) z=z*(2.d0-2.d0*sz)
-            sw(i4+gthrednr)=sw(i4+gthrednr)+z
-            swy(i4+gthrednr)=swy(i4+gthrednr)+z*y(jind4)
+            sw(i4gthnr)=sw(i4gthnr)+z
+            swy(i4gthnr)=swy(i4gthnr)+z*y(jind4)
          END DO
          DO i4=1,ngrad
             iind4 = iind+(i4-1)*n123
@@ -1576,7 +1580,8 @@ C  this part for negative l1 only (opposite directions)
          END DO
          z = swy0/sw0
          if(model.eq.2) z=sqrt(z)
-         thn(i) = max(z,minlev)
+C         thn(i) = max(z,minlev)
+         thn(i) = z
          ni(i) = sw0/maxswi
       END DO
 C$OMP END DO NOWAIT

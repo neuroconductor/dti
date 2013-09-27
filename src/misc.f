@@ -1,3 +1,91 @@
+      subroutine lkern1(x,n,h,kern,m,khx)
+C
+C  from package aws
+C
+      implicit logical(a-z)
+      integer n,kern,m
+      real*8 x(n),h,khx(n)
+      integer i
+      real*8 mu0, mu2, mu4, xi, xih, skhx
+      select case (kern)            
+         case (1)
+C  Gaussian
+            mu0 = 2.506628274631d0
+            mu2 = 1.d0
+            mu4 = 3.d0
+         case (2) 
+C  Uniform
+            mu0 = 0.5d0
+            mu2 = 0.333333333333d0
+            mu4 = 0.2d0
+         case (3) 
+C  Triangular
+            mu0 = 1
+            mu2 = 0.166666666666d0
+            mu4 = 0.066666666666d0
+         case (4) 
+C  Epanechnikov
+            mu0 = 4.d0/3.d0
+            mu2 = 0.2d0
+            mu4 = 3.d0/3.5d1
+         case (5) 
+C  Biweight
+            mu0 = 1.6d1/1.5d1
+            mu2 = 1.d0/7.d0
+            mu4 = 1.d0/2.1d1
+         case (6) 
+C  Triweight
+            mu0 = 3.2d1/3.5d1
+            mu2 = 1.d0/9.d0
+            mu4 = 1.d0/3.3d1
+         case default
+C  Gaussian
+            mu0 = 2.506628274631d0
+            mu2 = 1.d0
+            mu4 = 3.d0
+      end select                    
+      skhx = 0.d0
+      DO i=1,n
+         xi=x(i)
+         xih=xi/h
+         select case (kern)            
+            case (1)
+               khx(i)=exp(-xih*xih/2.d0)/mu0
+            case (2)
+               xih=abs(xih)
+               if(xih.le.1.d0) khx(i)=1.d0/mu0           
+            case (3)
+               xih=abs(xih)
+               if(xih.le.1.d0) khx(i)=(1.d0-xih)/mu0         
+            case (4)
+               if(abs(xih).le.1.d0) THEN
+                  xih=xih*xih
+                  khx(i)=(1.d0-xih)/mu0
+               ENDIF           
+            case (5)
+               if(abs(xih).le.1.d0) THEN
+                  xih=1.d0-xih*xih
+                  khx(i)=xih*xih/mu0
+               ENDIF           
+            case (6)
+               if(abs(xih).le.1.d0) THEN
+                  xih=1.d0-xih*xih
+                  khx(i)=xih*xih*xih/mu0
+               ENDIF           
+            case default
+               khx(i)=exp(-xih*xih/2.d0)/mu0
+         end select
+         skhx=skhx+khx(i)
+C  compute first order derivatives 
+         if(m.eq.1) khx(i)=xi/h*khx(i)/mu2
+C  compute second order derivatives
+         IF(m.eq.2) khx(i)=(xi/h*xi/h-mu2)/(mu4-mu2*mu2)*khx(i)
+      END DO
+      DO i=1,n
+         khx(i)=khx(i)/skhx
+      END DO
+      RETURN
+      END
       subroutine initdata(si,n1,n2,n3,nb,maxvalue)
 C
 C   project all values to (1,maxvalue) to avoid infinite estimates

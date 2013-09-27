@@ -31,8 +31,10 @@ setMethod( "dtiTensor", "dtiData",
    sdcoef <- object@sdcoef
    if(mc.cores>1&method=="nonlinear") require(parallel)
    if(all(sdcoef[1:4]==0)) {
-      cat("No parameters for model of error standard deviation found\n estimating these parameters\n You may prefer to run sdpar before calling dtiTensor\n")
-      sdcoef <- sdpar(object,interactive=FALSE)@sdcoef
+      cat("No parameters for model of error standard deviation found\n
+          Using constant weights \n You may prefer to run sdpar before calling dtiTensor\n")
+#      sdcoef <- sdpar(object,interactive=FALSE)@sdcoef
+       sdcoef <- c(1,0,1,1)
    }
    z <- sioutlier(object@si,s0ind,mc.cores=mc.cores)
 #

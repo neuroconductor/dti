@@ -3,6 +3,254 @@
 #      estimate variance parameter in a multicoil system
 #
 #
+awslsigmc <- function(y,                 # data
+                     steps,             # number of iteration steps for PS
+                     mask = NULL,       # data mask, where to do estimation
+                     ncoils = 1,        # number of coils for parallel MR image acquisition
+                     vext = c( 1, 1),   # voxel extensions
+                     lambda = 20,       # adaptation parameter for PS
+                     minni = 2,         # minimum sum of weights for estimating local sigma
+                     hsig = 5,          # bandwidth for smoothing local sigma estimates
+                     verbose = FALSE
+                     ) {
+  ## some functions for pilot estimates
+  IQQ <- function (x, q = .25, na.rm = FALSE, type = 7) 
+    diff(quantile(as.numeric(x), c(q, 1-q), na.rm = na.rm, names = FALSE, type = type))
+
+  IQQdiff <- function(y, mask, q = .25, verbose = FALSE) {
+    cq <- qnorm(1-q)*sqrt(2)*2
+    sx <- IQQ( diff(y[mask]), q)/cq
+    sy <- IQQ( diff(aperm(y,c(2,1,3))[aperm(mask,c(2,1,3))]), q)/cq
+    sz <- IQQ( diff(aperm(y,c(3,1,2))[aperm(mask,c(3,1,2))]), q)/cq
+    if(verbose) cat( "Pilot estimates of sigma", sx, sy, sz, "\n")
+    min( sx, sy, sz)
+  }
+  
+  estsigma <- function(y, mask, q, L, sigma, verbose=FALSE){
+    meany <- mean(y[mask]^2)
+    eta <- sqrt(max( 0, meany/sigma^2-2*L))
+    m <- sqrt(pi/2)*gamma(L+1/2)/gamma(L)/gamma(3/2)*hyperg_1F1(-1/2,L,-eta^2/2)
+    v <- max( .01, 2*L+eta^2-m^2)
+    if(verbose) cat( eta, m, v, "\n")
+    IQQdiff( y, mask, q)/sqrt(v)
+  }
+  
+  varstats <- sofmchi(ncoils)
+  if(length(vext)==3) vext <- vext[2:3]/vext[1]
+  ## dimension and size of cubus
+  ddim <- dim(y)
+  n <- prod(ddim)
+
+  ## test dimension
+  if (length(ddim) != 3) stop("first argument should be a 3-dimentional array")
+
+  ## check mask
+  if (is.null(mask)) mask <- array(TRUE, ddim)
+  if(length(mask) != n) stop("dimensions of data array and mask should coincide")
+
+  ## initial value for sigma_0 
+  # sigma <- sqrt( mean( y[mask]^2) / 2 / ncoils)
+  sigma <- IQQdiff( y, mask, .25, verbose=verbose)
+#  cat( "sigmahat1", sigma, "\n")
+  sigma <- estsigma( y, mask, .25, ncoils, sigma)
+#  cat( "sigmahat2", sigma, "\n")
+  sigma <- estsigma( y, mask, .25, ncoils, sigma)
+#  cat( "sigmahat3", sigma, "\n")
+  sigma <- estsigma( y, mask, .25, ncoils, sigma, verbose=verbose)
+#  cat( "sigmahat4", sigma,"\n")
+##
+##   Prepare for diagnostics plots
+##
+  if(verbose){
+     mslice <-  ddim[3]/2
+     par(mfrow=c(1,3),mar=c(3,3,3,1),mgp=c(2,1,0))
+  }
+  ## define initial arrays for parameter estimates and sum of weights (see PS)
+  th <- array( 1, ddim)
+  ni <- array( 1, ddim)
+  sigma <- array( 1, ddim)
+# initialize array for local sigma by global estimate
+  mc.cores <- setCores(,reprt=FALSE)
+  ## iterate PS starting with bandwidth h0
+  for (i in 1:steps) {
+
+    h <- 1.25^((i-1)/3)
+    nw <- prod(2*as.integer(h/c(1,vext))+1)
+#    cat("nw=",nw,"h/vext=",h/c(1,1/vext),"ih=",as.integer(h/c(1,1/vext)),"\n")
+    param <- .Fortran("paramw3",
+                      as.double(h),
+                      as.double(vext),
+                      ind=integer(3*nw),
+                      w=double(nw),
+                      n=as.integer(nw),
+                      DUPL = FALSE,
+                      PACKAGE = "dti")[c("ind","w","n")]
+    nw <- param$n
+    param$ind <- param$ind[1:(3*nw)]
+    dim(param$ind) <- c(3,nw)
+    param$w   <- param$w[1:nw]    
+    fncchi <- fncchiv(th/sigma,varstats)
+## correction factor for variance of NC Chi distribution
+    ## perform one step PS with bandwidth h
+##  first step is nonadaptive since th, sigma and fncchi are constant
+    z <- .Fortran("awslchi",
+                  as.double(y),        # data
+                  as.double(th),       # previous estimates
+                  ni = as.double(ni),
+                  as.double(sigma),
+                  as.double(fncchi/2),
+                  as.double(ncoils),
+                  as.logical(mask),
+                  as.integer(ddim[1]),
+                  as.integer(ddim[2]),
+                  as.integer(ddim[3]),
+                  as.integer(param$ind),
+                  as.double(param$w),
+                  as.integer(nw),
+                  as.double(minni),
+                  double(nw*mc.cores), # wad(nw,nthreds)
+                  double(nw*mc.cores), # sad(nw,nthreds)
+                  as.double(lambda),
+                  as.integer(mc.cores),
+                  as.integer(floor(ncoils)),
+                  double(floor(ncoils)*mc.cores), # work(L,nthreds)
+                  th = double(n),
+                  sigman = double(n),
+                  DUPL = FALSE,
+                  PACKAGE = "dti")[c("ni","th","sigman")]
+    ## extract sum of weigths (see PS) and consider only voxels with ni larger then mean
+    th <- array(z$th,ddim)
+    ni <- array(z$ni,ddim)
+##
+##  nonadaptive smoothing of estimated standard deviations
+##
+    sigma <- kernsm(array(z$sigman,ddim),hsig)
+##
+##  diagnostics
+##
+    if(verbose){
+       image(sigma[,,mslice],col=grey(0:255/255))
+       title(paste("sigma max=",max(sigma[,,mslice])))
+       image(th[,,mslice],col=grey(0:255/255))
+       title(paste("E(S)  max=",max(th[,,mslice])))
+       image(ni[,,mslice],col=grey(0:255/255))
+       title(paste("Ni    max=",max(ni[,,mslice])))
+    }
+  }
+  ## END PS iteration
+
+
+  ## this is the result (th is expectation, not the non-centrality parameter !!!)
+  invisible(list(sigma = sigma,
+                 theta = th, 
+                 ni  = ni))
+}
+###########################################################################
+#
+#   nonadaptive 1-3D smoothing on a grid (adaptet from aws package)
+#
+###########################################################################
+kernsm <- function (y, h = 1, kern="Gaussian")
+{
+#
+#  nonadaptive kernel smoothing using FFT
+#
+    expand.x.par <- function(x,h){
+       dx <- dim(x)
+       if(is.null(dx)) dx <- length(x)
+       d <- length(dx)
+       if(length(h)<d) h <- pmax(.01,rep(h[1],d))
+#      zero-padding
+       dx1 <- nextn(dx+2*h)
+       ddx <- (dx1-dx)%/%2
+       ilow <- ddx+1
+       iup <- ddx+dx
+       list(dx1=dx1,d=d,ilow=ilow,iup=iup,h=h)
+    }
+    expand.x <- function(x,xp){
+       xx <- array(0,xp$dx1)
+       if(xp$d==1) {
+          xx[xp$ilow:xp$iup] <- x 
+       } else if(xp$d==2) {
+          xx[xp$ilow[1]:xp$iup[1],xp$ilow[2]:xp$iup[2]] <- x 
+       } else {
+          xx[xp$ilow[1]:xp$iup[1],xp$ilow[2]:xp$iup[2],xp$ilow[3]:xp$iup[3]] <- x 
+       }
+       xx
+    }
+    grid <- function(d) {
+       d0 <- d%/%2+1
+       gd <- seq(0,1,length=d0)
+       if (2*d0==d+1) gd <- c(gd,-gd[d0:2]) else gd <- c(gd,-gd[(d0-1):2])
+       gd
+    }
+    gridind <- function(d,side=1) {
+       d0 <- d%/%2+1
+       if(side==1) 1:d0  else (d0+1):d 
+    }
+    lkern1 <- function(x,h,ikern,m){
+       nx <- length(x)
+       .Fortran("lkern1",
+                as.double(x),
+                as.integer(nx),
+                as.double(h),
+                as.integer(ikern),
+                as.integer(m),
+                khofx=double(nx),
+                DUPL=TRUE,
+                PACKAGE="dti")$khofx
+    }
+    lkern <- function(xp,kind="Gaussian"){
+#
+#   generate 1D, 2D or 3D product kernel weights appropriate for fft
+#   m defines (partial) derivatives up to order 2
+#   
+#
+       xh <- array(0,c(xp$d,xp$dx1))
+       dx0 <- xp$dx1%/%2 + 1
+       m <- 0
+       if(length(m)<xp$d) m <- rep(m,xp$d)
+       if(xp$d==1) {
+          xh[1,] <- grid(xp$dx1)
+       } else if(xp$d==2) {
+          xh[1,,] <- grid(xp$dx1[1])
+          for(i in 1:xp$dx1[1]) xh[2,i,] <- grid(xp$dx1[2])
+       } else if(xp$d==2) {
+          xh[1,,,] <- grid(xp$dx1[1])
+          for(i in 1:xp$dx1[1]) xh[2,i,,] <- grid(xp$dx1[2])
+          for(i in 1:xp$dx1[1]) for(j in 1:xp$dx1[2]) xh[2,i,j,] <- grid(xp$dx1[3])
+       }
+       ikern <- switch(kind,"Gaussian"=1,
+                            "Uniform"=2,
+                            "Triangle"=3,
+                            "Epanechnikov"=4,
+                            "Biweight"=5,
+                            "Triweight"=6,
+                            1)
+       kwghts <- switch(xp$d,lkern1(grid(xp$dx1[1]),2*xp$h[1]/xp$dx1[1],ikern,m[1]),
+                 outer(lkern1(grid(xp$dx1[1]),2*xp$h[1]/xp$dx1[1],ikern,m[1]),
+                       lkern1(grid(xp$dx1[2]),2*xp$h[2]/xp$dx1[2],ikern,m[2]),"*"),
+                 outer(outer(lkern1(grid(xp$dx1[1]),2*xp$h[1]/xp$dx1[1],ikern,m[1]),
+                       lkern1(grid(xp$dx1[2]),2*xp$h[2]/xp$dx1[2],ikern,m[2]),"*"),
+                       lkern1(grid(xp$dx1[3]),2*xp$h[3]/xp$dx1[3],ikern,m[3]),"*"))
+       kwghts
+    }
+    ypar <- expand.x.par(y,h)
+    yext <- expand.x(y,ypar)
+    kwghts <- lkern(ypar,kern)
+    yhat <- Re(fft(fft(yext) * fft(kwghts),inverse=TRUE))/prod(ypar$dx1)
+    ilow <- ypar$ilow
+    iup <- ypar$iup
+    yhat <- switch(ypar$d,yhat[ilow:iup],
+                          yhat[ilow[1]:iup[1],ilow[2]:iup[2]],
+                          yhat[ilow[1]:iup[1],ilow[2]:iup[2],ilow[3]:iup[3]])
+    yhat  
+}
+#
+#
+#      estimate variance parameter in a multicoil system
+#
+#
 awssigmc <- function(y,                 # data
                      steps,             # number of iteration steps for PS
                      mask = NULL,       # data mask, where to do estimation
