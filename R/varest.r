@@ -1,3 +1,44 @@
+likesigma <- function(sigma,wj,Sj,L){
+ni <- sum(wj)
+ksi <- sum(wj*Sj^2)/ni
+sigma <- min(sigma,sqrt(ksi/2/L)-1e-8)
+eta <- pmin(Sj/sigma^2*sqrt(pmax(ksi-2*L*sigma^2)),50)
+#print(eta)
+eta <- sum(wj*log(besselI(eta, L-1)))/ni
+#print(eta)
+eta-ksi/sigma^2-2*log(sigma)-(L-1)/2*log(ksi-2*L*sigma^2)
+}
+likesigmaf <- function(sigma,wj,Sj,L){
+ni <- sum(wj)
+ksi <- sum(wj*Sj^2)/ni
+.Fortran("lncchi",as.double(sigma),
+                  as.double(ni),
+                  as.double(ksi),
+                  as.double(wj),
+                  as.double(Sj),
+                  as.double(L),
+                  as.integer(length(Sj)),
+                  double(floor(L+10)),
+                  ergs=double(1),
+                  DUPL=FALSE,
+                  PACKAGE="dti")$ergs
+}
+
+mlikesigmaf <- function(sigma,wj,Sj,L){
+.Fortran("localmin",as.double(sigma/10),
+                  as.double(sigma*10),
+                  as.double(wj),
+                  as.double(Sj),
+                  as.double(L),
+                  as.integer(length(Sj)),
+                  as.double(1e-8),
+                  as.integer(100),
+                  double(floor(L+10)),
+                  xmin=double(1),
+                  fmin=double(1),
+                  DUPL=FALSE,
+                  PACKAGE="dti")[c("xmin","fmin")]
+}
 #
 #
 #      estimate variance parameter in a multicoil system
@@ -56,19 +97,19 @@ awslsigmc <- function(y,                 # data
 #  cat( "sigmahat2", sigma, "\n")
   sigma <- estsigma( y, mask, .25, ncoils, sigma)
 #  cat( "sigmahat3", sigma, "\n")
-  sigma <- estsigma( y, mask, .25, ncoils, sigma, verbose=verbose)
+  sigma <- estsigma( y, mask, .25, ncoils, sigma)
 #  cat( "sigmahat4", sigma,"\n")
 ##
 ##   Prepare for diagnostics plots
 ##
   if(verbose){
      mslice <-  ddim[3]/2
-     par(mfrow=c(1,3),mar=c(3,3,3,1),mgp=c(2,1,0))
+     par(mfrow=c(2,2),mar=c(3,3,3,1),mgp=c(2,1,0))
   }
   ## define initial arrays for parameter estimates and sum of weights (see PS)
   th <- array( 1, ddim)
   ni <- array( 1, ddim)
-  sigma <- array( 1, ddim)
+  sigma <- array( sigma, ddim)
 # initialize array for local sigma by global estimate
   mc.cores <- setCores(,reprt=FALSE)
   ## iterate PS starting with bandwidth h0
@@ -129,12 +170,14 @@ awslsigmc <- function(y,                 # data
 ##  diagnostics
 ##
     if(verbose){
-       image(sigma[,,mslice],col=grey(0:255/255))
-       title(paste("sigma max=",max(sigma[,,mslice])))
+       image(y[,,mslice],col=grey(0:255/255))
+       title(paste("S  max=",signif(max(y[,,mslice]),3)," median=",signif(median(y[,,mslice]),3)))
        image(th[,,mslice],col=grey(0:255/255))
-       title(paste("E(S)  max=",max(th[,,mslice])))
+       title(paste("E(S)  max=",signif(max(th[,,mslice]),3)," median=",signif(median(th[,,mslice]),3)))
+       image(sigma[,,mslice],col=grey(0:255/255))
+       title(paste("sigma max=",signif(max(sigma[,,mslice]),3)," median=",signif(median(sigma[,,mslice]),3)))
        image(ni[,,mslice],col=grey(0:255/255))
-       title(paste("Ni    max=",max(ni[,,mslice])))
+       title(paste("Ni    max=",signif(max(ni[,,mslice]),3)," median=",signif(median(ni[,,mslice]),3)))
     }
   }
   ## END PS iteration

@@ -27,17 +27,18 @@ C
       real*8 s(n1,n2,n3),th(n1,n2,n3),ni(n1*n2*n3),thn(n1*n2*n3),
      1  fns(n1,n2,n3),sigman(n1*n2*n3),lambda,w(nw),sigma(n1,n2,n3),
      2  wad(nw,nthreds),sad(nw,nthreds),L,minni,work(iL,nthreds)
-      integer i1,i2,i3,j1,j2,j3,i,j,jj,n,thrednr
+      integer i1,i2,i3,j1,j2,j3,i,j,jj,n,maxit,thrednr
       real*8 z,sw,sws,sws2,sj,thi,wj,kval,fnsi,sigi,tol,low,up,ksi,
      1       xmin,fmin
 !$      integer omp_get_thread_num
 !$      external omp_get_thread_num
       n = n1*n2*n3
       thrednr = 1
-      tol=1e-6
+      tol=1d-6
+      maxit=100
 C  precompute values of lgamma(corrected df/2) in each voxel
 C$OMP PARALLEL DEFAULT(SHARED)
-C$OMP& FIRSTPRIVATE(iL,L,minni,n1,n2,n3)
+C$OMP& FIRSTPRIVATE(iL,L,minni,n1,n2,n3,maxit)
 C$OMP& PRIVATE(i,j,i1,i2,i3,j1,j2,j3,z,sw,sws,sw2,sws2,thi,kval,
 C$OMP& wj,sj,thrednr,fnsi,low,up,tol,sigi,ksi,jj,xmin,fmin)
 C$OMP DO SCHEDULE(GUIDED)
