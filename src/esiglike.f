@@ -66,7 +66,7 @@ C  n     - number of local weights/observations
 C
       implicit logical (a-z)
       integer n
-      real*8 sigma,ni,ksi,wj(n),sj(n),L,work(*),ergs(2)
+      real*8 sigma,ni,ksi,wj(n),sj(n),L,work(*)
       integer j
       real*8 eta,z,sig2,zs,pen,sl,lm1,za
       real*8 bessliex

@@ -111,7 +111,9 @@ z <- .C("mixtrl0",
           order   = integer(nvox),#order_ret selected order of mixture
           mix     = double(maxcomp*nvox),#mixture weights
           DUPL=FALSE, PACKAGE="dti")[c("sigma2","orient","order","mix")]
-lev <- c(alpha,1)*lambda
+lev <- matrix(0,2,nvox)
+lev[1,] <- (alpha+1)*lambda
+lev[2,] <- lambda
 rbind(z$order,z$sigma2,matrix(lev,2,nvox),matrix(z$mix,maxcomp,nvox),matrix(z$orient,2*maxcomp,nvox))
 }
 
@@ -139,7 +141,9 @@ z <- .C("mixtrl1",
           lambda  = double(nvox),#lambda_ret lambda_2 
           mix     = double(maxcomp*nvox),#mixture weights
           DUPL=FALSE, PACKAGE="dti")[c("sigma2","orient","order","lambda","mix")]
-lev <- c(alpha,1)*z$lambda
+lev <- matrix(0,2,nvox)
+lev[1,] <- (alpha+1)*z$lambda
+lev[2,] <- z$lambda
 rbind(z$order,z$sigma2,matrix(lev,2,nvox),matrix(z$mix,maxcomp,nvox),matrix(z$orient,2*maxcomp,nvox))
 }
 
@@ -168,8 +172,10 @@ z <- .C("mixtrl2",
           lambda  = double(nvox),#lambda_ret lambda_2 
           mix     = double(maxcomp*nvox),#mixture weights
           DUPL=FALSE, PACKAGE="dti")[c("sigma2","orient","order","alpha","lambda","mix")] 
-lev <- c(z$alpha,1)*z$lambda
-rbind(z$order,z$sigma2,matrix(lev,2,nvox),matrix(z$mix,maxcomp,nvox),matrix(z$orient,2*maxcomp,nvox))
+lev <- matrix(0,2,nvox)
+lev[1,] <- (z$alpha+1)*z$lambda
+lev[2,] <- z$lambda
+rbind(z$order,z$sigma2,lev,matrix(z$mix,maxcomp,nvox),matrix(z$orient,2*maxcomp,nvox))
 }
 pgetsii30 <- function(x,maxcomp,dgrad,th,isample0,nsi,nth,nvico,nguess){
          nvox <- length(x)/(nsi+2)

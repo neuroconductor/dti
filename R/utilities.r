@@ -777,8 +777,7 @@ setMethod("extract","dwiMixtensor",function(x,
   if("order" %in% what) z$order <- x@order
   if("ev" %in% what) { 
      ev <- array(0,c(3,dim(x@ev)[-1]))
-     ev[1,,,] <- x@ev[1,,,] + x@ev[2,,,]
-     ev[2,,,] <- x@ev[2,,,]
+     ev[1:2,,,] <- x@ev
      ev[3,,,] <- x@ev[2,,,]
      z$ev <- ev
      }
@@ -796,7 +795,8 @@ setMethod("extract","dwiMixtensor",function(x,
   if("s0" %in% what) z$s0 <- x@th0
   if("mask" %in% what) z$mask <- x@mask
   if("fa" %in% what){
-      fa <- x@ev[1,,,]/sqrt((x@ev[1,,,]+x@ev[2,,,])^2+2*x@ev[2,,,]^2)
+      alpha <- (x@ev[1,,,]-x@ev[2,,,])/x@ev[2,,,]
+      fa <- alpha/sqrt(3+2*alpha+alpha^2)
       fa[x@order==0] <- 0
       dim(fa) <- x@ddim
       z$fa <- fa

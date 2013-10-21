@@ -52,6 +52,7 @@ awslsigmc <- function(y,                 # data
                      lambda = 20,       # adaptation parameter for PS
                      minni = 2,         # minimum sum of weights for estimating local sigma
                      hsig = 5,          # bandwidth for smoothing local sigma estimates
+                     sigma = NULL,
                      verbose = FALSE
                      ) {
   ## some functions for pilot estimates
@@ -90,6 +91,7 @@ awslsigmc <- function(y,                 # data
   if(length(mask) != n) stop("dimensions of data array and mask should coincide")
 
   ## initial value for sigma_0 
+  if(is.null(sigma)){
   # sigma <- sqrt( mean( y[mask]^2) / 2 / ncoils)
   sigma <- IQQdiff( y, mask, .25, verbose=verbose)
 #  cat( "sigmahat1", sigma, "\n")
@@ -99,6 +101,7 @@ awslsigmc <- function(y,                 # data
 #  cat( "sigmahat3", sigma, "\n")
   sigma <- estsigma( y, mask, .25, ncoils, sigma)
 #  cat( "sigmahat4", sigma,"\n")
+  }
 ##
 ##   Prepare for diagnostics plots
 ##
@@ -162,10 +165,36 @@ awslsigmc <- function(y,                 # data
     ## extract sum of weigths (see PS) and consider only voxels with ni larger then mean
     th <- array(z$th,ddim)
     ni <- array(z$ni,ddim)
+    cat("local estimation in step ",i," completed",Sys.time(),"\n") 
 ##
 ##  nonadaptive smoothing of estimated standard deviations
 ##
-    sigma <- kernsm(array(z$sigman,ddim),hsig)
+#    sigma <- kernsm(array(z$sigman,ddim),hsig)
+    nw <- (2*as.integer(hsig)+1)^3
+    param <- .Fortran("paramw3",
+                      as.double(hsig),
+                      as.double(vext),
+                      ind=integer(3*nw),
+                      w=double(nw),
+                      n=as.integer(nw),
+                      DUPL = FALSE,
+                      PACKAGE = "dti")[c("ind","w","n")]
+    nw <- param$n
+    param$ind <- param$ind[1:(3*nw)]
+    dim(param$ind) <- c(3,nw)
+    sigma <- .Fortran("mediansm",
+                      as.double(z$sigman),
+                      as.integer(ddim[1]),
+                      as.integer(ddim[2]),
+                      as.integer(ddim[3]),
+                      as.integer(param$ind),
+                      as.integer(nw),
+                      double(2*nw),
+                      sigman = double(n),
+                      DUPL = FALSE,
+                      PACKAGE = "dti")$sigman
+    dim(sigma) <- ddim
+    cat("local median smoother in step ",i," completed",Sys.time(),"\n") 
 ##
 ##  diagnostics
 ##
@@ -181,10 +210,11 @@ awslsigmc <- function(y,                 # data
     }
   }
   ## END PS iteration
-
+  sigmal <- array(z$sigman,ddim)
 
   ## this is the result (th is expectation, not the non-centrality parameter !!!)
   invisible(list(sigma = sigma,
+                 sigmal = sigmal,
                  theta = th, 
                  ni  = ni))
 }

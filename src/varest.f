@@ -1,3 +1,50 @@
+      subroutine mediansm(y,n1,n2,n3,ind,nind,work,yout)
+C
+C
+C   3D median smoother of y with neighborhood defined by ind
+C   results in yout
+C   size of work needs to be 2*nind
+C
+      implicit logical (a-z)
+      integer n1,n2,n3,nind,ind(3,nind)
+      real*8 y(n1,n2,n3),yout(n1,n2,n3),work(*)
+      integer i1,i2,i3,j1,j2,j3,j,k
+      DO i1=1,n1
+         DO i2=1,n2
+            DO i3=1,n3
+               k=0
+               DO j=1,nind
+                  j1=i1+ind(1,j)
+                  if(j1.le.0.or.j1.gt.n1) CYCLE
+                  j2=i2+ind(2,j)
+                  if(j2.le.0.or.j2.gt.n2) CYCLE
+                  j3=i3+ind(3,j)
+                  if(j3.le.0.or.j3.gt.n3) CYCLE
+                  k=k+1
+                  work(k)=y(j1,j2,j3)
+               END DO
+               DO j=1,nind
+                  if(ind(1,j).eq.0) CYCLE
+                  j1=i1-ind(1,j)
+                  if(j1.le.0.or.j1.gt.n1) CYCLE
+                  j2=i2-ind(2,j)
+                  if(j2.le.0.or.j2.gt.n2) CYCLE
+                  j3=i3-ind(3,j)
+                  if(j3.le.0.or.j3.gt.n3) CYCLE
+                  k=k+1
+                  work(k)=y(j1,j2,j3)
+               END DO
+               call qsort3(work,1,k)
+               IF (mod(k,2) == 0) THEN    
+                  yout(i1,i2,i3) = (work(k/2)+work(k/2+1))/2.d0
+               ELSE
+                  yout(i1,i2,i3) = work(k/2+1)
+               END IF
+            END DO
+         END DO
+      END DO
+      return
+      end
       subroutine awslchi(s,th,ni,sigma,fns,L,mask,n1,n2,n3,ind,w,nw,
      1                minni,wad,sad,lambda,nthreds,iL,work,thn,sigman)
 C
