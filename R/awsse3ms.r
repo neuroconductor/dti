@@ -59,6 +59,17 @@ setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=12,kappa0=.5,
   if(is.null(yind)) yind <- (1:ddim[2])[apply(mask,2,any)]
   if(is.null(zind)) zind <- (1:ddim[3])[apply(mask,3,any)]
 # reduce everything to this subcube 
+##
+##  check memory size needed for largest vector
+##
+  vsize <- (nshell+1)*ngrad*length(xind)*length(yind)*length(zind)
+  if(vsize>2^31-1){
+     cat("region specified is to large, a vector of size",vsize,"needs to be passed through
+      the .Fortran, this is limited to 2^31-1 in R\n reducing the zind")
+     maxzind <- (2^31-1)/(nshell+1)/ngrad/length(xind)/length(yind)
+     nzind <- apply(mask,3,sum)
+     
+  }
   sb <- sb[xind,yind,zind,]
   s0 <- s0[xind,yind,zind]
   mask <- mask[xind,yind,zind]
@@ -156,7 +167,7 @@ setMethod("dwi.smooth.ms", "dtiData", function(object,kstar,lambda=12,kappa0=.5,
 #
 #  one s0 image only
 #
-  si <- array(0,c(ddim,ngrad))
+  si <- array(object@si,c(ddim,ngrad))
 #
 #  back to original scale
 #

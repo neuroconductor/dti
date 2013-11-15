@@ -53,6 +53,7 @@ awslsigmc <- function(y,                 # data
                      minni = 2,         # minimum sum of weights for estimating local sigma
                      hsig = 5,          # bandwidth for smoothing local sigma estimates
                      sigma = NULL,
+                     family = c("Gauss","NCchi"),
                      verbose = FALSE
                      ) {
   ## some functions for pilot estimates
@@ -77,7 +78,7 @@ awslsigmc <- function(y,                 # data
     IQQdiff( y, mask, q)/sqrt(v)
   }
   
-  varstats <- sofmchi(ncoils)
+  if(family=="NCchi") varstats <- sofmchi(ncoils)
   if(length(vext)==3) vext <- vext[2:3]/vext[1]
   ## dimension and size of cubus
   ddim <- dim(y)
@@ -93,14 +94,12 @@ awslsigmc <- function(y,                 # data
   ## initial value for sigma_0 
   if(is.null(sigma)){
   # sigma <- sqrt( mean( y[mask]^2) / 2 / ncoils)
-  sigma <- IQQdiff( y, mask, .25, verbose=verbose)
-#  cat( "sigmahat1", sigma, "\n")
-  sigma <- estsigma( y, mask, .25, ncoils, sigma)
-#  cat( "sigmahat2", sigma, "\n")
-  sigma <- estsigma( y, mask, .25, ncoils, sigma)
-#  cat( "sigmahat3", sigma, "\n")
-  sigma <- estsigma( y, mask, .25, ncoils, sigma)
-#  cat( "sigmahat4", sigma,"\n")
+     sigma <- IQQdiff( y, mask, .25, verbose=verbose)
+     if(family=="NCchi"){
+        sigma <- estsigma( y, mask, .25, ncoils, sigma)
+        sigma <- estsigma( y, mask, .25, ncoils, sigma)
+        sigma <- estsigma( y, mask, .25, ncoils, sigma)
+     }
   }
 ##
 ##   Prepare for diagnostics plots
@@ -133,11 +132,12 @@ awslsigmc <- function(y,                 # data
     param$ind <- param$ind[1:(3*nw)]
     dim(param$ind) <- c(3,nw)
     param$w   <- param$w[1:nw]    
-    fncchi <- fncchiv(th/sigma,varstats)
+    if(family=="NCchi") {
+       fncchi <- fncchiv(th/sigma,varstats)
 ## correction factor for variance of NC Chi distribution
     ## perform one step PS with bandwidth h
 ##  first step is nonadaptive since th, sigma and fncchi are constant
-    z <- .Fortran("awslchi",
+       z <- .Fortran("awslchi",
                   as.double(y),        # data
                   as.double(th),       # previous estimates
                   ni = as.double(ni),
@@ -163,8 +163,29 @@ awslsigmc <- function(y,                 # data
                   DUPL = FALSE,
                   PACKAGE = "dti")[c("ni","th","sigman")]
     ## extract sum of weigths (see PS) and consider only voxels with ni larger then mean
+    } else {
+       z <- .Fortran("awslgaus",
+                  as.double(y),        # data
+                  as.double(th),       # previous estimates
+                  ni = as.double(ni),
+                  as.double(sigma),
+                  as.logical(mask),
+                  as.integer(ddim[1]),
+                  as.integer(ddim[2]),
+                  as.integer(ddim[3]),
+                  as.integer(param$ind),
+                  as.double(param$w),
+                  as.integer(nw),
+                  as.double(minni),
+                  as.double(lambda),
+                  th = double(n),
+                  sigman = double(n),
+                  DUPL = FALSE,
+                  PACKAGE = "dti")[c("ni","th","sigman")]
+    }
     th <- array(z$th,ddim)
     ni <- array(z$ni,ddim)
+    mask[z$sigman==0] <- FALSE
     cat("local estimation in step ",i," completed",Sys.time(),"\n") 
 ##
 ##  nonadaptive smoothing of estimated standard deviations
@@ -189,7 +210,8 @@ awslsigmc <- function(y,                 # data
                       as.integer(ddim[3]),
                       as.integer(param$ind),
                       as.integer(nw),
-                      double(2*nw),
+                      double(nw*mc.cores), # work(nw,nthreds)
+                      as.integer(mc.cores),
                       sigman = double(n),
                       DUPL = FALSE,
                       PACKAGE = "dti")$sigman

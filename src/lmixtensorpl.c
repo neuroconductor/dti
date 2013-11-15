@@ -494,16 +494,17 @@ void mixtrl2( int* n1, int* siind, int* ngrad0, int* maxcomp, int* maxit,
             orient_ret[0+2*j+2*maxcompc*ii] = angles[0];
             orient_ret[1+2*j+2*maxcompc*ii] = angles[1];
             
-            param[3*j] = 2;  
+            param[3*j] = 4;  
 //initial value for w(j) corresponds to volume w(j)/(1+sum_k w(j)), i.e. a 17% isotropic compartment
             param[3*j+1] = angles[0];
             param[3*j+2] = angles[1];
 // set values for lower corresponding to weights to 0
-/*            lower[3*j] = 1e-2;
-	    nbd[3*j] = 1;*/
+            lower[3*j] = -6;
+            upper[3*j] = 20;
+	    nbd[3*j] = 2;
          }
 // lower values for lambda and alpha to get lambda_1>=lambda_2>=0
-         lower[3*maxcompc+1] = 0.1;
+         lower[3*maxcompc+1] = 0.5;
          upper[3*maxcompc+1] = 10;
 	 nbd[3*maxcompc+1] = 2;
          lower[3*maxcompc] = 0.01;
@@ -707,13 +708,14 @@ void mixtrl1( int* n1, int* siind, int* ngrad0, int* maxcomp, int* maxit,
             orient_ret[0+2*j+2*maxcompc*ii] = angles[0];
             orient_ret[1+2*j+2*maxcompc*ii] = angles[1];
             
-            param[3*j] = 2;  
+            param[3*j] = 4;  
 //initial value for w(j) corresponds to volume w(j)/(1+sum_k w(j)), i.e. a 17% isotropic compartment
             param[3*j+1] = angles[0];
             param[3*j+2] = angles[1];
 // set values for lower corresponding to weights to 0
-/*            lower[3*j] = 1e-2;
-	    nbd[3*j] = 1;*/
+            lower[3*j] = -6;
+            upper[3*j] = 20;
+	    nbd[3*j] = 2;
          }
 /*         lower[3*maxcompc] = 0.01;
 	 nbd[3*maxcompc] = 1;*/
@@ -909,13 +911,14 @@ void mixtrl0( int* n1, int* siind, int* ngrad0, int* maxcomp, int* maxit,
             orient_ret[0+2*j+2*maxcompc*ii] = angles[0];
             orient_ret[1+2*j+2*maxcompc*ii] = angles[1];
             
-            param[3*j] = 2;  
+            param[3*j] = 4;  
 //initial value for w(j) corresponds to volume w(j)/(1+sum_k w(j)), i.e. a 17% isotropic compartment
             param[3*j+1] = angles[0];
             param[3*j+2] = angles[1];
 // set values for lower corresponding to weights to 0
-/*            lower[3*j] = 0.25; 
-	    nbd[3*j] = 1;*/
+            lower[3*j] = -6;
+            upper[3*j] = 20;
+	    nbd[3*j] = 2;
          }
 // lower value for alpha to get lambda_1>=lambda_2
          // initialize EV-parameter

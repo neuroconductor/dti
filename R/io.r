@@ -291,6 +291,8 @@ readDWIdata <- function(gradient, dirlist,
       }
     } else {
       if (length(filelist) > 1) { # list of 3D files
+## for dti_leipzig data we got length(dim(dd))==4
+        if(length(dim(dd))==4&&dim(dd)[4]==1) dim(dd) <- dim(dd)[1:3]
         if (first) { 
           ttt <- dd[xind, yind, zind]
           nttt <- dim(ttt)
