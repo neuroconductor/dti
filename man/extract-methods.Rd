@@ -13,6 +13,8 @@
 \alias{[,dtiData-method}
 \alias{[,dtiIndices-method}
 \alias{[,dtiTensor-method}
+\alias{[,dkiIndices-method}
+\alias{[,dkiTensor-method}
 \alias{[,dwiMixtensor-method}
 \alias{[,dwiQball-method}
 \title{ Methods for Function `extract' and `[' in Package `dti' }
@@ -30,6 +32,8 @@
   \S4method{[}{dtiData}(x, i, j, k, drop=FALSE)
   \S4method{[}{dtiTensor}(x, i, j, k, drop=FALSE)
   \S4method{[}{dtiIndices}(x, i, j, k, drop=FALSE)
+  \S4method{[}{dkiTensor}(x, i, j, k, drop=FALSE)
+  \S4method{[}{dkiIndices}(x, i, j, k, drop=FALSE)
   \S4method{[}{dwiQball}(x, i, j, k, drop=FALSE)
 }
 \arguments{

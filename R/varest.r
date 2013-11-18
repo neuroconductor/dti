@@ -111,7 +111,8 @@ awslsigmc <- function(y,                 # data
   ## define initial arrays for parameter estimates and sum of weights (see PS)
   th <- array( 1, ddim)
   ni <- array( 1, ddim)
-  sigma <- array( sigma, ddim)
+  sigma <- array(sigma, ddim)
+  sigmar <- array(0, c(ddim, steps))
 # initialize array for local sigma by global estimate
   mc.cores <- setCores(,reprt=FALSE)
   ## iterate PS starting with bandwidth h0
@@ -216,6 +217,7 @@ awslsigmc <- function(y,                 # data
                       DUPL = FALSE,
                       PACKAGE = "dti")$sigman
     dim(sigma) <- ddim
+    sigmar[, , , i] <- sigma
     cat("local median smoother in step ",i," completed",Sys.time(),"\n") 
 ##
 ##  diagnostics
@@ -235,7 +237,7 @@ awslsigmc <- function(y,                 # data
   sigmal <- array(z$sigman,ddim)
 
   ## this is the result (th is expectation, not the non-centrality parameter !!!)
-  invisible(list(sigma = sigma,
+  invisible(list(sigma = sigmar,
                  sigmal = sigmal,
                  theta = th, 
                  ni  = ni))

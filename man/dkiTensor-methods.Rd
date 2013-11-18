@@ -1,7 +1,9 @@
 \name{dkiTensor-methods}
 \docType{methods}
+\alias{dkiTensor}
 \alias{dkiTensor-methods}
 \alias{dkiIndices-methods}
+\alias{dkiIndices}
 \alias{dkiTensor,ANY-method}
 \alias{dkiIndices,ANY-method}
 \alias{dkiTensor,dtiData-method}
