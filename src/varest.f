@@ -101,6 +101,7 @@ C$OMP DO SCHEDULE(GUIDED)
          sws2=0.d0
          sgi=sigma(i1,i2,i3)
          thi = th(i1,i2,i3)
+         thn(i) = thi
          fnsi = fns(i1,i2,i3)
 C   thats the estimated standard deviation of s(i1,i2,i3)
          kval = lambda/ni(i)*sgi*sgi

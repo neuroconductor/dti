@@ -106,8 +106,8 @@ cat("sioutlier completed\n")
    gc()
 ## Regularizations
    if(any(is.na(D))|any(abs(D)>1e10)){
-      dim(D) <- c(6,total)
-      indD <- (1:total)[apply(is.na(D),2,any)]
+      dim(D) <- c(6,ntotal)
+      indD <- (1:ntotal)[apply(is.na(D),2,any)]
       cat("NA's in D in ", length(indD),"voxel:",indD,"\n")
       D[,indD] <- c(1,0,0,1,0,1)
       mask[indD] <- FALSE

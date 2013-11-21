@@ -60,7 +60,23 @@ awslsigmc <- function(y,                 # data
   IQQ <- function (x, q = .25, na.rm = FALSE, type = 7) 
     diff(quantile(as.numeric(x), c(q, 1-q), na.rm = na.rm, names = FALSE, type = type))
 
-  IQQdiff <- function(y, mask, q = .25, verbose = FALSE) {
+  IQQ <- function (x, q = .25, na.rm = FALSE, type = 7){ 
+    cqz <- qnorm(.05)/qnorm(q)
+    x <- as.numeric(x)
+    z <- diff(quantile(x, c(q, 1-q), na.rm = na.rm, names = FALSE, type = type))
+    z0 <- 0
+    while(abs(z-z0)>1e-5*z0){
+# outlier removal
+       z0 <- z
+#       cat(sum(x>(z0*cqz))," ")
+       x <- x[x<(z0*cqz)]
+       z <- diff(quantile(x, c(q, 1-q), na.rm = na.rm, names = FALSE, type = type))  
+#       cat(z0,z,"\n")
+    }
+    z
+    }
+    
+IQQdiff <- function(y, mask, q = .25, verbose = FALSE) {
     cq <- qnorm(1-q)*sqrt(2)*2
     sx <- IQQ( diff(y[mask]), q)/cq
     sy <- IQQ( diff(aperm(y,c(2,1,3))[aperm(mask,c(2,1,3))]), q)/cq
@@ -135,8 +151,9 @@ awslsigmc <- function(y,                 # data
     param$w   <- param$w[1:nw]    
     if(family=="NCchi") {
        fncchi <- fncchiv(th/sigma,varstats)
+       fncchi[!mask] <- 1
 ## correction factor for variance of NC Chi distribution
-    ## perform one step PS with bandwidth h
+## perform one step PS with bandwidth h
 ##  first step is nonadaptive since th, sigma and fncchi are constant
        z <- .Fortran("awslchi",
                   as.double(y),        # data
@@ -187,7 +204,7 @@ awslsigmc <- function(y,                 # data
     th <- array(z$th,ddim)
     ni <- array(z$ni,ddim)
     mask[z$sigman==0] <- FALSE
-    cat("local estimation in step ",i," completed",Sys.time(),"\n") 
+    cat("local estimation in step ",i," completed",format(Sys.time()),"\n") 
 ##
 ##  nonadaptive smoothing of estimated standard deviations
 ##
@@ -217,8 +234,8 @@ awslsigmc <- function(y,                 # data
                       DUPL = FALSE,
                       PACKAGE = "dti")$sigman
     dim(sigma) <- ddim
+    cat("local median smoother in step ",i," completed",format(Sys.time()),"\n") 
     sigmar[, , , i] <- sigma
-    cat("local median smoother in step ",i," completed",Sys.time(),"\n") 
 ##
 ##  diagnostics
 ##

@@ -22,9 +22,8 @@
          maxangle = 30,level=0, quant=.8, scale=.4, bgcolor="black", add=FALSE, 
          subdivide=2, maxobjects=729, what=c("tensor","adc","odf"), odfscale = 1, 
          minalpha=.25, normalize=NULL, box=FALSE, title=FALSE,\dots)
-\S4method{show3d}{dkiTensor}(obj, xind=NULL, yind=NULL, zind=NULL, method=1, minfa=.3, mask=NULL, fibers=FALSE, 
-         maxangle = 30,level=0, quant=.8, scale=.4, bgcolor="black", add=FALSE, 
-         subdivide=2, maxobjects=729, what=c("tensor","adc","odf"), odfscale = 1, 
+\S4method{show3d}{dkiTensor}(obj, xind=NULL, yind=NULL, zind=NULL, method=1, minfa=.3, mask=NULL, level=0, quant=.8, scale=.4, bgcolor="black", add=FALSE, 
+         subdivide=2, maxobjects=729, what=c("KT", "DT"),  
          minalpha=.25, normalize=NULL, box=FALSE, title=FALSE,\dots)
 \S4method{show3d}{dtiIndices}(obj, index=c("fa","ga"), xind=NULL, yind=NULL, zind=NULL, method=1, 
          minfa=0, bgcolor="black", add=FALSE, lwd=1, box=FALSE, 
