@@ -145,7 +145,7 @@ defineKurtosisTensor <- function(DK) {
 
 kurtosisFunctionF1<- function(l1, l2, l3) {
   
-  require(gsl)
+  #require(gsl)
   ## Tabesh et al. Eq. [28], [A9, A12]
   
   ## consider removable singularities!! 
@@ -180,7 +180,7 @@ kurtosisFunctionF1<- function(l1, l2, l3) {
 
 kurtosisFunctionF2 <- function(l1, l2, l3) {
   
-  require(gsl)
+  #require(gsl)
   ## Tabesh et al. Eq. [28], [A10, A11, A12]
   
   alpha <- function(x) {

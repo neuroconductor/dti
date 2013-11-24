@@ -1,5 +1,5 @@
 pmatrix <- function(x, FUN, ..., mc.cores = setCores(,reprt=FALSE)){
-     require(parallel)
+     #require(parallel)
      cl <- makeCluster(mc <- mc.cores)
 #
 #   parCapply does not pass dimension attributes to FUN !!!!

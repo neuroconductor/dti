@@ -351,7 +351,7 @@ Kofgrad <- function(grad,D0,N=1,L=2,bvalue){
   #  this differs from Jian Chengs paper using b D_0 instead of \pi^2 \zeta q^2 
   #  which simpifies the expression for I_{nn'\alpha}
   #
-  require(gsl)
+  #require(gsl)
   ngrad <- dim(grad)[2]
   Np1 <- N+1
   Lind <- (L+1)*(L+2)/2

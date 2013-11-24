@@ -13,11 +13,11 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
   }
   eps <- 1e-6
   maxnw <- 10000
-  if (graph) {
-    adimpro <- require(adimpro)
-    if (!adimpro) cat("No graphical output! Install package adimpro from CRAN!\n")
-    graph <- graph & adimpro
-  }
+#  if (graph) {
+#    adimpro <- require(adimpro)
+#    if (!adimpro) cat("No graphical output! Install package adimpro from CRAN!\n")
+#    graph <- graph & adimpro
+#  }
   args <- sys.call(-3)
   args <- c(object@call,args)
   sdcoef <- object@sdcoef

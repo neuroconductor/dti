@@ -29,7 +29,7 @@ setMethod( "dtiTensor", "dtiData",
    s0ind <- object@s0ind
    ns0 <- length(s0ind)
    sdcoef <- object@sdcoef
-   if(mc.cores>1&method=="nonlinear") require(parallel)
+   #if(mc.cores>1&method=="nonlinear") require(parallel)
    if(all(sdcoef[1:4]==0)) {
       cat("No parameters for model of error standard deviation found\n
           Using constant weights \n You may prefer to run sdpar before calling dtiTensor\n")

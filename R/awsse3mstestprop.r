@@ -7,7 +7,7 @@ dwi.smooth.testprop <-  function(spatialdim,ngrad,bv,D0=1.3e-3,th0,df,kstar,lamb
 #  
 #
 #
-  data("optgradients")
+  data("optgradients", envir = environment())
   grad <- optgrad[[ngrad-5]]
   ns0 <- 1
   lbv <- length(bv)
@@ -43,7 +43,7 @@ levels <- levels[levels>=minlevel]
 par(mfrow=c(1,2),mar=c(3,3,3,3),mgp=c(2,1,0))
 
 kldistnorm1 <- function(th1,y,df){
-require(gsl)
+#require(gsl)
 L <- df/2
 m1 <- sqrt(pi/2)*gamma(L+1/2)/gamma(1.5)/gamma(L)*hyperg_1F1(-0.5,L, -th1^2/2, give=FALSE, strict=TRUE)
 (m1-y)^2/2/(2*L+th1^2-m1^2)

@@ -326,7 +326,7 @@ fncchiL <- function(x,L){
 ##  standard deviation of a noncentral chi-distribution with
 ##  2*L df and noncentrality-parameter x
 ##
-require(gsl)
+#require(gsl)
 x <- pmax(x,sqrt(2)*gamma(L+.5)/gamma(L))
 z <- sqrt(pi/2)*gamma(L+1/2)/gamma(1.5)/gamma(L)*hyperg_1F1(-0.5,L, -x^2/2, give=FALSE, strict=TRUE)
 sqrt(2*L+x^2-z^2)
@@ -336,7 +336,7 @@ fncchiL2 <- function(x,L){
 ##  variance of a noncentral chi-distribution with
 ##  2*L df and noncentrality-parameter x
 ##
-require(gsl)
+#require(gsl)
 x <- pmax(x,sqrt(2)*gamma(L+.5)/gamma(L))
 z <- sqrt(pi/2)*gamma(L+1/2)/gamma(1.5)/gamma(L)*hyperg_1F1(-0.5,L, -x^2/2, give=FALSE, strict=TRUE)
 2*L+x^2-z^2
@@ -456,7 +456,7 @@ thcorr3D <- function(bw,lag=rep(5,3)){
 andir2.image <- function(dtobject,slice=1,method=1,quant=0,minfa=NULL,show=TRUE,xind=NULL,yind=NULL,...){
   if(!("dti" %in% class(dtobject))) stop("Not an dti-object")
   if(is.null(dtobject$anindex)) stop("No anisotropy index yet")
-  adimpro <- require(adimpro)
+  #adimpro <- require(adimpro)
   anindex <- dtobject$anindex
   dimg <- dim(anindex)[1:2]
   if(is.null(xind)) xind <- 1:dimg[1]
@@ -482,13 +482,13 @@ andir2.image <- function(dtobject,slice=1,method=1,quant=0,minfa=NULL,show=TRUE,
   andirection <- t(andirection)
   andirection <- andirection*as.vector(anindex)*as.numeric(anindex>minfa)
   dim(andirection)<-c(dimg,3)
-  if(adimpro) {
+#  if(adimpro) {
     andirection <- make.image(andirection)
     if(show) show.image(andirection,...)
-  } else if(show) {
-    dim(anindex) <- dimg
-    image(anindex,...)
-  }
+#  } else if(show) {
+#    dim(anindex) <- dimg
+#    image(anindex,...)
+#  }
   invisible(andirection)
 } 
 
@@ -653,7 +653,7 @@ vcrossp <- function(a, b) {
 }
 
 showFAColorScale <- function(filename = "FAcolorscale.png") {
-  data("colqFA")
+  data("colqFA", envir = environment())
   png( filename = filename, width = 800, height = 100, bg = "white", pointsize = 16)
   par( mar = c( 2, 0.5, 0.1, 0.5))
   image( matrix( seq( 0, 1, length = 256), 256, 1), col = colqFA, yaxt = "n")

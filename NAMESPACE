@@ -5,7 +5,9 @@ useDynLib(dti)
 import("methods", "oro.dicom", "awsMethods")
 importFrom(graphics, plot)
 importFrom(adimpro, make.image, show.image)
-importFrom(rgl,rgl.lines,open3d,plot3d,rgl.bg)
+importFrom(rgl, rgl.lines, open3d, plot3d, rgl.bg)
+importFrom(oro.nifti, readNIfTI, readANALYZE, writeNIfTI)
+importFrom(gsl, hyperg_1F1)
 exportClasses("dwi", "dtiData", "dtiTensor", "dtiIndices", "dwiQball",
               "dwiMixtensor", "dwiFiber", "dkiTensor", "dkiIndices")
 exportMethods("show", "plot", "print", "summary", "dti.smooth", "dtiTensor",

@@ -25,11 +25,11 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
 #
   wlse <- TRUE
   eps <- 1e-6
-  if (graph) {
-    adimpro <- require(adimpro)
-    if (!adimpro) cat("No graphical output! Install package adimpro from CRAN!\n")
-    graph <- graph & adimpro
-  }
+#  if (graph) {
+#    adimpro <- require(adimpro)
+#    if (!adimpro) cat("No graphical output! Install package adimpro from CRAN!\n")
+#    graph <- graph & adimpro
+#  }
   args <- sys.call(-3)
   args <- c(object@call,args)
   s0ind <- object@s0ind

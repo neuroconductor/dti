@@ -28,7 +28,8 @@
 \S4method{tracking}{dtiIndices}(obj, roix=NULL, roiy=NULL, roiz=NULL, mask=NULL,
                     method="LINEPROP", minfa=0.3, maxangle=30, subsample = 1)
 \S4method{tracking}{dwiMixtensor}(obj, roix=NULL, roiy=NULL, roiz=NULL, mask=NULL,
-                    method="LINEPROP", minfa=0.3, maxangle=30, subsample = 1, mincompartsize = 0)
+                    method="LINEPROP", minfa=0.3, maxangle=30, subsample = 1, 
+                    mincompartsize = 0)
 \S4method{selectFibers}{dwiFiber}(obj, roix=NULL, roiy=NULL, roiz=NULL, mask=NULL,
                     minlength=1)
 \S4method{reduceFibers}{dwiFiber}(obj, maxdist=1, ends=TRUE)

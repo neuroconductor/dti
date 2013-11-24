@@ -23,12 +23,17 @@
 }
 \usage{
   \S4method{extract}{dtiData}(x, 
-    what=c("data","gradient","btb","s0","sb","siq"), xind=TRUE, yind=TRUE, zind=TRUE)
-  \S4method{extract}{dtiTensor}(x, what=c("tensor","fa","ga","md","evalues","andir","s0","mask","bic","aic","outlier"),
-  xind=TRUE, yind=TRUE, zind=TRUE, mc.cores = setCores(, reprt = FALSE))
-  \S4method{extract}{dwiMixtensor}(x, what=c("andir","order","ev","mix","s0","mask","fa","eorder","bic","aic"), xind=TRUE, yind=TRUE, zind=TRUE)
-  \S4method{extract}{dtiIndices}(x, what=c("fa","andir","ga","md","bary"), xind=TRUE, yind=TRUE, zind=TRUE)
-  \S4method{extract}{dwiQball}(x, what=c("sphcoef","s0","mask","bic","aic","outlier"), xind=TRUE, yind=TRUE, zind=TRUE)
+    what=c("data","gradient","btb","s0","sb","siq"), 
+    xind=TRUE, yind=TRUE, zind=TRUE)
+  \S4method{extract}{dtiTensor}(x, what=c("tensor", "fa", "ga", "md", "evalues", 
+      "andir", "s0", "mask", "bic", "aic", "outlier"),
+    xind=TRUE, yind=TRUE, zind=TRUE, mc.cores = setCores(, reprt = FALSE))
+  \S4method{extract}{dwiMixtensor}(x, what=c("andir", "order", "ev", "mix", "s0", 
+      "mask", "fa", "eorder", "bic", "aic"), xind=TRUE, yind=TRUE, zind=TRUE)
+  \S4method{extract}{dtiIndices}(x, what=c("fa", "andir", "ga", "md", "bary"), 
+    xind=TRUE, yind=TRUE, zind=TRUE)
+  \S4method{extract}{dwiQball}(x, what=c("sphcoef", "s0", "mask", "bic", "aic", 
+      "outlier"), xind=TRUE, yind=TRUE, zind=TRUE)
   \S4method{[}{dtiData}(x, i, j, k, drop=FALSE)
   \S4method{[}{dtiTensor}(x, i, j, k, drop=FALSE)
   \S4method{[}{dtiIndices}(x, i, j, k, drop=FALSE)

@@ -17,7 +17,7 @@ dtiTensJKN <- function( object, what=c("FA","GA","MD"), coverage=c(.5,.8,.9,.95)
    s0ind <- object@s0ind
    ns0 <- length(s0ind)
    sdcoef <- object@sdcoef
-   if(mc.cores>1) require(parallel)
+   #if(mc.cores>1) require(parallel)
    if(all(sdcoef[1:4]==0)) {
       cat("No parameters for model of error standard deviation found\n estimating these parameters\n You may prefer to run sdpar before calling dtiTensor\n")
       sdcoef <- sdpar(object,interactive=FALSE)@sdcoef

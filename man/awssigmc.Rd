@@ -20,10 +20,12 @@ Estimate noise variance for multicoil MR systems
     Function \code{afsigmc} implements estimates from Aja-Fernandez (2009). 
 }
 \usage{
-awssigmc(y, steps, mask = NULL, ncoils = 1, vext = c(1, 1), lambda = 20, h0 = 2, verbose = FALSE, sequence = FALSE, hadj = 1, q = 0.25, qni = .8, method=c("VAR","MAD"))
+awssigmc(y, steps, mask = NULL, ncoils = 1, vext = c(1, 1), lambda = 20, 
+         h0 = 2, verbose = FALSE, sequence = FALSE, hadj = 1, q = 0.25, 
+         qni = .8, method=c("VAR","MAD"))
 afsigmc(y, level = NULL, mask = NULL,  ncoils = 1,   vext = c( 1, 1),   
-                    h = 2, verbose = FALSE, hadj = 1, 
-                    method = c("modevn","modem1chi","bkm2chi","bkm1chi"))
+        h = 2, verbose = FALSE, hadj = 1, 
+        method = c("modevn","modem1chi","bkm2chi","bkm1chi"))
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

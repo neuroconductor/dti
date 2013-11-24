@@ -15,8 +15,14 @@ Method \code{dwi.smooth} refers to the original POAS approach for single shell d
 Method \code{dwi.smooth.ms} implements an improved method that is applicable for both single and multi-shell data. 
 }
 \usage{
-  \S4method{dwi.smooth}{dtiData}(object, kstar, lambda=20, kappa0=NULL, ncoils=1, sigma=NULL, level=NULL, vred=4, xind=NULL, yind=NULL, zind=NULL, verbose=FALSE, dist=1, model=c("Gapprox","Gapprox2","Chi","Chi2"))
-  \S4method{dwi.smooth.ms}{dtiData}(object, kstar, lambda=12, kappa0=.5, ncoils=1, sigma=NULL, ws0=1, level=NULL, xind=NULL, yind=NULL, zind=NULL, verbose=FALSE, usemaxni=TRUE, memrelease = TRUE)
+  \S4method{dwi.smooth}{dtiData}(object, kstar, lambda=20, kappa0=NULL, ncoils=1, 
+                                 sigma=NULL, level=NULL, vred=4, xind=NULL, 
+                                 yind=NULL, zind=NULL, verbose=FALSE, dist=1, 
+                                 model=c("Gapprox","Gapprox2","Chi","Chi2"))
+  \S4method{dwi.smooth.ms}{dtiData}(object, kstar, lambda=12, kappa0=.5, ncoils=1, 
+                                    sigma=NULL, ws0=1, level=NULL, xind=NULL,
+                                    yind=NULL, zind=NULL, verbose=FALSE, 
+                                    usemaxni=TRUE, memrelease = TRUE)
 }
 \arguments{
   \item{object}{ Object of class \code{"dtiData"}}

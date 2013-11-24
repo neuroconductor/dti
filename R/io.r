@@ -215,7 +215,7 @@ readDWIdata <- function(gradient, dirlist,
     i <- i+1
     if (!verbose) setTxtProgressBar(pb, i)
     if (format == "DICOM") {
-      dd <- dicomInfo(ff)
+      dd <- readDICOM(ff)
       delta <- c(as.numeric(unlist(strsplit(extractHeader(dd$hdr, "PixelSpacing", FALSE)[1], " "))), extractHeader(dd$hdr, "SliceThickness")[1])
       imageOrientationPatient <- as.numeric(unlist(strsplit(extractHeader(dd$hdr, "ImageOrientationPatient", FALSE)[1], " ")))
       imageOrientationPatient <- matrix(c(imageOrientationPatient, vcrossp(imageOrientationPatient[1:3], imageOrientationPatient[4:6])), 3, 3)

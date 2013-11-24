@@ -12,7 +12,7 @@ setMethod("show3d","dtiData", function(obj, xind=NULL, yind=NULL, zind=NULL, qua
 ## check what
   what <- tolower(what)
   what <- match.arg(what)
-  if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
+  #if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
   cube <- selectCube(xind,yind,zind,obj@ddim,maxobjects)
   xind <- cube$xind
   yind <- cube$yind
@@ -70,7 +70,7 @@ setMethod("show3d","dtiData", function(obj, xind=NULL, yind=NULL, zind=NULL, qua
 ##############
 
 setMethod("show3d","dtiTensor", function(obj,xind=NULL,yind=NULL,zind=NULL,method=1,minfa=.3,mask=NULL,fibers=FALSE,maxangle=30,level=0,quant=.8,scale=.4,bgcolor="black",add=FALSE,subdivide=2,maxobjects=729,what=c("tensor","adc","odf"),odfscale=1,minalpha=.25,normalize=NULL,box=FALSE,title=FALSE,...){
-  if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
+  #if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
 ## check what
   what <- tolower(what)
   what <- match.arg(what)
@@ -191,7 +191,7 @@ setMethod("show3d","dtiTensor", function(obj,xind=NULL,yind=NULL,zind=NULL,metho
   invisible(rgl.cur())
 })
 setMethod("show3d","dwiMixtensor", function(obj,xind=NULL,yind=NULL,zind=NULL,minfa=.3,minorder=1,mineo=1,fibers=FALSE,maxangle=30,level=0,quant=.8,scale=.4,bgcolor="black",add=FALSE,subdivide=3,maxobjects=729,what=c("odf","axis","both"),odfscale=1,minalpha=1,lwd=3,box=FALSE,title=FALSE,...){
-  if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
+  #if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
 ## check what
   what <- tolower(what)
   what <- match.arg(what)
@@ -329,7 +329,7 @@ setMethod("show3d","dtiIndices",function(obj, index=c("fa","ga"), xind=NULL, yin
   index <- tolower(index)
 ## check index
   index <- match.arg(index)
-  if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
+  #if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
   index <- tolower(index) 
   if(!(index%in%c("fa","ga"))) stop("index should be either 'FA' or 'GA'\n")
   cube <- selectCube(xind,yind,zind,obj@ddim,prod(obj@ddim))
@@ -391,7 +391,7 @@ setMethod("show3d","dtiIndices",function(obj, index=c("fa","ga"), xind=NULL, yin
 ##############
 
 setMethod("show3d","dwiQball", function(obj,xind=NULL, yind=NULL, zind=NULL, level=0, quant=.8, scale=.4, odfscale=1, bgcolor="black", add=FALSE, subdivide=3, maxobjects=729, minalpha=1, box=FALSE, title=FALSE,...){
-  if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
+  #if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
   if(!exists("icosa0")) data("polyeders", envir = environment())
   if(subdivide<0||subdivide>4) subdivide <- 3
   cube <- selectCube(xind,yind,zind,obj@ddim,maxobjects)
@@ -468,7 +468,7 @@ setMethod("show3d","dwiQball", function(obj,xind=NULL, yind=NULL, zind=NULL, lev
 })
 
 setMethod("show3d","dwiFiber", function(obj,add=FALSE,bgcolor="black",box=FALSE,title=FALSE,lwd=1,...){
-  if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
+  #if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
   if(!add) {
      open3d()
      par3d(...)
@@ -512,7 +512,7 @@ setMethod( "show3d", "dkiTensor",
                      ...){
              
              ## first test the OpenGL visualization capabilities! 
-             if( !require( rgl)) stop("Package rgl needs to be installed for 3D visualization")
+             #if( !require( rgl)) stop("Package rgl needs to be installed for 3D visualization")
              
              what <- match.arg( what)
              
