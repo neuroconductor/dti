@@ -7,8 +7,6 @@ Authors@R: c(person("Karsten", "Tabelow", role = c("aut", "cre"),
              person("Joerg", "Polzehl", role = c("aut"),
                     email = "joerg.polzehl@wias-berlin.de"),
              person("Felix", "Anker", role = c("ctb")))
-Author: Karsten Tabelow and Joerg Polzehl, with contributions from F. Anker 
-Maintainer: Karsten Tabelow <karsten.tabelow@wias-berlin.de>
 Depends: R (>= 2.14.0), awsMethods (>= 1.0-1)
 Imports: methods, parallel, oro.nifti (>= 0.3.9), oro.dicom, adimpro, gsl, rgl
 Suggests: quadprog
