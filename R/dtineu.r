@@ -258,4 +258,95 @@ function(object, mc.cores=setCores(,reprt=FALSE)) {
             )
 })
 
+dtiTensorChi <- function(object, sigma=NULL, L=1, method = c( "nonlinear", "linear"),
+                         mc.cores = setCores( , reprt = FALSE)){
+##
+##  Estimate parameters in Diffusion Tensor model with
+##  Gauss-approximation for noncentral chi
+##
+   tensobj <- dtiTensor(object,method = method)
+   if(is.null(sigma)||sigma<=0){
+      cat("Please specify a valid sigma\n Returning biased estimated tensor object\n")
+      return(tensobj)
+   }
+   ddim <- tensobj@ddim
+   bv <- object@bvalue
+   mask <- tensobj@mask
+   D <- tensobj@D
+   dim(D) <- c(6,prod(ddim))
+   mbv <- mean(bv[-object@s0ind])
+   btb <- object@btb/mbv
+   nvox <- sum(mask)
+   param <- matrix(0,7,nvox)
+##  use ms0 and mbv to rescale parameters such that they are of comparable magnitude
+   param[1,] <- tensobj@th0[mask]/sigma
+   param[-1,] <- D2Rall(D[,mask]*mbv)
+   z <- sioutlier(object@si,object@s0ind,mc.cores=mc.cores)
+   CL <- sqrt(pi/2)*gamma(L+1/2)/gamma(L)/gamma(3/2)
+   if(mc.cores==1){
+#      si <- array(z$si,c(object@ngrad,prod(ddim)))[,mask]/sigma
+#      for(i in 1:length(mask)){
+#         param[,i] <- optim(param[,i],tchi,si=si[,i],btb=btb,L=L,CL=CL,method="BFGS",
+#                            control=list(reltol=1e-5,maxit=50))$par
+#         if(i%/%100*100==i) cat(i,"voxel processed. Time:",format(Sys.time()),"\n")
+#   }
+      x <- matrix(0,object@ngrad+7,nvox)
+      x[1:7,] <- param
+      x[-(1:7),] <- array(z$si,c(object@ngrad,prod(ddim)))[,mask]/sigma
+      param <- ptenschi(x,fn=tchi,btb=btb,L=L,CL=CL)
+      cat(nvox,"voxel processed. Time:",format(Sys.time()),"\n")
+   } else {
+      x <- matrix(0,object@ngrad+7,nvox)
+      x[1:7,] <- param
+      x[-(1:7),] <- array(z$si,c(object@ngrad,prod(ddim)))[,mask]/sigma
+      param <- plmatrix(x,ptenschi,fn=tchi,btb=btb,L=L,CL=CL)
+      cat(nvox,"voxel processed. Time:",format(Sys.time()),"\n")
+   }
+   D[,mask] <- R2Dall(param[-1,])/mbv
+   dim(D) <- c(6,ddim)
+   tensobj@D <- D
+   tensobj@th0[mask] <- param[1,]*sigma
+   tensobj
+}
+##
+## Parallel version
+##
+ptenschi <- function(x,fn,btb,L,CL){
+nvox <- dim(x)[2]
+param <- matrix(0,7,nvox)
+for(i in 1:nvox){
+   param[,i] <-
+   optim(x[1:7,i],fn,si=x[-(1:7),i],btb=btb,L=L,CL=CL,method="BFGS",
+                      control=list(reltol=1e-5,maxit=50))$par
+   }
+param
+}
+
+
+tchi <- function(param,si,btb,L,CL){
+##
+##  Risk function for Diffusion Tensor model with
+##  Gauss-approximation for noncentral chi
+##
+   ng <- dim(btb)[2]
+   D <- .Fortran("rho2D0",
+                 as.double(param[-1]),
+                 D=double(6),
+                 DUPL=FALSE,
+                 PACKAGE="dti")$D
+   gDg <- D%*%btb ## b_i*g_i^TD g_i (i=1,ngrad)
+   gvalue <- param[1]*exp(-gDg)
+   mgvh <- -gvalue*gvalue/2
+   muL <- CL*.C("hyperg_1F1_e",
+              as.double(rep(-.5,ng)),
+              as.double(rep(L,ng)),
+              as.double(mgvh),
+              as.integer(ng),
+              val=as.double(mgvh),
+              err=as.double(mgvh),
+              status=as.integer(0*mgvh),
+              PACKAGE="gsl")$val
+   vL <- 2*L+gvalue^2-muL^2
+   sum((si-muL)^2/vL)
+}
 

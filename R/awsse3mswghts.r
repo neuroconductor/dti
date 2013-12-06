@@ -81,7 +81,7 @@ dwi.smooth.ms.wghts <- function(object,kstar,lambda=12,kappa0=.5,ncoils=1,sigma=
   kinit <- if(lambda<1e10) 0 else kstar
   mc.cores <- setCores(,reprt=FALSE)
   gc()
-  pwghts <- list(NULL)
+  pwghts <- pwghtsna <- list(NULL)
   k1 <- 1
   for(k in kinit:kstar){
      hakt <- hseq$h[,k+1]
@@ -97,8 +97,11 @@ dwi.smooth.ms.wghts <- function(object,kstar,lambda=12,kappa0=.5,ncoils=1,sigma=
      pind1 <- cbind(param$ind,-param$ind[,param$ind[1,]>0])
      pind1[4:5,] <- abs(pind1[4:5,])
      n1 <- dim(pind1)[2]
-     pind01 <- cbind(param0$ind,-param$ind0[,param$ind0[1,]>0])
+     w1 <- c(param$w,param$w[param$ind[1,]>0])
+     pind01 <- cbind(param0$ind,-param0$ind[,param0$ind[1,]>0])
      n01 <- dim(pind01)[2]
+     w01 <- c(param0$w,param0$w[param0$ind[1,]>0])
+     pwghtsna[[k1]] <- list(ind=pind1,w=w1,n=n1,ind0=pind01,w0=w01,n0=n01)
      t2 <- Sys.time()
      z <- .Fortran("adsmse3w",
                 as.double(sb),#y
@@ -134,12 +137,12 @@ dwi.smooth.ms.wghts <- function(object,kstar,lambda=12,kappa0=.5,ncoils=1,sigma=
                 double((nshell+1)*mc.cores),#nii
                 double((nshell+1)*mc.cores),#fsi2  
                 as.integer(vx),
-                as,integer(vy),
+                as.integer(vy),
                 as.integer(vz),
-                as.integer(n1),
-                as.integer(n01),
                 w=double(n1),
                 w0=double(n01),
+                as.integer(n1),
+                as.integer(n01),
                 DUPL=FALSE,
                 PACKAGE="dti")[c("ni","th","ni0","th0","w","w0")]
     t3 <- Sys.time()
@@ -178,9 +181,90 @@ dwi.smooth.ms.wghts <- function(object,kstar,lambda=12,kappa0=.5,ncoils=1,sigma=
   si[,,,1] <-  z$th0/sqrt(ns0)*sigma
 #  go back to original s0 scale
   si[,,,-1] <- z$th*sigma
-  lobject <- list(si=si,gradient=grad,bvalues=bvalues,pwghts=pwghts)
+  lobject <- list(si=si,gradient=grad,bvalues=bvalues,pwghts=pwghts,pwghtsna=pwghtsna)
   lobject
 }
 
+showse3wghts <- function(lobject,gind=1,k=NULL,adaptive=TRUE, S0=FALSE, scale=.5, 
+                         windowRect = c(0, 0, 800, 800),
+                         userMatrix = rotationMatrix(-pi/2, 1, 0, 0),zoom = 1,FOV=1,color=c("blue","red"),bgc="white"){
+   if(is.null(k)) k <- length(lobject)
+   pwghts <- if(adaptive) lobject$pwghts[[k]] else lobject$pwghtsna[[k]]
+   open3d(windowRect = windowRect, userMatrix = userMatrix , zoom = zoom, FOV=FOV)
+   rgl.bg(color=bgc)
+   if(!S0){
+      grad <- lobject$gradient 
+      indg <- (1:pwghts$n)[pwghts$ind[4,]==gind]
+##  first gradient has bv==0
+      ind <- pwghts$ind[,indg]
+      w <- pwghts$w[indg]*scale
+      rv <- apply(abs(ind),1,max)+scale
+      rgl.points(rv[1]*c(-1,-1,-1,-1,1,1,1,1),rv[2]*c(-1,-1,1,1,-1,-1,1,1),rv[3]*c(-1,1,-1,1,-1,1,-1,1),
+               color=bgc)
+      lns <- array(0,c(2,3,length(w)))
+      rgl.spheres(0,0,0,.1,col="blue")
+      rgl.points(ind[1,],ind[2,],ind[3,],color=color[2])
+      lns[1,1,] <- ind[1,]-w*grad[1,ind[5,]]
+      lns[1,2,] <- ind[2,]-w*grad[2,ind[5,]]
+      lns[1,3,] <- ind[3,]-w*grad[3,ind[5,]]
+      lns[2,1,] <- ind[1,]+w*grad[1,ind[5,]]
+      lns[2,2,] <- ind[2,]+w*grad[2,ind[5,]]
+      lns[2,3,] <- ind[3,]+w*grad[3,ind[5,]]
+      segments3d(lns[,1,],lns[,2,],lns[,3,],color=color[1])
+    } else {
+      ind <- pwghts$ind
+      w <- pwghts$w
+      rv <- apply(abs(ind),1,max)+scale
+      rgl.points(rv[1]*c(-1,-1,-1,-1,1,1,1,1),rv[2]*c(-1,-1,1,1,-1,-1,1,1),rv[3]*c(-1,1,-1,1,-1,1,-1,1),
+               color=bgc)
+      spheres3d(ind[1,],ind[2,],ind[3,],radius=w*scale,color=heat.colors(255)[as.integer(255*w)])
+    }
+  }
+  
+  
+plotse3wghts <- function(tindobj,lobject,slice=1,gind=1,k=NULL,adaptive=TRUE,
+ scale=.5){
+   img <- extract.image(plot(tindobj,slice=slice))
+   center <- 
+   if(is.null(k)) k <- length(lobject)
+   pwghts <- if(adaptive) lobject$pwghts[[k]] else lobject$pwghtsna[[k]]
+   open3d(windowRect = windowRect, userMatrix = userMatrix , zoom =
+zoom, FOV=FOV)
+   rgl.bg(color=bgc)
+   if(!S0){
+      grad <- lobject$gradient
+      grad[3, ] <- 0
+      grad <- sweep(grad, 2, sqrt(apply(grad^2, 2, sum)), "/")
+      ind <- pwghts$ind
+      ind <- ind[, ind[3, ] == 0]
+      w <- pwghts$w[pwghts$ind[3, ]==0]
+      indg <- (1:length(w))[ind[4,]==gind]
+##  first gradient has bv==0
+      ind <- ind[,indg]
+      w <- w[indg]*scale
+      rv <- apply(abs(ind),1,max)+scale
 
+rgl.points(rv[1]*c(-1,-1,-1,-1,1,1,1,1),rv[2]*c(-1,-1,1,1,-1,-1,1,1),rv[3]*c(-1,1,-1,1,-1,1,-1,1),
+               color=bgc)
+      lns <- array(0,c(2,3,length(w)))
+      rgl.spheres(0,0,0,.1,col="blue")
+      rgl.points(ind[1,],ind[2,],ind[3,],color=color[2])
+      lns[1,1,] <- ind[1,]-w*grad[1,ind[5,]]
+      lns[1,2,] <- ind[2,]-w*grad[2,ind[5,]]
+      lns[1,3,] <- ind[3,]-w*grad[3,ind[5,]]
+      lns[2,1,] <- ind[1,]+w*grad[1,ind[5,]]
+      lns[2,2,] <- ind[2,]+w*grad[2,ind[5,]]
+      lns[2,3,] <- ind[3,]+w*grad[3,ind[5,]]
+      segments3d(lns[,1,],lns[,2,],lns[,3,],color=color[1])
+    } else {
+      ind <- pwghts$ind
+      w <- pwghts$w
+      rv <- apply(abs(ind),1,max)+scale
+
+rgl.points(rv[1]*c(-1,-1,-1,-1,1,1,1,1),rv[2]*c(-1,-1,1,1,-1,-1,1,1),rv[3]*c(-1,1,-1,1,-1,1,-1,1),
+               color=bgc)
+
+spheres3d(ind[1,],ind[2,],ind[3,],radius=w*scale,color=heat.colors(255)[as.integer(255*w)])
+    }
+  }
 
