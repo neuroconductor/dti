@@ -9,6 +9,279 @@
 #                                                                 #
 ###################################################################
 
+dkiTensor1 <- function(object,  ...) cat("No DKI tensor calculation defined for this class:", class( object), "\n")
+
+setGeneric("dkiTensor1", function(object, ...) standardGeneric("dkiTensor1"))
+
+setMethod("dkiTensor1", "dtiData",
+          function(object, 
+                   method=c("CLLS-QP", "CLLS-H", "ULLS") , 
+                   mc.cores=setCores(, reprt = FALSE),
+                   verbose=FALSE) {
+            
+            if (verbose) cat("dkiTensor: entering function", format(Sys.time()), "\n")
+            
+            ## check method
+            method <- match.arg(method)
+	  
+            ## call history
+            args <- c(object@call, sys.call(-1))
+	  
+            ## check available number of cores for parallel computation
+            if(is.null(mc.cores)) mc.cores <- 1
+            mc.cores <- min(mc.cores, detectCores())
+
+            ## define the design matrix of the estimation problem
+            xxx <- dkiDesign(object@gradient[, - object@s0ind])
+            
+            ## container for estimation results
+            ddim <- object@ddim  
+            D <- array(0, dim=c(6, ddim))
+            W <- array(0, dim=c(15, ddim))
+            bvalues <- object@bvalue[- object@s0ind]
+            meanbv <- mean(bvalues)
+            meanbv2 <- meanbv^2
+            bvalues <- bvalues/meanbv
+            maxbv <- max(bvalues)
+            
+            ## we need the mean s0 image and a mask
+            s0 <- drop(apply(object@si[, , , object@s0ind, drop=FALSE], 1:3, mean))
+            mask <- s0 > object@level
+            mask <- connect.mask(mask)
+            
+            if (method == "CLLS-QP") {
+
+              if (!require(quadprog)) return("dkiTensor: did not find package quadprog, please install for the CLLS-QP method")
+
+              ## Tabesh Eq. [11, 14, 15]
+              Tabesh_AD <- xxx[, 1:6]
+              Tabesh_AK <- xxx[, 7:21]
+              
+              ## Tabesh Eq. [10]
+              Tabesh_A <- cbind(sweep(Tabesh_AD, 1, - bvalues, "*"),
+                                sweep(Tabesh_AK, 1, bvalues^2/6, "*"))
+##
+##   old variant gave condition number of 3268 for Tabesh_A instead of 35 
+##                                     10684619 for Dmat instead of 1263
+##   for Siawooshs MQ01286 Data
+##
+              ngrad <- object@ngrad - length(object@s0ind)
+              
+              ## Tabesh Eq. [13]
+              Tabesh_C <- rbind( cbind(Tabesh_AD, matrix(0, ngrad, 15)), 
+                                 cbind(matrix(0, ngrad, 6), Tabesh_AK), 
+                                 cbind(3/maxbv*Tabesh_AD, - Tabesh_AK))
+
+              ## scaling factor to make it numerically stable
+              ## choice is arbitrary
+              Dmat <- t(Tabesh_A) %*% Tabesh_A
+              Amat <- t(Tabesh_C)
+
+              ## go through the dataset
+              if (verbose) pb <- txtProgressBar(0, ddim[1], style=3)
+              for (i in 1:ddim[1]) {
+                if (verbose) setTxtProgressBar(pb, i)
+                for (j in 1:ddim[2]) {
+                  for (k in 1:ddim[3]) {
+                    if (mask[i, j, k]) {
+                      ## Tabesh Eq. [12]
+                      Tabesh_B <- log(object@si[i, j, k, -object@s0ind] / s0[i, j, k])
+                      ## TODO: PERFORM SOME TEST BEFORE IT!!
+                      
+                      ## QP solution
+                      dvec <- E * as.vector(t(Tabesh_A) %*% Tabesh_B)
+                      resQPsolution <- solve.QP(Dmat, dvec, Amat)$solution
+                      D[, i, j, k] <- meanbv * resQPsolution[c(1, 4, 5, 2, 6, 3)] # re-order DT estimate to comply with dtiTensor
+
+                      ## Tabesh Eq. [9]
+                      W[, i, j, k] <- resQPsolution[7:21] / mean(resQPsolution[1:3])^2 # kurtosis tensor
+                    }
+                  }
+                }
+              }
+              if (verbose) close(pb)  
+            } 
+            if (method == "CLLS-H") {
+
+              ## these are the distinct bvalues
+              bv <- unique(bvalues)
+              bv <- bv[order(bv)]
+              if (length(bv) != 2) stop("Need exactly two shells for CLLS-H method, choose other method!")
+              ## now we have bv[ 1] < bv[ 2] 
+              
+              indbv1 <- (1:object@ngrad)[bvalues == bv[ 1]] # smaller b-value
+              indbv2 <- (1:object@ngrad)[bvalues == bv[ 2]] # larger b-value
+              if ((ngrad <- length(indbv1)) != length(indbv2)) stop("Need same number of gradients vectors for both shells!")
+
+              ## we must have two shell data and the gradient direction coincide for both shells
+              gradtest <- abs(range(diag(t(object@gradient[, indbv1]) %*% object@gradient[, indbv2]) - 1))
+              if (max(gradtest) > 1e-6) warning("dkiTensor: Gradient directions on the two shells are not identical (this might be a numerical problem).\n Proceed, but strange things may happen!")
+              
+              ## We need only a reduced design, as the gradient directions coincide
+              xxx <- dkiDesign(object@gradient[, indbv1])
+              Tabesh_AD <- xxx[, 1:6]
+              Tabesh_AK <- xxx[, 7:21]
+              PI_Tabesh_AD <- pseudoinverseSVD(Tabesh_AD)
+              PI_Tabesh_AK <- pseudoinverseSVD(Tabesh_AK)
+              
+              ## some hard-coded constraints, see Tabesh Eq. [6] ff. 
+              Kmin <- 0
+              ## Tabesh Eq. [6]
+              C <- 3
+              ## TODO: Do we want this as user defined arguments?
+              
+              ## for all voxel
+              ## TODO: Make this more efficient matrix operation!
+              if (verbose) pb <- txtProgressBar(0, ddim[1], style=3)
+              for (j in 1:ddim[1]) {
+                if (verbose) setTxtProgressBar(pb, j)
+                for (k in 1:ddim[2]) {
+                  for (m in 1:ddim[3]) {
+                    
+                    if (mask[j, k, m]) {
+                      ## Tabesh Eq. [20]
+                      D1 <- - log(object@si[j, k, m, indbv1] / s0[j, k, m]) / bv[1]
+                      D2 <- - log(object@si[j, k, m, indbv2] / s0[j, k, m]) / bv[2]
+                      
+                      ## Tabesh Eq. [18]
+                      Di <- (bv[2] * D1 - bv[1] * D2) / (bv[2] - bv[1])
+                      
+                      ## Tabesh Eq. [19]
+                      Ki <-  6 * (D1 - D2) / (bv[2] - bv[1]) / Di^2 
+                      
+                      ## now we apply some constraints Tabesh
+                      ## D1
+                      ind1 <- (Di <= 0)
+                      Di[ind1] <- 0
+                      ## D2
+                      ind2 <- (!ind1 & (D1 < 0))
+                      Di[ind2] <- 0
+                      ## D3
+                      ind3 <- (!ind1 & !ind2 & (Di > 0) & (Ki < Kmin))
+                      if (Kmin == 0) {
+                        Di[ind3] = D1[ind3]
+                      } else {
+                        x <- - Kmin * bv[1] / 3 
+                        Di[ind3] = (sqrt(1 + 2 * x * D1[ind3]) - 1) / x
+                      }
+                      ## D4
+                      Kmax <- numeric(length(Di))
+                      dim(Kmax) <- dim(Di)
+                      Kmax[Di > 0] <- C / bv[2] / Di[Di > 0]
+                      ind4 <- (!ind1 & !ind2 & !ind3 & (Di > 0) & (Ki > Kmax))
+                      Di[ind4] <- D1[ind4] / (1 - C * bv[1] / 6 / bv[2])
+                      
+                      ## estimate D tensor! Tabesh Eq. [21]
+                      Dihat <- meanbv * PI_Tabesh_AD %*% Di
+                      D[c(1, 4, 6, 2, 3, 5), j, k, m] <- meanbv * Dihat 
+                      
+                      ## re-estimate Di: Tabesh Eq. [22]
+                      DiR <- Tabesh_AD %*% Dihat
+                      
+                      ## constraints for the KT estimation step
+                      KiR = numeric(length(Ki))
+                      ## Tabesh Eq. [23]
+                      ind <- (DiR > 0)
+                      KiR[ind] <- 6 * (DiR[ind] - D2[ind]) / bv[2] / DiR[ind]^2
+
+                      ## K1 and K2
+                      Kmax <- numeric(length(DiR))
+                      dim(Kmax) <- dim(DiR)# DiR is a vector 
+                      Kmax[DiR > 0] <- C / bv[2] / DiR[DiR > 0]
+                      ind <- (KiR > Kmax)
+                      KiR[ind] <- Kmax[ind]
+                      ind <- (KiR < Kmin)
+                      KiR[ind] <- Kmin
+                      
+                      
+                      ## estimate KT Tabesh Eq. [24]
+                      W[, j, k, m] <- PI_Tabesh_AK %*% (DiR^2 * KiR) / (mean(Dihat[1:3]))^2
+                      
+                    }    
+                  }
+                }
+              }
+              if (verbose) close(pb)  
+            }  
+            if (method == "ULLS") {
+
+              ## Tabesh Eq. [11, 14, 15]
+              Tabesh_AD <- xxx[, 1:6]
+              Tabesh_AK <- xxx[, 7:21]
+              
+              ## Tabesh Eq. [10]
+              Tabesh_A <- cbind(sweep(Tabesh_AD, 1, bvalues, "*"),
+                                sweep(Tabesh_AK, 1, bvalues^2/6, "*"))
+              PI_Tabesh_A <- pseudoinverseSVD(Tabesh_A)
+#
+#   this can be written in compact form !!
+#
+              ## go through the dataset
+              if (verbose) pb <- txtProgressBar(0, ddim[1], style=3)
+              for (i in 1:ddim[1]) {
+                if (verbose) setTxtProgressBar(pb, i)
+                for (j in 1:ddim[2]) {
+                  for (k in 1:ddim[3]) {
+                    if (mask[i, j, k]) {
+                      
+                      ## TODO: make this for all voxel
+                      Tabesh_B <- log(object@si[i, j, k, -object@s0ind] / s0[i, j, k])
+              
+                      ## TODO: correct assignment! Check matrix dimensions!
+                      Tabesh_X <- PI_Tabesh_A %*% Tabesh_B
+                      D[c(1, 4, 6, 2, 3, 5), i, j, k] <- meanbv * Tabesh_X[1:6]
+                      W[, i, j, k] <- Tabesh_X[7:21] / (mean(Tabesh_X[1:3]))^2
+                    }
+                  }
+                }
+              }
+              if (verbose) close(pb)  
+              
+            }
+
+            if (verbose) cat("dkiTensor: finished estimation", format(Sys.time()), "\n")
+            
+            ## TODO: CHECK THESE!
+            sigma2 <- array(0, dim=ddim)
+            scorr <- array(0, dim=c(3, 3, 3))
+            bw <- c(0, 0, 0)
+            index <- 1
+            scale <- 1
+            ## do we need this?
+            
+            if (verbose) cat("dkiTensor: exiting function", format(Sys.time()), "\n")	 	  
+	  
+            invisible(new("dkiTensor",
+                          call  = args,
+                          D     = D,
+                          W     = W,
+                          th0   = s0,
+                          sigma = sigma2,
+                          scorr = scorr, 
+                          bw    = bw, 
+                          mask  = mask,
+                          hmax  = 1,
+                          gradient = object@gradient,
+                          bvalue = object@bvalue,
+                          btb   = xxx,
+                          ngrad = object@ngrad,
+                          s0ind = object@s0ind,
+                          replind = object@replind,
+                          ddim  = object@ddim,
+                          ddim0 = object@ddim0,
+                          xind  = object@xind,
+                          yind  = object@yind,
+                          zind  = object@zind,
+                          voxelext = object@voxelext,
+                          level = object@level,
+                          orientation = object@orientation,
+                          rotation = object@rotation,
+                          source = object@source,
+                          outlier = index,
+                          scale = scale,
+                          method = method)
+            )
+          })
 dkiTensor <- function(object,  ...) cat("No DKI tensor calculation defined for this class:", class( object), "\n")
 
 setGeneric("dkiTensor", function(object, ...) standardGeneric("dkiTensor"))
