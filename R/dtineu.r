@@ -29,6 +29,7 @@ setMethod( "dtiTensor", "dtiData",
    s0ind <- object@s0ind
    ns0 <- length(s0ind)
    sdcoef <- object@sdcoef
+   ngrad0 <- ngrad-ns0
    #if(mc.cores>1&method=="nonlinear") require(parallel)
    if(all(sdcoef[1:4]==0)) {
       cat("No parameters for model of error standard deviation found\n
@@ -36,55 +37,45 @@ setMethod( "dtiTensor", "dtiData",
 #      sdcoef <- sdpar(object,interactive=FALSE)@sdcoef
        sdcoef <- c(1,0,1,1)
    }
-   z <- sioutlier(object@si,s0ind,mc.cores=mc.cores)
+   z <- sioutlier1(object@si,s0ind,object@level,mc.cores=mc.cores)
 #
 #  this does not scale well with openMP
 #
 cat("sioutlier completed\n")
-   si <- array(z$si,c(ngrad,ddim))
-   index <- z$index
-   ngrad0 <- ngrad - length(s0ind)
-   s0 <- si[s0ind,,,]
-   si <- si[-s0ind,,,]
-   if(ns0>1) {
-      dim(s0) <- c(ns0,prod(ddim))
-      s0 <- rep(1/ns0,ns0)%*%s0
-      dim(s0) <- ddim
-   }
-   mask <- s0 > object@level
-   mask <- connect.mask(mask)
-   dim(si) <- c(ngrad0,prod(ddim))
-   ttt <- array(0,dim(si))
-   ttt[,mask] <- -log1p(sweep(si[,mask],2,as.vector(s0[mask]),"/")-1)
+   mask <- z$mask
+   nvox <- sum(mask)
+   ttt <- array(0,c(ngrad0,nvox))
+   ttt <- -log1p(sweep(z$si[-s0ind,],2,as.vector(z$s0),"/")-1)
 #  suggestion by B. Ripley
 #   idsi <- 1:length(dim(si))
 #   ttt <- -log(sweep(si,idsi[-1],s0,"/"))
    ttt[is.na(ttt)] <- 0
    ttt[(ttt == Inf)] <- 0
    ttt[(ttt == -Inf)] <- 0
-   dim(ttt) <- c(ngrad0,prod(ddim))
    cat("Data transformation completed ",format(Sys.time()),"\n")
                
+   D <- matrix(0,6,ntotal)
    btbsvd <- svd(object@btb[,-s0ind])
    solvebtb <- btbsvd$u %*% diag(1/btbsvd$d) %*% t(btbsvd$v)
-   D <- solvebtb%*% ttt
+   D[,mask] <- solvebtb%*% ttt
    cat("Diffusion tensors (linearized model) generated ",format(Sys.time()),"\n")
+   rm(ttt)
    D[c(1,4,6),!mask] <- 1e-6
    D[c(2,3,5),!mask] <- 0
    D <- dti3Dreg(D,mc.cores=mc.cores)
    dim(D) <- c(6,ntotal)
-   th0 <- array(s0,ntotal)
-   th0[!mask] <- 0
-   nvox <- sum(mask)
+   th0 <- array(0,ntotal)
+   th0[mask] <- z$s0
+   index <- z$index
    if(method== "nonlinear"){
 #  method == "nonlinear" uses linearized model for initial estimates
        ngrad0 <- ngrad
        df <- sum(table(object@replind)-1)
        param <- matrix(0,7,nvox)
-       ms0 <- mean(s0[mask])
+       ms0 <- mean(z$s0)
        mbv <- mean(object@bvalue[-object@s0ind])
 ##  use ms0 and mbv to rescale parameters such that they are of comparable magnitude
-       param[1,] <- s0[mask]/ms0
+       param[1,] <- z$s0/ms0
        param[-1,] <- D2Rall(D[,mask]*mbv)
 ## use reparametrization D = R^T R
        sdcoef[-2] <- sdcoef[-2]/ms0# effect of rescaling of signal
@@ -93,7 +84,7 @@ cat("sioutlier completed\n")
           param <- matrix(.C("dtens",
                          as.integer(nvox),
                          param=as.double(param),
-                         as.double(matrix(z$si,c(ngrad,ntotal))[,mask]/ms0),
+                         as.double(z$si/ms0),
                          as.integer(ngrad),
                          as.double(object@btb/mbv),
                          as.double(sdcoef),
@@ -105,7 +96,7 @@ cat("sioutlier completed\n")
        } else {
           x <- matrix(0,ngrad+7,nvox)
           x[1:7,] <- param
-          x[-(1:7),] <- matrix(z$si,c(ngrad,ntotal))[,mask]/ms0
+          x[-(1:7),] <- z$si/ms0
           param <- plmatrix(x,ptensnl,ngrad=ngrad,btb=object@btb/mbv,
                             sdcoef=sdcoef,maxit=1000,reltol=1e-7)
        }
@@ -117,7 +108,7 @@ cat("sioutlier completed\n")
    z <- .Fortran("tensres",
                  as.double(th0[mask]),
                  as.double(D[,mask]),
-                 as.double(matrix(z$si,c(ngrad,ntotal))[,mask]),
+                 as.double(z$si),
                  as.integer(nvox),
                  as.integer(ngrad),
                  as.double(object@btb),
@@ -258,33 +249,35 @@ function(object, mc.cores=setCores(,reprt=FALSE)) {
             )
 })
 
-dtiTensorChi <- function(object, sigma=NULL, L=1, method = c( "nonlinear", "linear"),
+dtiTensorChi <- function(object, sigma=NULL, L=1,
                          mc.cores = setCores( , reprt = FALSE)){
 ##
 ##  Estimate parameters in Diffusion Tensor model with
 ##  Gauss-approximation for noncentral chi
 ##
-   tensobj <- dtiTensor(object,method = method)
+   tensobj <- dtiTensor(object,method = "nonlinear")
    if(is.null(sigma)||sigma<=0){
       cat("Please specify a valid sigma\n Returning biased estimated tensor object\n")
       return(tensobj)
    }
    ddim <- tensobj@ddim
    bv <- object@bvalue
-   mask <- tensobj@mask
    D <- tensobj@D
    dim(D) <- c(6,prod(ddim))
    mbv <- mean(bv[-object@s0ind])
    btb <- object@btb/mbv
-   nvox <- sum(mask)
-   param <- matrix(0,7,nvox)
 ##  use ms0 and mbv to rescale parameters such that they are of comparable magnitude
+   z <- sioutlier1(object@si,object@s0ind,object@level,mc.cores=mc.cores)
+   mask <- z$mask
+   nvox <- sum(mask)
+   
+   param <- matrix(0,7,nvox)
    param[1,] <- tensobj@th0[mask]/sigma
    param[-1,] <- D2Rall(D[,mask]*mbv)
-   z <- sioutlier(object@si,object@s0ind,mc.cores=mc.cores)
+   
    CL <- sqrt(pi/2)*gamma(L+1/2)/gamma(L)/gamma(3/2)
    if(mc.cores==1){
-      si <- array(z$si,c(object@ngrad,prod(ddim)))[,mask]/sigma
+      si <- array(z$si,c(object@ngrad,nvox))/sigma
       for(i in 1:length(mask)){
          param[,i] <- optim(param[,i],tchi,si=si[,i],btb=btb,L=L,CL=CL,method="BFGS",
                             control=list(reltol=1e-5,maxit=50))$par
@@ -293,7 +286,7 @@ dtiTensorChi <- function(object, sigma=NULL, L=1, method = c( "nonlinear", "line
    } else {
       x <- matrix(0,object@ngrad+7,nvox)
       x[1:7,] <- param
-      x[-(1:7),] <- array(z$si,c(object@ngrad,prod(ddim)))[,mask]/sigma
+      x[-(1:7),] <- array(z$si,c(object@ngrad,nvox))/sigma
       param <- plmatrix(x,ptenschi,fn=tchi,btb=btb,L=L,CL=CL)
       cat(nvox,"voxel processed. Time:",format(Sys.time()),"\n")
    }

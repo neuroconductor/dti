@@ -88,6 +88,21 @@ z <- .C("mixture",
           DUPL=FALSE, PACKAGE="dti")[c("sigma2","orient","order","lev","mix")]
 rbind(z$order,z$sigma2,matrix(z$lev,2,nvox),matrix(z$mix,maxcomp,nvox),matrix(z$orient,2*maxcomp,nvox))
 }
+pdkiQP <- function(x,TA,Dmat,Amat){
+##
+##  dkiTensor CLLS-QP parallel version
+##
+   require(quadprog)
+   nvox <- dim(x)[2]
+   param <- matrix(0,21,nvox)
+   for(i in 1:nvox){
+      dvec <- -as.vector(t(TA) %*% x[,i])
+      resQPsolution <- solve.QP(Dmat, dvec, Amat)$solution
+      param[1:6, i] <- resQPsolution[1:6]
+      param[7:21, i] <- resQPsolution[7:21] / mean(resQPsolution[1:3])^2
+   }
+   param
+}
 pmixtns0 <- function(x,ngrad0,maxcomp,maxit,grad,bv,lambda,alpha,factr,penIC,vert){
 nvox <- length(x)/(ngrad0+1+maxcomp)
 dim(x) <- c(ngrad0+1+maxcomp,nvox)

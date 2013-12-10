@@ -1,8 +1,71 @@
-#
-#   This function is a slightly modified version of
-#   function setCores in package spMC version 0.2.2
-#   written by Luca Sartore <drwolf85@gmail.com>
-#
+sioutlier1 <- function( si, s0ind, level, mc.cores = 1, verbose = TRUE){
+##
+##   replace si values that are larger than s0 
+##   create mask and reduce data to region covered by mask
+##
+  dsi <- dim(si)
+  n <- prod(dsi[-length(dsi)])
+  ng <- dsi[length(dsi)]
+  ns0 <- length(s0ind)
+  siind <- (1:ng)[-s0ind]
+  dim(si) <- c(n,ng)
+  si <- t(si)
+  
+  if (verbose) cat("outlier: ")
+
+  if(mc.cores>1){
+    mc.cores.old <- setCores(,reprt=FALSE)
+    setCores(mc.cores)
+  }
+  t1 <- Sys.time()
+  if(mc.cores==1||ng>250){
+    z <- .Fortran("outlier",
+                  as.double(si),
+                  as.integer(n),
+                  as.integer(ng),
+                  as.integer(s0ind),
+                  as.integer(siind),
+                  as.integer(ns0),
+                  si=double(n*ng),
+                  index=logical(n),
+                  DUP=FALSE,
+                  PACKAGE="dti")[c("si","index")]
+    zz <- matrix(z$si,ng,n)
+    index <- (1:n)[z$index]
+    rm(z)
+  } else {
+    zz <- matrix(.Fortran("outlierp",
+                          as.double(si),
+                          as.integer(n),
+                          as.integer(ng),
+                          as.integer(s0ind),
+                          as.integer(ns0),
+                          as.integer(siind),
+                          as.integer(ng-ns0),
+                          si=double(n*(ng+1)),
+                          as.integer(ng+1),
+                          DUP=FALSE,
+                          PACKAGE="dti")$si,ng+1,n)
+    t2 <- Sys.time()
+    if(mc.cores>1) setCores(mc.cores.old,reprt=FALSE)
+    index <- (1:n)[as.logical(zz[ng+1,])]
+    zz <- zz[1:ng,]
+  }
+  ng0 <- length(siind)
+  s0 <- zz[s0ind,]
+  si <- zz[-s0ind,]
+  if(ns0>1) {
+     s0 <- rep(1/ns0,ns0)%*%s0
+  }
+  mask <- array(s0 > level,dsi[-length(dsi)])
+  mask <- connect.mask(mask)
+  nvox <- sum(mask)
+  
+  t2 <- Sys.time()
+  if (verbose) cat( difftime( t2, t1), attr(difftime( t2, t1), "units"), "for", n, "voxel\n")
+  if(mc.cores>1) setCores(mc.cores.old,reprt=FALSE)
+  list(si=zz[,mask],s0=s0[mask],index=index,mask=mask)
+}
 sioutlier <- function( si, s0ind, mc.cores = 1, verbose = TRUE){
   dsi <- dim(si)
   n <- prod(dsi[-length(dsi)])
@@ -18,7 +81,6 @@ sioutlier <- function( si, s0ind, mc.cores = 1, verbose = TRUE){
     mc.cores.old <- setCores(,reprt=FALSE)
     setCores(mc.cores)
   }
-  siindex <- (1:ng)[-s0ind]
   t1 <- Sys.time()
   if(mc.cores==1||ng>250){
     z <- .Fortran("outlier",
