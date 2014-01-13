@@ -1,4 +1,4 @@
-      subroutine mediansm(y,n1,n2,n3,ind,nind,work,ncores,yout)
+      subroutine mediansm(y,mask,n1,n2,n3,ind,nind,work,ncores,yout)
 C
 C
 C   3D median smoother of y with neighborhood defined by ind
@@ -7,6 +7,7 @@ C   size of work needs to be 2*nind
 C
       implicit logical (a-z)
       integer n1,n2,n3,nind,ind(3,nind),ncores
+      logical mask(n1,n2,n3)
       real*8 y(n1,n2,n3),yout(n1,n2,n3),work(nind,ncores)
       integer i1,i2,i3,j1,j2,j3,j,k,thrednr
 !$      integer omp_get_thread_num
@@ -18,6 +19,10 @@ C$OMP DO SCHEDULE(GUIDED)
 !$         thrednr = omp_get_thread_num()+1
          DO i2=1,n2
             DO i3=1,n3
+               if(.not.mask(i1,i2,i3)) THEN
+                  yout(i1,i2,i3) = y(i1,i2,i3)
+                  CYCLE
+               ENDIF
                k=0
                DO j=1,nind
                   j1=i1+ind(1,j)
@@ -26,15 +31,20 @@ C$OMP DO SCHEDULE(GUIDED)
                   if(j2.le.0.or.j2.gt.n2) CYCLE
                   j3=i3+ind(3,j)
                   if(j3.le.0.or.j3.gt.n3) CYCLE
+                  if(y(j1,j2,j3).le.0.d0) CYCLE
                   k=k+1
                   work(k,thrednr)=y(j1,j2,j3)
                END DO
-               call qsort3(work(1,thrednr),1,k)
-               IF (mod(k,2) == 0) THEN    
-                  yout(i1,i2,i3) = 
+               IF(k.gt.1) THEN
+                  call qsort3(work(1,thrednr),1,k)
+                  IF (mod(k,2) == 0) THEN    
+                     yout(i1,i2,i3) = 
      1               (work(k/2,thrednr)+work(k/2+1,thrednr))/2.d0
+                  ELSE
+                     yout(i1,i2,i3) = work(k/2+1,thrednr)
+                  END IF
                ELSE
-                  yout(i1,i2,i3) = work(k/2+1,thrednr)
+                  yout(i1,i2,i3) = y(i1,i2,i3)
                END IF
             END DO
          END DO

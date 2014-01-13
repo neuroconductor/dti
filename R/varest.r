@@ -223,6 +223,7 @@ IQQdiff <- function(y, mask, q = .25, verbose = FALSE) {
     dim(param$ind) <- c(3,nw)
     sigma <- .Fortran("mediansm",
                       as.double(z$sigman),
+                      as.logical(mask),
                       as.integer(ddim[1]),
                       as.integer(ddim[2]),
                       as.integer(ddim[3]),
@@ -234,6 +235,10 @@ IQQdiff <- function(y, mask, q = .25, verbose = FALSE) {
                       DUPL = FALSE,
                       PACKAGE = "dti")$sigman
     dim(sigma) <- ddim
+##
+##  this is to rigid !!
+##
+    mask[sigma==0] <- FALSE
     cat("local median smoother in step ",i," completed",format(Sys.time()),"\n") 
     sigmar[, , , i] <- sigma
 ##
@@ -241,13 +246,13 @@ IQQdiff <- function(y, mask, q = .25, verbose = FALSE) {
 ##
     if(verbose){
        image(y[,,mslice],col=grey(0:255/255))
-       title(paste("S  max=",signif(max(y[,,mslice]),3)," median=",signif(median(y[,,mslice]),3)))
+       title(paste("S  max=",signif(max(y[mask]),3)," median=",signif(median(y[mask]),3)))
        image(th[,,mslice],col=grey(0:255/255))
-       title(paste("E(S)  max=",signif(max(th[,,mslice]),3)," median=",signif(median(th[,,mslice]),3)))
+       title(paste("E(S)  max=",signif(max(th[mask]),3)," median=",signif(median(th[mask]),3)))
        image(sigma[,,mslice],col=grey(0:255/255))
-       title(paste("sigma max=",signif(max(sigma[,,mslice]),3)," median=",signif(median(sigma[,,mslice]),3)))
+       title(paste("sigma max=",signif(max(sigma[mask]),3)," median=",signif(median(sigma[mask]),3)))
        image(ni[,,mslice],col=grey(0:255/255))
-       title(paste("Ni    max=",signif(max(ni[,,mslice]),3)," median=",signif(median(ni[,,mslice]),3)))
+       title(paste("Ni    max=",signif(max(ni[mask]),3)," median=",signif(median(ni[mask]),3)))
     }
   }
   ## END PS iteration
