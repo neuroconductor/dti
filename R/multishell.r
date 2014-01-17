@@ -77,6 +77,7 @@ for(i in 1:nbv){
       for(k in indb){
          d <- abs(t(grad[,k])%*%grad[,indbk])
          od <- order(d,decreasing = TRUE)
+         ijk0 <- (1:length(indbk))[od]
          ijk <- indbk[od]
 #         cat("k",k,"d",d[od][1:8],"ijk",ijk[1:8],"\n")
          ind[,j,k] <- ijk[1:3]
@@ -90,7 +91,7 @@ for(i in 1:nbv){
             dd <- numeric(dperm-1)
             d <- acos(pmin(1,d))
             for(l in 1:(dperm-1)){
-               ijk1 <- ijk[perm[l,]]
+               ijk1 <- ijk0[perm[l,]]
                dd[l] <- d[ijk1[1]]+d[ijk1[2]]+d[ijk1[3]]
             }
             odd <- order(dd)
