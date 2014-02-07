@@ -51,7 +51,7 @@ awslsigmc <- function(y,                 # data
                      vext = c( 1, 1),   # voxel extensions
                      lambda = 20,       # adaptation parameter for PS
                      minni = 2,         # minimum sum of weights for estimating local sigma
-                     hsig = 5,          # bandwidth for smoothing local sigma estimates
+                     hsig = 3,          # bandwidth for median smoothing local sigma estimates
                      sigma = NULL,
                      family = c("Gauss","NCchi"),
                      verbose = FALSE
@@ -94,7 +94,7 @@ IQQdiff <- function(y, mask, q = .25, verbose = FALSE) {
     IQQdiff( y, mask, q)/sqrt(v)
   }
   
-  if(family=="NCchi") varstats <- sofmchi(ncoils)
+  if("NCchi"%in%family) varstats <- sofmchi(ncoils)
   if(length(vext)==3) vext <- vext[2:3]/vext[1]
   ## dimension and size of cubus
   ddim <- dim(y)
@@ -111,7 +111,7 @@ IQQdiff <- function(y, mask, q = .25, verbose = FALSE) {
   if(is.null(sigma)){
   # sigma <- sqrt( mean( y[mask]^2) / 2 / ncoils)
      sigma <- IQQdiff( y, mask, .25, verbose=verbose)
-     if(family=="NCchi"){
+     if("NCchi"%in%family){
         sigma <- estsigma( y, mask, .25, ncoils, sigma)
         sigma <- estsigma( y, mask, .25, ncoils, sigma)
         sigma <- estsigma( y, mask, .25, ncoils, sigma)
@@ -121,8 +121,10 @@ IQQdiff <- function(y, mask, q = .25, verbose = FALSE) {
 ##   Prepare for diagnostics plots
 ##
   if(verbose){
-     mslice <-  ddim[3]/2
-     par(mfrow=c(2,2),mar=c(3,3,3,1),mgp=c(2,1,0))
+     mslice <-  (ddim[3]+1)/2
+     par(mfrow=c(2,3),mar=c(3,3,3,1),mgp=c(2,1,0))
+  } else {
+     cat("step")
   }
   ## define initial arrays for parameter estimates and sum of weights (see PS)
   th <- array( 1, ddim)
@@ -131,6 +133,19 @@ IQQdiff <- function(y, mask, q = .25, verbose = FALSE) {
   sigmar <- array(0, c(ddim, steps))
 # initialize array for local sigma by global estimate
   mc.cores <- setCores(,reprt=FALSE)
+  ## preparations for median smoothing
+  nwmd <- (2*as.integer(hsig)+1)^3
+  parammd <- .Fortran("paramw3",
+                      as.double(hsig),
+                      as.double(c(1,1)),
+                      ind=integer(3*nwmd),
+                      w=double(nwmd),
+                      n=as.integer(nwmd),
+                      DUPL = FALSE,
+                      PACKAGE = "dti")[c("ind","w","n")]
+  nwmd <- parammd$n
+  parammd$ind <- parammd$ind[1:(3*nwmd)]
+  dim(parammd$ind) <- c(3,nwmd)
   ## iterate PS starting with bandwidth h0
   for (i in 1:steps) {
 
@@ -149,7 +164,7 @@ IQQdiff <- function(y, mask, q = .25, verbose = FALSE) {
     param$ind <- param$ind[1:(3*nw)]
     dim(param$ind) <- c(3,nw)
     param$w   <- param$w[1:nw]    
-    if(family=="NCchi") {
+    if("NCchi"%in%family) {
        fncchi <- fncchiv(th/sigma,varstats)
        fncchi[!mask] <- 1
 ## correction factor for variance of NC Chi distribution
@@ -204,65 +219,95 @@ IQQdiff <- function(y, mask, q = .25, verbose = FALSE) {
     th <- array(z$th,ddim)
     ni <- array(z$ni,ddim)
     mask[z$sigman==0] <- FALSE
-    cat("local estimation in step ",i," completed",format(Sys.time()),"\n") 
+    if(verbose) cat("local estimation in step ",i," completed",format(Sys.time()),"\n") 
 ##
 ##  nonadaptive smoothing of estimated standard deviations
 ##
-#    sigma <- kernsm(array(z$sigman,ddim),hsig)
-    nw <- (2*as.integer(hsig)+1)^3
-    param <- .Fortran("paramw3",
-                      as.double(hsig),
-                      as.double(vext),
-                      ind=integer(3*nw),
-                      w=double(nw),
-                      n=as.integer(nw),
-                      DUPL = FALSE,
-                      PACKAGE = "dti")[c("ind","w","n")]
-    nw <- param$n
-    param$ind <- param$ind[1:(3*nw)]
-    dim(param$ind) <- c(3,nw)
     sigma <- .Fortran("mediansm",
                       as.double(z$sigman),
                       as.logical(mask),
                       as.integer(ddim[1]),
                       as.integer(ddim[2]),
                       as.integer(ddim[3]),
-                      as.integer(param$ind),
-                      as.integer(nw),
-                      double(nw*mc.cores), # work(nw,nthreds)
+                      as.integer(parammd$ind),
+                      as.integer(nwmd),
+                      double(nwmd*mc.cores), # work(nw,nthreds)
                       as.integer(mc.cores),
                       sigman = double(n),
                       DUPL = FALSE,
                       PACKAGE = "dti")$sigman
     dim(sigma) <- ddim
-##
-##  this is to rigid !!
-##
     mask[sigma==0] <- FALSE
-    cat("local median smoother in step ",i," completed",format(Sys.time()),"\n") 
+    if(verbose) cat("local median smoother in step ",i," completed",format(Sys.time()),"\n") 
     sigmar[, , , i] <- sigma
 ##
 ##  diagnostics
 ##
     if(verbose){
+       meds <- median(sigma[mask])
+       means <- mean(sigma[mask])
        image(y[,,mslice],col=grey(0:255/255))
        title(paste("S  max=",signif(max(y[mask]),3)," median=",signif(median(y[mask]),3)))
        image(th[,,mslice],col=grey(0:255/255))
        title(paste("E(S)  max=",signif(max(th[mask]),3)," median=",signif(median(th[mask]),3)))
-       image(sigma[,,mslice],col=grey(0:255/255))
-       title(paste("sigma max=",signif(max(sigma[mask]),3)," median=",signif(median(sigma[mask]),3)))
+       image(sigma[,,mslice],col=grey(0:255/255),zlim=c(0,max(sigma[mask])))
+       title(paste("sigma max=",signif(max(sigma[mask]),3)," median=",signif(meds,3)))
        image(ni[,,mslice],col=grey(0:255/255))
        title(paste("Ni    max=",signif(max(ni[mask]),3)," median=",signif(median(ni[mask]),3)))
-    }
+       plot(density(sigma[mask]),main="density of sigma")
+       plot(density(ni[mask]),main="density of Ni")
+       cat("mean sigma",means,"median sigma",meds,"sd sigma",sd(sigma[mask]),"\n")
+     } else {
+       cat(" ",i)
+     }
   }
   ## END PS iteration
+  if(!verbose) cat("\n")
   sigmal <- array(z$sigman,ddim)
+  if(!("NCchi"%in%family)){
+  ## still need to estimate noise sd (for correct distribution)
+     vqm2p1chi <- function(L, to = 50, delta = .002){
+                     x <- seq(0, to, delta)
+                     mu <- sqrt(pi/2)*gamma(L+1/2)/gamma(1.5)/gamma(L)*
+                           hyperg_1F1(-0.5,L, -x^2/2, give=FALSE, strict=TRUE)
+                     list(ncp = x, vqm2p1=(2*L+x^2)/mu^2)
+                  }
+
+     thncchi <- function(m,v,vqm2p1){
+#
+#  solve v/m^2+1 = (2*L+th^2)/mu(th)^2
+#
+        vqm2p1$ncp[findInterval(-v/m^2-1, -vqm2p1$vqm2p1, all.inside = TRUE)]
+     }
+     z <- vqm2p1chi(ncoils)
+     eta <- thncchi(th[mask],sigmal[mask]^2,z)
+     eta[eta>49.9] <- th[mask][eta>49.9]/sigmal[mask][eta>49.9]
+     mu <- sqrt(pi/2)*gamma(ncoils+1/2)/gamma(1.5)/gamma(ncoils)*
+                 hyperg_1F1(-0.5,ncoils, -eta^2/2, give=FALSE, strict=TRUE)
+     sigmal[mask] <- th[mask]/mu
+     th[mask] <- eta*sigmal[mask]
+     sigmar <- .Fortran("mediansm",
+                      as.double(sigmal),
+                      as.logical(mask),
+                      as.integer(ddim[1]),
+                      as.integer(ddim[2]),
+                      as.integer(ddim[3]),
+                      as.integer(parammd$ind),
+                      as.integer(nwmd),
+                      double(nwmd*mc.cores), # work(nwmd,nthreds)
+                      as.integer(mc.cores),
+                      sigman = double(n),
+                      DUPL = FALSE,
+                      PACKAGE = "dti")$sigman
+    dim(sigmar) <- ddim
+  }
 
   ## this is the result (th is expectation, not the non-centrality parameter !!!)
   invisible(list(sigma = sigmar,
                  sigmal = sigmal,
                  theta = th, 
-                 ni  = ni))
+                 ni  = ni,
+                 mask = mask))
 }
 ###########################################################################
 #

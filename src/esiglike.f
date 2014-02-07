@@ -52,7 +52,7 @@ C      call dblepr("eta",3,eta,1)
       erg=ksi/sig2+log(sig2)+lm1/2.d0*log(sl)-eta/ni-pen
       RETURN
       END
-      real*8 function lncchi2(sigma,ni,ksi,wj,sj,L,n,work)
+      real*8 function lncchi2(sigma,ni,ksi,wj,sj,L,clws,n,work)
 C
 C  compute local weighted noncentral chi^2 log-likelihood * (-1)
 C  
@@ -68,35 +68,36 @@ C
       integer n
       real*8 sigma,ni,ksi,wj(n),sj(n),L,work(*)
       integer j
-      real*8 eta,z,sig2,zs,pen,sl,lm1,za
+      real*8 eta,z,sig2,zs,pen,sl,lm1,za,clws
       real*8 bessliex
       external bessliex
       lm1=L-1
       sig2=sigma*sigma
       eta=0.d0
-      pen=0.d0
       sl=ksi-2.d0*L*sig2
       if(sl.lt.1d-6) THEN
          pen=sl-1d-6
-         sig2=(ksi+1e-6)/2.d0/L
-         sl=1d-6
-      END IF
-      z=sqrt(sl)
-      zs=z/sig2
-      DO j=1,n
-         if(wj(j).gt.0.d0) THEN
-            za=sj(j)*zs
-            if(za.le.1d2) THEN
-               za=log(bessliex(za,lm1,1.d0,work))
-            ELSE
-               za=za-log(za*6.283185d0)/2.d0
+C  \theta estimated as zero: central case
+         lncchi2=L*log(sig2)+ksi/sig2+max(sl,0.d0)/2.d0+clws-pen
+C clws contains (L-1)\sum_j wj log(sj) + ni (L-1) log2 + lgamma(L)
+      ELSE
+         z=sqrt(sl)
+         zs=z/sig2
+         DO j=1,n
+            if(wj(j).gt.0.d0) THEN
+               za=sj(j)*zs
+               if(za.le.1d2) THEN
+                  za=log(bessliex(za,lm1,1.d0,work))
+               ELSE
+                  za=za-log(za*6.283185d0)/2.d0
 C  large value approximation
-            END IF
+               END IF
 C  avoid Inf in besseli (unlikely in optimum, does not change convexity)
-            eta=eta+wj(j)*za
-         END IF
-      END DO
-      lncchi2=ksi/sig2+log(sig2)+lm1/2.d0*log(sl)-eta/ni-pen
+               eta=eta+wj(j)*za
+            END IF
+         END DO
+         lncchi2=ksi/sig2+log(sig2)+lm1/2.d0*log(sl)-eta/ni
+      END IF
       RETURN
       END
 C    
@@ -109,25 +110,29 @@ C
       integer n,maxit
       real*8 low,up,wj(n),sj(n),L,tol,xmin,fmin,work(*)
       real*8 goldc,a,b,d,e,eps,xm,p,q,r,eps1,eps2,u,v,w,fu,fv,fw,fx,x
-      real*8 ni,ksi,sjj
+      real*8 ni,ksi,sjj,clws,Lm1
       integer it,j
       logical gsect
-      real*8 lncchi2
-      external lncchi2
+      real*8 lncchi2,lgammaf
+      external lncchi2,lgammaf
       eps=1d-8
       goldc=0.381966
 C  Initialize
 C  ni    - sum(wj)
 C  ksi   - sum(wj*Sj^2)/ni
+      Lm1=L-1
       ni=0.d0
       ksi=0.d0
+      clws=0.d0
       DO j=1,n
          if(wj(j).gt.0.d0) THEN
             ni=ni+wj(j)
             sjj=sj(j)
             ksi=ksi+wj(j)*sjj*sjj
+            clws=clws+wj(j)*log(sjj)
          END IF
       END DO
+      clws=-Lm1*clws/ni+Lm1*log(2.d0)+lgammaf(L)
       ksi=ksi/ni
       a=low 
       b=up
@@ -136,7 +141,7 @@ C  ksi   - sum(wj*Sj^2)/ni
       x=v
       e=0.d0
       d=0.d0
-      fx=lncchi2(x,ni,ksi,wj,sj,L,n,work)
+      fx=lncchi2(x,ni,ksi,wj,sj,L,clws,n,work)
       fv=fx
       fw=fx
 C  Search for minimum
@@ -184,7 +189,7 @@ C         call dblepr("d",1,d,1)
          ELSE
             u=x+sign(eps1,d)
          END IF
-         fu=lncchi2(u,ni,ksi,wj,sj,L,n,work)
+         fu=lncchi2(u,ni,ksi,wj,sj,L,clws,n,work)
          IF (fu .le. fx) THEN
             IF (u .ge. x) THEN
                a=x
@@ -214,7 +219,8 @@ C         call dblepr("d",1,d,1)
             END IF
          END IF
       END DO
-      xmin=x  
+      xmin=sqrt(ni/(ni-1.d0))*x
+C this seems to correct the bias
       fmin=fx
       RETURN
       END 
