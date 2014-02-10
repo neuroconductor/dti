@@ -54,7 +54,8 @@ awslsigmc <- function(y,                 # data
                      hsig = 3,          # bandwidth for median smoothing local sigma estimates
                      sigma = NULL,
                      family = c("Gauss","NCchi"),
-                     verbose = FALSE
+                     verbose = FALSE,
+                     u=NULL
                      ) {
   ## some functions for pilot estimates
   IQQ <- function (x, q = .25, na.rm = FALSE, type = 7) 
@@ -195,6 +196,8 @@ IQQdiff <- function(y, mask, q = .25, verbose = FALSE) {
                   sigman = double(n),
                   DUPL = FALSE,
                   PACKAGE = "dti")[c("ni","th","sigman")]
+      thchi <- fncchir(th/z$sigma,varstats)*z$sigma
+      thchi[!mask] <- 0
     ## extract sum of weigths (see PS) and consider only voxels with ni larger then mean
     } else {
        z <- .Fortran("awslgaus",
@@ -257,6 +260,11 @@ IQQdiff <- function(y, mask, q = .25, verbose = FALSE) {
        plot(density(sigma[mask]),main="density of sigma")
        plot(density(ni[mask]),main="density of Ni")
        cat("mean sigma",means,"median sigma",meds,"sd sigma",sd(sigma[mask]),"\n")
+       if(!is.null(u)&&"NCchi"%in%family){
+          thchims <- fncchir(th/sigma,varstats)*sigma
+          thchims[!mask] <- 0
+          cat("MAE(th)",mean(abs(thchi-u)[mask]),"RMSE(th)",sqrt(mean((thchi-u)[mask]^2)),"MAE(thms)",mean(abs(thchims-u)[mask]),"RMSE(thms)",sqrt(mean((thchims-u)[mask]^2)),"\n")
+       }
      } else {
        cat(" ",i)
      }
@@ -301,11 +309,13 @@ IQQdiff <- function(y, mask, q = .25, verbose = FALSE) {
                       PACKAGE = "dti")$sigman
     dim(sigmar) <- ddim
   }
-
+  thchi <- fncchir(th/sigma,varstats)*sigma
+  thchi[!mask] <- 0
   ## this is the result (th is expectation, not the non-centrality parameter !!!)
   invisible(list(sigma = sigmar,
                  sigmal = sigmal,
                  theta = th, 
+                 thchi = thchi,
                  ni  = ni,
                  mask = mask))
 }
