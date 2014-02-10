@@ -196,7 +196,7 @@ IQQdiff <- function(y, mask, q = .25, verbose = FALSE) {
                   sigman = double(n),
                   DUPL = FALSE,
                   PACKAGE = "dti")[c("ni","th","sigman")]
-      thchi <- fncchir(th/z$sigma,varstats)*z$sigma
+      thchi <- fncchir(z$th/z$sigma,varstats)*z$sigma
       thchi[!mask] <- 0
     ## extract sum of weigths (see PS) and consider only voxels with ni larger then mean
     } else {
