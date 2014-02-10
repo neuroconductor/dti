@@ -123,7 +123,11 @@ IQQdiff <- function(y, mask, q = .25, verbose = FALSE) {
 ##
   if(verbose){
      mslice <-  (ddim[3]+1)/2
-     par(mfrow=c(2,3),mar=c(3,3,3,1),mgp=c(2,1,0))
+     if(!is.null(u)&&"NCchi"%in%family){
+        par(mfrow=c(2,4),mar=c(3,3,3,1),mgp=c(2,1,0))
+     } else {
+        par(mfrow=c(2,3),mar=c(3,3,3,1),mgp=c(2,1,0))
+     }
   } else {
      cat("step")
   }
@@ -262,7 +266,10 @@ IQQdiff <- function(y, mask, q = .25, verbose = FALSE) {
        cat("mean sigma",means,"median sigma",meds,"sd sigma",sd(sigma[mask]),"\n")
        if(!is.null(u)&&"NCchi"%in%family){
           thchims <- fncchir(th/sigma,varstats)*sigma
-          thchims[!mask] <- 0
+          thchims[!mask] <- u[!mask]
+          image(abs(thchims-u)[,,mslice],col=grey(0:255/255))
+          title("abs Error in thchims")
+          plot(density((thchims-u)[mask]),main="density of thchims-u")
           cat("MAE(th)",mean(abs(thchi-u)[mask]),"RMSE(th)",sqrt(mean((thchi-u)[mask]^2)),"MAE(thms)",mean(abs(thchims-u)[mask]),"RMSE(thms)",sqrt(mean((thchims-u)[mask]^2)),"\n")
        }
      } else {
