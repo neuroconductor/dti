@@ -54,6 +54,122 @@ C$OMP END PARALLEL
 C$OMP FLUSH(yout)
       return
       end
+      subroutine awslchi2(s,ksi,ni,sigma,vpar,L,mask,n1,n2,n3,ind,
+     1      w,nw,minni,wad,sad,lambda,nthreds,iL,work,thn,sigman,ksin)
+C
+C  local variance estimation using (adaptive) weighted likelihood
+C
+C   Takes observed intensities in s and 
+C     initial estimates of \sigma in sigma
+C   perform adaptive smoothing on R^3
+C   th containes previous estimates of E S
+C   ni containes previous sum of weights
+C   mask - logical mask (use if mask==TRUE)
+C   n1,n2,n3 - dimensions
+C   ind  - integer array dim (3,n) containing relative indices in xyz
+C   w    - vector of corresponding location weights
+C   nw   - number of positive weights (initial value 
+C   
+C   lambda   - kritical value for pairwise tests
+C   thn      - new estimate sum_j w_a(j) S_j
+C   ind(.,i) contains coordinate indormation corresponding to positive
+C   location weights in w(i)
+C   ind(.,i)[1:3] are j1-i1,j2-i2 and j3-i3 respectively 
+C   wad, sad - array for weights>0 and corresponding observed s
+C
+      implicit logical (a-z)
+      integer n1,n2,n3,nw,ind(3,nw),nthreds,iL
+      logical mask(n1,n2,n3)
+      real*8 s(n1,n2,n3),ni(n1*n2*n3),thn(n1*n2*n3),
+     1  ksi(n1,n2,n3),sigman(n1*n2*n3),lambda,w(nw),sigma(n1,n2,n3),
+     2  wad(nw,nthreds),sad(nw,nthreds),L,minni,work(iL,nthreds),
+     3  ksin(n1,n2,n3),vpar(6)
+      integer i1,i2,i3,j1,j2,j3,i,j,jj,n,maxit,thrednr
+      real*8 z,sw,sws,sws2,sj,thi,wj,kval,fnsi,sgi,tol,low,up,
+     1       fmin,sgi2,vz,thi2,thj2,fnsj,thj
+!$      integer omp_get_thread_num
+!$      external omp_get_thread_num
+      n = n1*n2*n3
+      thrednr = 1
+      tol=1d-6
+      maxit=100
+C  precompute values of lgamma(corrected df/2) in each voxel
+C$OMP PARALLEL DEFAULT(SHARED)
+C$OMP& FIRSTPRIVATE(iL,L,minni,n1,n2,n3,maxit)
+C$OMP& PRIVATE(i,j,i1,i2,i3,j1,j2,j3,z,sw,sws,sws2,thi,kval,thi2,thj2,
+C$OMP& wj,sj,thrednr,fnsi,low,up,tol,sgi,jj,fmin,sgi2,vz,thj,fnsj)
+C$OMP DO SCHEDULE(GUIDED)
+      DO i=1,n
+         i1=mod(i,n1)
+         if(i1.eq.0) i1=n1
+         i2=mod((i-i1)/n1+1,n2)
+         if(i2.eq.0) i2=n2
+         i3=(i-i1-(i2-1)*n1)/n1/n2+1         
+         if(.not.mask(i1,i2,i3)) CYCLE
+!$         thrednr = omp_get_thread_num()+1
+         sw=0.d0
+         sws=0.d0
+         sws2=0.d0
+         sgi=sigma(i1,i2,i3)
+         sgi2=sgi*sgi
+         thi = sqrt(max(0.d0,ksi(i1,i2,i3)/sgi2-2.d0*L))
+         thn(i) = thi
+         if(thi.gt.vpar(1)) THEN
+            thi2 = thi*thi
+            vz = vpar(3)*thi+vpar(4)*thi2+vpar(5)*thi*thi2+vpar(6)
+            fnsi = max(vpar(2),vz/(vz+1))
+         ELSE
+            fnsi = vpar(2)
+         END IF
+C   thats the estimated standard deviation of s(i1,i2,i3)
+         kval = lambda/ni(i)
+         jj = 0
+         DO j=1,nw
+            wad(j,thrednr)=0.d0
+            j1=i1+ind(1,j)
+            if(j1.le.0.or.j1.gt.n1) CYCLE
+            j2=i2+ind(2,j)
+            if(j2.le.0.or.j2.gt.n2) CYCLE
+            j3=i3+ind(3,j)
+            if(j3.le.0.or.j3.gt.n3) CYCLE
+            wj=w(j)
+            thj = sqrt(max(0.d0,ksi(j1,j2,j3)/sgi2-2.d0*L))
+            if(thj.gt.vpar(1)) THEN
+               thj2 = thj*thj
+               vz = vpar(3)*thj+vpar(4)*thj2+vpar(5)*thj*thj2+vpar(6)
+               fnsj = max(vpar(2),vz/(vz+1))
+            ELSE
+               fnsj = vpar(2)
+            END IF            
+            z=thi-thj
+            z=z*z/(fnsi+fnsj)
+            if(z.ge.kval) CYCLE
+            wj=wj*min(1.d0,2.d0-2.d0*z/kval)
+            sw=sw+wj
+            sj=s(j1,j2,j3)
+            sws=sws+wj*sj
+            sws2=sws2+wj*sj*sj
+            jj=jj+1
+            wad(jj,thrednr)=wj
+            sad(jj,thrednr)=sj
+         END DO
+         ni(i) = sw
+         if(sw.gt.minni) THEN
+            ksin(i1,i2,i3) = sws2/sw
+C needed for the next iteration 
+            low = sgi/1d1
+            up = sgi*1d1
+            call localmin(low,up,wad(1,thrednr),sad(1,thrednr),L,jj,
+     1                    tol,maxit,work(1,thrednr),sgi,fmin)
+         END IF
+         sigman(i)=sgi
+         thn(i) = sqrt(max(0.d0,ksin(i1,i2,i3)-2.d0*sgi*sgi*L))
+      END DO
+C$OMP END DO NOWAIT
+C$OMP END PARALLEL
+C$OMP FLUSH(thn,ni,sigman)
+      RETURN
+      END
       subroutine awslchi(s,th,ni,sigma,fns,L,mask,n1,n2,n3,ind,w,nw,
      1                minni,wad,sad,lambda,nthreds,iL,work,thn,sigman)
 C

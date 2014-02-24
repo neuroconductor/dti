@@ -14,42 +14,29 @@ C
       integer n
       real*8 sigma,ni,ksi,wj(n),sj(n),L,work(*),erg
       integer j
-      real*8 eta,z,sig2,zs,pen,sl,lm1,za
+      real*8 eta,z,sig2,zs,sl,lm1,za
       real*8 bessliex
       external bessliex
       lm1=L-1
       sig2=sigma*sigma
       eta=0.d0
-      pen=0.d0
       sl=ksi-2.d0*L*sig2
-      if(sl.lt.1d-6) THEN
-         pen=sl-1d-6
-         sig2=(ksi+1e-6)/2.d0/L
-         sl=1d-6
-      END IF
-      z=sqrt(sl)
-      zs=z/sig2
-      DO j=1,n
-         if(wj(j).gt.0.d0) THEN
-            za=sj(j)*zs
-            if(za.le.1d2) THEN
-               za=log(bessliex(za,lm1,1.d0,work))
-            ELSE
-               za=za-log(za*6.283185d0)/2.d0
+         z=sqrt(sl)
+         zs=z/sig2
+         DO j=1,n
+            if(wj(j).gt.0.d0) THEN
+               za=sj(j)*zs
+               if(za.le.1d2) THEN
+                  za=log(bessliex(za,lm1,1.d0,work))
+               ELSE
+                  za=za-log(za*6.283185d0)/2.d0
 C  large value approximation
-            END IF
+               END IF
 C  avoid Inf in besseli (unlikely in optimum, does not change convexity)
-C            call dblepr("z",1,z,1)
-            eta=eta+wj(j)*za
-         END IF
-      END DO
-C      call dblepr("sig2",4,sig2,1)
-C      call dblepr("ni",2,ni,1)
-C      call dblepr("pen",3,pen,1)
-C      call dblepr("sl",2,sl,1)
-C      call dblepr("ksi",3,ksi,1)
-C      call dblepr("eta",3,eta,1)
-      erg=ksi/sig2+log(sig2)+lm1/2.d0*log(sl)-eta/ni-pen
+               eta=eta+wj(j)*za
+            END IF
+         END DO
+         erg=ksi/sig2+log(sig2)+lm1/2.d0*log(sl)-eta/ni
       RETURN
       END
       real*8 function lncchi2(sigma,ni,ksi,wj,sj,L,clws,n,work)

@@ -1,17 +1,36 @@
 likesigma <- function(sigma,wj,Sj,L){
+n <- length(sigma)
 ni <- sum(wj)
 ksi <- sum(wj*Sj^2)/ni
-sigma <- min(sigma,sqrt(ksi/2/L)-1e-8)
-eta <- pmin(Sj/sigma^2*sqrt(pmax(ksi-2*L*sigma^2)),50)
-#print(eta)
-eta <- sum(wj*log(besselI(eta, L-1)))/ni
-#print(eta)
-eta-ksi/sigma^2-2*log(sigma)-(L-1)/2*log(ksi-2*L*sigma^2)
+theta <- sqrt(max(0,ksi/sigma^2-2*L))
+if(theta>0){
+l <- sum(wj*(L*log(Sj)-Sj^2/sigma^2/2+log(besselI(Sj*theta/sigma, L-1))))+
+ni*((1-L)*log(theta)-(L+1)*log(sigma)-theta^2/2)
+} else {
+l <- sum(wj*((2*L-1)*log(Sj)-Sj^2/sigma^2/2)) +ni*((1-L)*log(2)-lgamma(L)-2*L*log(sigma))
 }
+-l
+}
+
+likesigma0 <- function(theta,sigma,wj,Sj,L){
+n <- length(sigma)
+ni <- sum(wj)
+ksi <- sum(wj*Sj^2)/ni
+if(theta>0){
+l <- sum(wj*(L*log(Sj)-Sj^2/sigma^2/2+log(besselI(Sj*theta/sigma, L-1))))+
+ni*((1-L)*log(theta)-(L+1)*log(sigma)-theta^2/2)
+} else {
+l <- sum(wj*((2*L-1)*log(Sj)-Sj^2/sigma^2/2)) +ni*((1-L)*log(2)-lgamma(L)-2*L*log(sigma))
+}
+-l
+}
+
+
 likesigmaf <- function(sigma,wj,Sj,L){
 ni <- sum(wj)
 ksi <- sum(wj*Sj^2)/ni
-.Fortran("lncchi",as.double(sigma),
+if(ksi-2*L*sigma^2 > 0){
+z <- .Fortran("lncchi",as.double(sigma),
                   as.double(ni),
                   as.double(ksi),
                   as.double(wj),
@@ -22,7 +41,13 @@ ksi <- sum(wj*Sj^2)/ni
                   ergs=double(1),
                   DUPL=FALSE,
                   PACKAGE="dti")$ergs
+} else {# central case
+#z <- -(2*L-1)*sum(wj*log(Sj))/ni+ksi/2/sigma^2+2*L*log(sigma)+(L-1)*log(2)+lgamma(L)
+z <- -(L-1)*sum(wj*log(Sj))/ni+ksi/2/sigma^2+2*L*log(sigma)+(L-1)*log(2)+lgamma(L)
 }
+z
+}
+
 
 mlikesigmaf <- function(sigma,wj,Sj,L){
 .Fortran("localmin",as.double(sigma/10),
@@ -45,6 +70,301 @@ mlikesigmaf <- function(sigma,wj,Sj,L){
 #
 #
 awslsigmc <- function(y,                 # data
+                     steps,             # number of iteration steps for PS
+                     mask = NULL,       # data mask, where to do estimation
+                     ncoils = 1,        # number of coils for parallel MR image acquisition
+                     vext = c( 1, 1),   # voxel extensions
+                     lambda = 20,       # adaptation parameter for PS
+                     minni = 2,         # minimum sum of weights for estimating local sigma
+                     hsig = 3,          # bandwidth for median smoothing local sigma estimates
+                     sigma = NULL,
+                     family = c("Gauss","NCchi"),
+                     verbose = FALSE,
+                     u=NULL
+                     ) {
+  ## some functions for pilot estimates
+  IQQ <- function (x, q = .25, na.rm = FALSE, type = 7) 
+    diff(quantile(as.numeric(x), c(q, 1-q), na.rm = na.rm, names = FALSE, type = type))
+
+  IQQ <- function (x, q = .25, na.rm = FALSE, type = 7){ 
+    cqz <- qnorm(.05)/qnorm(q)
+    x <- as.numeric(x)
+    z <- diff(quantile(x, c(q, 1-q), na.rm = na.rm, names = FALSE, type = type))
+    z0 <- 0
+    while(abs(z-z0)>1e-5*z0){
+# outlier removal
+       z0 <- z
+#       cat(sum(x>(z0*cqz))," ")
+       x <- x[x<(z0*cqz)]
+       z <- diff(quantile(x, c(q, 1-q), na.rm = na.rm, names = FALSE, type = type))  
+#       cat(z0,z,"\n")
+    }
+    z
+    }
+    
+IQQdiff <- function(y, mask, q = .25, verbose = FALSE) {
+    cq <- qnorm(1-q)*sqrt(2)*2
+    sx <- IQQ( diff(y[mask]), q)/cq
+    sy <- IQQ( diff(aperm(y,c(2,1,3))[aperm(mask,c(2,1,3))]), q)/cq
+    sz <- IQQ( diff(aperm(y,c(3,1,2))[aperm(mask,c(3,1,2))]), q)/cq
+    if(verbose) cat( "Pilot estimates of sigma", sx, sy, sz, "\n")
+    min( sx, sy, sz)
+  }
+  
+  estsigma <- function(y, mask, q, L, sigma, verbose=FALSE){
+    meany <- mean(y[mask]^2)
+    eta <- sqrt(max( 0, meany/sigma^2-2*L))
+    m <- sqrt(pi/2)*gamma(L+1/2)/gamma(L)/gamma(3/2)*hyperg_1F1(-1/2,L,-eta^2/2)
+    v <- max( .01, 2*L+eta^2-m^2)
+    if(verbose) cat( eta, m, v, "\n")
+    IQQdiff( y, mask, q)/sqrt(v)
+  }
+  
+  if("NCchi"%in%family){
+     varstats <- sofmchi(ncoils)
+     th <- seq(0,30,.01)
+     z <- fncchiv(th,varstats)
+     minz <- min(z)
+     th <- th[z>min(z)]
+     minth <- min(th)
+     z <- z[z>min(z)]
+     nz <- nls(z~(a*th+b*th*th+c*th*th*th+d)/(a*th+b*th*th+c*th*th*th+1+d),data=list(th=th,z=z),start=list(a=1,b=1,c=1,d=1))
+     vpar <- c(minth,minz,coef(nz))
+  ##  this provides an excellent approximation for the variance reduction in case of low ncp 
+  }
+
+  if(length(vext)==3) vext <- vext[2:3]/vext[1]
+  ## dimension and size of cubus
+  ddim <- dim(y)
+  n <- prod(ddim)
+
+  ## test dimension
+  if (length(ddim) != 3) stop("first argument should be a 3-dimentional array")
+
+  ## check mask
+  if (is.null(mask)) mask <- array(TRUE, ddim)
+  if(length(mask) != n) stop("dimensions of data array and mask should coincide")
+
+  ## initial value for sigma_0 
+  if(is.null(sigma)){
+  # sigma <- sqrt( mean( y[mask]^2) / 2 / ncoils)
+     sigma <- IQQdiff( y, mask, .25, verbose=verbose)
+     if("NCchi"%in%family){
+        sigma <- estsigma( y, mask, .25, ncoils, sigma)
+        sigma <- estsigma( y, mask, .25, ncoils, sigma)
+        sigma <- estsigma( y, mask, .25, ncoils, sigma)
+     }
+  }
+##
+##   Prepare for diagnostics plots
+##
+  if(verbose){
+     mslice <-  (ddim[3]+1)/2
+     if(!is.null(u)&&"NCchi"%in%family){
+        par(mfrow=c(2,4),mar=c(3,3,3,1),mgp=c(2,1,0))
+     } else {
+        par(mfrow=c(2,3),mar=c(3,3,3,1),mgp=c(2,1,0))
+     }
+  } else {
+     cat("step")
+  }
+  ## define initial arrays for parameter estimates and sum of weights (see PS)
+  ksi <- array( y^2, ddim)
+  ni <- array( 1, ddim)
+  sigma <- array(sigma, ddim)
+  sigmar <- array(0, c(ddim, steps))
+# initialize array for local sigma by global estimate
+  mc.cores <- setCores(,reprt=FALSE)
+  ## preparations for median smoothing
+  nwmd <- (2*as.integer(hsig)+1)^3
+  parammd <- .Fortran("paramw3",
+                      as.double(hsig),
+                      as.double(c(1,1)),
+                      ind=integer(3*nwmd),
+                      w=double(nwmd),
+                      n=as.integer(nwmd),
+                      DUPL = FALSE,
+                      PACKAGE = "dti")[c("ind","w","n")]
+  nwmd <- parammd$n
+  parammd$ind <- parammd$ind[1:(3*nwmd)]
+  dim(parammd$ind) <- c(3,nwmd)
+  ## iterate PS starting with bandwidth h0
+  for (i in 1:steps) {
+
+    h <- 1.25^((i-1)/3)
+    nw <- prod(2*as.integer(h/c(1,vext))+1)
+#    cat("nw=",nw,"h/vext=",h/c(1,1/vext),"ih=",as.integer(h/c(1,1/vext)),"\n")
+    param <- .Fortran("paramw3",
+                      as.double(h),
+                      as.double(vext),
+                      ind=integer(3*nw),
+                      w=double(nw),
+                      n=as.integer(nw),
+                      DUPL = FALSE,
+                      PACKAGE = "dti")[c("ind","w","n")]
+    nw <- param$n
+    param$ind <- param$ind[1:(3*nw)]
+    dim(param$ind) <- c(3,nw)
+    param$w   <- param$w[1:nw]    
+    if("NCchi"%in%family) {
+## perform one step PS with bandwidth h
+       z <- .Fortran("awslchi2",
+                  as.double(y),        # data
+                  as.double(ksi),# \sum w_ij S_j^2
+                  ni = as.double(ni),
+                  as.double(sigma),
+                  as.double(vpar),# parameters for var. reduction
+                  as.double(ncoils),
+                  as.logical(mask),
+                  as.integer(ddim[1]),
+                  as.integer(ddim[2]),
+                  as.integer(ddim[3]),
+                  as.integer(param$ind),
+                  as.double(param$w),
+                  as.integer(nw),
+                  as.double(minni),
+                  double(nw*mc.cores), # wad(nw,nthreds)
+                  double(nw*mc.cores), # sad(nw,nthreds)
+                  as.double(lambda),
+                  as.integer(mc.cores),
+                  as.integer(floor(ncoils)),
+                  double(floor(ncoils)*mc.cores), # work(L,nthreds)
+                  th = double(n),
+                  sigman = double(n),
+                  ksi = double(n),
+                  DUPL = FALSE,
+                  PACKAGE = "dti")[c("ni","ksi","th","sigman")]
+      thchi <- z$th
+      ksi <- z$ksi
+      thchi[!mask] <- 0
+    ## extract sum of weigths (see PS) and consider only voxels with ni larger then mean
+    } else {
+       z <- .Fortran("awslgaus",
+                  as.double(y),        # data
+                  as.double(th),       # previous estimates
+                  ni = as.double(ni),
+                  as.double(sigma),
+                  as.logical(mask),
+                  as.integer(ddim[1]),
+                  as.integer(ddim[2]),
+                  as.integer(ddim[3]),
+                  as.integer(param$ind),
+                  as.double(param$w),
+                  as.integer(nw),
+                  as.double(minni),
+                  as.double(lambda),
+                  th = double(n),
+                  sigman = double(n),
+                  DUPL = FALSE,
+                  PACKAGE = "dti")[c("ni","th","sigman")]
+    }
+    th <- array(z$th,ddim)
+    ni <- array(z$ni,ddim)
+    mask[z$sigman==0] <- FALSE
+    if(verbose) cat("local estimation in step ",i," completed",format(Sys.time()),"\n") 
+##
+##  nonadaptive smoothing of estimated standard deviations
+##
+    sigma <- .Fortran("mediansm",
+                      as.double(z$sigman),
+                      as.logical(mask),
+                      as.integer(ddim[1]),
+                      as.integer(ddim[2]),
+                      as.integer(ddim[3]),
+                      as.integer(parammd$ind),
+                      as.integer(nwmd),
+                      double(nwmd*mc.cores), # work(nw,nthreds)
+                      as.integer(mc.cores),
+                      sigman = double(n),
+                      DUPL = FALSE,
+                      PACKAGE = "dti")$sigman
+    dim(sigma) <- ddim
+    mask[sigma==0] <- FALSE
+    if(verbose) cat("local median smoother in step ",i," completed",format(Sys.time()),"\n") 
+    sigmar[, , , i] <- sigma
+##
+##  diagnostics
+##
+    if(verbose){
+       meds <- median(sigma[mask])
+       means <- mean(sigma[mask])
+       image(y[,,mslice],col=grey(0:255/255))
+       title(paste("S  max=",signif(max(y[mask]),3)," median=",signif(median(y[mask]),3)))
+       image(th[,,mslice],col=grey(0:255/255))
+       title(paste("E(S)  max=",signif(max(th[mask]),3)," median=",signif(median(th[mask]),3)))
+       image(sigma[,,mslice],col=grey(0:255/255),zlim=c(0,max(sigma[mask])))
+       title(paste("sigma max=",signif(max(sigma[mask]),3)," median=",signif(meds,3)))
+       image(ni[,,mslice],col=grey(0:255/255))
+       title(paste("Ni    max=",signif(max(ni[mask]),3)," median=",signif(median(ni[mask]),3)))
+       plot(density(sigma[mask]),main="density of sigma")
+       plot(density(ni[mask]),main="density of Ni")
+       cat("mean sigma",means,"median sigma",meds,"sd sigma",sd(sigma[mask]),"\n")
+       if(!is.null(u)&&"NCchi"%in%family){
+          thchims <- fncchir(th/sigma,varstats)*sigma
+          thchims[!mask] <- u[!mask]
+          image(abs(thchims-u)[,,mslice],col=grey(0:255/255))
+          title("abs Error in thchims")
+          plot(density((thchims-u)[mask]),main="density of thchims-u")
+          cat("MAE(th)",mean(abs(thchi-u)[mask]),"RMSE(th)",sqrt(mean((thchi-u)[mask]^2)),"MAE(thms)",mean(abs(thchims-u)[mask]),"RMSE(thms)",sqrt(mean((thchims-u)[mask]^2)),"\n")
+       }
+     } else {
+       cat(" ",i)
+     }
+  }
+  ## END PS iteration
+  if(!verbose) cat("\n")
+  sigmal <- array(z$sigman,ddim)
+  if(!("NCchi"%in%family)){
+  ## still need to estimate noise sd (for correct distribution)
+     vqm2p1chi <- function(L, to = 50, delta = .002){
+                     x <- seq(0, to, delta)
+                     mu <- sqrt(pi/2)*gamma(L+1/2)/gamma(1.5)/gamma(L)*
+                           hyperg_1F1(-0.5,L, -x^2/2, give=FALSE, strict=TRUE)
+                     list(ncp = x, vqm2p1=(2*L+x^2)/mu^2)
+                  }
+
+     thncchi <- function(m,v,vqm2p1){
+#
+#  solve v/m^2+1 = (2*L+th^2)/mu(th)^2
+#
+        vqm2p1$ncp[findInterval(-v/m^2-1, -vqm2p1$vqm2p1, all.inside = TRUE)]
+     }
+     z <- vqm2p1chi(ncoils)
+     eta <- thncchi(th[mask],sigmal[mask]^2,z)
+     eta[eta>49.9] <- th[mask][eta>49.9]/sigmal[mask][eta>49.9]
+     mu <- sqrt(pi/2)*gamma(ncoils+1/2)/gamma(1.5)/gamma(ncoils)*
+                 hyperg_1F1(-0.5,ncoils, -eta^2/2, give=FALSE, strict=TRUE)
+     sigmal[mask] <- th[mask]/mu
+     th[mask] <- eta*sigmal[mask]
+     sigmar <- .Fortran("mediansm",
+                      as.double(sigmal),
+                      as.logical(mask),
+                      as.integer(ddim[1]),
+                      as.integer(ddim[2]),
+                      as.integer(ddim[3]),
+                      as.integer(parammd$ind),
+                      as.integer(nwmd),
+                      double(nwmd*mc.cores), # work(nwmd,nthreds)
+                      as.integer(mc.cores),
+                      sigman = double(n),
+                      DUPL = FALSE,
+                      PACKAGE = "dti")$sigman
+    dim(sigmar) <- ddim
+  }
+  thchi <- fncchir(th/sigma,varstats)*sigma
+  thchi[!mask] <- 0
+  ## this is the result (th is expectation, not the non-centrality parameter !!!)
+  invisible(list(sigma = sigmar,
+                 sigmal = sigmal,
+                 theta = th, 
+                 thchi = thchi,
+                 ni  = ni,
+                 mask = mask))
+}
+##
+##  Old version 
+##
+awslsigmcold <- function(y,                 # data
                      steps,             # number of iteration steps for PS
                      mask = NULL,       # data mask, where to do estimation
                      ncoils = 1,        # number of coils for parallel MR image acquisition
