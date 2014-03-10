@@ -1208,6 +1208,79 @@ awsncoilsigma <- function(y,                 # data
                  minni  = if(sequence) minni else min(ni[ind])))
 }
 
+afsigmneu <- function(y,L,level,h=2,hadj=1,vext = c( 1, 1)){
+##
+##   estimate effective sigma and effective L according to Aja-Fernandez 2013
+##
+#    sh2B stands for \hat{\sigma}^2_{n,B}
+#    sh2L stands for \hat{\sigma}^2_{nL}
+#    sh2eB stands for \hat{\sigma}^2_{eff,B}
+#    sh2eS stands for \hat{\sigma}^2_{eff,S}
+#    LeB stands for \hat{L}_{eff,B}
+#    vmlb  -  Var(M_L(x)|x \in B)
+#    vmlbx -  Var(M_L(x)|x \in B)_x
+#    phix  -  \hat{\Phi}_n(x)
+#    
+     ddim <- dim(y)
+     n <- prod(ddim)
+     indB <- y<level
+     sh2Lsimple <- mean(y[indB]^2)/2
+     mask <- array(TRUE,ddim)
+     vx <- .Fortran("afmodevn",
+                    as.double(y),
+                    as.integer(ddim[1]),
+                    as.integer(ddim[2]),
+                    as.integer(ddim[3]),
+                    as.logical(mask),
+                    as.double(h),
+                    as.double(vext),
+                    sigma = double(n),
+                    DUPL = FALSE,
+                    PACKAGE = "dti")$sigma
+     dim(vx) <- ddim
+     vxb <- vx[indB]
+     vxs <- vx[!indB]
+     dv2b <- density( vxb[vxb>0], n = 4092, adjust = hadj, to = min( max(vxb[vxb>0]), median(vxb[vxb>0])*5) )
+     sh2B <- dv2b$x[dv2b$y == max(dv2b$y)][1]
+     dv2s <- density( vxs[vxs>0], n = 4092, adjust = hadj, to = min( max(vxs[vxs>0]), median(vxs[vxs>0])*5) )
+     sh2eS <- dv2s$x[dv2s$y == max(dv2s$y)][1]
+     m2 <- .Fortran("afmodem2",
+                    as.double(y),
+                    as.integer(ddim[1]),
+                    as.integer(ddim[2]),
+                    as.integer(ddim[3]),
+                    as.logical(mask),
+                    as.double(h),
+                    as.double(vext),
+                    sm = double(n),
+                    DUPL = FALSE,
+                    PACKAGE = "dti")$sm
+     dim(m2) <- ddim
+     m2b <- m2[indB]
+     dm2b <- density( m2b[m2b>0], n = 4092, adjust = hadj, to = min( max(m2b[m2b>0]), median(m2b[m2b>0])*5) )
+     sh2L <- dm2b$x[dm2b$y == max(dm2b$y)][1]/2
+     cat("sh2B",sh2B,"sh2Lsimple",sh2Lsimple,"sh2L",sh2L,"\n")
+##
+##  now get sh2eB and LeB
+##
+     LeBn <- L
+     sh2eBn <- sh2B/2/(LeBn-gamma(LeBn+.5)^2/gamma(LeBn)^2)
+     LeB <- 1
+     sh2eB <- 0
+     while(abs(sh2eB-sh2eBn)>1e-5||abs(LeB-LeBn)>1e-5){
+        LeB <- LeBn
+        sh2eB <- sh2eBn
+        LeBn <- sh2L/sh2eB
+        sh2eBn <- sh2B/2/(LeBn-gamma(LeBn+.5)^2/gamma(LeBn)^2)
+        cat("LeB",LeB,"LeBn",LeBn,"sh2eB",sh2eB,"sh2eBn",sh2eBn,"\n")
+     }
+     sh2eB <- sh2eBn
+     LeB <- sh2L/sh2eB
+     phix <- sh2L/(m2+sh2L)
+     seff <- sqrt((1-phix)*sh2eS+phix*sh2eB)
+     Leff <- sh2L/seff^2
+     list(seff=seff,Leff=Leff,sh2L=sh2L,sh2B=sh2B,sh2eS=sh2eS,sh2eB=sh2eB,LeB=LeB,m2=m2,vx=vx,indB=indB)
+}
 
 afsigmc <- function(y,                 # data
                     level = NULL,             # threshold for background separation
