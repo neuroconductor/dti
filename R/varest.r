@@ -1208,7 +1208,7 @@ awsncoilsigma <- function(y,                 # data
                  minni  = if(sequence) minni else min(ni[ind])))
 }
 
-afsigmneu <- function(y,L,level,h=2,hadj=1,vext = c( 1, 1)){
+afsigmneu <- function(y,L,level=NULL,mask=NULL,h=2,hadj=1,vext = c( 1, 1)){
 ##
 ##   estimate effective sigma and effective L according to Aja-Fernandez 2013
 ##
@@ -1223,15 +1223,19 @@ afsigmneu <- function(y,L,level,h=2,hadj=1,vext = c( 1, 1)){
 #    
      ddim <- dim(y)
      n <- prod(ddim)
-     indB <- y<level
+     if(is.null(level)&is.null(mask)){
+        warning("no background definition, need either level or mask")
+        return(invisible(NULL))
+     }
+     if(is.null(level)) indB <- !mask else indB <- y<level
      sh2Lsimple <- mean(y[indB]^2)/2
-     mask <- array(TRUE,ddim)
+     mask1 <- array(TRUE,ddim)
      vx <- .Fortran("afmodevn",
                     as.double(y),
                     as.integer(ddim[1]),
                     as.integer(ddim[2]),
                     as.integer(ddim[3]),
-                    as.logical(mask),
+                    as.logical(mask1),
                     as.double(h),
                     as.double(vext),
                     sigma = double(n),
@@ -1249,7 +1253,7 @@ afsigmneu <- function(y,L,level,h=2,hadj=1,vext = c( 1, 1)){
                     as.integer(ddim[1]),
                     as.integer(ddim[2]),
                     as.integer(ddim[3]),
-                    as.logical(mask),
+                    as.logical(mask1),
                     as.double(h),
                     as.double(vext),
                     sm = double(n),
