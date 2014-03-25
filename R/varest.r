@@ -80,7 +80,8 @@ awslsigmc <- function(y,                 # data
                      sigma = NULL,
                      family = c("Gauss","NCchi"),
                      verbose = FALSE,
-                     u=NULL
+                     u=NULL,
+                     bc=FALSE # bias correction ...
                      ) {
   ## some functions for pilot estimates
   IQQ <- function (x, q = .25, na.rm = FALSE, type = 7) 
@@ -160,6 +161,8 @@ IQQdiff <- function(y, mask, q = .25, verbose = FALSE) {
 ##
   if(verbose){
      mslice <-  (ddim[3]+1)/2
+     ymslice <- y[,,mslice]
+     ymslice[!mask[,,mslice]] <- 0
      if(!is.null(u)&&"NCchi"%in%family){
         par(mfrow=c(2,4),mar=c(3,3,3,1),mgp=c(2,1,0))
      } else {
@@ -237,6 +240,35 @@ IQQdiff <- function(y, mask, q = .25, verbose = FALSE) {
       thchi <- z$th
       ksi <- z$ksi
       thchi[!mask] <- 0
+      if(bc){
+##
+##  try to correct for bias in estimate of sigma (3 iterations)
+##
+      sig <- sig0 <- z$sigman[mask]
+      thchi0 <- thchi[mask]
+      ksi0 <- ksi[mask]
+      snr <- thchi0/sig0
+      ind <- snr>0&snr<5
+      snr <- snr[ind]
+      snri <- 1/(snr^4+1.4)
+      lami <- 1/lambda^3.2
+      sig[ind] <- sig0[ind]*(1+0.2682*snri+5.1455*lami+9.6334*snri*lami) 
+      thchi0[ind] <- sqrt(pmax(0,ksi0[ind]-2*ncoils*sig[ind]^2))
+      snr <- thchi0/sig
+      ind <- snr>0&snr<5
+      snr <- snr[ind]
+      snri <- 1/(snr^4+1.4)
+      lami <- 1/lambda^3.2
+      sig[ind] <- sig0[ind]*(1+0.2682*snri+5.1455*lami+9.6334*snri*lami) 
+      thchi0[ind] <- sqrt(pmax(0,ksi0[ind]-2*ncoils*sig[ind]^2))
+      snr <- thchi0/sig
+      ind <- snr>0&snr<5
+      snr <- snr[ind]
+      snri <- 1/(snr^4+1.4)
+      lami <- 1/lambda^3.2
+      sig[ind] <- sig0[ind]*(1+0.2682*snri+5.1455*lami+9.6334*snri*lami) 
+      z$sigman[mask] <- sig
+      }
     ## extract sum of weigths (see PS) and consider only voxels with ni larger then mean
     } else {
        z <- .Fortran("awslgaus",
@@ -288,7 +320,7 @@ IQQdiff <- function(y, mask, q = .25, verbose = FALSE) {
     if(verbose){
        meds <- median(sigma[mask])
        means <- mean(sigma[mask])
-       image(y[,,mslice],col=grey(0:255/255))
+       image(ymslice,col=grey(0:255/255))
        title(paste("S  max=",signif(max(y[mask]),3)," median=",signif(median(y[mask]),3)))
        image(th[,,mslice],col=grey(0:255/255))
        title(paste("E(S)  max=",signif(max(th[mask]),3)," median=",signif(median(th[mask]),3)))
@@ -1230,6 +1262,9 @@ afsigmneu <- function(y,L,level=NULL,mask=NULL,h=2,hadj=1,vext = c( 1, 1)){
      if(is.null(level)) indB <- !mask else indB <- y<level
      sh2Lsimple <- mean(y[indB]^2)/2
      mask1 <- array(TRUE,ddim)
+##
+##  local variance estimates in vx
+## 
      vx <- .Fortran("afmodevn",
                     as.double(y),
                     as.integer(ddim[1]),
@@ -1280,7 +1315,8 @@ afsigmneu <- function(y,L,level=NULL,mask=NULL,h=2,hadj=1,vext = c( 1, 1)){
      }
      sh2eB <- sh2eBn
      LeB <- sh2L/sh2eB
-     phix <- sh2L/(m2+sh2L)
+     phix <- pmax(0,pmin(1,sh2L/(m2-sh2L)))
+     dim(phix) <- dim(m2)
      seff <- sqrt((1-phix)*sh2eS+phix*sh2eB)
      Leff <- sh2L/seff^2
      list(seff=seff,Leff=Leff,sh2L=sh2L,sh2B=sh2B,sh2eS=sh2eS,sh2eB=sh2eB,LeB=LeB,m2=m2,vx=vx,indB=indB)

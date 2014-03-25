@@ -368,6 +368,24 @@ sofmchi <- function(L, to = 50, delta = .01){
   list(ncp = x, mu = mu, s = s, s2 = s2, minlev = minlev, L = L)
 }
 
+sofmu12 <- function(mu1,mu2,s=NULL,L=1){
+require(gsl)
+if(is.null(s)) s<- .9*sqrt(mu2/L/2)
+x2 <- mu2/2/s^2-L
+Lhalf <- gamma(L+1/2)/gamma(1.5)/gamma(L)*hyperg_1F1(-0.5,L, -x2/2, give=FALSE, strict=TRUE)
+s<-mu1*sqrt(2/pi)/Lhalf
+cat("sigma=",s,"mu1=",sqrt(pi/2)*gamma(L+1/2)/gamma(1.5)/gamma(L)*hyperg_1F1(-0.5,L, -(mu2/2/s^2-L)/2, give=FALSE, strict=TRUE)*s,"mu2=",2*L*s^2+pmax(0,mu2-2*L*s^2),"\n")
+s
+}
+
+sofmu12 <- function(mu1,mu2,varstats,s=NULL,L=1){
+if(is.null(s)) s<- .9*sqrt(mu2/L/2)
+eta <- fncchir(mu1/s,varstats)
+s <- sqrt(mu2/(2*L+eta^2))
+cat("sigma=",s,"mu1=",sqrt(pi/2)*gamma(L+1/2)/gamma(1.5)/gamma(L)*hyperg_1F1(-0.5,L, -(mu2/2/s^2-L)/2, give=FALSE, strict=TRUE)*s,"mu2=",2*L*s^2+pmax(0,mu2-2*L*s^2),"\n")
+s
+}
+
 fncchir <- function(mu,varstats){
 #
 #  Bias-correction
