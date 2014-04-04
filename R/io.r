@@ -215,7 +215,7 @@ readDWIdata <- function(gradient, dirlist,
     i <- i+1
     if (!verbose) setTxtProgressBar(pb, i)
     if (format == "DICOM") {
-      dd <- readDICOMFile(ff)
+      dd <- readDICOMFile(ff, skipSequence = TRUE)
       delta <- c(as.numeric(unlist(strsplit(extractHeader(dd$hdr, "PixelSpacing", FALSE)[1], " "))), extractHeader(dd$hdr, "SliceThickness")[1])
       imageOrientationPatient <- as.numeric(unlist(strsplit(extractHeader(dd$hdr, "ImageOrientationPatient", FALSE)[1], " ")))
       imageOrientationPatient <- matrix(c(imageOrientationPatient, vcrossp(imageOrientationPatient[1:3], imageOrientationPatient[4:6])), 3, 3)
@@ -355,7 +355,7 @@ readDWIdata <- function(gradient, dirlist,
 
   ## set level to level*mean  of positive s_0 values
   level <- max(mins0value, level * mean(si[ , , , s0ind][si[ , , , s0ind] > 0]))
-  cat("readDWIdata: Create auxiliary statistics",format(Sys.time()), " \n")
+  if (verbose) cat("readDWIdata: Create auxiliary statistics",format(Sys.time()), " \n")
   design <- create.designmatrix.dti(gradient)
 
   invisible(new("dtiData",
