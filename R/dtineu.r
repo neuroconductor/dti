@@ -277,7 +277,7 @@ dtiTensorChi <- function(object, sigma=NULL, L=1,
    
    CL <- sqrt(pi/2)*gamma(L+1/2)/gamma(L)/gamma(3/2)
    if(mc.cores==1){
-      si <- array(z$si,c(object@ngrad,nvox))/sigma
+      si <- t(array(z$si,c(object@ngrad,nvox)))/sigma
       for(i in 1:length(mask)){
          param[,i] <- optim(param[,i],tchi,si=si[,i],btb=btb,L=L,CL=CL,method="BFGS",
                             control=list(reltol=1e-5,maxit=50))$par
@@ -286,7 +286,7 @@ dtiTensorChi <- function(object, sigma=NULL, L=1,
    } else {
       x <- matrix(0,object@ngrad+7,nvox)
       x[1:7,] <- param
-      x[-(1:7),] <- array(z$si,c(object@ngrad,nvox))/sigma
+      x[-(1:7),] <- t(t(array(z$si,c(object@ngrad,nvox)))/sigma)
       param <- plmatrix(x,ptenschi,fn=tchi,btb=btb,L=L,CL=CL)
       cat(nvox,"voxel processed. Time:",format(Sys.time()),"\n")
    }
