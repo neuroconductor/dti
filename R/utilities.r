@@ -8,8 +8,7 @@ sdpar <- function(object,  ...) cat("No method defined for class:",class(object)
 
 setGeneric("sdpar", function(object,  ...) standardGeneric("sdpar"))
 
-setMethod("sdpar", "dtiData",
-          function(object,
+setMethod("sdpar", "dtiData", function(object,
                    level = NULL,
                    sdmethod = "sd",
                    interactive = TRUE,

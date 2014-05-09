@@ -1,4 +1,6 @@
 \name{awssigmc}
+\alias{awslsigmc}
+\alias{aflsigmc}
 \alias{awssigmc}
 \alias{afsigmc}
 %- Also NEED an '\alias' for EACH other topic documented here.
@@ -14,18 +16,24 @@ Estimate noise variance for multicoil MR systems
     be a locally smooth function in voxel space that reflects the varying local influence of the receiver coils in the
     the reconstruction algorithm used. 
   
-    The function assumes \eqn{L} to be known and estimates a global \eqn{\sigma} employing an assumption of local homogeneity for
+    The functions assume \eqn{L} to be known and estimate either a local 
+    (function \code{awslsigmc}) or global ( function \code{awssigmc}) 
+    \eqn{\sigma} employing an assumption of local homogeneity for
      the noncentrality parameter \eqn{\eta}.
     
     Function \code{afsigmc} implements estimates from Aja-Fernandez (2009). 
+    Function \code{aflsigmc} implements the estimate from Aja-Fernandez (2013). 
 }
 \usage{
 awssigmc(y, steps, mask = NULL, ncoils = 1, vext = c(1, 1), lambda = 20, 
          h0 = 2, verbose = FALSE, sequence = FALSE, hadj = 1, q = 0.25, 
          qni = .8, method=c("VAR","MAD"))
+awslsigmc(y, steps, mask = NULL, ncoils = 1, vext = c(1, 1), lambda = 5, minni = 2, 
+         hsig = 5, sigma = NULL, family = c("Gauss","NCchi"), verbose = FALSE, u=NULL)
 afsigmc(y, level = NULL, mask = NULL,  ncoils = 1,   vext = c( 1, 1),   
         h = 2, verbose = FALSE, hadj = 1, 
         method = c("modevn","modem1chi","bkm2chi","bkm1chi"))
+aflsigmc(y, ncoils, level = NULL, mask = NULL, h=2, hadj=1,  vext = c( 1, 1))
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -80,6 +88,13 @@ afsigmc(y, level = NULL, mask = NULL,  ncoils = 1,   vext = c( 1, 1),
    to redefine mask}
   
   \item{h}{ bandwidth for local avaeraging}
+  \item{minni}{Minimum sum of weights for updating values of \code{sigma}.}
+  \item{hsig}{Bandwidth of the median filter.} 
+  \item{sigma}{Initial estimate for \code{sigma}}
+  \item{family}{One of \code{"Gauss"} or \code{"NCchi"} (default) defining the 
+      probability distribution to use.} 
+  \item{u}{if \code{verbose==TRUE} an array of noncentrality paramters for
+      comparisons. Internal use for tests only}
 }
 \value{
    a list with components

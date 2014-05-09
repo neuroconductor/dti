@@ -8,8 +8,7 @@ setMethod("plot", "dwi", function(x, y, ...) cat("No implementation for class dw
 
 ##############
 
-setMethod("plot", "dtiData", 
-function(x, y,slice=1, gradient=NULL, view= "axial", show=TRUE, density=FALSE, xind=NULL, yind=NULL, zind=NULL, mar=c(3,3,3,.3), mgp=c(2,1,0), ...) {
+setMethod("plot", "dtiData", function(x, y,slice=1, gradient=NULL, view= "axial", show=TRUE, density=FALSE, xind=NULL, yind=NULL, zind=NULL, mar=c(3,3,3,.3), mgp=c(2,1,0), ...) {
   if(is.null(x@si)) cat("No dwi data yet")
   maxsi <- max(x@si)
   if(is.null(xind)) xind<-(1:x@ddim[1])
@@ -221,8 +220,7 @@ setMethod("plot", "dwiMixtensor", function(x, y, slice=1, view="axial", what="fa
 
 ##############
 
-setMethod("plot", "dtiIndices", 
-function(x, y, slice=1, view= "axial", method=1, quant=0, minfa=NULL, show=TRUE, identify=FALSE, density=FALSE, contrast.enh=1,what="fa",xind=NULL,yind=NULL,zind=NULL, mar=c(3,3,3,.3),mgp=c(2,1,0), ...) {
+setMethod("plot", "dtiIndices", function(x, y, slice=1, view= "axial", method=1, quant=0, minfa=NULL, show=TRUE, identify=FALSE, density=FALSE, contrast.enh=1,what="fa",xind=NULL,yind=NULL,zind=NULL, mar=c(3,3,3,.3),mgp=c(2,1,0), ...) {
   what <- tolower(what)
   if(is.null(x@fa)) cat("No anisotropy index yet")
   if(!(method %in% 1:6)) {
@@ -384,15 +382,13 @@ function(x, y, slice=1, view= "axial", method=1, quant=0, minfa=NULL, show=TRUE,
   }
 })
 
-setMethod("plot", "dwiFiber", 
-function(x, y, ...) {
+setMethod("plot", "dwiFiber", function(x, y, ...) {
    plot(density(diff(c(x@startind,dim(x@fibers)[1]+1))-1), ...)
    title("Density of fiber lenghts")
    invisible(NULL)
 })
 
-setMethod("plot", "dkiIndices", 
-          function(x, 
+setMethod("plot", "dkiIndices", function(x, 
                    y, 
                    slice = 1, 
                    #view = "axial", 

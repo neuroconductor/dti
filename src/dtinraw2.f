@@ -54,19 +54,19 @@ C
 C     get rho from D (with regularization of D)
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-      subroutine D2rho0(D,rho)
-      implicit logical(a-z)
-      real*8 D(6),rho(6)
-      logical negdefin
-      call regularD(D,negdefin)
-      rho(1)=sqrt(max(1d-12,D(1)))
-      rho(2)=D(2)/rho(1)
-      rho(3)=D(3)/rho(1)
-      rho(4)=sqrt(max(1d-12,D(4)-rho(2)*rho(2)))
-      rho(5)=(D(5)-rho(2)*rho(3))/rho(4)
-      rho(6)=sqrt(max(1d-12,D(6)-rho(3)*rho(3)-rho(5)*rho(5)))
-      RETURN
-      END
+!       subroutine D2rho0(D,rho)
+!       implicit logical(a-z)
+!       real*8 D(6),rho(6)
+!       logical negdefin
+!       call regularD(D,negdefin)
+!       rho(1)=sqrt(max(1d-12,D(1)))
+!       rho(2)=D(2)/rho(1)
+!       rho(3)=D(3)/rho(1)
+!       rho(4)=sqrt(max(1d-12,D(4)-rho(2)*rho(2)))
+!       rho(5)=(D(5)-rho(2)*rho(3))/rho(4)
+!       rho(6)=sqrt(max(1d-12,D(6)-rho(3)*rho(3)-rho(5)*rho(5)))
+!       RETURN
+!       END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 C
 C     get rho from D (uses c(1,0,0,1,0,1) in case of inplausible D

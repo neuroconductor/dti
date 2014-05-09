@@ -190,223 +190,223 @@ C     assumes maximum of 5 micxture components
       RETURN
       END
 
-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-C
-C   Compute distances of vertices
-C
-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-      subroutine distvert(vert,nvert,ab,distab,ndist)
-      implicit logical (a-z)
-      integer nvert,ndist,ab(2,ndist)
-C  ndist = nvert*(nvert-1)/2
-      real*8 vert(3,nvert),distab(ndist)
-      integer i,j,k
-      real*8 dotprod3,z
-      k=1
-      DO i=1,nvert-1
-         DO j=i+1,nvert
-            ab(1,k)=i
-            ab(2,k)=j
-            z=dotprod3(vert(1,i),vert(1,j))
-            distab(k)=acos(max(-1.d0,min(1.d0,z)))
-            k=k+1
-         END DO
-      END DO
-      RETURN
-      END
-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-C
-C   Compute triangulation of the sphere form vertex distances
-C   ab and distab are assumed to be sorted by distab in R
-C
-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-      subroutine triedges(ab,distab,iab,ndist,abc,ntria)
-      implicit logical (a-z)
-      integer ndist,ntria,ab(2,ndist),iab(ndist),abc(3,ntria)
-      real*8 distab(ndist)
-      integer i,it,m1
-C
-C   Initialization
-C         
-      DO i=1,ndist
-         iab(i)=0
-      END DO
-      it=0
-      m1=1
-C  it is index of last triangle
-C  m1 is index of first edge that is used once
-C  now get first triangle
-      ierr=.TRUE.
-      DO while(ierr)
-         it=it+1
-         call findtri(m1,ab,distab,iab,ndist,abc,it,ierr)
-         ierr=.FALSE.
-         DO i=1,ndist
-            if(iab(i).eq.1) THEN
-               ierr=.TRUE.
-               m1=i
-               EXIT
-            END IF
-         END DO
-         if(it.ge.ntria) THEN
-            call intpr("Found it triangles",18,it,1)
-            RETURN
-         END IF
-      END DO
-      ntria=it
-      RETURN
-      END
-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-C
-C   Add a new triangle
-C
-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-      subroutine findtri(iedge,ab,distab,iab,ndist,abc,it,ierr)
-      implicit logical (a-z)
-      integer iedge,ndist,it,ab(2,ndist),iab(ndist),abc(3,it)
-      real*8 distab(ndist)
-      integer a,b,i,j,k,c,ci,cj
-      real*8 z,mindist,dab
-      logical ierr,checktri
-      external checktri
-      a=ab(1,iedge)
-      b=ab(2,iedge)
-      dab=distab(iedge)
-      ierr=.FALSE.
-      mindist=1d10
-      ci=1
-      cj=1
-      DO i=1,ndist
-         if(i.eq.iedge) CYCLE
-         if(iab(i).eq.2) CYCLE
-         if(ab(1,i).eq.a) THEN
-            k=ab(2,i)
-            if(it.gt.1.and.checktri(a,b,k,abc,it-1)) CYCLE
-            DO j=1,ndist
-               if(iab(j).eq.2) CYCLE
-               if(ab(1,j).eq.b) THEN
-                  if(ab(2,j).eq.k) THEN
-                     z=distab(i)*distab(j)*dab
-                     if(z.lt.mindist) THEN
-                        c=k
-                        ci=i
-                        cj=j
-                        mindist=z
-                        ierr=.TRUE.
-                     END IF
-                  END IF
-               END IF    
-               if(ab(2,j).eq.b) THEN
-                  if(ab(1,j).eq.k) THEN
-                     z=distab(i)*distab(j)*dab
-                      if(z.lt.mindist) THEN
-                        c=k
-                        ci=i
-                        cj=j
-                        mindist=z
-                        ierr=.TRUE.
-                     END IF
-                  END IF
-               END IF    
-            END DO
-         END IF
-         if(ab(2,i).eq.a) THEN
-            k=ab(1,i)
-            if(it.gt.1.and.checktri(a,b,k,abc,it-1)) CYCLE
-            DO j=1,ndist
-               if(iab(j).eq.2) CYCLE
-               if(ab(1,j).eq.b) THEN
-                  if(ab(2,j).eq.k) THEN
-                     z=distab(i)*distab(j)*dab
-                     if(z.lt.mindist) THEN
-                        c=k
-                        ci=i
-                        cj=j
-                        mindist=z
-                        ierr=.TRUE.
-                     END IF
-                  END IF
-               END IF    
-               if(ab(2,j).eq.b) THEN
-                  if(ab(1,j).eq.k) THEN
-                     z=distab(i)*distab(j)*dab
-                     if(z.lt.mindist) THEN
-                        c=k
-                        ci=i
-                        cj=j
-                        mindist=z
-                        ierr=.TRUE.
-                     END IF
-                  END IF
-               END IF    
-            END DO
-         END IF
-      END DO
-      IF(ierr) THEN
-         call sortabc(a,b,c,abc(1,it))
-         iab(iedge)=iab(iedge)+1
-         iab(ci)=iab(ci)+1
-         iab(cj)=iab(cj)+1
-      END IF
-      RETURN
-      END
-C
-C  sort values a,b,c into abc(3)
-C
-      subroutine sortabc(a,b,c,abc)
-C  sort in decreasing order
-      integer a,b,c,abc(3)
-      IF(a.lt.b) THEN
-         IF(a.lt.c) THEN
-            abc(1)=a
-            IF(b.lt.c) THEN
-               abc(2)=b
-               abc(3)=c
-            ELSE
-               abc(2)=c
-               abc(3)=b
-            END IF
-         ELSE 
-            abc(1)=c
-            abc(2)=a
-            abc(3)=b
-         END IF
-      ELSE
-         IF(b.lt.c) THEN
-            abc(1)=b
-            IF(a.lt.c) THEN
-               abc(2)=a
-               abc(3)=c
-            ELSE
-               abc(2)=c
-               abc(3)=a
-            END IF
-         ELSE 
-            abc(1)=c
-            abc(2)=b
-            abc(3)=a
-         END IF
-      END IF
-      RETURN
-      END
-C
-C   check if triangle exists
-C
-      logical function checktri(a,b,c,abc,it)
-      implicit logical (a-z)
-      integer a,b,c,it,abc(3,it),s(3)
-      integer i
-      checktri=.FALSE.
-      DO i=1,it
-         call sortabc(a,b,c,s)
-         IF(s(1).eq.abc(1,i).and.s(2).eq.abc(2,i).and.
-     1                           s(3).eq.abc(3,i)) THEN
-            checktri=.TRUE.
-            CYCLE
-         END IF
-      END DO
-      RETURN 
-      END
+! CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+! C
+! C   Compute distances of vertices
+! C
+! CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+!       subroutine distvert(vert,nvert,ab,distab,ndist)
+!       implicit logical (a-z)
+!       integer nvert,ndist,ab(2,ndist)
+! C  ndist = nvert*(nvert-1)/2
+!       real*8 vert(3,nvert),distab(ndist)
+!       integer i,j,k
+!       real*8 dotprod3,z
+!       k=1
+!       DO i=1,nvert-1
+!          DO j=i+1,nvert
+!             ab(1,k)=i
+!             ab(2,k)=j
+!             z=dotprod3(vert(1,i),vert(1,j))
+!             distab(k)=acos(max(-1.d0,min(1.d0,z)))
+!             k=k+1
+!          END DO
+!       END DO
+!       RETURN
+!       END
+! CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+! C
+! C   Compute triangulation of the sphere form vertex distances
+! C   ab and distab are assumed to be sorted by distab in R
+! C
+! CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+!       subroutine triedges(ab,distab,iab,ndist,abc,ntria)
+!       implicit logical (a-z)
+!       integer ndist,ntria,ab(2,ndist),iab(ndist),abc(3,ntria)
+!       real*8 distab(ndist)
+!       integer i,it,m1
+! C
+! C   Initialization
+! C         
+!       DO i=1,ndist
+!          iab(i)=0
+!       END DO
+!       it=0
+!       m1=1
+! C  it is index of last triangle
+! C  m1 is index of first edge that is used once
+! C  now get first triangle
+!       ierr=.TRUE.
+!       DO while(ierr)
+!          it=it+1
+!          call findtri(m1,ab,distab,iab,ndist,abc,it,ierr)
+!          ierr=.FALSE.
+!          DO i=1,ndist
+!             if(iab(i).eq.1) THEN
+!                ierr=.TRUE.
+!                m1=i
+!                EXIT
+!             END IF
+!          END DO
+!          if(it.ge.ntria) THEN
+!             call intpr("Found it triangles",18,it,1)
+!             RETURN
+!          END IF
+!       END DO
+!       ntria=it
+!       RETURN
+!       END
+! CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+! C
+! C   Add a new triangle
+! C
+! CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+!       subroutine findtri(iedge,ab,distab,iab,ndist,abc,it,ierr)
+!       implicit logical (a-z)
+!       integer iedge,ndist,it,ab(2,ndist),iab(ndist),abc(3,it)
+!       real*8 distab(ndist)
+!       integer a,b,i,j,k,c,ci,cj
+!       real*8 z,mindist,dab
+!       logical ierr,checktri
+!       external checktri
+!       a=ab(1,iedge)
+!       b=ab(2,iedge)
+!       dab=distab(iedge)
+!       ierr=.FALSE.
+!       mindist=1d10
+!       ci=1
+!       cj=1
+!       DO i=1,ndist
+!          if(i.eq.iedge) CYCLE
+!          if(iab(i).eq.2) CYCLE
+!          if(ab(1,i).eq.a) THEN
+!             k=ab(2,i)
+!             if(it.gt.1.and.checktri(a,b,k,abc,it-1)) CYCLE
+!             DO j=1,ndist
+!                if(iab(j).eq.2) CYCLE
+!                if(ab(1,j).eq.b) THEN
+!                   if(ab(2,j).eq.k) THEN
+!                      z=distab(i)*distab(j)*dab
+!                      if(z.lt.mindist) THEN
+!                         c=k
+!                         ci=i
+!                         cj=j
+!                         mindist=z
+!                         ierr=.TRUE.
+!                      END IF
+!                   END IF
+!                END IF    
+!                if(ab(2,j).eq.b) THEN
+!                   if(ab(1,j).eq.k) THEN
+!                      z=distab(i)*distab(j)*dab
+!                       if(z.lt.mindist) THEN
+!                         c=k
+!                         ci=i
+!                         cj=j
+!                         mindist=z
+!                         ierr=.TRUE.
+!                      END IF
+!                   END IF
+!                END IF    
+!             END DO
+!          END IF
+!          if(ab(2,i).eq.a) THEN
+!             k=ab(1,i)
+!             if(it.gt.1.and.checktri(a,b,k,abc,it-1)) CYCLE
+!             DO j=1,ndist
+!                if(iab(j).eq.2) CYCLE
+!                if(ab(1,j).eq.b) THEN
+!                   if(ab(2,j).eq.k) THEN
+!                      z=distab(i)*distab(j)*dab
+!                      if(z.lt.mindist) THEN
+!                         c=k
+!                         ci=i
+!                         cj=j
+!                         mindist=z
+!                         ierr=.TRUE.
+!                      END IF
+!                   END IF
+!                END IF    
+!                if(ab(2,j).eq.b) THEN
+!                   if(ab(1,j).eq.k) THEN
+!                      z=distab(i)*distab(j)*dab
+!                      if(z.lt.mindist) THEN
+!                         c=k
+!                         ci=i
+!                         cj=j
+!                         mindist=z
+!                         ierr=.TRUE.
+!                      END IF
+!                   END IF
+!                END IF    
+!             END DO
+!          END IF
+!       END DO
+!       IF(ierr) THEN
+!          call sortabc(a,b,c,abc(1,it))
+!          iab(iedge)=iab(iedge)+1
+!          iab(ci)=iab(ci)+1
+!          iab(cj)=iab(cj)+1
+!       END IF
+!       RETURN
+!       END
+! C
+! C  sort values a,b,c into abc(3)
+! C
+!       subroutine sortabc(a,b,c,abc)
+! C  sort in decreasing order
+!       integer a,b,c,abc(3)
+!       IF(a.lt.b) THEN
+!          IF(a.lt.c) THEN
+!             abc(1)=a
+!             IF(b.lt.c) THEN
+!                abc(2)=b
+!                abc(3)=c
+!             ELSE
+!                abc(2)=c
+!                abc(3)=b
+!             END IF
+!          ELSE 
+!             abc(1)=c
+!             abc(2)=a
+!             abc(3)=b
+!          END IF
+!       ELSE
+!          IF(b.lt.c) THEN
+!             abc(1)=b
+!             IF(a.lt.c) THEN
+!                abc(2)=a
+!                abc(3)=c
+!             ELSE
+!                abc(2)=c
+!                abc(3)=a
+!             END IF
+!          ELSE 
+!             abc(1)=c
+!             abc(2)=b
+!             abc(3)=a
+!          END IF
+!       END IF
+!       RETURN
+!       END
+! C
+! C   check if triangle exists
+! C
+!       logical function checktri(a,b,c,abc,it)
+!       implicit logical (a-z)
+!       integer a,b,c,it,abc(3,it),s(3)
+!       integer i
+!       checktri=.FALSE.
+!       DO i=1,it
+!          call sortabc(a,b,c,s)
+!          IF(s(1).eq.abc(1,i).and.s(2).eq.abc(2,i).and.
+!      1                           s(3).eq.abc(3,i)) THEN
+!             checktri=.TRUE.
+!             CYCLE
+!          END IF
+!       END DO
+!       RETURN 
+!       END
 C
 C   compute radii for vertices of a polyeder from radii on gradients
 C

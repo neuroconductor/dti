@@ -8,7 +8,10 @@ show3d <- function(obj,  ...) cat("3D Visualization not implemented for this cla
 
 setGeneric("show3d", function(obj,  ...) standardGeneric("show3d"))
 
-setMethod("show3d","dtiData", function(obj, xind=NULL, yind=NULL, zind=NULL, quant=.8, scale=.4, bgcolor="black", add=FALSE, maxobjects=729, what=c("adc","data"), minalpha=1, nn=1, normalize=FALSE, box=FALSE, title=FALSE,...){
+setMethod("show3d","dtiData", function( obj, xind=NULL, yind=NULL, zind=NULL,
+          quant=.8, scale=.4, bgcolor="black", add=FALSE, maxobjects=729, 
+          what=c("adc","data"), minalpha=1, nn=1, normalize=FALSE, 
+          box=FALSE, title=FALSE,...){
 ## check what
   what <- tolower(what)
   what <- match.arg(what)
@@ -69,7 +72,11 @@ setMethod("show3d","dtiData", function(obj, xind=NULL, yind=NULL, zind=NULL, qua
 })
 ##############
 
-setMethod("show3d","dtiTensor", function(obj,xind=NULL,yind=NULL,zind=NULL,method=1,minfa=.3,mask=NULL,fibers=FALSE,maxangle=30,level=0,quant=.8,scale=.4,bgcolor="black",add=FALSE,subdivide=2,maxobjects=729,what=c("tensor","adc","odf"),odfscale=1,minalpha=.25,normalize=NULL,box=FALSE,title=FALSE,...){
+setMethod("show3d","dtiTensor", function(obj, 
+   xind=NULL, yind=NULL, zind=NULL, method=1, minfa=.3, mask=NULL, fibers=FALSE, 
+   maxangle=30, level=0, quant=.8, scale=.4, bgcolor="black", add=FALSE, 
+   subdivide=2, maxobjects=729, what=c("tensor","adc","odf"), odfscale=1, 
+   minalpha=.25, normalize=NULL, box=FALSE, title=FALSE, ...){
   #if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
 ## check what
   what <- tolower(what)
@@ -190,7 +197,11 @@ setMethod("show3d","dtiTensor", function(obj,xind=NULL,yind=NULL,zind=NULL,metho
   if(obj@hmax>1) paste("smoothed with hmax=",obj@hmax),if(normalize) "normalized","\n")
   invisible(rgl.cur())
 })
-setMethod("show3d","dwiMixtensor", function(obj,xind=NULL,yind=NULL,zind=NULL,minfa=.3,minorder=1,mineo=1,fibers=FALSE,maxangle=30,level=0,quant=.8,scale=.4,bgcolor="black",add=FALSE,subdivide=3,maxobjects=729,what=c("odf","axis","both"),odfscale=1,minalpha=1,lwd=3,box=FALSE,title=FALSE,...){
+setMethod("show3d","dwiMixtensor", function(obj, 
+   xind=NULL, yind=NULL, zind=NULL, minfa=.3, minorder=1, mineo=1, fibers=FALSE, 
+   maxangle=30, level=0, quant=.8, scale=.4, bgcolor="black", add=FALSE, 
+   subdivide=3, maxobjects=729, what=c("odf","axis","both"), odfscale=1, 
+   minalpha=1, lwd=3, box=FALSE, title=FALSE, ...){
   #if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
 ## check what
   what <- tolower(what)
@@ -325,7 +336,9 @@ setMethod("show3d","dwiMixtensor", function(obj,xind=NULL,yind=NULL,zind=NULL,mi
 })
 ##############
 
-setMethod("show3d","dtiIndices",function(obj, index=c("fa","ga"), xind=NULL, yind=NULL, zind=NULL, method=1, minfa=0, bgcolor="black", add=FALSE, lwd=1,box=FALSE,title=FALSE,...){
+setMethod("show3d","dtiIndices", function(obj, 
+   index=c("fa","ga"), xind=NULL, yind=NULL, zind=NULL, method=1, minfa=0,
+   bgcolor="black", add=FALSE, lwd=1, box=FALSE, title=FALSE, ...){
   index <- tolower(index)
 ## check index
   index <- match.arg(index)
@@ -390,7 +403,10 @@ setMethod("show3d","dtiIndices",function(obj, index=c("fa","ga"), xind=NULL, yin
 
 ##############
 
-setMethod("show3d","dwiQball", function(obj,xind=NULL, yind=NULL, zind=NULL, level=0, quant=.8, scale=.4, odfscale=1, bgcolor="black", add=FALSE, subdivide=3, maxobjects=729, minalpha=1, box=FALSE, title=FALSE,...){
+setMethod("show3d","dwiQball", function(obj,
+   xind=NULL, yind=NULL, zind=NULL, level=0, quant=.8, scale=.4, odfscale=1,
+   bgcolor="black", add=FALSE, subdivide=3, maxobjects=729, minalpha=1, 
+   box=FALSE, title=FALSE,...){
   #if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
   if(!exists("icosa0")) data("polyeders", envir = environment())
   if(subdivide<0||subdivide>4) subdivide <- 3
@@ -467,7 +483,8 @@ setMethod("show3d","dwiQball", function(obj,xind=NULL, yind=NULL, zind=NULL, lev
   invisible(rgl.cur())
 })
 
-setMethod("show3d","dwiFiber", function(obj,add=FALSE,bgcolor="black",box=FALSE,title=FALSE,lwd=1,...){
+setMethod("show3d","dwiFiber", function(obj, 
+   add=FALSE, bgcolor="black", box=FALSE, title=FALSE, lwd=1, ...){
   #if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
   if(!add) {
      open3d()
@@ -491,8 +508,7 @@ setMethod("show3d","dwiFiber", function(obj,add=FALSE,bgcolor="black",box=FALSE,
 })
 
 ## argument which are not yet decided have "???"
-setMethod( "show3d", "dkiTensor", 
-           function( obj,
+setMethod( "show3d", "dkiTensor", function( obj,
                      xind = NULL, yind = NULL, zind = NULL,
                      method = 1, # ???
                      minfa = .3, # ???
@@ -616,7 +632,7 @@ setMethod( "show3d", "dkiTensor",
 #                                                              #
 ################################################################
 
-show3dTens <- function(radii,polyeder,centers=NULL,colors=NULL,alpha=1,...){
+show3dTens <- function(radii, polyeder, centers=NULL, colors=NULL, alpha=1, ...){
    if(is.null(centers)){
       centers <- matrix(0,3,1)
       n <- 1
@@ -660,7 +676,7 @@ show3dTens <- function(radii,polyeder,centers=NULL,colors=NULL,alpha=1,...){
 
 #############
 
-show3dData <- function(radii,vertices,centers=NULL,minalpha=1,...){
+show3dData <- function( radii, vertices, centers=NULL, minalpha=1, ...){
 #
 #   use gradients directly
 #
@@ -708,7 +724,7 @@ show3dData <- function(radii,vertices,centers=NULL,minalpha=1,...){
 
 #############
 
-show3dCdata <- function(radii,polyeder,centers=NULL,minalpha=1,scale=.5,...){
+show3dCdata <- function( radii, polyeder, centers=NULL, minalpha=1, scale=.5, ...){
    if(is.null(centers)){
       centers <- matrix(0,3,1)
       n <- 1
@@ -738,7 +754,7 @@ show3dCdata <- function(radii,polyeder,centers=NULL,minalpha=1,scale=.5,...){
 
 #############
 
-show3dODF <- function(radii,polyeder,centers=NULL,minalpha=1,...){
+show3dODF <- function( radii, polyeder, centers=NULL, minalpha=1, ...){
    if(is.null(centers)||length(centers)==3){
       centers <- matrix(0,3,1)
       n <- 1

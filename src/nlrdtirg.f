@@ -390,43 +390,43 @@ C
 C   compute Least Squares Criterion based on positive definit tensor parametrization D = R^T R
 C
 C     
-      subroutine opttensR(par,si,s0,grad,ngrad,sdcoef,erg)
-      implicit logical (a-z)
-      integer ngrad
-      real*8 par(6),si(ngrad),s0,grad(3,ngrad),sdcoef(4),erg
-      integer i
-      real*8 low,up,g1,g2,g3,s,D(6),z,w
-      low=sdcoef(1)+sdcoef(3)*sdcoef(2)
-      up=sdcoef(1)+sdcoef(4)*sdcoef(2)
-      call rho2D0(par,D)
-      s=0.d0
-      DO i = 1,ngrad
-         g1 = grad(1,i)
-         g2 = grad(2,i)
-         g3 = grad(3,i)
-         z =  g1*g1*D(1)+g2*g2*D(4)+g3*g3*D(6)+
-     1        2.d0*(g1*g2*D(2)+g1*g3*D(3)+g2*g3*D(5))
-         w = max(low,(min(up,sdcoef(1)+si(i)*sdcoef(2))))
-         z = (si(i)-s0*exp(-z))/w
-         s = s+z*z
-      END DO
-      erg = s
-      RETURN
-      END      
-      subroutine tensRres(par,si,s0,grad,ngrad,res)
-      implicit logical (a-z)
-      integer ngrad
-      real*8 par(6),si(ngrad),s0,grad(3,ngrad)
-      integer i
-      real*8 g1,g2,g3,D(6),res(ngrad),z
-      call rho2D0(par,D)
-      DO i = 1,ngrad
-         g1 = grad(1,i)
-         g2 = grad(2,i)
-         g3 = grad(3,i)
-         z =  g1*g1*D(1)+g2*g2*D(4)+g3*g3*D(6)+
-     1        2.d0*(g1*g2*D(2)+g1*g3*D(3)+g2*g3*D(5))
-         res(i) = (si(i)-s0*exp(-z))
-      END DO
-      RETURN
-      END
+!       subroutine opttensR(par,si,s0,grad,ngrad,sdcoef,erg)
+!       implicit logical (a-z)
+!       integer ngrad
+!       real*8 par(6),si(ngrad),s0,grad(3,ngrad),sdcoef(4),erg
+!       integer i
+!       real*8 low,up,g1,g2,g3,s,D(6),z,w
+!       low=sdcoef(1)+sdcoef(3)*sdcoef(2)
+!       up=sdcoef(1)+sdcoef(4)*sdcoef(2)
+!       call rho2D0(par,D)
+!       s=0.d0
+!       DO i = 1,ngrad
+!          g1 = grad(1,i)
+!          g2 = grad(2,i)
+!          g3 = grad(3,i)
+!          z =  g1*g1*D(1)+g2*g2*D(4)+g3*g3*D(6)+
+!      1        2.d0*(g1*g2*D(2)+g1*g3*D(3)+g2*g3*D(5))
+!          w = max(low,(min(up,sdcoef(1)+si(i)*sdcoef(2))))
+!          z = (si(i)-s0*exp(-z))/w
+!          s = s+z*z
+!       END DO
+!       erg = s
+!       RETURN
+!       END      
+!       subroutine tensRres(par,si,s0,grad,ngrad,res)
+!       implicit logical (a-z)
+!       integer ngrad
+!       real*8 par(6),si(ngrad),s0,grad(3,ngrad)
+!       integer i
+!       real*8 g1,g2,g3,D(6),res(ngrad),z
+!       call rho2D0(par,D)
+!       DO i = 1,ngrad
+!          g1 = grad(1,i)
+!          g2 = grad(2,i)
+!          g3 = grad(3,i)
+!          z =  g1*g1*D(1)+g2*g2*D(4)+g3*g3*D(6)+
+!      1        2.d0*(g1*g2*D(2)+g1*g3*D(3)+g2*g3*D(5))
+!          res(i) = (si(i)-s0*exp(-z))
+!       END DO
+!       RETURN
+!       END

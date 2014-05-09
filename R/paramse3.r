@@ -1,5 +1,4 @@
-gethseqfullse3 <-
-function (kstar, gradstats, kappa=NULL, vext = c(1, 1)) 
+gethseqfullse3 <- function (kstar, gradstats, kappa=NULL, vext = c(1, 1)) 
 {
     ngrad <- dim(gradstats$bghat)[2]
     h  <- vr  <- matrix(0,ngrad,kstar)

@@ -2,8 +2,7 @@ dwiRiceBias <- function(object,  ...) cat("No Rice Bias correction defined for t
 
 setGeneric("dwiRiceBias", function(object,  ...) standardGeneric("dwiRiceBias"))
 
-setMethod("dwiRiceBias", "dtiData",
-          function(object, 
+setMethod("dwiRiceBias", "dtiData", function(object, 
                    sigma = NULL, 
                    ncoils = 1) {
             

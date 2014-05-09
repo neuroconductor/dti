@@ -368,23 +368,6 @@ sofmchi <- function(L, to = 50, delta = .01){
   list(ncp = x, mu = mu, s = s, s2 = s2, minlev = minlev, L = L)
 }
 
-sofmu12 <- function(mu1,mu2,s=NULL,L=1){
-require(gsl)
-if(is.null(s)) s<- .9*sqrt(mu2/L/2)
-x2 <- mu2/2/s^2-L
-Lhalf <- gamma(L+1/2)/gamma(1.5)/gamma(L)*hyperg_1F1(-0.5,L, -x2/2, give=FALSE, strict=TRUE)
-s<-mu1*sqrt(2/pi)/Lhalf
-cat("sigma=",s,"mu1=",sqrt(pi/2)*gamma(L+1/2)/gamma(1.5)/gamma(L)*hyperg_1F1(-0.5,L, -(mu2/2/s^2-L)/2, give=FALSE, strict=TRUE)*s,"mu2=",2*L*s^2+pmax(0,mu2-2*L*s^2),"\n")
-s
-}
-
-sofmu12 <- function(mu1,mu2,varstats,s=NULL,L=1){
-if(is.null(s)) s<- .9*sqrt(mu2/L/2)
-eta <- fncchir(mu1/s,varstats)
-s <- sqrt(mu2/(2*L+eta^2))
-cat("sigma=",s,"mu1=",sqrt(pi/2)*gamma(L+1/2)/gamma(1.5)/gamma(L)*hyperg_1F1(-0.5,L, -(mu2/2/s^2-L)/2, give=FALSE, strict=TRUE)*s,"mu2=",2*L*s^2+pmax(0,mu2-2*L*s^2),"\n")
-s
-}
 
 fncchir <- function(mu,varstats){
 #
@@ -401,26 +384,6 @@ fncchiv <- function(mu,varstats){
 varstats$s2[findInterval(mu, varstats$mu, all.inside = TRUE)]
 }
 
-fncchiL <- function(x,L){
-##
-##  standard deviation of a noncentral chi-distribution with
-##  2*L df and noncentrality-parameter x
-##
-#require(gsl)
-x <- pmax(x,sqrt(2)*gamma(L+.5)/gamma(L))
-z <- sqrt(pi/2)*gamma(L+1/2)/gamma(1.5)/gamma(L)*hyperg_1F1(-0.5,L, -x^2/2, give=FALSE, strict=TRUE)
-sqrt(2*L+x^2-z^2)
-}
-fncchiL2 <- function(x,L){
-##
-##  variance of a noncentral chi-distribution with
-##  2*L df and noncentrality-parameter x
-##
-#require(gsl)
-x <- pmax(x,sqrt(2)*gamma(L+.5)/gamma(L))
-z <- sqrt(pi/2)*gamma(L+1/2)/gamma(1.5)/gamma(L)*hyperg_1F1(-0.5,L, -x^2/2, give=FALSE, strict=TRUE)
-2*L+x^2-z^2
-}
 
 Spatialvar.gauss<-function(h,h0,d,interv=1){
 #
@@ -622,33 +585,33 @@ sphcoord <- function(ccoord){
 }
 
 
-gettriangles <- function(gradients){
-  dgrad <- dim(gradients)
-  if(dgrad[2]==3) gradients <- t(gradients)
-  ngrad <- dim(gradients)[2]
-  ndist <- ngrad*(ngrad-1)/2
-  z <- .Fortran("distvert",
-                 as.double(gradients),
-                 as.integer(ngrad),
-                 ab=integer(2*ndist),
-                 distab=double(ndist),
-                 as.integer(ndist),
-                 DUPL=FALSE,
-                 PACKAGE="dti")[c("ab","distab")]
-  o <- order(z$distab)
-  distab <- z$distab[o]
-  ab <- matrix(z$ab,2,ndist)[,o]
-  z <- .Fortran("triedges",
-                 as.integer(ab),
-                 as.double(distab),
-                 iab=integer(ndist),
-                 as.integer(ndist),
-                 triangles=integer(3*5*ngrad),
-                 ntriangles=as.integer(5*ngrad),
-                 DUPL=FALSE,
-                 PACKAGE="dti")[c("iab","triangles","ntriangles")]
-  list(triangles=matrix(z$triangles,3,5*ngrad)[,1:z$ntriangle], edges=ab[,z$iab==2])
-}
+# gettriangles <- function(gradients){
+#   dgrad <- dim(gradients)
+#   if(dgrad[2]==3) gradients <- t(gradients)
+#   ngrad <- dim(gradients)[2]
+#   ndist <- ngrad*(ngrad-1)/2
+#   z <- .Fortran("distvert",
+#                  as.double(gradients),
+#                  as.integer(ngrad),
+#                  ab=integer(2*ndist),
+#                  distab=double(ndist),
+#                  as.integer(ndist),
+#                  DUPL=FALSE,
+#                  PACKAGE="dti")[c("ab","distab")]
+#   o <- order(z$distab)
+#   distab <- z$distab[o]
+#   ab <- matrix(z$ab,2,ndist)[,o]
+#   z <- .Fortran("triedges",
+#                  as.integer(ab),
+#                  as.double(distab),
+#                  iab=integer(ndist),
+#                  as.integer(ndist),
+#                  triangles=integer(3*5*ngrad),
+#                  ntriangles=as.integer(5*ngrad),
+#                  DUPL=FALSE,
+#                  PACKAGE="dti")[c("iab","triangles","ntriangles")]
+#   list(triangles=matrix(z$triangles,3,5*ngrad)[,1:z$ntriangle], edges=ab[,z$iab==2])
+# }
 
 create.designmatrix.dti <- function(gradient) {
   dgrad <- dim(gradient)

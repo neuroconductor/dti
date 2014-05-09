@@ -10,13 +10,15 @@ setGeneric("dtiTensor", function(object,  ...) standardGeneric("dtiTensor"))
 
 setMethod( "dtiTensor", "dtiData",
            function( object, 
-                     method = c( "nonlinear", "linear"),
+                     method = c( "nonlinear", "linear", "quasi-likelihood"),
+                     sigma = NULL, L = 1, 
                      mc.cores = setCores( , reprt = FALSE)) {
 
 ## check method! available are: 
 ##   "linear" - use linearized model (log-transformed)
 ##   "nonlinear" - use nonlinear model with parametrization according to Koay et.al. (2006)
-             method <- match.arg( method)
+##   "quasi-likelihood" - use nonlinear model Gaussian Approximation to \chi 
+   method <- match.arg(method)
                           
    if(is.null(mc.cores)) mc.cores <- 1
    mc.cores <- min(mc.cores,detectCores())
@@ -24,6 +26,7 @@ setMethod( "dtiTensor", "dtiData",
    args <- c(object@call,args)
    ngrad <- object@ngrad
    grad <- object@gradient
+   btb <- object@btb
    ddim <- object@ddim
    ntotal <- prod(ddim)
    s0ind <- object@s0ind
@@ -55,7 +58,7 @@ cat("sioutlier completed\n")
    cat("Data transformation completed ",format(Sys.time()),"\n")
                
    D <- matrix(0,6,ntotal)
-   btbsvd <- svd(object@btb[,-s0ind])
+   btbsvd <- svd(btb[,-s0ind])
    solvebtb <- btbsvd$u %*% diag(1/btbsvd$d) %*% t(btbsvd$v)
    D[,mask] <- solvebtb%*% ttt
    cat("Diffusion tensors (linearized model) generated ",format(Sys.time()),"\n")
@@ -67,7 +70,7 @@ cat("sioutlier completed\n")
    th0 <- array(0,ntotal)
    th0[mask] <- z$s0
    index <- z$index
-   if(method== "nonlinear"){
+   if(method %in%  c("nonlinear","quasi-likelihood")){
 #  method == "nonlinear" uses linearized model for initial estimates
        ngrad0 <- ngrad
        df <- sum(table(object@replind)-1)
@@ -86,7 +89,7 @@ cat("sioutlier completed\n")
                          param=as.double(param),
                          as.double(z$si/ms0),
                          as.integer(ngrad),
-                         as.double(object@btb/mbv),
+                         as.double(btb/mbv),
                          as.double(sdcoef),
                          as.double(rep(0,ngrad)),#si
                          as.double(rep(1,ngrad)),#var                         
@@ -97,7 +100,7 @@ cat("sioutlier completed\n")
           x <- matrix(0,ngrad+7,nvox)
           x[1:7,] <- param
           x[-(1:7),] <- z$si/ms0
-          param <- plmatrix(x,ptensnl,ngrad=ngrad,btb=object@btb/mbv,
+          param <- plmatrix(x,ptensnl,ngrad=ngrad,btb=btb/mbv,
                             sdcoef=sdcoef,maxit=1000,reltol=1e-7)
        }
        th0[mask] <- param[1,]*ms0
@@ -105,21 +108,21 @@ cat("sioutlier completed\n")
        cat("successfully completed nonlinear regression ",format(Sys.time()),"\n")
    }
    res <- matrix(0,ngrad,ntotal)
-   z <- .Fortran("tensres",
+   zz <- .Fortran("tensres",
                  as.double(th0[mask]),
                  as.double(D[,mask]),
                  as.double(z$si),
                  as.integer(nvox),
                  as.integer(ngrad),
-                 as.double(object@btb),
+                 as.double(btb),
                  res = double(ngrad*nvox),
                  rss = double(nvox),
                  PACKAGE="dti",DUP=TRUE)[c("res","rss")]
     res <- matrix(0,ngrad,ntotal)
-    res[,mask] <- z$res
+    res[,mask] <- zz$res
     rss <- numeric(ntotal)
-    rss[mask] <- z$rss/(ngrad0-6)
-    rm(z)
+    rss[mask] <- zz$rss/(ngrad0-6)
+    rm(zz)
     dim(th0) <- ddim
     dim(D) <- c(6,ddim)
     dim(res) <- c(ngrad,ddim)
@@ -147,6 +150,39 @@ cat("sioutlier completed\n")
        mask[indD] <- FALSE
     }
     scorr <- mcorr(res,mask,ddim,ngrad0,lags=c(5,5,3),mc.cores=mc.cores)
+    if(method=="quasi-likelihood"){
+       if(is.null(sigma)||sigma<=0){
+          cat("Please specify a valid estimate of sigma for quasi-likelihood\n 
+            returning result for method='nonlinear' \n")
+            method <- "nonlinear"
+       }
+    }
+   if(method=="quasi-likelihood"){
+      param <- matrix(0,7,nvox)
+      if(length(sigma)==1) sigma <- array(sigma,ddim)
+       cat("starting quasi-likelihood ",format(Sys.time()),"\n")
+      dim(D) <- c(6,ntotal)
+      param[1,] <- th0[mask]/sigma[mask]
+      param[-1,] <- D2Rall(D[,mask]*mbv)
+      CL <- sqrt(pi/2)*gamma(L+1/2)/gamma(L)/gamma(3/2)
+      if(mc.cores==1){
+         si <- t(array(z$si,c(ngrad,nvox)))/sigma[mask]
+         for(i in 1:length(mask)){
+            param[,i] <- optim(param[,i],tchi,si=si[,i],btb=btb/mbv,L=L,CL=CL,method="BFGS",
+                            control=list(reltol=1e-5,maxit=50))$par
+            if(i%/%1000*1000==i) cat(i,"voxel processed. Time:",format(Sys.time()),"\n")
+      }
+      } else {
+         setCores(mc.cores)
+         x <- matrix(0,ngrad+7,nvox)
+         x[1:7,] <- param
+         x[-(1:7),] <- t(t(array(z$si,c(ngrad,nvox)))/sigma[mask])
+         param <- plmatrix(x,ptenschi,fn=tchi,btb=btb/mbv,L=L,CL=CL)
+         cat(nvox,"voxel processed. Time:",format(Sys.time()),"\n")
+      }
+      D[,mask] <- R2Dall(param[-1,])/mbv
+      cat("successfully completed quasi-likelihood ",format(Sys.time()),"\n")
+    }
     ev <- dti3Dev(D,mask,mc.cores=mc.cores)
     dim(ev) <- c(3,ddim)   
     dim(D) <- c(6,ddim)   
@@ -163,8 +199,8 @@ cat("sioutlier completed\n")
                   hmax = 1,
                   gradient = object@gradient,
                   bvalue = object@bvalue,
-                  btb   = object@btb,
-                  ngrad = object@ngrad, # = dim(btb)[2]
+                  btb   = btb,
+                  ngrad = ngrad, # = dim(btb)[2]
                   s0ind = object@s0ind,
                   replind = object@replind,
                   ddim  = object@ddim,
@@ -216,8 +252,7 @@ dtiIndices <- function(object, ...) cat("No DTI indices calculation defined for 
 
 setGeneric("dtiIndices", function(object, ...) standardGeneric("dtiIndices"))
 
-setMethod("dtiIndices","dtiTensor",
-function(object, mc.cores=setCores(,reprt=FALSE)) {
+setMethod("dtiIndices","dtiTensor",function(object, mc.cores=setCores(,reprt=FALSE)) {
   args <- sys.call(-1)
   args <- c(object@call,args)
   ddim <- object@ddim
@@ -249,56 +284,8 @@ function(object, mc.cores=setCores(,reprt=FALSE)) {
             )
 })
 
-dtiTensorChi <- function(object, sigma=NULL, L=1,
-                         mc.cores = setCores( , reprt = FALSE)){
 ##
-##  Estimate parameters in Diffusion Tensor model with
-##  Gauss-approximation for noncentral chi
-##
-   tensobj <- dtiTensor(object,method = "nonlinear")
-   if(is.null(sigma)||sigma<=0){
-      cat("Please specify a valid sigma\n Returning biased estimated tensor object\n")
-      return(tensobj)
-   }
-   ddim <- tensobj@ddim
-   bv <- object@bvalue
-   D <- tensobj@D
-   dim(D) <- c(6,prod(ddim))
-   mbv <- mean(bv[-object@s0ind])
-   btb <- object@btb/mbv
-##  use ms0 and mbv to rescale parameters such that they are of comparable magnitude
-   z <- sioutlier1(object@si,object@s0ind,object@level,mc.cores=mc.cores)
-   mask <- z$mask
-   nvox <- sum(mask)
-   
-   param <- matrix(0,7,nvox)
-   if(length(sigma)==1) sigma <- array(sigma,ddim)
-   param[1,] <- tensobj@th0[mask]/sigma[mask]
-   param[-1,] <- D2Rall(D[,mask]*mbv)
-   
-   CL <- sqrt(pi/2)*gamma(L+1/2)/gamma(L)/gamma(3/2)
-   if(mc.cores==1){
-      si <- t(array(z$si,c(object@ngrad,nvox)))/sigma[mask]
-      for(i in 1:length(mask)){
-         param[,i] <- optim(param[,i],tchi,si=si[,i],btb=btb,L=L,CL=CL,method="BFGS",
-                            control=list(reltol=1e-5,maxit=50))$par
-         if(i%/%1000*1000==i) cat(i,"voxel processed. Time:",format(Sys.time()),"\n")
-   }
-   } else {
-      x <- matrix(0,object@ngrad+7,nvox)
-      x[1:7,] <- param
-      x[-(1:7),] <- t(t(array(z$si,c(object@ngrad,nvox)))/sigma[mask])
-      param <- plmatrix(x,ptenschi,fn=tchi,btb=btb,L=L,CL=CL)
-      cat(nvox,"voxel processed. Time:",format(Sys.time()),"\n")
-   }
-   D[,mask] <- R2Dall(param[-1,])/mbv
-   dim(D) <- c(6,ddim)
-   tensobj@D <- D
-   tensobj@th0[mask] <- param[1,]*sigma[mask]
-   tensobj
-}
-##
-## Parallel version
+## Parallel version for quasi-likelihood
 ##
 ptenschi <- function(x,fn,btb,L,CL){
 nvox <- dim(x)[2]
@@ -326,15 +313,16 @@ tchi <- function(param,si,btb,L,CL){
    gDg <- D%*%btb ## b_i*g_i^TD g_i (i=1,ngrad)
    gvalue <- param[1]*exp(-gDg)
    mgvh <- -gvalue*gvalue/2
-   muL <- CL*.C("hyperg_1F1_e",
-              as.double(rep(-.5,ng)),
-              as.double(rep(L,ng)),
-              as.double(mgvh),
-              as.integer(ng),
-              val=as.double(mgvh),
-              err=as.double(mgvh),
-              status=as.integer(0*mgvh),
-              PACKAGE="gsl")$val
+#    muL <- CL*.C("hyperg_1F1_e",
+#               as.double(rep(-.5,ng)),
+#               as.double(rep(L,ng)),
+#               as.double(mgvh),
+#               as.integer(ng),
+#               val=as.double(mgvh),
+#               err=as.double(mgvh),
+#               status=as.integer(0*mgvh),
+#               PACKAGE="gsl")$val
+   muL <- CL*hyperg_1F1(rep(-.5,ng),rep(L,ng),mgvh)
    vL <- 2*L+gvalue^2-muL^2
    sum((si-muL)^2/vL)
 }

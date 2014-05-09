@@ -694,95 +694,95 @@ getsiind2 <- function(si,sigma2,grad,bv,vico,alpha,lambda,maxcomp=3,maxc=.866,ng
      krit=array(krit,dim(si)[-1]))
 }
 
-mtrisk <- function(par,dwiobj,ix=1,iy=1,iz=1){
-   s0ind <- dwiobj@s0ind
-   grad <-  dwiobj@gradient[,-s0ind]
-   bv <- dwiobj@bvalue[-s0ind]
-   bv <- bv/max(bv)
-   si <- dwiobj@si[ix,iy,iz,]
-   siq <- si[-s0ind]/mean(si[s0ind])
-   ng <- length(bv)
-   npar <- length(par)
-   rsk <- .Fortran("rskmixl2",
-                as.double(par),
-                as.integer(npar),
-                as.double(siq),
-                as.double(grad),
-                as.double(bv),
-                as.integer(ng),
-                rsk=double(1),
-                DUPL=FALSE,
-                PACKAGE="dti")$rsk   
-   rsk
-}
-mtgrad <- function(par,dwiobj,ix=1,iy=1,iz=1,eps=1e-4){
-   s0ind <- dwiobj@s0ind
-   grad <-  dwiobj@gradient[,-s0ind]
-   bv <- dwiobj@bvalue[-s0ind]
-   bv <- bv/max(bv)
-   si <- dwiobj@si[ix,iy,iz,]
-   siq <- si[-s0ind]/mean(si[s0ind])
-   ng <- length(bv)
-   npar <- length(par)
-   drsk <- .Fortran("drskml2",
-                as.double(par),
-                as.integer(npar),
-                as.double(siq),
-                as.double(grad),
-                as.double(bv),
-                as.integer(ng),
-                drsk=double(npar),
-                DUPL=FALSE,
-                PACKAGE="dti")$drsk   
-   drsk
-}
-mtgrad1 <- function(par,dwiobj,ix=1,iy=1,iz=1,eps=1e-4){
-   s0ind <- dwiobj@s0ind
-   grad <-  dwiobj@gradient[,-s0ind]
-   bv <- dwiobj@bvalue[-s0ind]
-   bv <- bv/max(bv)
-   si <- dwiobj@si[ix,iy,iz,]
-   siq <- si[-s0ind]/mean(si[s0ind])
-   ng <- length(bv)
-   npar <- length(par)
-   drsk <- .Fortran("drskml2",
-                as.double(par),
-                as.integer(npar),
-                as.double(siq),
-                as.double(grad),
-                as.double(bv),
-                as.integer(ng),
-                drsk=double(npar),
-                DUPL=FALSE,
-                PACKAGE="dti")$drsk   
-   rsk <- .Fortran("rskmixl2",
-                as.double(par),
-                as.integer(npar),
-                as.double(siq),
-                as.double(grad),
-                as.double(bv),
-                as.integer(ng),
-                rsk=double(1),
-                DUPL=FALSE,
-                PACKAGE="dti")$rsk   
-   drskn <- drsk
-   for(i in 1:npar){
-      par0 <- par
-      par0[i] <- par[i]+eps
-      rsk0 <- .Fortran("rskmixl2",
-                as.double(par0),
-                as.integer(npar),
-                as.double(siq),
-                as.double(grad),
-                as.double(bv),
-                as.integer(ng),
-                rsk=double(1),
-                DUPL=FALSE,
-                PACKAGE="dti")$rsk   
-      drskn[i] <- (rsk0-rsk)/eps
-   }
-   cat("parameters, analytic gradient, numeric gradient\n")
-   print(rbind(par,drsk,drskn))
-   list(drskn=drskn)
-}
+# mtrisk <- function(par,dwiobj,ix=1,iy=1,iz=1){
+#    s0ind <- dwiobj@s0ind
+#    grad <-  dwiobj@gradient[,-s0ind]
+#    bv <- dwiobj@bvalue[-s0ind]
+#    bv <- bv/max(bv)
+#    si <- dwiobj@si[ix,iy,iz,]
+#    siq <- si[-s0ind]/mean(si[s0ind])
+#    ng <- length(bv)
+#    npar <- length(par)
+#    rsk <- .Fortran("rskmixl2",
+#                 as.double(par),
+#                 as.integer(npar),
+#                 as.double(siq),
+#                 as.double(grad),
+#                 as.double(bv),
+#                 as.integer(ng),
+#                 rsk=double(1),
+#                 DUPL=FALSE,
+#                 PACKAGE="dti")$rsk   
+#    rsk
+# }
+# mtgrad <- function(par,dwiobj,ix=1,iy=1,iz=1,eps=1e-4){
+#    s0ind <- dwiobj@s0ind
+#    grad <-  dwiobj@gradient[,-s0ind]
+#    bv <- dwiobj@bvalue[-s0ind]
+#    bv <- bv/max(bv)
+#    si <- dwiobj@si[ix,iy,iz,]
+#    siq <- si[-s0ind]/mean(si[s0ind])
+#    ng <- length(bv)
+#    npar <- length(par)
+#    drsk <- .Fortran("drskml2",
+#                 as.double(par),
+#                 as.integer(npar),
+#                 as.double(siq),
+#                 as.double(grad),
+#                 as.double(bv),
+#                 as.integer(ng),
+#                 drsk=double(npar),
+#                 DUPL=FALSE,
+#                 PACKAGE="dti")$drsk   
+#    drsk
+# }
+# mtgrad1 <- function(par,dwiobj,ix=1,iy=1,iz=1,eps=1e-4){
+#    s0ind <- dwiobj@s0ind
+#    grad <-  dwiobj@gradient[,-s0ind]
+#    bv <- dwiobj@bvalue[-s0ind]
+#    bv <- bv/max(bv)
+#    si <- dwiobj@si[ix,iy,iz,]
+#    siq <- si[-s0ind]/mean(si[s0ind])
+#    ng <- length(bv)
+#    npar <- length(par)
+#    drsk <- .Fortran("drskml2",
+#                 as.double(par),
+#                 as.integer(npar),
+#                 as.double(siq),
+#                 as.double(grad),
+#                 as.double(bv),
+#                 as.integer(ng),
+#                 drsk=double(npar),
+#                 DUPL=FALSE,
+#                 PACKAGE="dti")$drsk   
+#    rsk <- .Fortran("rskmixl2",
+#                 as.double(par),
+#                 as.integer(npar),
+#                 as.double(siq),
+#                 as.double(grad),
+#                 as.double(bv),
+#                 as.integer(ng),
+#                 rsk=double(1),
+#                 DUPL=FALSE,
+#                 PACKAGE="dti")$rsk   
+#    drskn <- drsk
+#    for(i in 1:npar){
+#       par0 <- par
+#       par0[i] <- par[i]+eps
+#       rsk0 <- .Fortran("rskmixl2",
+#                 as.double(par0),
+#                 as.integer(npar),
+#                 as.double(siq),
+#                 as.double(grad),
+#                 as.double(bv),
+#                 as.integer(ng),
+#                 rsk=double(1),
+#                 DUPL=FALSE,
+#                 PACKAGE="dti")$rsk   
+#       drskn[i] <- (rsk0-rsk)/eps
+#    }
+#    cat("parameters, analytic gradient, numeric gradient\n")
+#    print(rbind(par,drsk,drskn))
+#    list(drskn=drskn)
+# }
 

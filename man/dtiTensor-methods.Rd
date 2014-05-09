@@ -9,12 +9,15 @@
   The method estimates, in each voxel, the diffusion tensor from the DWI data contained in an object of class \code{"dtiData"}.
 }
 \usage{
-  \S4method{dtiTensor}{dtiData}(object, method=c( "nonlinear", "linear"),
-                     mc.cores = setCores( , reprt = FALSE))
+  \S4method{dtiTensor}{dtiData}(object, method=c( "nonlinear", "linear", "quasi-likelihood"), 
+          sigma = NULL, L = 1, mc.cores = setCores( , reprt = FALSE))
 }
 \arguments{
   \item{object}{ Object of class \code{"dtiData"}}
-  \item{method}{ Method for tensor estimation. May be \code{"linear"}, or \code{"nonlinear"}. }
+  \item{method}{ Method for tensor estimation. May be \code{"linear"}, or \code{"nonlinear"}. \code{method=="quasi-likelihood"} solves the nonlinear regression problem with the
+  expected value of the signal as regression function and weighting according to the signal variance.}
+   \item{sigma}{(local) scale parameter of the signal's distribution.}
+   \item{L}{(local) effective degrees of freedom.}
    \item{mc.cores}{Number of cores to use. Defaults to number of threads specified for openMP, see documentation of package \pkg{awsMethods}. 
    Our experience suggests to use 4-6 cores if available.}
 }
@@ -26,8 +29,19 @@
 
   \item{obj = "ANY"}{ Returns a warning. }
 
-  \item{obj = "dtiData"}{ Estimate diffusion tensor from data in each voxel with the different options for the regression type and model for variance estimation.  If \code{method=="linear"} estimates are obtained using a linearization of the tensor model. This was the estimate used in Tabelow et.al. (2008).  \code{method=="nonlinear"} uses a nonlinear regression model with reparametrization that ensures the tensor to be  positive semidefinite, see  Koay et.al. (2006).  The imlementation is based on R's internal C code for the
-  BFGS optimization. If \code{varmethod=="replicates"} the error variance is estimated from replicated gradient directions if possible, otherwise an estimate is obtained from the residual sum of squares.  If \code{varmodel=="global"} a homogeneous variance is assumed and estimated as the median of the local variance estimates. }
+  \item{obj = "dtiData"}{ Estimate diffusion tensor from data in each voxel with the different options for 
+  the regression type and model for variance estimation.  If \code{method=="linear"} estimates are obtained
+  using a linearization of the tensor model. This was the estimate used in Tabelow et.al. (2008). 
+  \code{method=="nonlinear"} uses a nonlinear regression model with reparametrization that ensures the
+  tensor to be  positive semidefinite, see  Koay et.al. (2006).  The imlementation is based on R's internal
+  C code for the
+  BFGS optimization. \code{method=="quasi-likelihood"} solves the nonlinear regression problem with the
+  expected value of the signal as regression function and weighting according to the signal variance.
+  Tis requires additional parameters \code{sigma} and \code{L} characterizing the distribution of the signal. If \code{varmethod=="replicates"} the error variance is estimated from replicated
+  gradient directions if possible, otherwise an estimate is obtained from the residual sum of squares.  If 
+  \code{varmodel=="global"} a homogeneous variance is assumed and estimated as the median of the local
+  variance estimates. 
+  \code{sigma} and \code{2*L} are the scale parameter and degrees of freedom of the (local) signal distribution. \code{L} characterizes the effective number of coils. Both parameters are either scalars or arrays of the size of the images.}
 
 }
 }

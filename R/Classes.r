@@ -105,8 +105,8 @@ setClass("dtiTensor",
             cat("invalid length of bw\n")
             return(invisible(FALSE))
           }
-          if (!(object@method %in% c("linear","nonlinear","unknown"))) {
-            cat("method should specify either linear or nonlinear or unknown\n")
+          if (!(object@method %in% c("linear","nonlinear","quasi-likelihood","unknown"))) {
+            cat("method should specify either linear, nonlinear, quasi-likelihood or unknown\n")
             return(invisible(FALSE))
           }
          }

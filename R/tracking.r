@@ -126,7 +126,9 @@ mask=NULL, method="LINEPROP", minfa=0.3, maxangle=30, subsample=1)
             )
 })
 
-setMethod("tracking","dtiIndices", function(obj, roix=NULL, roiy=NULL, roiz=NULL, mask=NULL, method="LINEPROP", minfa=0.3, maxangle=30, subsample = 1)
+setMethod("tracking","dtiIndices", function( obj,
+   roix=NULL, roiy=NULL, roiz=NULL, mask=NULL, method="LINEPROP",
+   minfa=0.3, maxangle=30, subsample = 1)
 {
 
   args <- sys.call(-1)
@@ -239,10 +241,10 @@ setMethod("tracking","dtiIndices", function(obj, roix=NULL, roiy=NULL, roiz=NULL
             )
 })
 
-setMethod("tracking", "dwiMixtensor",
-function(obj, roix=NULL, roiy=NULL, roiz=NULL, mask=NULL, method="LINEPROP", minfa=0.3, maxangle=30, subsample = 1, mincompartsize=0)
+setMethod("tracking", "dwiMixtensor", function(obj, roix=NULL, roiy=NULL, 
+   roiz=NULL, mask=NULL, method="LINEPROP", minfa=0.3, maxangle=30, 
+   subsample = 1, mincompartsize=0)
 {
-
   args <- sys.call(-1)
   args <- c(obj@call,args)
   imethod <- switch(method, "LINEPROP" = 1,
@@ -360,7 +362,7 @@ function(obj, roix=NULL, roiy=NULL, roiz=NULL, mask=NULL, method="LINEPROP", min
             )
 })
 
-reduceMixtens <- function(mtobj,mincompartsize=0){
+reduceMixtens <- function(mtobj, mincompartsize=0){
 ##
 ##  remove small compartments from tensor mixture 
 ##  for internal use with tracking only !!!

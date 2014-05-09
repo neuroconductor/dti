@@ -223,7 +223,8 @@ showse3wghts <- function(lobject,gind=1,k=NULL,adaptive=TRUE, S0=FALSE, scale=.5
   
   
 plotse3wghts <- function(tindobj,lobject,slice=1,gind=1,k=NULL,adaptive=TRUE,
- scale=.5){
+ scale=.5, windowRect=c(1,1,600,600), userMatrix=diag(4), 
+ FOV=1, zoom=1, bgc="white", S0=TRUE, color=c("red","black")){
    img <- extract.image(plot(tindobj,slice=slice))
    center <- 
    if(is.null(k)) k <- length(lobject)

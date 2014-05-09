@@ -155,8 +155,7 @@ lkfullse3msh <- function(h,kappa,gradstats,vext,n){
 list(h=h,kappa=kappa,ind=ind[,1:nn],w=w[1:nn],nind=nn)
 }
 
-gethseqfullse3msh <-
-function (kstar, gradstats, kappa, vext = c(1, 1)) 
+gethseqfullse3msh <- function (kstar, gradstats, kappa, vext = c(1, 1)) 
 {
 #
 #  generate information on local bandwidths and variance reduction

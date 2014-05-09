@@ -20,7 +20,7 @@ Method \code{dwi.smooth.ms} implements an improved method that is applicable for
                                  yind=NULL, zind=NULL, verbose=FALSE, dist=1, 
                                  model=c("Gapprox","Gapprox2","Chi","Chi2"))
   \S4method{dwi.smooth.ms}{dtiData}(object, kstar, lambda=12, kappa0=.5, ncoils=1, 
-                                    sigma=NULL, ws0=1, level=NULL, xind=NULL,
+                                    sigma=NULL, ws0=1, level=NULL, mask = NULL, xind=NULL,
                                     yind=NULL, zind=NULL, verbose=FALSE, 
                                     usemaxni=TRUE, memrelease = TRUE)
 }
@@ -33,6 +33,7 @@ Method \code{dwi.smooth.ms} implements an improved method that is applicable for
   \item{sigma}{Error standard deviation. Assumed to be known and homogeneous in the current implementation. A reasonable estimate may be defined 
   as the modal value of standard deviations obtained using method \code{getsdofsb}. }
   \item{level}{Threshold for image intensities when setting mask.}
+  \item{mask}{Binary 3D image defining a mask}
   \item{vred}{Used if \code{kappa0=NULL} to specify the variance reduction on the sphere when suggesting a value of kappa0}
   \item{xind}{index for x-coordinate}
   \item{yind}{index for y-coordinate}
