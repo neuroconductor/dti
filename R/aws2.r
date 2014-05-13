@@ -71,7 +71,7 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
                 andirection=double(3*n),
                 det=double(n),
                 as.double(eps),
-                DUP=FALSE,
+                DUP=TRUE,
                 PACKAGE="dti")[c("D","anindex","andirection","det")]
   dim(z$D) <- dimy
   z$th0 <- th0
@@ -202,7 +202,7 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
                     integer(maxnw*3),# auxiliary for index of aktive data
                     double(maxnw),# auxiliary for weights
                     double(ngrad),# auxiliary for variances
-                    DUP=FALSE,PACKAGE="dti")[c("th0","D","bi","anindex","andirection","det","sigma2r","sihat")] 
+                    DUP=TRUE,PACKAGE="dti")[c("th0","D","bi","anindex","andirection","det","sigma2r","sihat")] 
      dim(z$th0) <- dim(z$bi) <- dim(z$anindex) <- dim(z$det) <- dim(z$sigma2r) <- dimy[-1]
      dim(z$D) <- dimy
      dim(z$andirection) <- c(3,dimy[-1]) 

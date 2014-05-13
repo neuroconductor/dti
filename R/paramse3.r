@@ -19,7 +19,7 @@ gethseqfullse3 <- function (kstar, gradstats, kappa=NULL, vext = c(1, 1))
                      vr=double(kstar),#
                      n=integer(1),#
                      as.integer(gradstats$dist),
-                     DUPL=FALSE,
+                     DUPL=TRUE,
                      PACKAGE="dti")[c("h","vr","n")]
        h[i,] <- z$h
        vr[i,] <- z$vr 

@@ -126,7 +126,7 @@ setMethod("reduceFibers","dwiFiber", function(obj, maxdist=1, ends=TRUE)
                     as.integer(nfibers),
                     keep=logical(nfibers),
                     as.double(maxdist),
-                    DUP=FALSE,
+                    DUP=TRUE,
                     PACKAGE="dti")$keep
     } else {
    keep <- .Fortran("reducefi",
@@ -137,7 +137,7 @@ setMethod("reduceFibers","dwiFiber", function(obj, maxdist=1, ends=TRUE)
                     as.integer(nfibers),
                     keep=logical(nfibers),
                     as.double(maxdist),
-                    DUP=FALSE,
+                    DUP=TRUE,
                     PACKAGE="dti")$keep
     } 
     startf <- startf[keep]
@@ -164,7 +164,7 @@ ident.fibers <- function(mat){
                  as.integer(dd/2),
                  fiberstarts=integer(dd/2),#thats more the maximum needed
                  nfibers=integer(1),
-                 DUP=FALSE,
+                 DUP=TRUE,
                  PACKAGE="dti")[c("fiberstarts","nfibers")]
    z$fiberstarts[1:z$nfibers]
 }

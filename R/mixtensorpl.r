@@ -142,7 +142,7 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,
                 s0=double(nvox),
                 vsi=double(nvox),
                 mask=logical(nvox),
-                DUPL=FALSE,
+                DUPL=TRUE,
                 PACKAGE="dti")[c("siq","s0","vsi","mask")]
       t2 <- Sys.time()
       cat(difftime(t2,t1),"for",nvox,"voxel\n")
@@ -165,7 +165,7 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,
                 as.integer(object@level),
                 siq=double(nvox*(ngrad0+3)),
                 as.integer(ngrad0+3),
-                DUPL=FALSE,
+                DUPL=TRUE,
                 PACKAGE="dti")$siq,ngrad0+3,nvox)
       t2 <- Sys.time()
       cat(difftime(t2,t1),"for",nvox,"voxel\n")
@@ -284,7 +284,7 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,
                  order   = integer(nvoxm),   # selected order of mixture
                  lev     = double(2*nvoxm),         # logarithmic eigenvalues
                  mix     = double(maxcomp*nvoxm),   # mixture weights
-                 DUPL=FALSE, PACKAGE="dti")[c("sigma2","orient","order","lev","mix")]
+                 DUPL=TRUE, PACKAGE="dti")[c("sigma2","orient","order","lev","mix")]
          cat("End parameter estimation and model selection ",format(Sys.time()),"\n")
          sigma2 <-  array(0,ddim)
          sigma2[mask] <- z$sigma2
@@ -348,7 +348,7 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,
           orient  = double(2*maxcomp*nvoxm),#orient_ret phi/theta for all mixture tensors
           order   = integer(nvoxm),#order_ret selected order of mixture
           mix     = double(maxcomp*nvoxm),#mixture weights
-          DUPL=FALSE, PACKAGE="dti")[c("sigma2","orient","order","alpha","lambda","mix")],
+          DUPL=TRUE, PACKAGE="dti")[c("sigma2","orient","order","alpha","lambda","mix")],
           .C("mixtrl1", 
           as.integer(nvoxm),#n1
           as.integer(siind[,mask]),#siind 
@@ -369,7 +369,7 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,
           order   = integer(nvoxm),#order_ret selected order of mixture
           lambda  = double(nvoxm),#lambda_ret lambda_2 
           mix     = double(maxcomp*nvoxm),#mixture weights
-          DUPL=FALSE, PACKAGE="dti")[c("sigma2","orient","order","alpha","lambda","mix")],
+          DUPL=TRUE, PACKAGE="dti")[c("sigma2","orient","order","alpha","lambda","mix")],
           .C("mixtrl2", 
           as.integer(nvoxm),#n1
           as.integer(siind[,mask]),#siind 
@@ -391,7 +391,7 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,
           alpha   = double(nvoxm),#alpha_ret alpha=(lambda_1-lambda_2)/lambda_2 
           lambda  = double(nvoxm),#lambda_ret lambda_2 
           mix     = double(maxcomp*nvoxm),#mixture weights
-          DUPL=FALSE, PACKAGE="dti")[c("sigma2","orient","order","alpha","lambda","mix")])
+          DUPL=TRUE, PACKAGE="dti")[c("sigma2","orient","order","alpha","lambda","mix")])
       cat("End parameter estimation and model selection (C-code)",format(Sys.time()),"\n")
       sigma2 <-  array(0,ddim)
       sigma2[mask] <- z$sigma2
@@ -491,7 +491,7 @@ selisample <- function(ngrad,maxcomp,nguess,dgrad,maxc){
                 as.integer(dim(dgrad)[1]),
                 ind = logical(nguess),
                 as.double(maxc),
-                DUPL=FALSE,
+                DUPL=TRUE,
                 PACKAGE="dti")$ind 
    .Random.seed <- saved.seed
    }
@@ -533,7 +533,7 @@ maxc=.866,nguess=100,mc.cores = setCores(,reprt=FALSE)){
                    as.integer(nvoxel),
                    as.logical(landir),
                    iandir=integer(prod(ddim)),
-                   DUPL=FALSE,
+                   DUPL=TRUE,
                    PACKAGE="dti")$iandir
    isample0 <- selisample(nvico,maxcomp,nguess,dgradi,maxc)
    if(maxcomp>1) isample1 <- selisample(nvico,maxcomp-1,nguess,dgradi,maxc)
@@ -572,7 +572,7 @@ maxc=.866,nguess=100,mc.cores = setCores(,reprt=FALSE)){
                        krit=double(nvoxel),
                        as.integer(maxcomp+2),
                        as.logical(mask&!landir),
-                       DUP=FALSE,
+                       DUP=TRUE,
                        PACKAGE="dti")[c("siind","krit")]
          dim(z$siind) <- c(maxcomp+2,nvoxel)
          siind[,!landir] <- z$siind[,!landir]
@@ -619,7 +619,7 @@ maxc=.866,nguess=100,mc.cores = setCores(,reprt=FALSE)){
                           as.logical(mask&landir),
                           as.double(dgradi),
                           as.double(maxc),
-                          DUP=FALSE,
+                          DUP=TRUE,
                           PACKAGE="dti")[c("siind","krit")]
             dim(z$siind) <- c(maxcomp+2,nvoxel)
             siind[,landir] <- z$siind[,landir]
@@ -711,7 +711,7 @@ getsiind2 <- function(si,sigma2,grad,bv,vico,alpha,lambda,maxcomp=3,maxc=.866,ng
 #                 as.double(bv),
 #                 as.integer(ng),
 #                 rsk=double(1),
-#                 DUPL=FALSE,
+#                 DUPL=TRUE,
 #                 PACKAGE="dti")$rsk   
 #    rsk
 # }
@@ -732,7 +732,7 @@ getsiind2 <- function(si,sigma2,grad,bv,vico,alpha,lambda,maxcomp=3,maxc=.866,ng
 #                 as.double(bv),
 #                 as.integer(ng),
 #                 drsk=double(npar),
-#                 DUPL=FALSE,
+#                 DUPL=TRUE,
 #                 PACKAGE="dti")$drsk   
 #    drsk
 # }
@@ -753,7 +753,7 @@ getsiind2 <- function(si,sigma2,grad,bv,vico,alpha,lambda,maxcomp=3,maxc=.866,ng
 #                 as.double(bv),
 #                 as.integer(ng),
 #                 drsk=double(npar),
-#                 DUPL=FALSE,
+#                 DUPL=TRUE,
 #                 PACKAGE="dti")$drsk   
 #    rsk <- .Fortran("rskmixl2",
 #                 as.double(par),
@@ -763,7 +763,7 @@ getsiind2 <- function(si,sigma2,grad,bv,vico,alpha,lambda,maxcomp=3,maxc=.866,ng
 #                 as.double(bv),
 #                 as.integer(ng),
 #                 rsk=double(1),
-#                 DUPL=FALSE,
+#                 DUPL=TRUE,
 #                 PACKAGE="dti")$rsk   
 #    drskn <- drsk
 #    for(i in 1:npar){
@@ -777,7 +777,7 @@ getsiind2 <- function(si,sigma2,grad,bv,vico,alpha,lambda,maxcomp=3,maxc=.866,ng
 #                 as.double(bv),
 #                 as.integer(ng),
 #                 rsk=double(1),
-#                 DUPL=FALSE,
+#                 DUPL=TRUE,
 #                 PACKAGE="dti")$rsk   
 #       drskn[i] <- (rsk0-rsk)/eps
 #    }

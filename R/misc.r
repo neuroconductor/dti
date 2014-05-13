@@ -28,7 +28,7 @@ sioutlier1 <- function( si, s0ind, level, mc.cores = 1, verbose = TRUE){
                   as.integer(ns0),
                   si=double(n*ng),
                   index=logical(n),
-                  DUP=FALSE,
+                  DUP=TRUE,
                   PACKAGE="dti")[c("si","index")]
     zz <- matrix(z$si,ng,n)
     index <- (1:n)[z$index]
@@ -44,7 +44,7 @@ sioutlier1 <- function( si, s0ind, level, mc.cores = 1, verbose = TRUE){
                           as.integer(ng-ns0),
                           si=double(n*(ng+1)),
                           as.integer(ng+1),
-                          DUP=FALSE,
+                          DUP=TRUE,
                           PACKAGE="dti")$si,ng+1,n)
     t2 <- Sys.time()
     if(mc.cores>1) setCores(mc.cores.old,reprt=FALSE)
@@ -92,7 +92,7 @@ sioutlier <- function( si, s0ind, mc.cores = 1, verbose = TRUE){
                   as.integer(ns0),
                   si=double(n*ng),
                   index=logical(n),
-                  DUP=FALSE,
+                  DUP=TRUE,
                   PACKAGE="dti")[c("si","index")]
   } else {
     zz <- matrix(.Fortran("outlierp",
@@ -105,7 +105,7 @@ sioutlier <- function( si, s0ind, mc.cores = 1, verbose = TRUE){
                           as.integer(ng-ns0),
                           si=double(n*(ng+1)),
                           as.integer(ng+1),
-                          DUP=FALSE,
+                          DUP=TRUE,
                           PACKAGE="dti")$si,ng+1,n)
     t2 <- Sys.time()
     if (verbose) cat( difftime( t2, t1), attr(difftime( t2, t1), "units"), "for", n, "voxel\n")
@@ -138,7 +138,7 @@ mcorr <- function(res,mask,ddim,ngrad0,lags=c(5,5,3),mc.cores=1){
                    as.integer(lags[1]),
                    as.integer(lags[2]),
                    as.integer(lags[3]),
-                   PACKAGE="dti",DUP=FALSE)$scorr
+                   PACKAGE="dti",DUP=TRUE)$scorr
   t2 <- Sys.time()
   cat(difftime(t2,t1),"\n")
   if(mc.cores>1) setCores(mc.cores.old,reprt=FALSE)
@@ -189,7 +189,7 @@ dti3Dev <- function(D,mask,mc.cores=1){
                    as.double(D[,mask]),
                    as.integer(nvox0),
                    ev=double(3*nvox0),
-                   DUP=FALSE,
+                   DUP=TRUE,
                    PACKAGE="dti")$ev
    t2 <- Sys.time()
    cat(difftime(t2,t1)," for",nvox0,"voxel\n")
@@ -213,7 +213,7 @@ dti3Dand <- function(D,mask,mc.cores=1){
                    as.double(D[,mask]),
                    as.integer(nvox0),
                    andir=double(3*nvox0),
-                   DUP=FALSE,
+                   DUP=TRUE,
                    PACKAGE="dti")$andir
    t2 <- Sys.time()
    cat(difftime(t2,t1)," for",nvox0,"voxel\n")
@@ -242,7 +242,7 @@ dti3Dall <- function(D,mask,mc.cores=1){
                    md=double(nvox0),
                    andir=double(3*nvox0),
                    ev=double(3*nvox0),
-                   DUP=FALSE,
+                   DUP=TRUE,
                    PACKAGE="dti")[c("fa","ga","md","andir","ev")]
    t2 <- Sys.time()
    cat(difftime(t2,t1)," for",nvox0,"voxel\n")
@@ -274,7 +274,7 @@ dtieigen <- function(D,mask,mc.cores=1){
                    fa=double(nvox0),
                    ev=double(3*nvox0),
                    andir=double(6*nvox0),
-                   DUP=FALSE,
+                   DUP=TRUE,
                    PACKAGE="dti")[c("fa","ev","andir")]
    t2 <- Sys.time()
    cat(difftime(t2,t1)," for",nvox0,"voxel\n")
@@ -305,7 +305,7 @@ dtiind3D <- function( D, mask, mc.cores = 1, verbose = TRUE){
                 md      = double(nvox0),
                 andir   = double(3*nvox0),
                 bary    = double(3*nvox0),
-                DUP     = FALSE,
+                DUP     = TRUE,
                 PACKAGE = "dti")[c( "fa", "ga", "md", "andir", "bary")]
   if(mc.cores>1) setCores(mc.cores.old,reprt=FALSE)
   t2 <- Sys.time()
@@ -568,7 +568,7 @@ connect.mask <- function(mask){
                  integer(n),
                  integer(n),
                  mask=logical(n),
-                 DUP=FALSE,
+                 DUP=TRUE,
                  PACKAGE="dti")$mask
   dim(mask1) <- dm
   mask1
@@ -596,7 +596,7 @@ sphcoord <- function(ccoord){
 #                  ab=integer(2*ndist),
 #                  distab=double(ndist),
 #                  as.integer(ndist),
-#                  DUPL=FALSE,
+#                  DUPL=TRUE,
 #                  PACKAGE="dti")[c("ab","distab")]
 #   o <- order(z$distab)
 #   distab <- z$distab[o]
@@ -608,7 +608,7 @@ sphcoord <- function(ccoord){
 #                  as.integer(ndist),
 #                  triangles=integer(3*5*ngrad),
 #                  ntriangles=as.integer(5*ngrad),
-#                  DUPL=FALSE,
+#                  DUPL=TRUE,
 #                  PACKAGE="dti")[c("iab","triangles","ntriangles")]
 #   list(triangles=matrix(z$triangles,3,5*ngrad)[,1:z$ntriangle], edges=ab[,z$iab==2])
 # }
@@ -682,7 +682,7 @@ object@orient <- array(.Fortran("parofor",
                                 as.double(z$andir),
                                 as.integer(prod(dim(mix))),
                                 orient=double(2*prod(dim(mix))),
-                                DUPL=FALSE,
+                                DUPL=TRUE,
                                 PACKAGE="dti")$orient,c(2,dim(mix)))
 object@mix <- array(z$mix,dim(mix))
 object@order <- array(z$order,ddim)

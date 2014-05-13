@@ -1086,7 +1086,7 @@ z <- .Fortran("getmask",
               as.double(prop),
               s0=double(prod(object@ddim)),
               mask=logical(prod(object@ddim)),
-              DUP=FALSE,
+              DUP=TRUE,
               PACKAGE="dti")[c("s0","mask")]
 } else {
 z <- list(s0=object@si[,,,object@s0ind],mask=array(TRUE,object@ddim))
@@ -1114,7 +1114,7 @@ z <- .Fortran("getmask",
               as.double(prop),
               s0=double(prod(ddim)),
               mask=logical(prod(ddim)),
-              DUP=FALSE,
+              DUP=TRUE,
               PACKAGE="dti")[c("s0","mask")]
 } else {
 z <- list(s0=object,mask=array(TRUE,dim(object)))

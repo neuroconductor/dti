@@ -11,7 +11,7 @@ z <- .Fortran("lncchi",as.double(sigma),
                   as.integer(length(Sj)),
                   double(floor(L+10)),
                   ergs=double(1),
-                  DUPL=FALSE,
+                  DUPL=TRUE,
                   PACKAGE="dti")$ergs
 } else {# central case
 #z <- -(2*L-1)*sum(wj*log(Sj))/ni+ksi/2/sigma^2+2*L*log(sigma)+(L-1)*log(2)+lgamma(L)
@@ -33,7 +33,7 @@ mlikesigmaf <- function(sigma,wj,Sj,L){
                   double(floor(L+10)),
                   xmin=double(1),
                   fmin=double(1),
-                  DUPL=FALSE,
+                  DUPL=TRUE,
                   PACKAGE="dti")[c("xmin","fmin")]
 }
 #
@@ -158,7 +158,7 @@ estsigma <- function(y, mask, q, L, sigma, verbose=FALSE){
                       ind=integer(3*nwmd),
                       w=double(nwmd),
                       n=as.integer(nwmd),
-                      DUPL = FALSE,
+                      DUPL = TRUE,
                       PACKAGE = "dti")[c("ind","w","n")]
   nwmd <- parammd$n
   parammd$ind <- parammd$ind[1:(3*nwmd)]
@@ -175,7 +175,7 @@ estsigma <- function(y, mask, q, L, sigma, verbose=FALSE){
                       ind=integer(3*nw),
                       w=double(nw),
                       n=as.integer(nw),
-                      DUPL = FALSE,
+                      DUPL = TRUE,
                       PACKAGE = "dti")[c("ind","w","n")]
     nw <- param$n
     param$ind <- param$ind[1:(3*nw)]
@@ -207,7 +207,7 @@ estsigma <- function(y, mask, q, L, sigma, verbose=FALSE){
                   th = double(n),
                   sigman = double(n),
                   ksi = double(n),
-                  DUPL = FALSE,
+                  DUPL = TRUE,
                   PACKAGE = "dti")[c("ni","ksi","th","sigman")]
       thchi <- z$th
       ksi <- z$ksi
@@ -259,7 +259,7 @@ estsigma <- function(y, mask, q, L, sigma, verbose=FALSE){
                   as.double(lambda),
                   th = double(n),
                   sigman = double(n),
-                  DUPL = FALSE,
+                  DUPL = TRUE,
                   PACKAGE = "dti")[c("ni","th","sigman")]
     }
     th <- array(z$th,ddim)
@@ -280,7 +280,7 @@ estsigma <- function(y, mask, q, L, sigma, verbose=FALSE){
                       double(nwmd*mc.cores), # work(nw,nthreds)
                       as.integer(mc.cores),
                       sigman = double(n),
-                      DUPL = FALSE,
+                      DUPL = TRUE,
                       PACKAGE = "dti")$sigman
     dim(sigma) <- ddim
     mask[sigma==0] <- FALSE
@@ -351,7 +351,7 @@ estsigma <- function(y, mask, q, L, sigma, verbose=FALSE){
                       double(nwmd*mc.cores), # work(nwmd,nthreds)
                       as.integer(mc.cores),
                       sigman = double(n),
-                      DUPL = FALSE,
+                      DUPL = TRUE,
                       PACKAGE = "dti")$sigman
     dim(sigmar) <- ddim
   }
@@ -450,7 +450,7 @@ awssigmc <- function(y,                 # data
                       ind=integer(3*nw),
                       w=double(nw),
                       n=as.integer(nw),
-                      DUPL = FALSE,
+                      DUPL = TRUE,
                       PACKAGE = "dti")[c("ind","w","n")]
     nw <- param$n
     param$ind <- param$ind[1:(3*nw)]
@@ -476,7 +476,7 @@ awssigmc <- function(y,                 # data
                   as.double(sigma),
                   th = double(n),
                   sy = double(n),
-                  DUPL = FALSE,
+                  DUPL = TRUE,
                   PACKAGE = "dti")[c("ni","th","sy")]
     } else {
 #    cat("n",n,prod(ddim[1:3]),"ly",length(y),"lth",length(th),"lni",length(ni),"lfns",length(fncchi),"lmask",length(mask),"nw",nw,"lind",length(param$ind),"lw",length(param$w),"mc.cores",mc.cores,"\n")
@@ -498,7 +498,7 @@ awssigmc <- function(y,                 # data
                   as.integer(mc.cores), # nthreds
                   th = double(n), # thn(n1*n2*n3)
                   sy = double(n), # sy(n1*n2*n3)
-                  DUPL = FALSE,
+                  DUPL = TRUE,
                   PACKAGE = "dti")[c("ni","th","sy")]       
     }
     ## extract sum of weigths (see PS) and consider only voxels with ni larger then mean
@@ -570,7 +570,7 @@ aflsigmc <- function(y,ncoils,level=NULL,mask=NULL,h=2,hadj=1,vext = c( 1, 1)){
                     as.double(h),
                     as.double(vext),
                     sigma = double(n),
-                    DUPL = FALSE,
+                    DUPL = TRUE,
                     PACKAGE = "dti")$sigma
      dim(vx) <- ddim
      vxb <- vx[indB]
@@ -588,7 +588,7 @@ aflsigmc <- function(y,ncoils,level=NULL,mask=NULL,h=2,hadj=1,vext = c( 1, 1)){
                     as.double(h),
                     as.double(vext),
                     sm = double(n),
-                    DUPL = FALSE,
+                    DUPL = TRUE,
                     PACKAGE = "dti")$sm
      dim(m2) <- ddim
      m2b <- m2[indB]
@@ -666,7 +666,7 @@ afsigmc <- function(y,                 # data
                     as.double(h),
                     as.double(vext),
                     sigma = double(n),
-                    DUPL = FALSE,
+                    DUPL = TRUE,
                     PACKAGE = "dti")$sigma
      sigma <- sigma/2/(ncoils-gamma(ncoils+.5)^2/gamma(ncoils)^2)
      sigma <- array( sqrt(sigma), ddim)
@@ -681,7 +681,7 @@ afsigmc <- function(y,                 # data
                     as.double(h),
                     as.double(vext),
                     sigma = double(n),
-                    DUPL = FALSE,
+                    DUPL = TRUE,
                     PACKAGE = "dti")$sigma
      sigma <- array( afactor*sigma, ddim)
   }
@@ -796,7 +796,7 @@ awslinsd <- function(y,hmax=NULL,hpre=NULL,h0=NULL,mask=NULL,
                    bi=as.double(zobj$bi),
                    double(prod(dlw)),
                    as.double(wghts),
-                   PACKAGE="dti",DUP=FALSE)[c("bi","theta")]
+                   PACKAGE="dti",DUP=TRUE)[c("bi","theta")]
   dim(hobj$theta) <- dim(hobj$bi) <- dy
   #
   #   iteratate until maximal bandwidth is reached
@@ -828,7 +828,7 @@ awslinsd <- function(y,hmax=NULL,hpre=NULL,h0=NULL,mask=NULL,
                      theta=double(n),
                      double(prod(dlw)),
                      as.double(wghts),
-                     PACKAGE="dti",DUP=FALSE)[c("bi","hhom","theta","gi","gi2","hakt")]
+                     PACKAGE="dti",DUP=TRUE)[c("bi","hhom","theta","gi","gi2","hakt")]
     dim(zobj$theta)<-dim(zobj$gi)<-dim(zobj$gi2)<-dim(zobj$bi)<-dy
     hhom <- zobj$hhom
     #

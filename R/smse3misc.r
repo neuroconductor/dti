@@ -6,7 +6,7 @@ betagamma <- function(g){
                 as.integer(ngrad),
                 double(2*ngrad),
                 bghat = double(2*ngrad*ngrad),
-                DUPL = FALSE,
+                DUPL = TRUE,
                 PACKAGE = "dti")$bghat
   dim(bghat) <- c(2, ngrad, ngrad)
   ## sphaerische Coordinaten fuer Gradienten-Paare
@@ -38,7 +38,7 @@ getkappas <- function(grad, trace = 0, dist = 1){
              as.double(beta),
              as.double(matm),
              erg = double(1),
-             DUPL = FALSE,
+             DUPL = TRUE,
              PACKAGE = "dti")$erg
   }
   krit5 <- function(x,p,pk4,matm,beta){

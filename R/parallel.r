@@ -43,7 +43,7 @@ pnlrdtirg <- function(si,btb,sdcoef,s0ind,ngrad){
                  res=double((8+ngrad)*nvox),
                  as.integer(8+ngrad),
                  double(ngrad),
-                 DUP=FALSE,
+                 DUP=TRUE,
                  PACKAGE="dti")$res
     z
 }
@@ -85,7 +85,7 @@ z <- .C("mixture",
           order   = integer(nvox),   # selected order of mixture
           lev     = double(2*nvox),         # logarithmic eigenvalues
           mix     = double(maxcomp*nvox),   # mixture weights
-          DUPL=FALSE, PACKAGE="dti")[c("sigma2","orient","order","lev","mix")]
+          DUPL=TRUE, PACKAGE="dti")[c("sigma2","orient","order","lev","mix")]
 rbind(z$order,z$sigma2,matrix(z$lev,2,nvox),matrix(z$mix,maxcomp,nvox),matrix(z$orient,2*maxcomp,nvox))
 }
 pdkiQP <- function(x,TA,Dmat,Amat){
@@ -125,7 +125,7 @@ z <- .C("mixtrl0",
           orient  = double(2*maxcomp*nvox),#orient_ret phi/theta for all mixture tensors
           order   = integer(nvox),#order_ret selected order of mixture
           mix     = double(maxcomp*nvox),#mixture weights
-          DUPL=FALSE, PACKAGE="dti")[c("sigma2","orient","order","mix")]
+          DUPL=TRUE, PACKAGE="dti")[c("sigma2","orient","order","mix")]
 lev <- matrix(0,2,nvox)
 lev[1,] <- (alpha+1)*lambda
 lev[2,] <- lambda
@@ -155,7 +155,7 @@ z <- .C("mixtrl1",
           order   = integer(nvox),#order_ret selected order of mixture
           lambda  = double(nvox),#lambda_ret lambda_2 
           mix     = double(maxcomp*nvox),#mixture weights
-          DUPL=FALSE, PACKAGE="dti")[c("sigma2","orient","order","lambda","mix")]
+          DUPL=TRUE, PACKAGE="dti")[c("sigma2","orient","order","lambda","mix")]
 lev <- matrix(0,2,nvox)
 lev[1,] <- (alpha+1)*z$lambda
 lev[2,] <- z$lambda
@@ -186,7 +186,7 @@ z <- .C("mixtrl2",
           alpha   = double(nvox),#alpha_ret alpha=(lambda_1-lambda_2)/lambda_2 
           lambda  = double(nvox),#lambda_ret lambda_2 
           mix     = double(maxcomp*nvox),#mixture weights
-          DUPL=FALSE, PACKAGE="dti")[c("sigma2","orient","order","alpha","lambda","mix")] 
+          DUPL=TRUE, PACKAGE="dti")[c("sigma2","orient","order","alpha","lambda","mix")] 
 lev <- matrix(0,2,nvox)
 lev[1,] <- (z$alpha+1)*z$lambda
 lev[2,] <- z$lambda
@@ -214,7 +214,7 @@ z <- .Fortran("pgtsii30",
          siind=integer((maxcomp+2)*nvox),
          krit=double(nvox),
          as.integer(maxcomp+2),
-         DUP=FALSE,
+         DUP=TRUE,
          PACKAGE="dti")[c("siind","krit")]
          dim(z$siind) <- c(maxcomp+2,nvox)
          rbind(z$krit,z$siind)
@@ -244,7 +244,7 @@ z <- .Fortran("pgtsii31",
          as.integer(maxcomp+2),
          as.double(dgradi),
          as.double(maxc),
-         DUP=FALSE,
+         DUP=TRUE,
          PACKAGE="dti")[c("siind","krit")]
          dim(z$siind) <- c(maxcomp+2,nvox)
          rbind(z$krit,z$siind)
@@ -276,7 +276,7 @@ siind <- .Fortran("getsii",
          siind=integer((maxcomp+1)*nvox),
          krit=double(nvox),
          as.integer(maxcomp+1),
-         DUP=FALSE,
+         DUP=TRUE,
          PACKAGE="dti")[c("siind","krit")]
 z <- matrix(0,maxcomp+2,nvox)
 z[-1,] <- siind$siind

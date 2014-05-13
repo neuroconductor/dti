@@ -90,7 +90,7 @@ setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, mi
                 fa=double(n1*n2),
                 md=double(n1*n2),
                 andir=double(3*n1*n2),
-                DUP=FALSE,
+                DUP=TRUE,
                 PACKAGE="dti")[c("fa","md","andir")]
   } else {
   z <- .Fortran("dti2Dfa",
@@ -100,7 +100,7 @@ setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, mi
                 fa=double(n1*n2),
                 md=double(n1*n2),
                 andir=double(3*n1*n2),
-                DUP=FALSE,
+                DUP=TRUE,
                 PACKAGE="dti")[c("fa","md","andir")]
    }
    oldpar <- par(mfrow=c(3,3),mar=mar,mgp=mgp,...)

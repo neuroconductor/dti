@@ -139,7 +139,7 @@ m1 <- sqrt(pi/2)*gamma(L+1/2)/gamma(1.5)/gamma(L)*hyperg_1F1(-0.5,L, -th1^2/2, g
                 double((nshell+1)*mc.cores),#thi
                 double((nshell+1)*mc.cores),#nii
                 double((nshell+1)*mc.cores),#fsi2                
-                DUPL=FALSE,
+                DUPL=TRUE,
                 PACKAGE="dti")[c("ni","th","ni0","th0")]
     t3 <- Sys.time()
     if(usemaxni){
@@ -167,14 +167,14 @@ m1 <- sqrt(pi/2)*gamma(L+1/2)/gamma(1.5)/gamma(L)*hyperg_1F1(-0.5,L, -th1^2/2, g
                            as.double(ze/nie0),
                            as.integer(nz),
                            exprob=double(nz),
-                           PACKAGE="dti",DUP=FALSE)$exprob
+                           PACKAGE="dti",DUP=TRUE)$exprob
   exceedenceb[,k] <- .Fortran("exceed",
                            as.double(kldistb),
                            as.integer(length(kldistb)),
                            as.double(ze/nie),
                            as.integer(nz),
                            exprob=double(nz),
-                           PACKAGE="dti",DUP=FALSE)$exprob
+                           PACKAGE="dti",DUP=TRUE)$exprob
   if(k>2){
   contour(ze,1:k,exceedence0[,1:k],levels=levels,ylab="step",xlab="z",
        main=paste("S0-image lambda=",lambda," Exceed. Prob."))

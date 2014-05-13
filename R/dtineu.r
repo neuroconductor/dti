@@ -229,7 +229,7 @@ D2Rall <- function(D){
                as.double(D),
                rho=double(6*nvox),
                as.integer(nvox),
-               DUP=FALSE,
+               DUP=TRUE,
                PACKAGE="dti")$rho,6,nvox)
 }
 R2Dall <- function(R){
@@ -242,7 +242,7 @@ R2Dall <- function(R){
                as.double(R),
                D=double(6*nvox),
                as.integer(nvox),
-               DUP=FALSE,
+               DUP=TRUE,
                PACKAGE="dti")$D,6,nvox)
 }
 #############
@@ -308,7 +308,7 @@ tchi <- function(param,si,btb,L,CL){
    D <- .Fortran("rho2D0",
                  as.double(param[-1]),
                  D=double(6),
-                 DUPL=FALSE,
+                 DUPL=TRUE,
                  PACKAGE="dti")$D
    gDg <- D%*%btb ## b_i*g_i^TD g_i (i=1,ngrad)
    gvalue <- param[1]*exp(-gDg)

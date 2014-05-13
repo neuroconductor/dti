@@ -188,7 +188,7 @@ c("Gapprox","Gapprox2","Chi","Chi2")){
                 double(ngrad*mc.cores),
                 as.integer(model),
                 as.double(minlevel),
-                DUPL=FALSE,
+                DUPL=TRUE,
                 PACKAGE="dti")[c("ni","th")]
 #     save(z,sb,thk,ni,param,model,ddim,lambda,ngrad,model,minlevel,ncoils,mask,file="tmpi.rsc")
        gc()
@@ -227,7 +227,7 @@ if(verbose){
                     double(param$nstarts),#swi
                     as.integer(model),
                     as.double(minlevel0),
-                    DUPL=FALSE,
+                    DUPL=TRUE,
                     PACKAGE="dti")[c("ni","th0")]
 #     save(z0,s0,th0,ni0,param,model,ddim,lambda,ns0,model,minlevel,ncoils,mask,file="tmp.rsc")
       th0 <- z0$th0
@@ -278,7 +278,7 @@ lkfullse3 <- function(h,kappa,gradstats,vext,n){
                     w=double(n),
                     n=as.integer(n),
                     as.integer(gradstats$dist),
-                    DUPL=FALSE,
+                    DUPL=TRUE,
                     PACKAGE="dti")[c("ind","w","n")]
       dim(z$ind) <- c(5,n)
 list(h=h,kappa=kappa,ind=z$ind[,1:z$n],w=z$w[1:z$n],nind=z$n)

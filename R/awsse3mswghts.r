@@ -143,7 +143,7 @@ dwi.smooth.ms.wghts <- function(object,kstar,lambda=12,kappa0=.5,ncoils=1,sigma=
                 w0=double(n01),
                 as.integer(n1),
                 as.integer(n01),
-                DUPL=FALSE,
+                DUPL=TRUE,
                 PACKAGE="dti")[c("ni","th","ni0","th0","w","w0")]
     t3 <- Sys.time()
     pwghts[[k1]] <- list(ind=pind1,w=z$w,n=n1,ind0=pind01,w0=z$w0,n0=n01)

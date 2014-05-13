@@ -92,7 +92,7 @@ mask=NULL, method="LINEPROP", minfa=0.3, maxangle=30, subsample=1)
               as.double(minfa), # not yet used
               as.double(maxangle),   # not yet used
 #             as.integer(imethod),    # not yet used (for tracking method)
-              DUP=FALSE)
+              DUP=TRUE)
 
   dim(dd) <- c(length(dd)/6,6);
   istartfiber <- ident.fibers(dd[,1:3])
@@ -207,7 +207,7 @@ setMethod("tracking","dtiIndices", function( obj,
               as.double(minfa), # not yet used
               as.double(maxangle),   # not yet used
 #             as.integer(imethod),    # not yet used (for tracking method)
-              DUP=FALSE, package="dti")
+              DUP=TRUE, package="dti")
 
   dim(dd) <- c(length(dd)/6,6);
   istartfiber <- ident.fibers(dd[,1:3])
@@ -328,7 +328,7 @@ setMethod("tracking", "dwiMixtensor", function(obj, roix=NULL, roiy=NULL,
               as.double(minfa),
               as.double(maxangle), 
 #             as.integer(imethod),    # not yet used (for tracking method)
-              DUP=FALSE, package="dti")
+              DUP=TRUE, package="dti")
 
   dim(dd) <- c(length(dd)/6,6);
   istartfiber <- ident.fibers(dd[,1:3])

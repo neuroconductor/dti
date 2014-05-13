@@ -40,6 +40,27 @@ citEntry(entry = "Article",
 )
 
 citEntry(entry = "Article",
+         title = "Adaptive smoothing of multi-shell diffusion-weighted magnetic resonance data by msPOAS",
+         author = personList(as.person("Saskia M.A. Becker"),
+                             as.person("Karsten Tabelow"),
+                             as.person("Siawoosh Mohammadi"),
+                             as.person("Nikolaus Weiskopf"),
+                             as.person("J\\\"org Polzehl")),
+         journal      = "NeuroImage",
+         year         = "2014",
+         volume       = "95",
+         pages        = "90--105",
+         doi          = "10.1016/j.neuroimage.2014.03.053",
+
+         textVersion =
+         paste("Saskia M.A. Becker, Karsten Tabelow, Siawoosh Mohammadi, Nikolaus Weiskopf, Joerg Polzehl (2014).",
+               "Adaptive smoothing of multi-shell diffusion-weighted magnetic resonance data by msPOAS.",
+               "NeuroImage, 95, 90-105.",
+               "doi:10.1016/j.neuroimage.2014.03.053"),
+         header = "For the msPOAS method please cite:"
+)
+
+citEntry(entry = "Article",
          title = "Modeling the orientation distribution function by mixtures of angular central Gaussian distributions",
          author = personList(as.person("Karsten Tabelow"), 
 	                     as.person("Henning U. Voss"),

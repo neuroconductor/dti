@@ -140,7 +140,7 @@ setMethod("show3d","dtiTensor", function(obj,
                     as.double(D),
                     as.integer(n),
                     radii=double(n*polyeder$nv),
-                    DUP=FALSE,
+                    DUP=TRUE,
                     PACKAGE="dti")$radii
   dim(radii) <- c(polyeder$nv,n)
   if(what=="odf") normalize <- FALSE
@@ -269,7 +269,7 @@ setMethod("show3d","dwiMixtensor", function(obj,
                     as.integer(maxorder),
                     as.integer(n),
                     radii=double(n*polyeder$nv),
-                    DUP=FALSE,
+                    DUP=TRUE,
                     PACKAGE="dti")$radii
   dim(radii) <- c(polyeder$nv,n)
 #
@@ -298,7 +298,7 @@ setMethod("show3d","dwiMixtensor", function(obj,
                     as.integer(maxorder),
                     as.integer(n),
                     andir=double(3*n*dim(mix)[1]),
-                    DUP=FALSE,
+                    DUP=TRUE,
                     PACKAGE="dti")$andir,c(3,dim(mix)[1],n1,n2,n3))
   lcoord <- array(0,c(3,2*dim(mix)[1],n))
   for(i in 1:dim(mix)[1]){
