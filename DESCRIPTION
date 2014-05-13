@@ -1,6 +1,6 @@
 Package: dti
-Version: 1.2-0 
-Date: 2014-05-07
+Version: 1.2-1 
+Date: 2014-05-13
 Title: Analysis of diffusion weighted imaging (DWI) data
 Authors@R: c(person("Karsten", "Tabelow", role = c("aut", "cre"),
                     email = "karsten.tabelow@wias-berlin.de"), 
