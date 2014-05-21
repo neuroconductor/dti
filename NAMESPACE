@@ -1,4 +1,5 @@
-useDynLib(dti,.registration=TRUE)
+#useDynLib(dti,.registration=TRUE)
+useDynLib(dti)
 
 #exportPattern("^[^\\.]")
 
