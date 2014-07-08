@@ -72,7 +72,6 @@ setMethod("dwiSqrtODF","dtiData",function(object,what="sqrtODF",order=4,forder=1
                              double(nk*mc.cores),#ck
                              double(nk*mc.cores),#ck1
                              coefs=double(nk*nmask),
-                             DUPL=TRUE,
                              PACKAGE="dti")$coefs,c(nk,nmask))
     t2 <- Sys.time()
     cat("Obtained parameter estimates in",format(difftime(t2,t1)),"\n")
@@ -86,7 +85,6 @@ setMethod("dwiSqrtODF","dtiData",function(object,what="sqrtODF",order=4,forder=1
                   as.double(L),
                   fvmofc=double(nmask),
                   res=double(nmask*ng),
-                  DUPL=TRUE,
                   PACKAGE="dti")
     sigma2 <- z$fvmofc/(ng-nk)*2
     res <- array(z$res,c(ng,nmask))
@@ -201,7 +199,7 @@ g1f1 <- function(n,L,bvD0){
   ng <- length(bvD0)
   g1 <- array(0,c(L+1,2*n+1,ng))
   for(i in 0:(2*n)) for(j in (0:L)) {
-    g1[j+1,i+1,] <- gamma(j+i+1.5)*hyperg_1F1( i+j+1.5, 2*j+1.5, - bvD0)
+    g1[j+1,i+1,] <- gamma(j+i+1.5)*hg1f1( i+j+1.5, 2*j+1.5, - bvD0)
   }
   g1
 }
@@ -406,7 +404,6 @@ Mofcall <- function(coef,kern,si,lambda=0){
               as.double(L),
               krit=double(n),
               res=double(ng*n),
-              DUPL=TRUE,
               PACKAGE="dti")[c("krit","res")]
   list(Mofc=array(z$krit,dim(coef)[-(1:2)]),residuals=array(z$res,c(ng,dim(coef)[-(1:2)])),
        fitted.values=array(z$res+t(si),c(ng,dim(coef)[-(1:2)])))

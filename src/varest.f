@@ -31,6 +31,7 @@ C$OMP DO SCHEDULE(GUIDED)
                   if(j2.le.0.or.j2.gt.n2) CYCLE
                   j3=i3+ind(3,j)
                   if(j3.le.0.or.j3.gt.n3) CYCLE
+                  if(.not.mask(j1,j2,j3)) CYCLE
                   if(y(j1,j2,j3).le.0.d0) CYCLE
                   k=k+1
                   work(k,thrednr)=y(j1,j2,j3)

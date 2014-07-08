@@ -84,7 +84,6 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
                 andirection=double(3*n),
                 det=double(n),
                 as.double(eps),
-                DUP=TRUE,
                 PACKAGE="dti")[c("D","anindex","andirection","det")]
   y <- array(z$D,dimy)
   z$bi <- 1/sigma2
@@ -99,7 +98,6 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
                        as.double(hsig),
                        as.double(vext),
                        sigma2hat=double(n1*n2*n3),
-                       DUP=TRUE,
                        PACKAGE="dti")$sigma2hat
    z$sigma2hat <- sigma2hat
 #
@@ -203,7 +201,6 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
                 sigma2hat=double(n),
                 double(ngrad),
                 as.double(eps),
-                DUP=TRUE,
                 PACKAGE="dti")[c("D","bi","anindex","andirection","det","sigma2hat")]
      if(hakt<hsig){
         eta <- (hsig^3 - hakt^3)/hsig^3

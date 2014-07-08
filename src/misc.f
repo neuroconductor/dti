@@ -428,5 +428,87 @@ C$OMP END PARALLEL
 C$OMP FLUSH(exprob)
       Return
       End
-
-
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+C
+C  remove interior points from a cube, and return matrix of coords
+C
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+      subroutine rminteri(x,lx,n1,n2,n3,xcoord,nc,value)
+      implicit logical (a-z)
+      integer n1,n2,n3,xcoord(3,*),nc,x(n1,n2,n3),value(*)
+      logical lx(n1,n2,n3),sel
+      integer i1,i2,i3,k,a1,a2,a3,e1,e2,e3
+      k=1
+      DO i1=1,n1
+         a1=max(1,i1-1)
+         e1=min(n1,i1+1)
+         DO i2=1,n2
+            a2=max(1,i2-1)
+            e2=min(n2,i2+1)
+            DO i3=1,n3
+               a3=max(1,i3-1)
+               e3=min(n3,i3+1)
+               if(.not.lx(i1,i2,i3)) CYCLE
+               sel=.FALSE.
+               if(.not.lx(a1,i2,i3)) sel=.TRUE.
+               if(.not.lx(e1,i2,i3)) sel=.TRUE.
+               if(.not.lx(i1,a2,i3)) sel=.TRUE.
+               if(.not.lx(i1,e2,i3)) sel=.TRUE.
+               if(.not.lx(i1,i2,a3)) sel=.TRUE.
+               if(.not.lx(i1,i2,e3)) sel=.TRUE.
+C               if(a1.eq.1.or.a2.eq.1.or.a3.eq.1) sel=.TRUE.
+C               if(e1.eq.n1.or.e2.eq.n2.or.e3.eq.n3) sel=.TRUE.
+               if(sel) THEN
+                  xcoord(1,k)=i1
+                  xcoord(2,k)=i2
+                  xcoord(3,k)=i3
+                  value(k)=x(i1,i2,i3)
+                  k=k+1
+               END IF
+            END DO
+         END DO
+      END DO
+      nc=k-1
+      RETURN
+      END
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+C
+C   Hypergeometric 1F1 NIST HB 13.2.2, 13.2.39, 13.2(iv)
+C
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+      subroutine hg1f1(a,b,z,n,fz)
+      implicit logical (a-z)
+      integer n
+      real*8 a,b,z(n),fz(n)
+      integer i
+      real*8 x,y,d,eps,zi,ezi,ai
+      real*8 gammaf
+      external gammaf
+      eps=1.d-15
+      DO i=1,n
+         d = 1.d0
+         zi = z(i)
+         IF(zi.lt.0) THEN
+            ezi=exp(zi/2)
+            zi=-zi
+            ai=b-a
+            if(zi.gt.1400) THEN
+               fz(i) = exp((ai-b)*log(zi))/gammaf(ai)
+               CYCLE
+            END IF
+         ELSE
+            ezi=1.d0
+            ai=a
+         ENDIF
+         x = ezi
+         y = ezi
+         DO WHILE (abs(y).gt.abs(x)*eps)
+            y = y*(ai+d-1.d0)/(b+d-1.d0)*zi/d
+            x = x+y
+            d = d+1.d0
+         END DO
+         fz(i) = ezi*x
+      END DO
+      RETURN
+      END
+      
