@@ -11,7 +11,7 @@ likesigmaf <- function(sigma,wj,Sj,L){
                   as.integer(length(Sj)),
                   double(floor(L+10)),
                   ergs=double(1),
-                  PACKAGE="dti")$ergs
+                  PACKAGE="dti")$ergs-L
   } else {# central case
     #z <- -(2*L-1)*sum(wj*log(Sj))/ni+ksi/2/sigma^2+2*L*log(sigma)+(L-1)*log(2)+lgamma(L)
     z <- -(L-1)*sum(wj*log(Sj))/ni+ksi/2/sigma^2+2*L*log(sigma)+(L-1)*log(2)+lgamma(L)

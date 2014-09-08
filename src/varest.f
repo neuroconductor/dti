@@ -92,7 +92,7 @@ C
 !$      external omp_get_thread_num
       n = n1*n2*n3
       thrednr = 1
-      tol=1d-6
+      tol=1d-5
       maxit=100
 C  precompute values of lgamma(corrected df/2) in each voxel
 C$OMP PARALLEL DEFAULT(SHARED)
@@ -158,7 +158,9 @@ C   thats the estimated standard deviation of s(i1,i2,i3)
          if(sw.gt.minni) THEN
             ksin(i1,i2,i3) = sws2/sw
 C needed for the next iteration 
-            low = sgi/1d1
+            low = max(sqrt(ksin(i1,i2,i3)/2.d0/L),sgi/1d1)
+C  sqrt(ksin(i1,i2,i3)/2.d0/L) is the solution in the central case !
+C  old code was still correct but inefficient
             up = sgi*1d1
             call localmin(low,up,wad(1,thrednr),sad(1,thrednr),L,jj,
      1                    tol,maxit,work(1,thrednr),sgi,fmin)

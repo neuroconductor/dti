@@ -17,8 +17,18 @@ void F77_SUB(tensres)();
 void F77_SUB(thcorr)();
 void F77_SUB(k456krb)();
 void F77_SUB(hg1f1)();
-void F77_SUB(inhmtfun)();
-void F77_SUB(inhmtgrd)();
+void F77_SUB(imtfunbv)();
+void F77_SUB(imtgrdbv)();
+void F77_SUB(imtfunb1)();
+void F77_SUB(imtgrdb1)();
+void F77_SUB(imtfunb0)();
+void F77_SUB(imtgrdb0)();
+void F77_SUB(mtfunbv)();
+void F77_SUB(mtgrdbv)();
+void F77_SUB(mtfunb1)();
+void F77_SUB(mtgrdb1)();
+void F77_SUB(mtfunb0)();
+void F77_SUB(mtgrdb0)();
 void dtens( int * n1, double * param, double * sig_in, int * ngrad, double * btb_in, 
 	    double * sdcoef, double * sig_tmp, double * vinv_tmp, int * maxit, double * reltol);
 static R_CMethodDef cEntries[] = {
@@ -41,8 +51,18 @@ static R_FortranMethodDef fortranEntries[] = {
    {"thcorr", (DL_FUNC) &F77_SUB(thcorr), 8},
    {"k456krb", (DL_FUNC) &F77_SUB(k456krb), 4},
    {"hg1f1", (DL_FUNC) &F77_SUB(hg1f1), 5},
-   {"inhmtfun", (DL_FUNC) &F77_SUB(inhmtfun), 11},
-   {"inhmtgrd", (DL_FUNC) &F77_SUB(inhmtfun), 15},
+   {"imtfunbv", (DL_FUNC) &F77_SUB(imtfunbv), 11},
+   {"imtgrdbv", (DL_FUNC) &F77_SUB(imtgrdbv), 15},
+   {"imtfunb1", (DL_FUNC) &F77_SUB(imtfunb1), 12},
+   {"imtgrdb1", (DL_FUNC) &F77_SUB(imtgrdb1), 16},
+   {"imtfunb0", (DL_FUNC) &F77_SUB(imtfunb0), 13},
+   {"imtgrdb0", (DL_FUNC) &F77_SUB(imtgrdb0), 17},
+   {"mtfunbv", (DL_FUNC) &F77_SUB(mtfunbv), 11},
+   {"mtgrdbv", (DL_FUNC) &F77_SUB(mtgrdbv), 14},
+   {"mtfunb1", (DL_FUNC) &F77_SUB(mtfunb1), 12},
+   {"mtgrdb1", (DL_FUNC) &F77_SUB(mtgrdb1), 15},
+   {"mtfunb0", (DL_FUNC) &F77_SUB(mtfunb0), 13},
+   {"mtgrdb0", (DL_FUNC) &F77_SUB(mtgrdb0), 16},
    {NULL, NULL, 0}
 };
 

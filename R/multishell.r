@@ -12,9 +12,10 @@ sphtrarea1 <- function(g1,g2,g3){
   a12 <- acos(c12)
   a23 <- acos(c23)
   a13 <- acos(c13)
-  b1 <- 1+(c23-cos(a12-a13))/s12/s13
-  b2 <- 1+(c13-cos(a12-a23))/s12/s23
-  b3 <- 1+(c12-cos(a13-a23))/s13/s23
+  ## observed b1, b2, b3 outside [-1,1] due to numerics
+  b1 <- min(max(1+(c23-cos(a12-a13))/s12/s13,-1),1)
+  b2 <- min(max(1+(c13-cos(a12-a23))/s12/s23,-1),1)
+  b3 <- min(max(1+(c12-cos(a13-a23))/s13/s23,-1),1)
   acos(b1)+acos(b2)+acos(b3)-pi
 }
 
@@ -42,6 +43,8 @@ getsphwghts <- function(g,g1,g2,g3){
 getnext3g <- function(grad,bv){
   ##
   ##  calculate next neighbors on the sphere and weights for interpolation
+  ##
+  binomial <- function(a,b) prod(1:a)/prod(1:(a-b))/prod(1:b)
   ##
   grad <- grad[,bv>0]
   ng <- dim(grad)[2]
@@ -75,6 +78,7 @@ getnext3g <- function(grad,bv){
     for(j in (1:nbv)[-i]){
       indbk <- (1:ng)[bv==ubv[j]]
       for(k in indb){
+        maxl <- binomial(length(indbk),3)
         d <- abs(t(grad[,k])%*%grad[,indbk])
         od <- order(d,decreasing = TRUE)
         ijk0 <- (1:length(indbk))[od]
@@ -97,13 +101,17 @@ getnext3g <- function(grad,bv){
             odd <- order(dd)
             l <- 1
           }
-          while(z$ierr==1&&l<dperm){
+          while(z$ierr==1&&l<maxl){
             ijk1 <- ijk[perm[odd[l],]]
             z <- getsphwghts(grad[,k],grad[,ijk1[1]],grad[,ijk1[2]],grad[,ijk1[3]])
             ind[,j,k] <- ijk1[1:3]
             l<-l+1
           }
-          #            cat("l",l-1,"ijk1",ijk1[1:3],"w",z$w,"\n")
+##    if we were running out of options use ijk[1:3]
+          if(z$ierr==1){
+             ind[,j,k] <- ijk[1:3]
+             z <- getsphwghts(grad[,k],grad[,ijk[1]],grad[,ijk[2]],grad[,ijk[3]])
+          }
           w[,j,k] <- z$w
         }
       }
