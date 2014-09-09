@@ -40,6 +40,22 @@ getsphwghts <- function(g,g1,g2,g3){
   list(w=w/sum(w),ierr=ierr) 
 }
 
+unifybvals <- function(bval,dbv=51){
+   nbv <- length(bval)
+   nbval <- bval
+   obval <- numeric(nbv)
+   while(any(nbval!=obval)){
+      obval <- nbval
+      sbv <- sort(obval)
+      dsbv <- (1:(nbv-1))[diff(sbv)<dbv]
+      sbv[dsbv+1] <- sbv[dsbv]
+      obv <- order(obval)
+      nbval[obv] <- sbv
+   }
+   for(bv in unique(nbval)) nbval[nbval==bv] <- trunc(mean(bval[nbval==bv]))
+   nbval
+}
+
 getnext3g <- function(grad,bv){
   ##
   ##  calculate next neighbors on the sphere and weights for interpolation
@@ -62,7 +78,7 @@ getnext3g <- function(grad,bv){
   dperm <- l-1
   perm <- perm[2:dperm,]
   #  thats all ordered triples from (1:ng2), without (1,2,3)
-  bv <- bv[bv>0]
+  bv <- unifybvals(bv[bv>0]) # identifies b-values that differ by less than dbv=51
   ubv <- sort(unique(bv[bv>max(bv)/50]))
   nbv <- length(ubv)
   ind <- array(0,c(3,nbv,ng))
