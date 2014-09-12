@@ -93,8 +93,13 @@ getnext3g <- function(grad,bv){
     w[3,i,indb] <- 0
     for(j in (1:nbv)[-i]){
       indbk <- (1:ng)[bv==ubv[j]]
+      perm0 <- perm
+      if(length(indbk)<ng2){
+         indp <- apply(perm < length(indbk),1,all)
+         perm0 <- perm0[indp,]
+      }
+      dperm <- dim(perm0)[1]+1
       for(k in indb){
-        maxl <- binomial(length(indbk),3)
         d <- abs(t(grad[,k])%*%grad[,indbk])
         od <- order(d,decreasing = TRUE)
         ijk0 <- (1:length(indbk))[od]
@@ -111,14 +116,14 @@ getnext3g <- function(grad,bv){
             dd <- numeric(dperm-1)
             d <- acos(pmin(1,d))
             for(l in 1:(dperm-1)){
-              ijk1 <- ijk0[perm[l,]]
+              ijk1 <- ijk0[perm0[l,]]
               dd[l] <- d[ijk1[1]]+d[ijk1[2]]+d[ijk1[3]]
             }
             odd <- order(dd)
             l <- 1
           }
-          while(z$ierr==1&&l<maxl){
-            ijk1 <- ijk[perm[odd[l],]]
+          while(z$ierr==1&&l<dperm){
+            ijk1 <- ijk[perm0[odd[l],]]
             z <- getsphwghts(grad[,k],grad[,ijk1[1]],grad[,ijk1[2]],grad[,ijk1[3]])
             ind[,j,k] <- ijk1[1:3]
             l<-l+1
