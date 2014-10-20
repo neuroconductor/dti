@@ -158,10 +158,12 @@ C   thats the estimated standard deviation of s(i1,i2,i3)
          if(sw.gt.minni) THEN
             ksin(i1,i2,i3) = sws2/sw
 C needed for the next iteration 
-            low = max(sqrt(ksin(i1,i2,i3)/2.d0/L),sgi/1d1)
+C            low = max(sqrt(ksin(i1,i2,i3)/2.d0/L),sgi/1d1)
+             low = sgi/1d1
 C  sqrt(ksin(i1,i2,i3)/2.d0/L) is the solution in the central case !
 C  old code was still correct but inefficient
-            up = sgi*1d1
+C            up = sgi*1d1
+            up = min(sqrt(ksin(i1,i2,i3)/2.d0/L),sgi*1d1)
             call localmin(low,up,wad(1,thrednr),sad(1,thrednr),L,jj,
      1                    tol,maxit,work(1,thrednr),sgi,fmin)
          END IF
