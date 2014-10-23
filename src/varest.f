@@ -1,3 +1,77 @@
+      subroutine fmedian1(x,n,med)
+C
+C  compute the median using a select algorithm instead of sorting
+C
+      implicit logical (a-z)
+      integer n
+      real*8 x(n),med,fmedian
+      external fmedian
+      med = fmedian(x,n)
+      return
+      end
+      
+      subroutine swap(x,k,l)
+      implicit logical (a-z)
+      integer k,l
+      real*8 x(*),t
+      t = x(k)
+      x(k) = x(l)
+      x(l) = t
+      return
+      end
+      
+      subroutine qselect(x,n,k)
+C
+C  partial sorting using a select algorithm
+C  output x(k) contains the kth element of sort(x)
+C
+      implicit logical (a-z)
+      integer k,n
+      real*8 x(n)
+      integer lft,rght,cur,i
+      real*8 guess
+      lft=1
+      rght=n
+      DO WHILE (lft.lt.rght)
+         guess = x(k)
+         call swap(x,k,rght)
+         cur = lft
+         DO i=cur,rght-1
+            IF(x(i).le.guess) THEN
+               call swap(x,i,cur)
+               cur=cur+1
+            END IF
+         END DO
+         call swap(x,rght,cur)
+         if(cur.eq.k) EXIT
+         if(cur.lt.k) THEN
+            lft=cur+1
+         ELSE
+            rght=cur-1
+         END IF
+      END DO
+      RETURN
+      END
+
+      real*8 function fmedian(x,n)
+C
+C  compute the median using a select algorithm instead of sorting
+C  used in mediansm
+C      
+      implicit logical (a-z)
+      integer n
+      real*8 x(n)
+      integer m
+      m = n/2+1
+      call qselect(x,n,m)
+      fmedian = x(m)
+      if(mod(n,2).eq.0) THEN
+         m = n-m+1
+         call qselect(x,n,m)
+         fmedian = (fmedian+x(m))/2.d0
+      END IF
+      return
+      end
       subroutine mediansm(y,mask,n1,n2,n3,ind,nind,work,ncores,yout)
 C
 C
@@ -10,6 +84,8 @@ C
       logical mask(n1,n2,n3)
       real*8 y(n1,n2,n3),yout(n1,n2,n3),work(nind,ncores)
       integer i1,i2,i3,j1,j2,j3,j,k,thrednr
+      real*8 fmedian
+      external fmedian
 !$      integer omp_get_thread_num
 !$      external omp_get_thread_num
 C$OMP PARALLEL DEFAULT(SHARED)
@@ -37,13 +113,14 @@ C$OMP DO SCHEDULE(GUIDED)
                   work(k,thrednr)=y(j1,j2,j3)
                END DO
                IF(k.gt.1) THEN
-                  call qsort3(work(1,thrednr),1,k)
-                  IF (mod(k,2) == 0) THEN    
-                     yout(i1,i2,i3) = 
-     1               (work(k/2,thrednr)+work(k/2+1,thrednr))/2.d0
-                  ELSE
-                     yout(i1,i2,i3) = work(k/2+1,thrednr)
-                  END IF
+                  yout(i1,i2,i3) = fmedian(work(1,thrednr),k)
+C                  call qsort3(work(1,thrednr),1,k)
+C                  IF (mod(k,2) == 0) THEN    
+C                     yout(i1,i2,i3) = 
+C     1               (work(k/2,thrednr)+work(k/2+1,thrednr))/2.d0
+C                  ELSE
+C                     yout(i1,i2,i3) = work(k/2+1,thrednr)
+C                  END IF
                ELSE
                   yout(i1,i2,i3) = y(i1,i2,i3)
                END IF

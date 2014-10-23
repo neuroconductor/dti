@@ -259,11 +259,17 @@ awslsigmc <- function(y,                 # data
     th <- array(z$th,ddim)
     ni <- array(z$ni,ddim)
     mask[z$sigman==0] <- FALSE
+    nmask <- sum(mask)
     if(verbose) cat("local estimation in step ",i," completed",format(Sys.time()),"\n") 
     ##
     ##  nonadaptive smoothing of estimated standard deviations
     ##
-    sigma <- .Fortran("mediansm",
+    if(any(ni[mask]>minni)){
+       z$sigman[mask] <- z$sigman[mask] + rnorm(nmask)*sigma[mask]
+    ##
+    ##  avoid ties in local neighborhood cubes of z$sigman
+    ##
+       sigma <- .Fortran("mediansm",
                       as.double(z$sigman),
                       as.logical(mask),
                       as.integer(ddim[1]),
@@ -275,6 +281,7 @@ awslsigmc <- function(y,                 # data
                       as.integer(mc.cores),
                       sigman = double(n),
                       PACKAGE = "dti")$sigman
+    } 
     dim(sigma) <- ddim
     mask[sigma==0] <- FALSE
     if(verbose) cat("local median smoother in step ",i," completed",format(Sys.time()),"\n") 

@@ -18,3 +18,7 @@ double F77_SUB(digammaf)(double *x) {
 double F77_SUB(lgammaf)(double *x) {
    return lgammafn(*x);
 }
+void F77_SUB(rpsort3)(double *v, int *ii, int *jj)
+{
+    rPsort(v, *ii, *jj);
+}

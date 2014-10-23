@@ -709,3 +709,42 @@ hg1f1 <- function(a,b,z){
             PACKAGE="dti")$fz
 }
 
+mediansm3d <- function(y,mask,h){
+   nwmd <- (2*as.integer(h)+1)^3
+   ddim <- dim(y)
+   n <- prod(ddim)
+   parammd <- .Fortran("paramw3",
+                       as.double(h),
+                       as.double(c(1,1)),
+                       ind=integer(3*nwmd),
+                       w=double(nwmd),
+                       n=as.integer(nwmd),
+                       PACKAGE = "dti")[c("ind","w","n")]
+    mc.cores <- setCores(,reprt=FALSE)
+    if(diff(range(y))>0){
+    yhat <- .Fortran("mediansm",
+                         as.double(y),
+                         as.logical(mask),
+                         as.integer(ddim[1]),
+                         as.integer(ddim[2]),
+                         as.integer(ddim[3]),
+                         as.integer(parammd$ind),
+                         as.integer(nwmd),
+                         double(nwmd*mc.cores), # work(nw,nthreds)
+                         as.integer(mc.cores),
+                         yhat = double(n),
+                         PACKAGE = "dti")$yhat
+   }
+   dim(yhat) <- ddim
+   yhat
+}
+
+median1 <- function(x){
+   n <- length(x)
+   .Fortran("fmedian1",
+            as.double(x),
+            as.integer(n),
+            med=double(1),
+            PACKAGE = "dti")$med
+}
+
