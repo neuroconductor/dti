@@ -37,7 +37,7 @@ C
          call swap(x,k,rght)
          cur = lft
          DO i=cur,rght-1
-            IF(x(i).le.guess) THEN
+            IF(x(i).lt.guess) THEN
                call swap(x,i,cur)
                cur=cur+1
             END IF
