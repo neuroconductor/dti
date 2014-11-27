@@ -10,12 +10,12 @@ setGeneric("sdpar", function(object,  ...) standardGeneric("sdpar"))
 
 setMethod("sdpar", "dtiData", function(object,
                                        level = NULL,
-                                       sdmethod = "sd",
+                                       sdmethod = "none",
                                        interactive = TRUE,
                                        threshfactor = 1) {
   # determine interval of linearity
-  if(!(sdmethod%in%c("sd","mad"))){
-    warning("sdmethod needs to be either 'sd' or 'mad'")
+  if(!(sdmethod%in%c("none","sd","mad"))){
+    warning("sdmethod needs to be either 'none','sd' or 'mad'")
     return(object)
   }
   if(prod(object@ddim)==1){
@@ -27,7 +27,7 @@ setMethod("sdpar", "dtiData", function(object,
   s0ind<-object@s0ind
   s0 <- object@si[,,,s0ind,drop=FALSE]
   ls0ind <- length(s0ind)
-  A0 <- level
+  A0 <- level0
   if(ls0ind>1) {
     dim(s0) <- c(prod(object@ddim),ls0ind)
     s0mean <- s0%*%rep(1/ls0ind,ls0ind)
@@ -110,30 +110,34 @@ setMethod("sdpar", "dtiData", function(object,
   A0 <- max(level0,A1/200,1)
   # avoid A0=0 since this may lead to Inf weights in dtiTensor
   # determine parameters for linear relation between standard deviation and mean
-  if(ls0ind>1) {
-    s0sd <- apply(s0,1,sdmethod)
-    ind <- s0mean>A0&s0mean<A1
-    if(length(ind)<2){
-      warning("you need more than one voxel to model variances choice of A0/A1 to restrictive")
-      return(object)
-    }
-    sdcoef0 <- coefficients(lm(s0sd[ind]~s0mean[ind]))
-    if(sdcoef0[1]<0){
-      sdcoef0 <- numeric(2)
-      sdcoef0[1] <- .25  # this is an arbitrary (small) value to avaoid zero variances
-      sdcoef0[2] <- coefficients(lm(s0sd[ind]~s0mean[ind]-1))
-    }
-    if(sdcoef0[2]<0){
-      sdcoef0 <- numeric(2)
-      sdcoef0[1] <- max(0.25,mean(s0sd[ind]))
-      sdcoef0[2] <- 0
-    }
+  if(sdmethod=="none"){
+     sdcoef0 <- c(1,0) ## use OLSE
   } else {
-    sdcoef0 <- awslinsd(s0,hmax=5,mask=NULL,A0=A0,A1=A1)$vcoef
+    if(ls0ind>1) {
+       s0sd <- apply(s0,1,sdmethod)
+       ind <- s0mean>A0&s0mean<A1
+       if(length(ind)<2){
+         warning("you need more than one voxel to model variances choice of A0/A1 to restrictive")
+         return(object)
+       }
+       sdcoef0 <- coefficients(lm(s0sd[ind]~s0mean[ind]))
+       if(sdcoef0[1]<0){
+          sdcoef0 <- numeric(2)
+          sdcoef0[1] <- .25  # this is an arbitrary (small) value to avaoid zero variances
+          sdcoef0[2] <- coefficients(lm(s0sd[ind]~s0mean[ind]-1))
+       }
+       if(sdcoef0[2]<0){
+          sdcoef0 <- numeric(2)
+          sdcoef0[1] <- max(0.25,mean(s0sd[ind]))
+          sdcoef0[2] <- 0
+       }
+     } else {
+       sdcoef0 <- awslinsd(s0,hmax=5,mask=NULL,A0=A0,A1=A1)$vcoef
+     }
+     cat("Estimated parameters:",signif(sdcoef0[1:2],3),"Interval of linearity",signif(A0,3),"-",signif(A1,3),"\n")
   }
   object@level <- level0
   object@sdcoef[1:4] <- c(sdcoef0,A0,A1)
-  cat("Estimated parameters:",signif(sdcoef0[1:2],3),"Interval of linearity",signif(A0,3),"-",signif(A1,3),"\n")
   object
 })
 

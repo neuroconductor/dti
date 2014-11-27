@@ -21,13 +21,6 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
   args <- sys.call(-3)
   args <- c(object@call,args)
   sdcoef <- object@sdcoef
-  if(all(sdcoef[1:4]==0)) {
-    cat("No parameters for model of error standard deviation found\n 
-         Using constant weights\n 
-         You may prefer to run sdpar before calling dtiTensor")
-#    sdcoef <- sdpar(object,interactive=FALSE)@sdcoef
-    object@sdcoef <- c(1,0,1,1)
-  }
   dtobject <- dtiTensor(object,method="nonlinear")
   scale <- dtobject@scale
   mask <- dtobject@mask

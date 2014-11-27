@@ -33,13 +33,6 @@ setMethod( "dtiTensor", "dtiData",
              ns0 <- length(s0ind)
              sdcoef <- object@sdcoef
              ngrad0 <- ngrad-ns0
-             #if(mc.cores>1&method=="nonlinear") require(parallel)
-             if(all(sdcoef[1:4]==0)) {
-               cat("No parameters for model of error standard deviation found\n
-          Using constant weights \n You may prefer to run sdpar before calling dtiTensor\n")
-               #      sdcoef <- sdpar(object,interactive=FALSE)@sdcoef
-               sdcoef <- c(1,0,1,1)
-             }
              z <- sioutlier1(object@si,s0ind,object@level,mc.cores=mc.cores)
              #
              #  this does not scale well with openMP
