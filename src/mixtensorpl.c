@@ -125,7 +125,7 @@ void paroforient(double *dir, double *angles){
     angles[0] = 0;
   }else{
     double z = dir[0]/sth;
-    if(abs(z)>=1){
+    if(fabs(z)>=1){
       angles[1] = z < 0 ? 0 : M_PI;
     }else{
       angles[1] = acos(z) * sign(dir[1]);
