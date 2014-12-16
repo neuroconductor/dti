@@ -48,7 +48,7 @@ awslsigmc <- function(y,                 # data
                       minni = 2,         # minimum sum of weights for estimating local sigma
                       hsig = 5,          # bandwidth for median smoothing local sigma estimates
                       sigma = NULL,
-                      family = c("Gauss","NCchi"),
+                      family = c("NCchi", "Gauss"),
                       verbose = FALSE,
                       u=NULL#,
                       #bc=FALSE # bias correction ...
@@ -57,6 +57,8 @@ awslsigmc <- function(y,                 # data
   
   #   IQQ <- function (x, q = .25, na.rm = FALSE, type = 7) 
   #     diff(quantile(as.numeric(x), c(q, 1-q), na.rm = na.rm, names = FALSE, type = type))
+  
+  family <- match.arg(family)
   
   IQQ <- function (x, q = .25, na.rm = FALSE, type = 7){ 
     cqz <- qnorm(.05)/qnorm(q)
@@ -91,8 +93,8 @@ awslsigmc <- function(y,                 # data
     if(verbose) cat( eta, m, v, "\n")
     IQQdiff( y, mask, q)/sqrt(v)
   }
-  if("NCchi"%in%family){
-    varstats <- sofmchi(ncoils)
+  varstats <- sofmchi(ncoils)
+  if("NCchi" == family){
     th <- seq(0,30,.01)
     z <- fncchiv(th,varstats)
     minz <- min(z)
@@ -120,7 +122,7 @@ awslsigmc <- function(y,                 # data
   if(is.null(sigma)){
     # sigma <- sqrt( mean( y[mask]^2) / 2 / ncoils)
     sigma <- IQQdiff( y, mask, .25, verbose=verbose)
-    if("NCchi"%in%family){
+    if("NCchi" == family){
       sigma <- estsigma( y, mask, .25, ncoils, sigma)
       sigma <- estsigma( y, mask, .25, ncoils, sigma)
       sigma <- estsigma( y, mask, .25, ncoils, sigma)
@@ -133,7 +135,7 @@ awslsigmc <- function(y,                 # data
     mslice <-  (ddim[3]+1)/2
     ymslice <- y[,,mslice]
     ymslice[!mask[,,mslice]] <- 0
-    if(!is.null(u)&&"NCchi"%in%family){
+    if(!is.null(u)&&"NCchi" == family){
       par(mfrow=c(2,4),mar=c(3,3,3,1),mgp=c(2,1,0))
     } else {
       par(mfrow=c(2,3),mar=c(3,3,3,1),mgp=c(2,1,0))
@@ -142,6 +144,7 @@ awslsigmc <- function(y,                 # data
     cat("step")
   }
   ## define initial arrays for parameter estimates and sum of weights (see PS)
+  th <- y
   ksi <- array( y^2, ddim)
   ni <- array( 1, ddim)
   sigma <- array(sigma, ddim)
@@ -177,7 +180,7 @@ awslsigmc <- function(y,                 # data
     param$ind <- param$ind[1:(3*nw)]
     dim(param$ind) <- c(3,nw)
     param$w   <- param$w[1:nw]    
-    if("NCchi"%in%family) {
+    if("NCchi" == family) {
       ## perform one step PS with bandwidth h
       z <- .Fortran("awslchi2",
                     as.double(y),        # data
@@ -303,7 +306,7 @@ awslsigmc <- function(y,                 # data
       plot(density(sigma[mask]),main="density of sigma")
       plot(density(ni[mask]),main="density of Ni")
       cat("mean sigma",means,"median sigma",meds,"sd sigma",sd(sigma[mask]),"\n")
-      if(!is.null(u)&&"NCchi"%in%family){
+      if(!is.null(u)&&"NCchi" == family){
         thchims <- fncchir(th/sigma,varstats)*sigma
         thchims[!mask] <- u[!mask]
         image(abs(thchims-u)[,,mslice],col=grey(0:255/255))
@@ -318,7 +321,7 @@ awslsigmc <- function(y,                 # data
   ## END PS iteration
   if(!verbose) cat("\n")
   sigmal <- array(z$sigman,ddim)
-  if(!("NCchi"%in%family)){
+  if(!("NCchi" == family)){
     ## still need to estimate noise sd (for correct distribution)
     vqm2p1chi <- function(L, to = 50, delta = .002){
       x <- seq(0, to, delta)

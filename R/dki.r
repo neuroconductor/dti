@@ -64,7 +64,7 @@ setMethod("dkiTensor", "dtiData",
             
             if (method == "CLLS-QP"||method == "NLR"||method == "QL") {
               
-              if (!require(quadprog)) return("dkiTensor: did not find package quadprog, please install for the CLLS-QP method")
+              #if (!require(quadprog)) return("dkiTensor: did not find package quadprog, please install for the CLLS-QP method")
               
               ## Tabesh Eq. [11, 14, 15]
               Tabesh_AD <- xxx[, 1:6]

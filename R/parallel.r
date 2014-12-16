@@ -91,7 +91,7 @@ pdkiQP <- function(x,TA,Dmat,Amat){
   ##
   ##  dkiTensor CLLS-QP parallel version
   ##
-  require(quadprog)
+  #require(quadprog)
   nvox <- dim(x)[2]
   param <- matrix(0,21,nvox)
   for(i in 1:nvox){

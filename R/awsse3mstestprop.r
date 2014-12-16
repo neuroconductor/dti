@@ -8,7 +8,7 @@ dwi.smooth.testprop <-  function(spatialdim,ngrad,bv,D0=1.3e-3,th0,df,kstar,lamb
   #
   #
   data("optgradients", envir = environment())
-  grad <- optgrad[[ngrad-5]]
+  grad <- dti::optgrad[[ngrad-5]]
   ns0 <- 1
   lbv <- length(bv)
   if(lbv!=ngrad){

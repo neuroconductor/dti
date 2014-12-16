@@ -688,7 +688,7 @@ showFAColorScale <- function(filename = "FAcolorscale.png") {
   data("colqFA", envir = environment())
   png( filename = filename, width = 800, height = 100, bg = "white", pointsize = 16)
   par( mar = c( 2, 0.5, 0.1, 0.5))
-  image( matrix( seq( 0, 1, length = 256), 256, 1), col = colqFA, yaxt = "n")
+  image( matrix( seq( 0, 1, length = 256), 256, 1), col = dti::colqFA, yaxt = "n")
   axis(1, at = seq( 0, 1, by = 0.1))
   text( 0.1, 0, "FA", pos = 4, cex = 2, font = 2, col = "white")
   dev.off()
