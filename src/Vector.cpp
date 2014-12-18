@@ -41,13 +41,6 @@ Vector::Vector(double* d_input, int length)
 
 void Vector::print()
 {
-	if (this == NULL)
-	{
-//		Rprintf("Vector is NULL\n");
-		return;
-	}
-	
-//	Rprintf(" _   _ \n");	
 		
 	for (int i = 0; i < this->n; i++)
 	{
