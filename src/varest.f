@@ -241,8 +241,12 @@ C  sqrt(ksin(i1,i2,i3)/2.d0/L) is the solution in the central case !
 C  old code was still correct but inefficient
 C            up = sgi*1d1
             up = min(sqrt(ksin(i1,i2,i3)/2.d0/L),sgi*1d1)
-            call localmin(low,up,wad(1,thrednr),sad(1,thrednr),L,jj,
+            if(up.le.low) THEN
+               sgi = up
+            ELSE
+               call localmin(low,up,wad(1,thrednr),sad(1,thrednr),L,jj,
      1                    tol,maxit,work(1,thrednr),sgi,fmin)
+            END IF
          END IF
          sigman(i)=sgi
          thn(i) = sqrt(max(0.d0,ksin(i1,i2,i3)-2.d0*sgi*sgi*L))

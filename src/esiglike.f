@@ -134,13 +134,10 @@ C         END IF
 C  Search for minimum
       DO it=1,maxit   
          xm=0.5d0*(a+b)
-C         call dblepr("x",1,x,1)
-C         call dblepr("xm",2,xm,1)
          eps1=eps*abs(x)+tol/3.d0
          eps2=2.d0*eps1
          IF (abs(x-xm).le.(eps2-0.5d0*(b-a)) ) EXIT 
          gsect = .TRUE.
-C         call dblepr("e0",2,e,1)
          IF (abs(e) .gt. eps1) THEN  
             gsect = .FALSE.
             r=(x-w)*(fx-fv) 
@@ -151,7 +148,6 @@ C         call dblepr("e0",2,e,1)
             q=abs(q)
             r=e
             e=d
-C            call dblepr("p",1,p,1)
             IF (abs(p).ge.abs(0.5d0*q*r).or.
      1                  p.le.q*(a-x).or.p.ge.q*(b-x)) THEN
                 gsect = .TRUE.
@@ -167,10 +163,8 @@ C            call dblepr("p",1,p,1)
             ELSE
                e=b-x
             END IF
-C            call dblepr("e",1,e,1)
             d=goldc*e
          END IF
-C         call dblepr("d",1,d,1)
          IF (abs(d) .ge. eps1) THEN  
             u=x+d
          ELSE

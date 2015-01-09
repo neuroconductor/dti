@@ -268,7 +268,7 @@ awslsigmc <- function(y,                 # data
     ##  nonadaptive smoothing of estimated standard deviations
     ##
     if(any(ni[mask]>minni)){
-       z$sigman[mask] <- z$sigman[mask] + rnorm(nmask)*sigma[mask]
+       z$sigman[mask] <- z$sigman[mask]*(1+runif(nmask,-.0001,.0001))
     ##
     ##  avoid ties in local neighborhood cubes of z$sigman
     ##
