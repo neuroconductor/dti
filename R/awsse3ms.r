@@ -44,7 +44,7 @@ setMethod("dwi.smooth.ms",
             # this requires unique values for the bvalues
             # cf. the corresponding code in multishell.r:getnext3g
             msstructure <- getnext3g(grad, bvalues)
-            bv <- bvalues[-s0ind]
+            bv <- msstructure$bv
             nshell <- as.integer(msstructure$nbv)
             ubv <- msstructure$ubv
             
@@ -58,6 +58,7 @@ setMethod("dwi.smooth.ms",
               if (verbose) cat("using supplied array of sigma\n")
             } else if (identical(dim(sigma), c(ddim, nshell+1L))) {
               sigmacase <- 3
+              if (is.null(mask)) mask <- getmask(object, level)$mask
               if (verbose) cat("using supplied array of sigma per shell\n")
             } else {
               if (is.null(mask)) mask <- getmask(object, level)$mask
@@ -96,7 +97,8 @@ setMethod("dwi.smooth.ms",
             } else { # now is per shell
               s0 <- sweep(s0, 1:3, sigma[, , , 1], "/")
               for (shnr in 1:nshell) {
-                sb[, , , bv == ubv[shnr]] <- sweep(sb[, , , bv == ubv[shnr]], 1:3, sigma[, , , shnr], "/")
+                indbv <- (1:length(bv))[bv == ubv[shnr]]
+                sb[, , , indbv] <- sweep(sb[, , , indbv], 1:3, sigma[, , , shnr+1], "/")
               }
             }
             if(ns0>1){
@@ -105,7 +107,7 @@ setMethod("dwi.smooth.ms",
               #  make sure linear combination of s0 has same variance as original 
               dim(s0) <- ddim
             }
-            if (is.null(mask)) mask <- s0>(sqrt(ns0)*level/median(sigma))
+            if (is.null(mask)) mask <- getmask(object, level)$mask
             # determine minimal subcube that contains the mask ore use supplied information
             if(is.null(xind)) xind <- (1:ddim[1])[apply(mask,1,any)]
             if(is.null(yind)) yind <- (1:ddim[2])[apply(mask,2,any)]
@@ -244,10 +246,14 @@ setMethod("dwi.smooth.ms",
               si[xind, yind, zind, -1] <- z$th*sigma
             } else if (sigmacase == 2) {
               si[xind, yind, zind, -1] <- sweep(z$th, 1:3, sigma, "*")
-            } else { # now sigma is an array with (identical(dim(sigma), ddim) == TRUE)
+            } else if (sigmacase == 3) { # now sigma is an array with (identical(dim(sigma), ddim) == TRUE)
               for (shnr in 1:nshell) {
-                si[xind, yind, zind, -1][, , , bv == ubv[shnr]] <- sweep(z$th[, , , bv == ubv[shnr]], 1:3, sigma[, , , shnr], "*")
-              }
+                indth <- (1:length(bv))[bv == ubv[shnr]]
+                indsi <- indth+1
+                si[xind, yind, zind, indsi] <- sweep(z$th[, , , indth], 1:3, sigma[, , , shnr+1], "*")
+                }
+            } else {
+                si[xind, yind, zind, -1] <- z$th*sigma[,,,-1]
             }
             object@si <-  si
             object@gradient <- grad <- cbind(c(0,0,0),grad)

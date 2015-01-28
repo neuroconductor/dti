@@ -481,19 +481,20 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       integer n
       real*8 a,b,z(n),fz(n)
       integer i
-      real*8 x,y,d,eps,zi,ezi,ai
+      real*8 x,y,d,eps,zi,ezi,ai,gofb,gofbai
       real*8 gammaf
       external gammaf
       eps=1.d-15
+      gofbai=gammaf(b)/gammaf(b-a)
       DO i=1,n
          d = 1.d0
          zi = z(i)
          IF(zi.lt.0) THEN
             ezi=exp(zi/2)
-            zi=-zi
             ai=b-a
-            if(zi.gt.1400) THEN
-               fz(i) = exp((ai-b)*log(zi))/gammaf(ai)
+            if(zi.lt.-1400) THEN
+               fz(i) = exp((-a)*log(-zi))*gofbai+5.6e-3+1.9e-3*b
+C   add +5.6e-3+1.9e-3*b to keep the function monotone 
                CYCLE
             END IF
          ELSE
@@ -503,7 +504,7 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
          x = ezi
          y = ezi
          DO WHILE (abs(y).gt.abs(x)*eps)
-            y = y*(ai+d-1.d0)/(b+d-1.d0)*zi/d
+            y = -y*(ai+d-1.d0)/(b+d-1.d0)*zi/d
             x = x+y
             d = d+1.d0
          END DO
