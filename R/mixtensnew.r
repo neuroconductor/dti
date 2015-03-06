@@ -1,7 +1,7 @@
 dwiMixtensnew <- ## function(object, ...) cat("No dwiMixtensor calculation defined for this class:",class(object),"\n")
 ##
 ## setGeneric("dwiMixtensnew", function(object,  ...) standardGeneric("dwiMixtensnew"))
-
+##
 ## setMethod("dwiMixtensnew","dtiData",
 function(object, maxcomp=3, 
           model=c("MTiso","MTisoFA","MTisoEV"),
