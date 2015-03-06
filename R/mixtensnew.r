@@ -1,8 +1,9 @@
-dwiMixtensnew <- function(object, ...) cat("No dwiMixtensor calculation defined for this class:",class(object),"\n")
+dwiMixtensnew <- ## function(object, ...) cat("No dwiMixtensor calculation defined for this class:",class(object),"\n")
 
-setGeneric("dwiMixtensnew", function(object,  ...) standardGeneric("dwiMixtensnew"))
+## setGeneric("dwiMixtensnew", function(object,  ...) standardGeneric("dwiMixtensnew"))
 
-setMethod("dwiMixtensnew","dtiData",function(object, maxcomp=3, 
+## setMethod("dwiMixtensnew","dtiData",
+function(object, maxcomp=3, 
           model=c("MTiso","MTisoFA","MTisoEV"),
           fa=NULL, lambda=NULL, reltol=1e-10, maxit=5000, ngc=1000, 
           nguess=100*maxcomp^2, msc=c("BIC","AIC","AICC","none"),
@@ -19,7 +20,7 @@ setMethod("dwiMixtensnew","dtiData",function(object, maxcomp=3,
   msc <- match.arg(msc)
   factr <- reltol/1e-14 ## this is 1e6 
   set.seed(1)
-  bvalue <- object@bvalue[-object@s0ind]
+  bvalue <- object@bvalue
   maxbv <- max(bvalue)
   bvalue <- bvalue/maxbv
   maxc <- .866
@@ -30,9 +31,8 @@ setMethod("dwiMixtensnew","dtiData",function(object, maxcomp=3,
   nvox <- prod(ddim)
   s0ind <- object@s0ind
   ns0 <- length(s0ind)
-  ngrad0 <- ngrad - ns0
   if(5*(2+3*maxcomp)>ngrad){
-    #     maxcomp <- max(1,trunc((ngrad0-5)/15))
+    #     maxcomp <- max(1,trunc((ngrad-5)/15))
     cat("Maximal number of components reduced to", maxcomp,"due to insufficient
            number of gradient directions\n")
   }
@@ -80,7 +80,7 @@ setMethod("dwiMixtensnew","dtiData",function(object, maxcomp=3,
     lambdahat <- ev[3,,,] 
     # use third ev instead of (ev[2,,,]+ev[3,,,])/2 to avoid effects from mixtures
     alphahat <- if(imodel==2) (ev[1,,,]-lambdahat)/lambdahat else alpha
-    lambdahat <- median(lambdahat[!is.na(alphahat)&fa>.3])
+    lambdahat <- .5*median(lambdahat[!is.na(alphahat)&fa>.3])
     if(imodel==2) alphahat <- median(alphahat[!is.na(alphahat)&fa>.3])
     fahat <- alphahat/sqrt(3+2*alphahat+alphahat^2)
     cat("Using lambda_2=",lambdahat,"fa=",fahat," and alpha=",alphahat,"in initial estimates\n")
@@ -103,9 +103,9 @@ setMethod("dwiMixtensnew","dtiData",function(object, maxcomp=3,
   #  compute mean S_0, s_i/S_0 (siq), var(siq) and mask
   #
   nvox <- prod(ddim[1:3])
-  cat("sweeps0:")
+  cat("means0:")
   t1 <- Sys.time()
-    z <- .Fortran("means0",# mixtensbv.f
+  z <- .Fortran("means0",# mixtensbv.f
                   as.double(si[s0ind,,,,drop=FALSE]),
                   as.integer(nvox),
                   as.integer(ns0),
@@ -113,8 +113,13 @@ setMethod("dwiMixtensnew","dtiData",function(object, maxcomp=3,
                   s0=double(nvox),
                   mask=logical(nvox),
                   PACKAGE="dti")[c("s0","mask")]
-    s0 <- array(z$s0,ddim[1:3])
-    mask <- array(z$mask,ddim[1:3])
+  s0 <- array(z$s0,ddim[1:3])
+  mask <- array(z$mask,ddim[1:3])
+  means0 <- mean(s0[mask]) 
+  #
+  #  rescale s0 for numerical reasons
+  #
+  si <- si/means0
   npar <- switch(model,
                  MTisoEV=1+3*(0:maxcomp),
                  MTisoFA=2+3*(0:maxcomp),
@@ -122,14 +127,14 @@ setMethod("dwiMixtensnew","dtiData",function(object, maxcomp=3,
   #
   #   compute penalty for model selection, default BIC
   #
-  penIC <- switch(msc,AIC=2*npar/ngrad0,BIC=log(ngrad0)*npar/ngrad0,
-                  AICC=(1+npar/ngrad0)/(1-(npar+2)/ngrad0),
-                  None=log(ngrad0)-log(ngrad0-npar))
+  penIC <- switch(msc,AIC=2*npar/ngrad,BIC=log(ngrad)*npar/ngrad,
+                  AICC=(1+npar/ngrad)/(1-(npar+2)/ngrad),
+                  None=log(ngrad)-log(ngrad-npar))
   cat("End generating auxiliary objects",format(Sys.time()),"\n")
   #
   #  avoid situations where si's are larger than s0
   #
-  grad <- t(object@gradient[,-s0ind])
+  grad <- t(object@gradient)
   #
   #   determine initial estimates for orientations 
   #
@@ -164,7 +169,7 @@ setMethod("dwiMixtensnew","dtiData",function(object, maxcomp=3,
       setCores(mc.cores)
       x <- si[,mask]
       nvico <- dim(vert)[2]
-      dgrad <- matrix(abs(grad%*%vert),ngrad0,nvico)
+      dgrad <- matrix(abs(grad%*%vert),ngrad,nvico)
       dgrad <- dgrad/max(dgrad)
       dgradi <- matrix(abs(t(vert)%*%vert),nvico,nvico)
       dgradi <- dgradi/max(dgradi)
@@ -193,7 +198,7 @@ setMethod("dwiMixtensnew","dtiData",function(object, maxcomp=3,
                               as.integer(nvoxm),#nvoxm
                               as.integer(siind[,mask]),#siind 
                               as.double(wi[,mask]),# wi
-                              as.integer(ngrad0),#ngrad0
+                              as.integer(ngrad),#ngrad
                               as.integer(maxcomp),#maxcomp
                               as.integer(maxit),#maxit
                               as.double(t(grad)),#grad_in
@@ -214,7 +219,7 @@ setMethod("dwiMixtensnew","dtiData",function(object, maxcomp=3,
                      as.integer(nvoxm),#n1
                      as.integer(siind[,mask]),#siind 
                      as.double(wi[,mask]),# wi
-                     as.integer(ngrad0),#ngrad0
+                     as.integer(ngrad),#ngrad
                      as.integer(maxcomp),#maxcomp
                      as.integer(maxit),#maxit
                      as.double(t(grad)),#grad_in
@@ -236,7 +241,7 @@ setMethod("dwiMixtensnew","dtiData",function(object, maxcomp=3,
                      as.integer(nvoxm),#n1
                      as.integer(siind[,mask]),#siind 
                      as.double(wi[,mask]),# wi
-                     as.integer(ngrad0),#ngrad0
+                     as.integer(ngrad),#ngrad
                      as.integer(maxcomp),#maxcomp
                      as.integer(maxit),#maxit
                      as.double(t(grad)),#grad_in
@@ -281,13 +286,13 @@ setMethod("dwiMixtensnew","dtiData",function(object, maxcomp=3,
       x[-(1:(1+maxcomp)),] <- wi[,mask] 
       res <- matrix(0,5+3*maxcomp,nvox)
       res[,mask] <- switch(imodel+1,
-                           plmatrix(x,pmixtn0b,ngrad0=ngrad0,maxcomp=maxcomp,maxit=maxit,
+                           plmatrix(x,pmixtn0b,ngrad=ngrad,maxcomp=maxcomp,maxit=maxit,
                                     grad=grad,bv=bvalue,lambda=lambda,alpha=alpha,factr=factr,
                                     penIC=penIC,vert=vert,mc.cores=mc.cores),# model=0
-                           plmatrix(x,pmixtn1b,ngrad0=ngrad0,maxcomp=maxcomp,maxit=maxit,
+                           plmatrix(x,pmixtn1b,ngrad=ngrad,maxcomp=maxcomp,maxit=maxit,
                                     grad=grad,bv=bvalue,lambda=lambdahat,alpha=alpha,factr=factr,
                                     penIC=penIC,vert=vert,mc.cores=mc.cores),# model=1
-                           plmatrix(x,pmixtn2b,ngrad0=ngrad0,maxcomp=maxcomp,maxit=maxit,
+                           plmatrix(x,pmixtn2b,ngrad=ngrad,maxcomp=maxcomp,maxit=maxit,
                                     grad=grad,bv=bvalue,lambda=lambdahat,alpha=alphahat,factr=factr,
                                     penIC=penIC,vert=vert,mc.cores=mc.cores))# model=2
       cat("End parameter estimation and model selection (C-code)",format(Sys.time()),"\n")
@@ -301,19 +306,22 @@ setMethod("dwiMixtensnew","dtiData",function(object, maxcomp=3,
     }
     th0 <- apply(mix,2:4,sum)
     mix <- sweep(mix[-1,,,],2:4,th0,"/")
+    th0 <- th0*means0
     save(krit,wi,mask,z,mix,th0,file="tmp.rsc")
     method <- switch(imodel+1,"MTisoEV","MTisoFA","MTiso")
     model <- switch(imodel+1,"iso-prolate-fixedev","iso-prolate-fixedfa","iso-prolate")
-  invisible(new("dwiMixtensor",
-                model = model,
+##  invisible(new("dwiMixtensor",
+  list(              model = model,
                 call   = args,
                 ev     = lev/maxbv,
                 mix    = mix,
                 orient = orient,
                 order  = order,
                 p      = 0,
-                th0    = s0,
-                sigma  = sigma2,
+                s0=s0,
+                z=z,
+                th0    = th0,
+                sigma  = sigma2*means0^2,
                 scorr  = array(1,c(1,1,1)), 
                 bw     = c(0,0,0), 
                 mask   = mask,
@@ -337,9 +345,9 @@ setMethod("dwiMixtensnew","dtiData",function(object, maxcomp=3,
                 outlier = index,
                 scale = 1,
                 method = method)
-  )
+##  )
 }
-)
+##)
 
 imtfbv <- function(par,si,grad,bv,rho){
 ##  RSS for
@@ -686,7 +694,7 @@ getsiindbv <- function(si,grad,bv,vico,alpha,lambda,maxcomp=3,maxc=.866,nguess=1
                 PACKAGE="dti")[c("siind","krit","wi")]
   dim(z$siind) <- dim(z$wi) <- c(maxcomp+1,nvoxel)
   siind <- z$siind
-  wi <- z$siind
+  wi <- z$wi
   krit <- z$krit
   # now voxel where first tensor direction seems important
   list(siind=array(siind,c(maxcomp+1,dim(si)[-1])),
@@ -719,4 +727,22 @@ drskmb2 <- function(par,si,grad,bv){
             as.integer(ng),
             drsk=double(npar),
             PACKAGE="dti")$drsk
+}
+fmixureb <- function(par,grad,bv){
+  npar <- length(par)
+  ng <- dim(grad)[2]
+  fval <- numeric(ng)
+  for(i in 1:ng) {
+     fval[i] <- .Fortran("fmixturb",
+           as.double(par[1:(npar-3)]),
+           as.integer(npar-3),
+           as.double(par[npar-2]),
+           as.double(par[npar-1]),
+           as.double(par[npar]),
+           as.double(grad[,i]),
+           as.double(bv[i]),
+           fval=double(1),##
+           PACKAGE="dti")$fval
+  }
+  fval
 }

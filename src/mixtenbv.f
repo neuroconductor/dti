@@ -72,7 +72,7 @@ C
       integer npar
       real*8 par(npar),g(3),fval,lambda,alpha,w0
       integer ncomp,i
-      real*8 w(5),phi(5),eta(5),b,wi,sw,blam,f1
+      real*8 w(5),phi(5),eta(5),b,blam,f1
       real*8 ddot3sq
       external ddot3sq
 C  extract parameters
@@ -191,7 +191,7 @@ C  fval contains function value
       real*8 par(npar),g(3),dval(npar),w0,alpha,lambda,b,dw0,dlam,
      1       dalpha
       integer ncomp,i
-      real*8 w(5),phi(5),eta(5),wi,sw,blam
+      real*8 w(5),phi(5),eta(5),blam
       real*8 embclgd2(5),dgtd(3,5),fval,f1,f1l,f2l,f2c,adgtd(5)
 C  extract parameters
       ncomp=(npar-3)/3
@@ -250,7 +250,7 @@ C
       integer npar
       real*8 par(npar),g(3),dval(npar),alpha,lambda,b,dlam,w0,dw0
       integer ncomp,i
-      real*8 w(5),phi(5),eta(5),wi,sw,blam
+      real*8 w(5),phi(5),eta(5),blam
       real*8 embclgd2(5),dgtd(3,5),fval,f1,f1l,f2l,adgtd(5)
 C  extract parameters
       ncomp=(npar-1)/3
@@ -262,7 +262,7 @@ C need to have positive alpha to guarantee lambda1 >= lambda2
       END DO
 C  precompute common terms
       blam=b*lambda
-      f1=exp(-blam*(alpha+1.d0))
+      f1=w0*exp(-blam*(alpha+1.d0))
       fval = f1
       DO i=1,ncomp
 C
@@ -304,7 +304,7 @@ C
       integer npar
       real*8 par(npar),g(3),dval(npar),alpha,lambda,b,dw0,w0
       integer ncomp,i
-      real*8 w(5),phi(5),eta(5),wi,sw,blam
+      real*8 w(5),phi(5),eta(5),blam
       real*8 embclgd2(5),dgtd(3,5),fval,adgtd(5)
 C  extract parameters
       ncomp=npar/3
@@ -316,7 +316,7 @@ C need to have positive alpha to guarantee lambda1 >= lambda2
       END DO
 C  precompute common terms
       blam=b*lambda
-      fval = exp(-blam*(alpha+1.d0))
+      fval = w0*exp(-blam*(alpha+1.d0))
       DO i=1,ncomp
 C
 C   dgt(1,i) contains   (g^T n(phi,eta))^2
@@ -375,9 +375,10 @@ C
      2       wi(ns,nvox),bv(ngrad),alpha,lambda,z0(ngrad)
       integer i,k,ibest,mode,ind(10),l,ii,iw,wind(6),nwi(6)
       real*8 w(1000),krit,work1(1000),work2(12),erg,msi,m2si,
-     1       z1,dng,albv,lbv
+     1       z1,dng,albv,lbv,onealpha
       dng=ngrad
       iw=m
+      onealpha=1.d0+alpha
       DO i=1,m
          wind(i)=i
          nwi(i)=i
@@ -390,7 +391,7 @@ C
       call rchkusr()
       DO k=1,ngrad
          lbv = lambda*bv(k)
-         z0(k) = dexp(-lbv*(1.d0+alpha))
+         z0(k) = dexp(-lbv*onealpha)
          DO l=1,nv
             albv = alpha*lbv
             z1 = dgrad(k,l)
@@ -402,13 +403,12 @@ C  now search for minima of sms (or weighted sms
          ibest=0
          krit=1d20
          DO k=1,ntry
+C  need to generate z(,1) and sms for every k since they are modified in nnls 
             call dcopy(ngrad,si(1,i),1,sms,1)
             call dcopy(ngrad,z0,1,z(1,1),1)
             DO l=1,m
                call dcopy(ngrad,egrad(1,isample(l,k)),1,z(1,l+1),1)
             END DO
-         if(i.eq.16) THEN
-         END IF
          call nnls(z,ngrad,ngrad,m+1,sms,w,erg,work2,work1,ind,mode)
 C
 C  thats the Hansson-Larsson code for linear regression with positivity
@@ -422,10 +422,12 @@ C
                   krit=erg
                   ibest=k
                   iw=0
+                  wi(1,i)=w(1)
                   DO ii=2,m+1
                      if(w(ii).gt.1.d-12) THEN
                         iw=iw+1
                         wind(iw)=ii-1
+                        wi(iw+1,i)=w(ii)
                      ELSE
                         nwi(ii-iw-1)=ii-1
 C   nonactive directions
@@ -437,10 +439,8 @@ C   nonactive directions
          if(ibest.gt.0) THEN
             siind(1,i)=iw
             IF (iw.ge.1) THEN
-               wi(1,i)=w(1)
                DO l=1,iw
                   siind(l+1,i)=isample(wind(l),ibest)
-                  wi(l+1,i)=w(wind(l))
                END DO
             END IF
             IF (iw.lt.m) THEN
@@ -464,11 +464,11 @@ C   generate mask
 C   sweep s0 from si to generate  siq
 C   calculate variance of siq
 C
-      integer n,ng0,ng1,level
+      integer n,ng0,level
       real*8 s0(ng0,n),ms0(n)
-      logical mask(n),maskk
+      logical mask(n)
       integer i,k
-      real*8 s,z,z2,thresh,s0mean
+      real*8 z,thresh
       thresh = max(1,level*ng0)
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(s0,n,ng0,ms0,mask,thresh)

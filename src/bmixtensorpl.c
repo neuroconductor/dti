@@ -251,8 +251,8 @@ mfunrskmb2_ret getparam2b(int param_length, double* param, double fmin){
       param[3*i+1] = orient[2*i];
       param[3*i+2] = orient[1+2*i];
    }
-  lambda = param[3*c_ord];
-  alpha = param[3*c_ord+1];
+  lambda = param[3*c_ord+1];
+  alpha = param[3*c_ord+2];
   ret_val.order = c_ord;
   ret_val.lambda = lambda;  
   ret_val.alpha = alpha;  
@@ -319,7 +319,7 @@ mfunrskmb1_ret getparam1b(int param_length, double* param, double fmin){
       param[3*i+1] = orient[2*i];
       param[3*i+2] = orient[2*i+1];
    }
-  ret_val.lambda = param[3*c_ord];  
+  ret_val.lambda = param[3*c_ord+1];  
   ret_val.order = c_ord;
   ret_val.param = param;
   ret_val.mix = mix;
@@ -394,7 +394,7 @@ mfunrskmb0_ret getparam0b(int param_length, double* param, double fmin){
   return ret_val; 
 }
 
-void mixtrl2b( int* n1, int* siind, double* wi, int* ngrad0, int* maxcomp, int* maxit, 
+void mixtrl2b( int* n1, int* siind, double* wi, int* ngrad, int* maxcomp, int* maxit, 
           double* grad_in, double* bv_in, double* lambda_in, double* alpha_in,
           double* factr, double* penIC, double* sigma2, double* vert, 
           double* si_in, double* sigma2_ret, double* orient_ret, int* order_ret,
@@ -404,7 +404,7 @@ void mixtrl2b( int* n1, int* siind, double* wi, int* ngrad0, int* maxcomp, int* 
 // n1 - number of voxel
 // siind - initial parameters for orientations
 // wi - compartment fraction * th0
-// ngrad0 - number of gradient directions
+// ngrad - number of gradient directions
 // maxcomp - maximum number of mixture components
 // maxit - maxium number of iterations in L-BFGS-B
 // grad_in - array of gradients (3,ngrad)
@@ -419,7 +419,7 @@ void mixtrl2b( int* n1, int* siind, double* wi, int* ngrad0, int* maxcomp, int* 
 // order_ret - estimated model order (n1)
 // alpha_ret  - estimated alpha values (n1)
 // lambda_ret - estimated lambda values (n1)
-// mix_ret - estimated mixture coefficients (maxcomp,n1)
+// mix_ret - estimated mixture coefficients (maxcomp+1,n1)
   
    int maxcompc = *maxcomp;
    int trace = 0, nREPORT = 1, lmm = 5;
@@ -436,7 +436,7 @@ void mixtrl2b( int* n1, int* siind, double* wi, int* ngrad0, int* maxcomp, int* 
    double Fmin = 0.;          // minimal value of obj fct in optim 
     //Setting global variables
    dimxb = *n1;
-   si_init = si_in; grad = grad_in, ngradcc = *ngrad0; bv = bv_in;
+   si_init = si_in; grad = grad_in, ngradcc = *ngrad; bv = bv_in;
    alpha = *alpha_in;
    lambda = *lambda_in;
    
@@ -481,26 +481,27 @@ void mixtrl2b( int* n1, int* siind, double* wi, int* ngrad0, int* maxcomp, int* 
             orient_ret[0+2*j+2*maxcompc*iibv] = angles[0];
             orient_ret[1+2*j+2*maxcompc*iibv] = angles[1];
             
-            param[3*j] = wi[j+1+maxcompc*iibv];  
+            param[3*j] = wi[j+1+(maxcompc+1)*iibv];  
 //initial value for w(j) corresponds to volume w(j)/(1+sum_k w(j)), i.e. a 17% isotropic compartment
             param[3*j+1] = angles[0];
             param[3*j+2] = angles[1];
 // set values for lower corresponding to weights to 0
-            lower[3*j] = -6;
-            upper[3*j] = 20;
+            lower[3*j] = 0;
+            upper[3*j] = 1;
 	    nbd[3*j] = 2;
          }
 // lower values for lambda and alpha to get lambda_1>=lambda_2>=0
-         lower[3*maxcompc] = 0;
-         lower[3*maxcompc+1] = 0.;
+         lower[3*maxcompc] = 0;//w0
+         upper[3*maxcompc] = 1;//w0
+         lower[3*maxcompc+1] = 0.;//lambda
          upper[3*maxcompc+1] = 10;
-         lower[3*maxcompc+2] = 0.5;
+         lower[3*maxcompc+2] = 0.5;//alpha
          upper[3*maxcompc+2] = 10;
 	 nbd[3*maxcompc+1] = 2;
 	 nbd[3*maxcompc+2] = 2;
-	 nbd[3*maxcompc] = 1;
+	 nbd[3*maxcompc] = 2;
          // initialize EV-parameter and w0
-	 param[3*maxcompc] = wi[maxcompc*iibv];
+	 param[3*maxcompc] = wi[(maxcompc+1)*iibv];
          param[3*maxcompc+1] = lambda;//lambda_2
          param[3*maxcompc+2] = alpha;
 //alpha; lambda_1=(1+alpha)*lambda; FA=alpha/sqrt((1+alpha)^2+2)
@@ -516,7 +517,7 @@ void mixtrl2b( int* n1, int* siind, double* wi, int* ngrad0, int* maxcomp, int* 
          }
          
          
-         // use AIC/ngrad0, BIC/ngrad0 or AICC/ngrad0 respectively
+         // use AIC/ngrad, BIC/ngrad or AICC/ngrad respectively
          for(k = maxcompc; k > 0; k--){
             if(k < ord){
                if(k != maxcompc){
@@ -543,11 +544,12 @@ void mixtrl2b( int* n1, int* siind, double* wi, int* ngrad0, int* maxcomp, int* 
                   param_tmp[3*k+2] = param_work[3*k+5];
                   param_length=3*k+3;
                   lower[3*k] = 0.;
-                  lower[3*k+1] = 0.;//lambda
+                  upper[3*k] = 1.; // si are standardized by maxs0
+                  lower[3*k+1] = 0.01;//lambda
                   upper[3*k+1] = 10;//lambda
                   lower[3*k+2] = 0.5;//alpha
-                  upper[3*k+2] = 10;//alpha
- 	          nbd[3*k] = 1;
+                  upper[3*k+2] = 20;//alpha
+ 	          nbd[3*k] = 2;
 	          nbd[3*k+1] = 2;
  	          nbd[3*k+2] = 2;
                   for(l= 0; l < param_length; l++){
@@ -629,7 +631,7 @@ void mixtrl2b( int* n1, int* siind, double* wi, int* ngrad0, int* maxcomp, int* 
       R_CheckUserInterrupt();
    } // end iibv
 }
-void mixtrl1b( int* n1, int* siind, double* wi, int* ngrad0, int* maxcomp, int* maxit, 
+void mixtrl1b( int* n1, int* siind, double* wi, int* ngrad, int* maxcomp, int* maxit, 
           double* grad_in, double* bv_in, double* lambda_in, double* alpha_in,  
           double* factr, double* penIC, double* sigma2, double* vert, 
           double* si_in, double* sigma2_ret, double* orient_ret, 
@@ -638,7 +640,7 @@ void mixtrl1b( int* n1, int* siind, double* wi, int* ngrad0, int* maxcomp, int* 
 // optmethod: L-BFGS-B   
 // n1 - number of voxel
 // siind - initial parameters for orientations
-// ngrad0 - number of gradient directions
+// ngrad - number of gradient directions
 // maxcomp - maximum number of mixture components
 // maxit - maxium number of iterations in L-BFGS-B
 // grad_in - array of gradients (3,ngrad)
@@ -653,7 +655,7 @@ void mixtrl1b( int* n1, int* siind, double* wi, int* ngrad0, int* maxcomp, int* 
 // orient_ret - estimated orientations (2,maxcomp,n1)
 // order_ret - estimated model order (n1)
 // lambda_ret - estimated lambda values (n1)
-// mix_ret - estimated mixture coefficients (maxcomp,n1)
+// mix_ret - estimated mixture coefficients (maxcomp+1,n1)
    
    int maxcompc = *maxcomp;
    int trace = 0, nREPORT = 1, lmm = 5;
@@ -671,7 +673,7 @@ void mixtrl1b( int* n1, int* siind, double* wi, int* ngrad0, int* maxcomp, int* 
    
    //Setting global variables
    dimxb = *n1;
-   si_init = si_in; grad = grad_in, ngradcc = *ngrad0; bv = bv_in;
+   si_init = si_in; grad = grad_in, ngradcc = *ngrad; bv = bv_in;
    alpha = *alpha_in;
    lambda = *lambda_in;
    
@@ -745,7 +747,7 @@ void mixtrl1b( int* n1, int* siind, double* wi, int* ngrad0, int* maxcomp, int* 
          }
          
          
-         // use AIC/ngrad0, BIC/ngrad0 or AICC/ngrad0 respectively
+         // use AIC/ngrad, BIC/ngrad or AICC/ngrad respectively
          for(k = maxcompc; k > 0; k--){
             if(k < ord){
                if(k != maxcompc){
@@ -818,12 +820,12 @@ void mixtrl1b( int* n1, int* siind, double* wi, int* ngrad0, int* maxcomp, int* 
                   lambda_ret[iibv] = ret_val.lambda;
                   
                   for(l = 0; l < ord; l++){
-                     mix_ret[l+maxcompc*iibv] = ret_val.mix[l];
+                     mix_ret[l+(maxcompc+1)*iibv] = ret_val.mix[l];
                      orient_ret[0+2*l+2*maxcompc*iibv] = ret_val.orient[l*2];
                      orient_ret[1+2*l+2*maxcompc*iibv] = ret_val.orient[1+l*2];
                   }
                   for(l = ord; l < maxcompc; l++){
-                     mix_ret[l+maxcompc*iibv] = 0;
+                     mix_ret[l+(maxcompc+1)*iibv] = 0;
                   }
                   
                   sigma2_ret[iibv] = si2new;
@@ -833,7 +835,7 @@ void mixtrl1b( int* n1, int* siind, double* wi, int* ngrad0, int* maxcomp, int* 
       R_CheckUserInterrupt();
    } // end iibv
 }
-void mixtrl0b( int* n1, int* siind, double* wi, int* ngrad0, int* maxcomp, int* maxit, 
+void mixtrl0b( int* n1, int* siind, double* wi, int* ngrad, int* maxcomp, int* maxit, 
           double* grad_in, double* bv_in, double* lambda_in, double* alpha_in,  
           double* factr, double* penIC, double* sigma2, double* vert, 
           double* si_in, double* sigma2_ret, double* orient_ret, 
@@ -842,7 +844,7 @@ void mixtrl0b( int* n1, int* siind, double* wi, int* ngrad0, int* maxcomp, int* 
 // optmethod: L-BFGS-B   
 // n1 - number of voxel
 // siind - initial parameters for orientations
-// ngrad0 - number of gradient directions
+// ngrad - number of gradient directions
 // maxcomp - maximum number of mixture components
 // maxit - maxium number of iterations in L-BFGS-B
 // grad_in - array of gradients (3,ngrad)
@@ -876,7 +878,7 @@ void mixtrl0b( int* n1, int* siind, double* wi, int* ngrad0, int* maxcomp, int* 
    //Setting global variables
    alpha = *alpha_in; lambda = *lambda_in;;
    dimxb = *n1;
-   si_init = si_in; grad = grad_in, ngradcc = *ngrad0; bv = bv_in;
+   si_init = si_in; grad = grad_in, ngradcc = *ngrad; bv = bv_in;
    
    
    //Gradient vectors corresponding to minima in spherical coordinates
@@ -946,7 +948,7 @@ void mixtrl0b( int* n1, int* siind, double* wi, int* ngrad0, int* maxcomp, int* 
          
 //          Rprintf("\n");
          
-         // use AIC/ngrad0, BIC/ngrad0 or AICC/ngrad0 respectively
+         // use AIC/ngrad, BIC/ngrad or AICC/ngrad respectively
          for(k = maxcompc; k > 0; k--){
             if(k < ord){
                if(k != maxcompc){
@@ -1016,12 +1018,12 @@ void mixtrl0b( int* n1, int* siind, double* wi, int* ngrad0, int* maxcomp, int* 
                   order_ret[iibv] = ret_val.order;
                                     
                   for(l = 0; l < ord; l++){
-                     mix_ret[l+maxcompc*iibv] = ret_val.mix[l];
+                     mix_ret[l+(maxcompc+1)*iibv] = ret_val.mix[l];
                      orient_ret[0+2*l+2*maxcompc*iibv] = ret_val.orient[l*2];
                      orient_ret[1+2*l+2*maxcompc*iibv] = ret_val.orient[1+l*2];
                   }
                   for(l = ord; l < maxcompc; l++){
-                     mix_ret[l+maxcompc*iibv] = 0;
+                     mix_ret[l+(maxcompc+1)*iibv] = 0;
                   }
                   
                   sigma2_ret[iibv] = si2new;

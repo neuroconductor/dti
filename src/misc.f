@@ -481,7 +481,7 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       integer n
       real*8 a,b,z(n),fz(n)
       integer i
-      real*8 x,y,d,eps,zi,ezi,ai,gofb,gofbai
+      real*8 x,y,d,eps,zi,ezi,ai,gofbai
       real*8 gammaf
       external gammaf
       eps=1.d-15
