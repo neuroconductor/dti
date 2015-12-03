@@ -210,35 +210,6 @@ awslsigmc <- function(y,                 # data
       thchi <- z$th
       ksi <- z$ksi
       thchi[!mask] <- 0
-      #       if(bc){
-      # ##
-      # ##  try to correct for bias in estimate of sigma (3 iterations)
-      # ##
-      #       sig <- sig0 <- z$sigman[mask]
-      #       thchi0 <- thchi[mask]
-      #       ksi0 <- ksi[mask]
-      #       snr <- thchi0/sig0
-      #       ind <- snr>0&snr<5
-      #       snr <- snr[ind]
-      #       snri <- 1/(snr^4+1.4)
-      #       lami <- 1/lambda^3.2
-      #       sig[ind] <- sig0[ind]*(1+0.2682*snri+5.1455*lami+9.6334*snri*lami) 
-      #       thchi0[ind] <- sqrt(pmax(0,ksi0[ind]-2*ncoils*sig[ind]^2))
-      #       snr <- thchi0/sig
-      #       ind <- snr>0&snr<5
-      #       snr <- snr[ind]
-      #       snri <- 1/(snr^4+1.4)
-      #       lami <- 1/lambda^3.2
-      #       sig[ind] <- sig0[ind]*(1+0.2682*snri+5.1455*lami+9.6334*snri*lami) 
-      #       thchi0[ind] <- sqrt(pmax(0,ksi0[ind]-2*ncoils*sig[ind]^2))
-      #       snr <- thchi0/sig
-      #       ind <- snr>0&snr<5
-      #       snr <- snr[ind]
-      #       snri <- 1/(snr^4+1.4)
-      #       lami <- 1/lambda^3.2
-      #       sig[ind] <- sig0[ind]*(1+0.2682*snri+5.1455*lami+9.6334*snri*lami) 
-      #       z$sigman[mask] <- sig
-      #       }
       ## extract sum of weigths (see PS) and consider only voxels with ni larger then mean
     } else {
       z <- .Fortran("awslgaus",

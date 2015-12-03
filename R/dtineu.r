@@ -198,6 +198,8 @@ setMethod( "dtiTensor", "dtiData",
     ##  th0 = exp(param[1,]) needs to be positive
                param[-1,] <- D2Rall(D[,mask]*mbv)
                CL <- sqrt(pi/2)*gamma(L+1/2)/gamma(L)/gamma(3/2)
+##               btb[,-s0ind] <- 0
+### don't like this but otherwise we may see th0 to diverge if the model is inadequate ...
                if(mc.cores==1){
                   for(i in 1:nvox){
          ## z$si was created in sioutlier1, mask is set by thresholding with object$level + call to connect.mask
@@ -356,9 +358,9 @@ tchi <- function(param,si,sigma,btb,L,CL){
   logth <- param[1]
   if(logth>12) logth <- 12+log(logth/12)
   # logth should be < 12 for the solution
-  gDg <- D%*%btb ## b_i*g_i^TD g_i (i=1,ngrad)
-  gvalue <- exp(logth)*exp(-gDg)/sigma
-  mgvh <- -gvalue*gvalue/2
+  # gDg <- D%*%btb ## b_i*g_i^TD g_i (i=1,ngrad)
+  gvalue <- exp(logth-D%*%btb)/sigma
+  #    mgvh <- -gvalue*gvalue/2
   #    muL <- CL*.C("hyperg_1F1_e",
   #               as.double(rep(-.5,ng)),
   #               as.double(rep(L,ng)),
@@ -368,7 +370,8 @@ tchi <- function(param,si,sigma,btb,L,CL){
   #               err=as.double(mgvh),
   #               status=as.integer(0*mgvh),
   #               PACKAGE="gsl")$val
-  muL <- CL*hg1f1(rep(-.5,ng),rep(L,ng),mgvh)
+  muL <- CL*hg1f1(rep(-.5,ng),rep(L,ng),-gvalue*gvalue/2)
+#  vL <- 2*L+gvalue^2-muL^2
   vL <- pmax(1e-8,2*L+gvalue^2-muL^2)
   ## avoid negative variances that may result due to approximations
   ## within the iteration process 

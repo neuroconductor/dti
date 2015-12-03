@@ -11,15 +11,27 @@ dtiData <- function(gradient,imagefile,ddim,bvalue=NULL,xind=NULL,yind=NULL,zind
   if (dim(gradient)[1]!=3) stop("Not a valid gradient matrix")
   ngrad <- dim(gradient)[2]
   s0ind <- (1:ngrad)[apply(abs(gradient),2,max)==0] 
-  d <- diag(t(gradient[,-s0ind])%*%gradient[,-s0ind])
-  gradient[,-s0ind] <- t(t(gradient[,-s0ind])/sqrt(d))
-  if (is.null(bvalue)){
-    bvalue <- rep(1,ngrad)
-    bvalue[s0ind] <- 0
+  if(length(s0ind)>0){
+     d <- diag(t(gradient[,-s0ind])%*%gradient[,-s0ind])
+     gradient[,-s0ind] <- t(t(gradient[,-s0ind])/sqrt(d))
+     if (is.null(bvalue)){
+        bvalue <- rep(1,ngrad)
+        bvalue[s0ind] <- 0
+     } else {
+       if(length(bvalue)!=ngrad || max(bvalue[s0ind]) > 10*min(bvalue[-s0ind])) 
+         stop("invalid b-values")
+     }   
   } else {
-    if(length(bvalue)!=ngrad || max(bvalue[s0ind]) > 10*min(bvalue[-s0ind])) 
-      stop("invalid b-values")
-  }   
+## some datasets have small b-values assigned to unweighted data, e.g. HCP
+## define s0ind as set of minimal b-values
+     if(is.null(bvalue)) stop("need bvalues")
+     if(length(bvalue)!=ngrad) stop("invalid b-values")
+     s0ind <- (1:ngrad)[bvalue==min(bvalue)]
+     cat("identify S0 images with b-value",min(bvalue),"\n")
+     if(length(s0ind)==ngrad) stop("nonidentifability, all b-values are equal")
+     d <- diag(t(gradient)%*%gradient)
+     gradient <- t(t(gradient)/sqrt(d))
+  }
   if (!(file.exists(imagefile))) stop("Image file does not exist")
   cat("Start Data reading",format(Sys.time()), "\n")
   zz <- file(imagefile,"rb")
@@ -140,16 +152,27 @@ readDWIdata <- function(gradient, dirlist,
   if (dim(gradient)[1] != 3) stop("readDWIdata: Not a valid gradient matrix.")
   ngrad <- dim(gradient)[2]
   s0ind <- (1:ngrad)[apply(abs(gradient), 2, max) == 0]
-  if (length(s0ind) < 1) stop("readDWIdata: No b0 gradients found.")
-  d <- diag(t(gradient[,-s0ind])%*%gradient[,-s0ind])
-  gradient[,-s0ind] <- t(t(gradient[,-s0ind])/sqrt(d))
-  if (is.null(bvalue)){
-    bvalue <- rep(1,ngrad)
-    bvalue[s0ind] <- 0
+  if (length(s0ind) > 0) {
+     d <- diag(t(gradient[,-s0ind])%*%gradient[,-s0ind])
+     gradient[,-s0ind] <- t(t(gradient[,-s0ind])/sqrt(d))
+     if (is.null(bvalue)){
+        bvalue <- rep(1,ngrad)
+        bvalue[s0ind] <- 0
+     } else {
+        if(length(bvalue)!=ngrad || max(bvalue[s0ind]) > 10*min(bvalue[-s0ind])) 
+           stop("invalid b-values")
+     } 
   } else {
-    if(length(bvalue)!=ngrad || max(bvalue[s0ind]) > 10*min(bvalue[-s0ind])) 
-      stop("invalid b-values")
-  }   
+## some datasets have small b-values assigned to unweighted data, e.g. HCP
+## define s0ind as set of minimal b-values
+     if(is.null(bvalue)) stop("need bvalues")
+     if(length(bvalue)!=ngrad) stop("invalid b-values")
+     s0ind <- (1:ngrad)[bvalue==min(bvalue)]
+     cat("identify S0 images with b-value",min(bvalue),"\n")
+     if(length(s0ind)==ngrad) stop("nonidentifability, all b-values are equal")
+     d <- diag(t(gradient)%*%gradient)
+     gradient <- t(t(gradient)/sqrt(d))
+  }
   if(length(dirlist)==1&!is.na(isdir <- file.info(dirlist)$isdir)&!isdir){
     ## dirlist contains a filename rather than a list of directories
     filelist <- dirlist
