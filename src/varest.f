@@ -6,7 +6,14 @@ C
       integer n
       real*8 x(n),med,fmedian
       external fmedian
-      med = fmedian(x,n)
+      if(n.gt.2) THEN
+         med = fmedian(x,n)
+      ELSE IF (n.eq.2) THEN
+         med = (x(1)+x(2))/2
+      ELSE   
+         med = x(1)
+      END IF
+C      
       return
       end
       
@@ -86,10 +93,11 @@ C
       integer i1,i2,i3,j1,j2,j3,j,k,thrednr
       real*8 fmedian
       external fmedian
+      thrednr = 1
 !$      integer omp_get_thread_num
 !$      external omp_get_thread_num
 C$OMP PARALLEL DEFAULT(SHARED)
-C$OMP& PRIVATE(i1,i2,i3,j1,j2,j3,k,thrednr)
+C$OMP& PRIVATE(i1,i2,i3,j1,j2,j3,j,k,thrednr)
 C$OMP DO SCHEDULE(GUIDED)
       DO i1=1,n1
 !$         thrednr = omp_get_thread_num()+1

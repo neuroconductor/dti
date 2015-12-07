@@ -48,7 +48,7 @@ awslsigmc <- function(y,                 # data
                       minni = 2,         # minimum sum of weights for estimating local sigma
                       hsig = 5,          # bandwidth for median smoothing local sigma estimates
                       sigma = NULL,
-                      family = c("NCchi", "Gauss"),
+                      family = c("NCchi"),
                       verbose = FALSE,
                       u=NULL#,
                       #bc=FALSE # bias correction ...
@@ -148,7 +148,6 @@ awslsigmc <- function(y,                 # data
   ksi <- array( y^2, ddim)
   ni <- array( 1, ddim)
   sigma <- array(sigma, ddim)
-  sigmar <- array(0, c(ddim, steps))
   # initialize array for local sigma by global estimate
   mc.cores <- setCores(,reprt=FALSE)
   ## preparations for median smoothing
@@ -180,7 +179,6 @@ awslsigmc <- function(y,                 # data
     param$ind <- param$ind[1:(3*nw)]
     dim(param$ind) <- c(3,nw)
     param$w   <- param$w[1:nw]    
-    if("NCchi" == family) {
       ## perform one step PS with bandwidth h
       z <- .Fortran("awslchi2",
                     as.double(y),        # data
@@ -211,25 +209,6 @@ awslsigmc <- function(y,                 # data
       ksi <- z$ksi
       thchi[!mask] <- 0
       ## extract sum of weigths (see PS) and consider only voxels with ni larger then mean
-    } else {
-      z <- .Fortran("awslgaus",
-                    as.double(y),        # data
-                    as.double(th),       # previous estimates
-                    ni = as.double(ni),
-                    as.double(sigma),
-                    as.logical(mask),
-                    as.integer(ddim[1]),
-                    as.integer(ddim[2]),
-                    as.integer(ddim[3]),
-                    as.integer(param$ind),
-                    as.double(param$w),
-                    as.integer(nw),
-                    as.double(minni),
-                    as.double(lambda),
-                    th = double(n),
-                    sigman = double(n),
-                    PACKAGE = "dti")[c("ni","th","sigman")]
-    }
     th <- array(z$th,ddim)
     ni <- array(z$ni,ddim)
     mask[z$sigman==0] <- FALSE
@@ -259,7 +238,6 @@ awslsigmc <- function(y,                 # data
     dim(sigma) <- ddim
     mask[sigma==0] <- FALSE
     if(verbose) cat("local median smoother in step ",i," completed",format(Sys.time()),"\n") 
-    sigmar[, , , i] <- sigma
     ##
     ##  diagnostics
     ##
@@ -291,47 +269,11 @@ awslsigmc <- function(y,                 # data
   }
   ## END PS iteration
   if(!verbose) cat("\n")
-  sigmal <- array(z$sigman,ddim)
-  if(!("NCchi" == family)){
-    ## still need to estimate noise sd (for correct distribution)
-    vqm2p1chi <- function(L, to = 50, delta = .002){
-      x <- seq(0, to, delta)
-      mu <- sqrt(pi/2)*gamma(L+1/2)/gamma(1.5)/gamma(L)*hg1f1(-0.5,L, -x^2/2)
-      list(ncp = x, vqm2p1=(2*L+x^2)/mu^2)
-    }
-    
-    thncchi <- function(m,v,vqm2p1){
-      #
-      #  solve v/m^2+1 = (2*L+th^2)/mu(th)^2
-      #
-      vqm2p1$ncp[findInterval(-v/m^2-1, -vqm2p1$vqm2p1, all.inside = TRUE)]
-    }
-    z <- vqm2p1chi(ncoils)
-    eta <- thncchi(th[mask],sigmal[mask]^2,z)
-    eta[eta>49.9] <- th[mask][eta>49.9]/sigmal[mask][eta>49.9]
-    mu <- sqrt(pi/2)*gamma(ncoils+1/2)/gamma(1.5)/gamma(ncoils)*
-      hg1f1(-0.5,ncoils, -eta^2/2)
-    sigmal[mask] <- th[mask]/mu
-    th[mask] <- eta*sigmal[mask]
-    sigmar <- .Fortran("mediansm",
-                       as.double(sigmal),
-                       as.logical(mask),
-                       as.integer(ddim[1]),
-                       as.integer(ddim[2]),
-                       as.integer(ddim[3]),
-                       as.integer(parammd$ind),
-                       as.integer(nwmd),
-                       double(nwmd*mc.cores), # work(nwmd,nthreds)
-                       as.integer(mc.cores),
-                       sigman = double(n),
-                       PACKAGE = "dti")$sigman
-    dim(sigmar) <- ddim
-  }
   thchi <- fncchir(th/sigma,varstats)*sigma
   thchi[!mask] <- 0
   ## this is the result (th is expectation, not the non-centrality parameter !!!)
-  invisible(list(sigma = sigmar,
-                 sigmal = sigmal,
+  invisible(list(sigma = sigma,
+                 sigmal = array(z$sigman,ddim),
                  theta = th, 
                  thchi = thchi,
                  ni  = ni,
