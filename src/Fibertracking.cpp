@@ -123,7 +123,7 @@ double* Fibertracking::convertToDouble()
 	{
 		temp = allVectors.getStart().getComponents()[1];
 		
-		if (isnan(temp)) 
+		if (std::isnan(temp))
 		{
 			
 			i-=1;
