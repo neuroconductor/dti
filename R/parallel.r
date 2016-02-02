@@ -400,8 +400,8 @@ pgetsiindbv <- function(x,grad,bv,nvico,dgrad,dgradi,isample,alpha,lambda,
                     as.integer(maxcomp+1),
                     PACKAGE="dti")[c("siind","krit","wi")]
   z <- matrix(0,2*maxcomp+3,nvox)
-  z[2:(maxcomb+2),] <- siind$siind  ## vertex indices 
-  z[-(1:(maxcomb+2)),] <- siind$wi  ## weights
+  z[2:(maxcomp+2),] <- siind$siind  ## vertex indices 
+  z[-(1:(maxcomp+2)),] <- siind$wi  ## weights
   z[1,] <- siind$krit  ## kriterion
   z
 }
