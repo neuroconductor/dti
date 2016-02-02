@@ -8,7 +8,7 @@ Authors@R: c(person("Karsten", "Tabelow", role = c("aut", "cre"),
                     email = "joerg.polzehl@wias-berlin.de"),
              person("Felix", "Anker", role = c("ctb")))
 Depends: R (>= 3.1.0), awsMethods (>= 1.0-1), adimpro, rgl
-Imports: methods, parallel, oro.nifti (>= 0.3.9), oro.dicom, gsl, quadprog, Rsolnp
+Imports: methods, parallel, oro.nifti (>= 0.3.9), oro.dicom, gsl, quadprog
 LazyData: TRUE
 Description: Diffusion Weighted Imaging (DWI) is a Magnetic Resonance Imaging
              modality, that measures diffusion of water in tissues like the human 

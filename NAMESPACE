@@ -4,7 +4,7 @@ useDynLib(dti)
 #exportPattern("^[^\\.]")
 
 import(methods, parallel, oro.nifti, oro.dicom, adimpro, gsl, rgl, awsMethods, quadprog)
-importFrom("Rsolnp", "solnp")
+#importFrom("Rsolnp", "solnp")
 importFrom("grDevices", "col2rgb", "dev.off", "grey", "heat.colors",
            "png", "rainbow", "rgb")
 importFrom("graphics", "plot", "axis", "contour", "identify", "legend",
