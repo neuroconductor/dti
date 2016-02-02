@@ -1,3 +1,6 @@
+\.gitignore
 \.project
+\.cproject
+\.settings
 ^\.Rproj\.user$
 ^.*\.Rproj$
