@@ -140,7 +140,7 @@ function(object, maxcomp=3,
   #
   cat("Start search for initial directions at",format(Sys.time()),"\n")
   data("polyeders", envir = environment())
-  polyeder <- icosa3
+  polyeder <- icosa3 <- icosa3 ## WORKAROUND to make "polyeders" not global variable (for R CMD check)
   vert <- polyeder$vertices
   # remove redundant directions
   vind <- rep(TRUE,dim(vert)[2])

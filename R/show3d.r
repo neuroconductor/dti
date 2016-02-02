@@ -82,6 +82,15 @@ setMethod("show3d","dtiTensor", function(obj,
   what <- tolower(what)
   what <- match.arg(what)
   if(!exists("icosa0")) data("polyeders", envir = environment())
+
+  ## WORKAROUND to make "polyeders" not global variable (for R CMD check) 
+  icosa0 <- icosa0
+  icosa1 <- icosa1
+  icosa2 <- icosa2
+  icosa3 <- icosa3
+  icosa4 <- icosa4
+  ## END WORKAROUND
+
   if(subdivide<0||subdivide>4) subdivide <- 3
   cube <- selectCube(xind,yind,zind,obj@ddim,maxobjects)
   xind <- cube$xind
@@ -206,6 +215,15 @@ setMethod("show3d","dwiMixtensor", function(obj,
   what <- tolower(what)
   what <- match.arg(what)
   if(!exists("icosa0")) data("polyeders", envir = environment())
+
+  ## WORKAROUND to make "polyeders" not global variable (for R CMD check) 
+  icosa0 <- icosa0
+  icosa1 <- icosa1
+  icosa2 <- icosa2
+  icosa3 <- icosa3
+  icosa4 <- icosa4
+  ## END WORKAROUND
+
   if(subdivide<0||subdivide>4) subdivide <- 3
   cube <- selectCube(xind,yind,zind,obj@ddim,maxobjects)
   xind <- cube$xind
@@ -406,6 +424,15 @@ setMethod("show3d","dwiQball", function(obj,
                                         box=FALSE, title=FALSE,...){
   #if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
   if(!exists("icosa0")) data("polyeders", envir = environment())
+
+  ## WORKAROUND to make "polyeders" not global variable (for R CMD check) 
+  icosa0 <- icosa0
+  icosa1 <- icosa1
+  icosa2 <- icosa2
+  icosa3 <- icosa3
+  icosa4 <- icosa4
+  ## END WORKAROUND
+
   if(subdivide<0||subdivide>4) subdivide <- 3
   cube <- selectCube(xind,yind,zind,obj@ddim,maxobjects)
   xind <- cube$xind
@@ -529,7 +556,15 @@ setMethod( "show3d", "dkiTensor", function( obj,
   
   what <- match.arg( what)
   
-  data( "polyeders", envir = environment())
+  if (!exists("icosa1")) data("polyeders", envir = environment())
+
+  ## WORKAROUND to make "polyeders" not global variable (for R CMD check) 
+  icosa0 <- icosa0
+  icosa1 <- icosa1
+  icosa2 <- icosa2
+  icosa3 <- icosa3
+  icosa4 <- icosa4
+  ## END WORKAROUND
   
   if ( ( subdivide < 0) || ( subdivide > 4)) subdivide <- 2
   polyeder <- switch( subdivide + 1, 
