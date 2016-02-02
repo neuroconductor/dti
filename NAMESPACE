@@ -4,8 +4,18 @@ useDynLib(dti)
 #exportPattern("^[^\\.]")
 
 import(methods, parallel, oro.nifti, oro.dicom, adimpro, gsl, rgl, awsMethods, quadprog)
-importFrom(graphics, plot)
-importFrom(Rsolnp, solnp)
+importFrom("Rsolnp", "solnp")
+importFrom("grDevices", "col2rgb", "dev.off", "grey", "heat.colors",
+           "png", "rainbow", "rgb")
+importFrom("graphics", "plot", "axis", "contour", "identify", "legend",
+           "lines", "par", "text", "title")
+importFrom("stats", "IQR", "as.dist", "bw.nrd", "coef", "coefficients",
+           "density", "dnorm", "lm", "median", "nls", "optim",
+           "optimize", "qchisq", "qnorm", "quantile", "rchisq",
+           "runif", "sd")
+importFrom("utils", "data", "setTxtProgressBar", "txtProgressBar")
+
+
 exportClasses("dwi", "dtiData", "dtiTensor", "dtiIndices", "dwiQball",
               "dwiMixtensor", "dwiFiber", "dkiTensor", "dkiIndices")
 exportMethods("show", "plot", "print", "summary", "dti.smooth", "dtiTensor",
