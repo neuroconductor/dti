@@ -263,7 +263,7 @@ setMethod("plot", "dtiIndices", function(x, y, slice=1, view= "axial", method=1,
   anindex[anindex>1] <- 0
   anindex[anindex<0] <- 0
   if ((method==1) || (method==2) || (method==4)) {
-    if(contrast.enh<1&&fa.contrast.enh>0) anindex <- pmin(anindex/contrast.enh,1)
+    if (contrast.enh < 1 && contrast.enh > 0) anindex <- pmin(anindex/contrast.enh, 1)
     if(is.null(minfa)) minfa <- quantile(anindex,quant,na.rm=TRUE)
     if (diff(range(anindex,na.rm=TRUE)) == 0) minfa <- 0
     if(method==1) {
