@@ -5,6 +5,7 @@ useDynLib(dti)
 
 import(methods, parallel, oro.nifti, oro.dicom, adimpro, gsl, rgl, awsMethods, quadprog)
 importFrom(graphics, plot)
+importFrom(Rsolnp, solnp)
 exportClasses("dwi", "dtiData", "dtiTensor", "dtiIndices", "dwiQball",
               "dwiMixtensor", "dwiFiber", "dkiTensor", "dkiIndices")
 exportMethods("show", "plot", "print", "summary", "dti.smooth", "dtiTensor",
