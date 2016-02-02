@@ -10,7 +10,7 @@ exportClasses("dwi", "dtiData", "dtiTensor", "dtiIndices", "dwiQball",
               "dwiMixtensor", "dwiFiber", "dkiTensor", "dkiIndices")
 exportMethods("show", "plot", "print", "summary", "dti.smooth", "dtiTensor",
               "dtiIndices", "dwiQball", "dwiMixtensor", "dwiMtCombine", 
-              "dwiRiceBias", "dwiSqrtODF", "dkiTensor", "dkiIndices")
+              "dwiRiceBias", "dkiTensor", "dkiIndices")
 exportMethods("extract", "show3d", "tracking", "selectFibers", "reduceFibers",
               "touchingFibers", "combineFibers", "getmask", "sdpar", 
               "getsdofsb", "dwi.smooth", "dwi.smooth.ms")
