@@ -3,7 +3,7 @@
 #include <iostream>
 #include <string>
 #include <sstream>
-#include <math.h>
+#include <cmath>
 #include <R.h>
 #include <R_ext/Utils.h>
 #include <Rinternals.h>
