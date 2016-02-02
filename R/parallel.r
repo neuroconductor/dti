@@ -226,7 +226,7 @@ pmixtn1b <- function(x,ngrad,maxcomp,maxit,grad,bv,lambda,alpha,factr,penIC,vert
   dim(x) <- c(ngrad+2+2*maxcomp,nvox)
   z <- .C("mixtrl1b", 
           as.integer(nvox),#n1
-          as.integer(x[(ngrad+2):(ngrad0+1+maxcomp),]),#siind 
+          as.integer(x[(ngrad+2):(ngrad+1+maxcomp),]),#siind 
           as.integer(x[-(1:(ngrad+1+maxcomp)),]),#wi 
           as.integer(ngrad),#ngrad
           as.integer(maxcomp),#maxcomp
