@@ -22,7 +22,7 @@ VectorList::VectorList(Vector &set_start)
 	length = 1;
 	this->minLength = 6;
 	
-	if (isnan(set_start.getComponents()[1]))
+	if (ISNAN(set_start.getComponents()[1]))
 	{
 		num_nan = 1;
 	}
@@ -97,7 +97,7 @@ void VectorList::add_at_end(Vector &add)
 		end->setNext(NULL);
 	}
 	
-	if (isnan(add.getComponents()[1]))
+	if (ISNAN(add.getComponents()[1]))
 	{	
 		num_nan++;
 	}
@@ -124,7 +124,7 @@ void VectorList::add_at_start(Vector &add)
 		start->setPrev(NULL);
 	}
 	
-	if (isnan(add.getComponents()[1]))
+	if (ISNAN(add.getComponents()[1]))
 	{
 		num_nan++;
 	}
@@ -134,7 +134,7 @@ void VectorList::add_at_start(Vector &add)
 
 void VectorList::del_at_start()
 {
-	if (isnan(start->getComponents()[1]))
+	if (ISNAN(start->getComponents()[1]))
 	{
 		num_nan--;
 	}
