@@ -1,7 +1,8 @@
 
 #include "Fibertracking.h"
 
-using namespace std;
+// for Solaris?
+using std::isnan;
 
 int n_angle = 0;
 int n_visited = 0;
@@ -123,7 +124,7 @@ double* Fibertracking::convertToDouble()
 	{
 		temp = allVectors.getStart().getComponents()[1];
 		
-		if (std::isnan(temp))
+		if (isnan(temp))
 		{
 			
 			i-=1;

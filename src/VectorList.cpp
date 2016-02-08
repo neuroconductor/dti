@@ -1,7 +1,6 @@
+
 #include "VectorList.h"
 #include <R.h>
-
-using namespace std;
 
 VectorList::VectorList()
 {

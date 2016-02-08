@@ -4,8 +4,6 @@
 #include "Fiber.h"
 #include "VectorList.h"
 
-using namespace std;
-
 class Fibertracking
 {
 	private:

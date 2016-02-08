@@ -1,7 +1,5 @@
 #include "Fiber.h"
 
-using namespace std;
-
 Fiber::Fiber()
 {
 	start = NULL;

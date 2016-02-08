@@ -8,8 +8,6 @@
 #include <R_ext/Utils.h>
 #include <Rinternals.h>
 
-using namespace std;
-
 /*
  * The class 'Vector' offers typical vector operations.
  */

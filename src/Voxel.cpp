@@ -1,7 +1,5 @@
 #include "Voxel.h"
 
-using namespace std;
-
 Voxel::Voxel()
 {
 	this->order = 0;

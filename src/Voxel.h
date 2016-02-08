@@ -3,8 +3,6 @@
 
 #include "Vector.h"
 
-using namespace std;
-
 /*
  * The class 'Voxel' contains the direction vectors and the anisotropy
  * from the given R variables.

@@ -1,8 +1,6 @@
 
 #include "Vector.h"
 
-using namespace std;
-
 Vector::Vector(int numbArgs)
 {
 	this->n = numbArgs;

@@ -6,8 +6,6 @@
 #include <R.h>
 #include <Rinternals.h>
 
-using namespace std;
-
 extern "C"{
 	SEXP interface_tracking(SEXP data_dir_coords, SEXP data_FA_values, 
                                 SEXP data_mask,
