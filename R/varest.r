@@ -50,6 +50,7 @@ awslsigmc <- function(y,                 # data
                       sigma = NULL,
                       family = c("NCchi"),
                       verbose = FALSE,
+                      trace = FALSE,
                       u=NULL#,
                       #bc=FALSE # bias correction ...
 ) {
@@ -58,6 +59,7 @@ awslsigmc <- function(y,                 # data
   #   IQQ <- function (x, q = .25, na.rm = FALSE, type = 7) 
   #     diff(quantile(as.numeric(x), c(q, 1-q), na.rm = na.rm, names = FALSE, type = type))
   
+  if(trace) tergs <- array(0,c(steps,4,sum(mask))) else tergs <- NULL
   family <- match.arg(family)
   
   IQQ <- function (x, q = .25, na.rm = FALSE, type = 7){ 
@@ -266,6 +268,12 @@ awslsigmc <- function(y,                 # data
     } else {
       cat(" ",i)
     }
+    if(trace) {
+        tergs[i,1,] <- ni[mask]
+        tergs[i,2,] <- th[mask]
+        tergs[i,3,] <- z$sigma[mask]
+        tergs[i,4,] <- sigma[mask]
+    }
   }
   ## END PS iteration
   if(!verbose) cat("\n")
@@ -277,6 +285,7 @@ awslsigmc <- function(y,                 # data
                  theta = th, 
                  thchi = thchi,
                  ni  = ni,
+                 tergs = tergs,
                  mask = mask))
 }
 #

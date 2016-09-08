@@ -29,7 +29,7 @@ awssigmc(y, steps, mask = NULL, ncoils = 1, vext = c(1, 1), lambda = 20,
          h0 = 2, verbose = FALSE, sequence = FALSE, hadj = 1, q = 0.25, 
          qni = .8, method=c("VAR","MAD"))
 awslsigmc(y, steps, mask = NULL, ncoils = 1, vext = c(1, 1), lambda = 5, minni = 2, 
-         hsig = 5, sigma = NULL, family = c("NCchi"), verbose = FALSE, u=NULL)
+         hsig = 5, sigma = NULL, family = c("NCchi"), verbose = FALSE, trace=FALSE, u=NULL)
 afsigmc(y, level = NULL, mask = NULL,  ncoils = 1,   vext = c( 1, 1),   
         h = 2, verbose = FALSE, hadj = 1, 
         method = c("modevn","modem1chi","bkm2chi","bkm1chi"))
@@ -66,6 +66,10 @@ aflsigmc(y, ncoils, level = NULL, mask = NULL, h=2, hadj=1,  vext = c( 1, 1))
   \item{verbose}{
    if \code{verbose==TRUE} density plots 
    and quantiles of local estimates of \code{sigma} are provided.
+}
+  \item{trace}{
+   if \code{trace==TRUE} intermediate results for each step are
+   returned in component tergs for all voxel in mask.
 }
   \item{sequence}{
    if \code{sequence=TRUE} a vector of estimates for the noise

@@ -18,9 +18,10 @@ C   rho penalizes small angular differences
 C
       implicit logical (a-z)
       integer n,npar,nc
-      real*8 par(npar),si(n),grad(3,n),bv(n),rho,evc(3,nc),w(nc),krit
+      double precision par(npar),si(n),grad(3,n),bv(n),rho,evc(3,nc),
+     1       w(nc),krit
       integer i,k,l
-      real*8 w0,l1,l12,l2,ksi,eta,sksi,sw,z,z1,bvi
+      double precision w0,l1,l12,l2,ksi,eta,sksi,sw,z,z1,bvi
       l12=par(1)
       l2=par(2)
       l1=l12+l2
@@ -74,11 +75,11 @@ C   implicit:  th0=\sum_{k=0}^nc par(3*k+3)
 C
       implicit logical (a-z)
       integer n,npar,nc
-      real*8 par(npar),si(n),grad(3,n),bv(n),rho,evc(3,nc),w(nc),
-     1       grd(npar),f(n),el1(n),el2k(nc,n),evg(nc,n)
+      double precision par(npar),si(n),grad(3,n),bv(n),rho,evc(3,nc),
+     1       w(nc),grd(npar),f(n),el1(n),el2k(nc,n),evg(nc,n)
       integer i,k,l
-      real*8 w0,l1,l12,l2,ksi,eta,sksi,sw,z,z1,z2,z3,z1i,z2i,bvi,
-     1       e1k,e2k,e3k,e1e,e2e,dz2,dz3
+      double precision w0,l1,l12,l2,ksi,eta,sksi,sw,z,z1,z2,z3,z1i,
+     1       z2i,bvi,e1k,e2k,e3k,e1e,e2e,dz2,dz3
       l12=par(1)
       l2=par(2)
       l1=l12+l2
@@ -213,10 +214,10 @@ C   rho penalizes small angular differences
 C
       implicit logical (a-z)
       integer n,npar,nc
-      real*8 par(npar),si(n),grad(3,n),bv(n),rho,evc(3,nc),w(nc),krit,
-     1       alpha
+      double precision par(npar),si(n),grad(3,n),bv(n),rho,evc(3,nc),
+     1       w(nc),krit,alpha
       integer i,k,l
-      real*8 w0,l1,l12,l2,ksi,eta,sksi,sw,z,z1,bvi
+      double precision w0,l1,l12,l2,ksi,eta,sksi,sw,z,z1,bvi
       l2=par(1)
       l12=alpha*l2
       l1=l12+l2
@@ -269,10 +270,10 @@ C   implicit:  th0=\sum_{k=0}^nc par(3*k+2)
 C
       implicit logical (a-z)
       integer n,npar,nc
-      real*8 par(npar),si(n),grad(3,n),bv(n),rho,evc(3,nc),w(nc),
-     1       grd(npar),f(n),el1(n),el2k(nc,n),evg(nc,n),alpha
+      double precision par(npar),si(n),grad(3,n),bv(n),rho,evc(3,nc),
+     1       w(nc),grd(npar),f(n),el1(n),el2k(nc,n),evg(nc,n),alpha
       integer i,k,l
-      real*8 w0,l1,l12,l2,ksi,eta,sksi,sw,z,z1,z2,z3,z2i,bvi,
+      double precision w0,l1,l12,l2,ksi,eta,sksi,sw,z,z1,z2,z3,z2i,bvi,
      1       e1k,e2k,e3k,e1e,e2e,dz2,dz3
       l2=par(1)
       l12=alpha*l2
@@ -403,10 +404,10 @@ C   rho penalizes small angular differences
 C
       implicit logical (a-z)
       integer n,npar,nc
-      real*8 par(npar),si(n),grad(3,n),bv(n),rho,evc(3,nc),w(nc),krit,
-     1       alpha
+      double precision par(npar),si(n),grad(3,n),bv(n),rho,evc(3,nc),
+     1       w(nc),krit,alpha
       integer i,k,l
-      real*8 w0,l1,l12,l2,ksi,eta,sksi,sw,z,z1,bvi
+      double precision w0,l1,l12,l2,ksi,eta,sksi,sw,z,z1,bvi
       l12=alpha*l2
       l1=l12+l2
       w0=par(1)
@@ -457,10 +458,10 @@ C   implicit:  th0=\sum_{k=0}^nc par(3*k+2)
 C
       implicit logical (a-z)
       integer n,npar,nc
-      real*8 par(npar),si(n),grad(3,n),bv(n),rho,evc(3,nc),w(nc),
-     1       grd(npar),f(n),el1(n),el2k(nc,n),evg(nc,n),alpha,l2
+      double precision par(npar),si(n),grad(3,n),bv(n),rho,evc(3,nc),
+     1       w(nc),grd(npar),f(n),el1(n),el2k(nc,n),evg(nc,n),alpha,l2
       integer i,k,l
-      real*8 w0,l1,l12,ksi,eta,sksi,sw,z,z1,z2,z3,bvi,
+      double precision w0,l1,l12,ksi,eta,sksi,sw,z,z1,z2,z3,bvi,
      1       e1k,e2k,e3k,e1e,e2e,dz2,dz3
       l12=alpha*l2
       l1=l12+l2
@@ -577,9 +578,10 @@ C   rho penalizes small angular differences
 C
       implicit logical (a-z)
       integer n,npar,nc
-      real*8 par(npar),si(n),grad(3,n),bv(n),rho,evc(3,nc),w(nc),krit
+      double precision par(npar),si(n),grad(3,n),bv(n),rho,evc(3,nc),
+     1       w(nc),krit
       integer i,k,l
-      real*8 l1,l12,l2,ksi,eta,sksi,sw,z,z1,bvi
+      double precision l1,l12,l2,ksi,eta,sksi,sw,z,z1,bvi
       l12=par(1)
       l2=par(2)
       l1=l12+l2
@@ -631,11 +633,11 @@ C   implicit:  th0=\sum_{k=0}^nc par(3*k+2)
 C
       implicit logical (a-z)
       integer n,npar,nc
-      real*8 par(npar),si(n),grad(3,n),bv(n),rho,evc(3,nc),w(nc),
-     1       grd(npar),f(n),el2k(nc,n),evg(nc,n)
+      double precision par(npar),si(n),grad(3,n),bv(n),rho,evc(3,nc),
+     1       w(nc),grd(npar),f(n),el2k(nc,n),evg(nc,n)
       integer i,k,l
-      real*8 l1,l12,l2,ksi,eta,sksi,sw,z,z1,z2,z3,z1i,z2i,bvi,
-     1       e1k,e2k,e3k,e1e,e2e,dz2,dz3
+      double precision l1,l12,l2,ksi,eta,sksi,sw,z,z1,z2,z3,z1i,z2i,
+     1       bvi,e1k,e2k,e3k,e1e,e2e,dz2,dz3
       l12=par(1)
       l2=par(2)
       l1=l12+l2
@@ -764,10 +766,10 @@ C   rho penalizes small angular differences
 C
       implicit logical (a-z)
       integer n,npar,nc
-      real*8 par(npar),si(n),grad(3,n),bv(n),rho,evc(3,nc),w(nc),krit,
-     1       alpha
+      double precision par(npar),si(n),grad(3,n),bv(n),rho,evc(3,nc),
+     1       w(nc),krit,alpha
       integer i,k,l
-      real*8 l1,l12,l2,ksi,eta,sksi,sw,z,z1,bvi
+      double precision l1,l12,l2,ksi,eta,sksi,sw,z,z1,bvi
       l2=par(1)
       l12=alpha*l2
       l1=l12+l2
@@ -818,10 +820,10 @@ C   implicit:  th0=\sum_{k=0}^nc par(3*k+1)
 C
       implicit logical (a-z)
       integer n,npar,nc
-      real*8 par(npar),si(n),grad(3,n),bv(n),rho,evc(3,nc),w(nc),
-     1       grd(npar),f(n),el2k(nc,n),evg(nc,n),alpha
+      double precision par(npar),si(n),grad(3,n),bv(n),rho,evc(3,nc),
+     1       w(nc),grd(npar),f(n),el2k(nc,n),evg(nc,n),alpha
       integer i,k,l
-      real*8 l1,l12,l2,ksi,eta,sksi,sw,z,z1,z2,z3,z2i,bvi,
+      double precision l1,l12,l2,ksi,eta,sksi,sw,z,z1,z2,z3,z2i,bvi,
      1       e1k,e2k,e3k,e1e,e2e,dz2,dz3
       l2=par(1)
       l12=alpha*l2
@@ -946,10 +948,10 @@ C   rho penalizes small angular differences
 C
       implicit logical (a-z)
       integer n,npar,nc
-      real*8 par(npar),si(n),grad(3,n),bv(n),rho,evc(3,nc),w(nc),krit,
-     1       alpha
+      double precision par(npar),si(n),grad(3,n),bv(n),rho,evc(3,nc),
+     1       w(nc),krit,alpha
       integer i,k,l
-      real*8 l1,l12,l2,ksi,eta,sksi,sw,z,z1,bvi
+      double precision l1,l12,l2,ksi,eta,sksi,sw,z,z1,bvi
       l12=alpha*l2
       l1=l12+l2
       DO k=1,nc
@@ -998,10 +1000,10 @@ C   implicit:  th0=\sum_{k=0}^nc par(3*k)
 C
       implicit logical (a-z)
       integer n,npar,nc
-      real*8 par(npar),si(n),grad(3,n),bv(n),rho,evc(3,nc),w(nc),
-     1       grd(npar),f(n),el2k(nc,n),evg(nc,n),alpha,l2
+      double precision par(npar),si(n),grad(3,n),bv(n),rho,evc(3,nc),
+     1       w(nc),grd(npar),f(n),el2k(nc,n),evg(nc,n),alpha,l2
       integer i,k,l
-      real*8 l1,l12,ksi,eta,sksi,sw,z,z1,z2,z3,bvi,
+      double precision l1,l12,ksi,eta,sksi,sw,z,z1,z2,z3,bvi,
      1       e1k,e2k,e3k,e1e,e2e,dz2,dz3
       l12=alpha*l2
       l1=l12+l2
@@ -1108,11 +1110,11 @@ C
      1                   maxangle,vext,norient)
       implicit logical(a-z)
       integer n1,n2,n3,mo,order(n1,n2,n3)
-      real*8 mix(mo,n1,n2,n3),orient(3,mo,n1,n2,n3),minw,maxangle,
-     1       vext(3),norient(3,mo,n1,n2,n3)
+      double precision mix(mo,n1,n2,n3),orient(3,mo,n1,n2,n3),minw,
+     1       maxangle,vext(3),norient(3,mo,n1,n2,n3)
       logical mask(n1,n2,n3)
       integer i1,i2,i3,j,k,l,oi,ik1(26),ik2(26),ik3(26),j1,j2,j3
-      real*8 sw,d(3,26),ddot,dj(3),sd(3),mcos
+      double precision sw,d(3,26),ddot,dj(3),sd(3),mcos
       external ddot
       mcos = cos(maxangle)
 C first remove spurious effects

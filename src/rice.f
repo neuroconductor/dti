@@ -1,9 +1,9 @@
       subroutine besselq(x,n,fw)
       implicit logical (a-z) 
       integer n
-      real*8 x(n),fw(n)
+      double precision x(n),fw(n)
       external besseli
-      real*8 besseli
+      double precision besseli
       integer i
       DO i=1,n
          x(i)=i*1.d-2
@@ -16,11 +16,11 @@ C  avoid transform to zero for numerical stability
      1                    fw)
       implicit logical (a-z) 
       integer n,nb,niter(nb)
-      real*8 si(nb,n)
-      real*8 w(n),th(nb),s2(nb),sigma2,sw,fw(10000)
+      double precision si(nb,n)
+      double precision w(n),th(nb),s2(nb),sigma2,sw,fw(10000)
       logical sbind(nb)
       integer i,j,k,l,iter,ns0
-      real*8 z,sth,th2,ss2,thk,sii,minsi
+      double precision z,sth,th2,ss2,thk,sii,minsi
       iter=1
       DO k=1,nb
          iter=max(iter,niter(k))
@@ -60,9 +60,9 @@ C  just avoid extreme corrections caused by overestimated variances
       END DO
       RETURN
       END
-      real*8 function Lhalf(x)
-      real*8 x,mxh,bi(10)
-      real*8 bessliex
+      double precision function Lhalf(x)
+      double precision x,mxh,bi(10)
+      double precision bessliex
       external bessliex
       mxh = -0.5d0*x
 C      Lhalf = (1.d0-x)*besseli(mxh,0.d0,2.d0)-x*besseli(mxh,1.d0,2.d0)
@@ -70,9 +70,9 @@ C      Lhalf = (1.d0-x)*besseli(mxh,0.d0,2.d0)-x*besseli(mxh,1.d0,2.d0)
      1               x*bessliex(mxh,1.d0,2.d0,bi)
       Return
       End
-      real*8 function erice(x)
-      real*8 x
-      real*8 Lhalf
+      double precision function erice(x)
+      double precision x
+      double precision Lhalf
       external Lhalf
       if(x.gt.5d1) THEN
          erice = x

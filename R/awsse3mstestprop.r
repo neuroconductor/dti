@@ -123,7 +123,7 @@ dwi.smooth.testprop <-  function(spatialdim,ngrad,bv,D0=1.3e-3,th0,df,kstar,lamb
                   as.integer(ngrad),#ngrad
                   as.double(lambda),#lambda
                   as.double(ws0),# wghts0 rel. weight for s0 image
-                  as.integer(mc.cores),#ncores
+#                  as.integer(mc.cores),#ncores
                   as.integer(param$ind),#ind
                   as.double(param$w),#w
                   as.integer(param$n),#n

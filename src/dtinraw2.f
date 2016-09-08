@@ -6,7 +6,7 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine regularD(D,negdefin)
       implicit logical(a-z)
       logical negdefin
-      real*8 D(6),ew(3),ev(3,3)
+      double precision D(6),ew(3),ev(3,3)
       integer ierr
       call eigen3(D,ew,ev,ierr)
       if(ew(1).le.1.d-8) THEN
@@ -39,7 +39,7 @@ C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine D2rho(D,rho)
       implicit logical(a-z)
-      real*8 D(6),rho(6),eps
+      double precision D(6),rho(6),eps
       eps=1.d-8
       rho(1)=sqrt(D(1)+eps)
       rho(2)=D(2)/rho(1)
@@ -56,7 +56,7 @@ C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 !       subroutine D2rho0(D,rho)
 !       implicit logical(a-z)
-!       real*8 D(6),rho(6)
+!       double precision D(6),rho(6)
 !       logical negdefin
 !       call regularD(D,negdefin)
 !       rho(1)=sqrt(max(1d-12,D(1)))
@@ -77,9 +77,9 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine D2Rall(D,rho,nvox)
       implicit logical(a-z)
       integer nvox
-      real*8 D(6,nvox),rho(6,nvox)
+      double precision D(6,nvox),rho(6,nvox)
       integer i,ierr
-      real*8 ew(3),ev(3,3),r1,r2,r3,r4,r5
+      double precision ew(3),ev(3,3),r1,r2,r3,r4,r5
       DO i=1,nvox
          call eigen3(D(1,i),ew,ev,ierr)
          if(ew(1).le.1.d-6) THEN
@@ -112,7 +112,7 @@ C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine rho2D(rho,D)
       implicit logical(a-z)
-      real*8 D(6),rho(6),eps
+      double precision D(6),rho(6),eps
       eps=0.d-12
       D(1)=rho(1)*rho(1)+eps
       D(2)=rho(1)*rho(2)
@@ -131,8 +131,8 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine R2Dall(rho,D,nvox)
       implicit logical(a-z)
       integer nvox,i
-      real*8 D(6,nvox),rho(6,nvox),eps
-      real*8 r1,r2,r3,r4,r5,r6
+      double precision D(6,nvox),rho(6,nvox),eps
+      double precision r1,r2,r3,r4,r5,r6
       eps=0.d-12
       DO i=1,nvox
          r1=rho(1,i)
@@ -159,9 +159,9 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine sihat(th0i,Di,btb,F,nb)
       implicit logical (a-z)
       integer nb
-      real*8 th0i,Di(6),btb(6,nb),F(nb)
+      double precision th0i,Di(6),btb(6,nb),F(nb)
       integer j,k
-      real*8 z
+      double precision z
       DO k=1,nb
          z=0.d0
          DO j=1,6
@@ -207,8 +207,8 @@ C   F        -  auxiliary for function values in LSE
 C   eps      -  something small and positive
       implicit logical (a-z)
       integer n1,n2,n3,nb,niter,nw,nriter(nb),isel(3,nw)
-      real*8 siest(nb,n1,n2,n3),si(nb,n1,n2,n3),sisel(nb,nw)
-      real*8 btb(6,nb),swsi2(nb),sdcoef(4),th0(n1,n2,n3),
+      double precision siest(nb,n1,n2,n3),si(nb,n1,n2,n3),sisel(nb,nw)
+      double precision btb(6,nb),swsi2(nb),sdcoef(4),th0(n1,n2,n3),
      1       th0n(n1,n2,n3),sigma2r(n1,n2,n3),D(6,n1,n2,n3),
      2       Dn(6,n1,n2,n3),sipred(nb,n1,n2,n3),bi(n1,n2,n3),
      3       ani(n1,n2,n3),andir(3,n1,n2,n3),s2(nb),det(n1,n2,n3),h,
@@ -217,11 +217,11 @@ C   eps      -  something small and positive
       logical mask(n1,n2,n3),rician,sbind(nb)
       integer i1,j1,j1a,j1e,jj1,i2,j2,j2a,j2e,jj2,i3,j3,j3a,j3e,jj3,
      1        ierr,k,center,l,ns0
-      real*8 wij,adist,sw,h2,thi(7),bii,sqrbii,ew(3),ev(3,3),rssj,
-     1       mew,z1,z2,z3,sij,deti,z,sew,sw2,Di(6),dtidisrg,
+      double precision wij,adist,sw,h2,thi(7),bii,sqrbii,ew(3),ev(3,3),
+     1       rssj,mew,z1,z2,z3,sij,deti,z,sew,sw2,Di(6),dtidisrg,
      2       th0i,s2hat,ssigma2,rssi,h0,h1,squot,shat,low,up,zsd
       integer nselect
-      real*8 x(10000),fw(10000)
+      double precision x(10000),fw(10000)
       external adist,dtidisrg
       logical aws
       aws=lambda.lt.1e20
@@ -442,12 +442,12 @@ C   this also adjusts for eliminating \theta by combining the second and 4th mom
       END DO
       RETURN
       END
-      real*8 function dtidisrg(si,sj,varinv,nb)
+      double precision function dtidisrg(si,sj,varinv,nb)
       implicit logical (a-z)
       integer nb
-      real*8 si(nb)
-      real*8 sj(nb),varinv(nb)
-      real*8 z,z1
+      double precision si(nb)
+      double precision sj(nb),varinv(nb)
+      double precision z,z1
       integer i
       z=0.d0
       DO i=1,nb
@@ -465,11 +465,11 @@ C  same as solvedti except that s is double
 C
       implicit logical (a-z)
       integer nb,niter
-      real*8 s(nb)
-      real*8 D(6),b(6,nb),varinv(nb),th0,F(nb),eps,sdcoef(4)
+      double precision s(nb)
+      double precision D(6),b(6,nb),varinv(nb),th0,F(nb),eps,sdcoef(4)
       integer i,j,k,info,iter,icount
       logical negdefin
-      real*8 z,gamma,alpha,delta,xzvarinv,
+      double precision z,gamma,alpha,delta,xzvarinv,
      1       dg(7),pk(7),ak(7,7),ck(7,7),rss,nrss,crss,maxabsdg,
      2       oldrss,relrss,Dn(6),res,X(7),th0n,zsd,low,up
 C  first check if D defines a positive definite densor
@@ -624,10 +624,11 @@ C  same as solvedti except that s is double
 C
       implicit logical (a-z)
       integer nb,niter
-      real*8 s(nb),D(6),b(6,nb),varinv(nb),th0,F(nb),eps,sdcoef(4)
+      double precision s(nb),D(6),b(6,nb),varinv(nb),th0,F(nb),eps,
+     1       sdcoef(4)
       integer i,j,k,info,iter,icount
       logical negdefin
-      real*8 z,gamma,alpha,delta,xzvarinv,
+      double precision z,gamma,alpha,delta,xzvarinv,
      1       dg(7),pk(7),ak(7,7),ck(7,7),rss,nrss,crss,maxabsdg,
      2       oldrss,relrss,Dn(6),res,X(7),th0n,zsd,low,up
 C  first check if D defines a positive definite densor

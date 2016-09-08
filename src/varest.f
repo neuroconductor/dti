@@ -4,7 +4,7 @@ C  compute the median using a select algorithm instead of sorting
 C
       implicit logical (a-z)
       integer n
-      real*8 x(n),med,fmedian
+      double precision x(n),med,fmedian
       external fmedian
       if(n.gt.2) THEN
          med = fmedian(x,n)
@@ -20,7 +20,7 @@ C
       subroutine swap(x,k,l)
       implicit logical (a-z)
       integer k,l
-      real*8 x(*),t
+      double precision x(*),t
       t = x(k)
       x(k) = x(l)
       x(l) = t
@@ -34,9 +34,9 @@ C  output x(k) contains the kth element of sort(x)
 C
       implicit logical (a-z)
       integer k,n
-      real*8 x(n)
+      double precision x(n)
       integer lft,rght,cur,i
-      real*8 guess
+      double precision guess
       lft=1
       rght=n
       DO WHILE (lft.lt.rght)
@@ -60,14 +60,14 @@ C
       RETURN
       END
 
-      real*8 function fmedian(x,n)
+      double precision function fmedian(x,n)
 C
 C  compute the median using a select algorithm instead of sorting
 C  used in mediansm
 C      
       implicit logical (a-z)
       integer n
-      real*8 x(n)
+      double precision x(n)
       integer m
       m = n/2+1
       call qselect(x,n,m)
@@ -89,9 +89,9 @@ C
       implicit logical (a-z)
       integer n1,n2,n3,nind,ind(3,nind),ncores
       logical mask(n1,n2,n3)
-      real*8 y(n1,n2,n3),yout(n1,n2,n3),work(nind,ncores)
+      double precision y(n1,n2,n3),yout(n1,n2,n3),work(nind,ncores)
       integer i1,i2,i3,j1,j2,j3,j,k,thrednr
-      real*8 fmedian
+      double precision fmedian
       external fmedian
 !$      integer omp_get_thread_num
 !$      external omp_get_thread_num
@@ -166,12 +166,12 @@ C
       implicit logical (a-z)
       integer n1,n2,n3,nw,ind(3,nw),nthreds,iL
       logical mask(n1,n2,n3)
-      real*8 s(n1,n2,n3),ni(n1*n2*n3),thn(n1*n2*n3),
+      double precision s(n1,n2,n3),ni(n1*n2*n3),thn(n1*n2*n3),
      1  ksi(n1,n2,n3),sigman(n1*n2*n3),lambda,w(nw),sigma(n1,n2,n3),
      2  wad(nw,nthreds),sad(nw,nthreds),L,minni,work(iL,nthreds),
      3  ksin(n1,n2,n3),vpar(6)
       integer i1,i2,i3,j1,j2,j3,i,j,jj,n,maxit,thrednr
-      real*8 z,sw,sws,sws2,sj,thi,wj,kval,fnsi,sgi,tol,low,up,
+      double precision z,sw,sws,sws2,sj,thi,wj,kval,fnsi,sgi,tol,low,up,
      1       fmin,sgi2,vz,thi2,thj2,fnsj,thj
 !$      integer omp_get_thread_num
 !$      external omp_get_thread_num
@@ -218,6 +218,7 @@ C   thats the estimated standard deviation of s(i1,i2,i3)
             if(j2.le.0.or.j2.gt.n2) CYCLE
             j3=i3+ind(3,j)
             if(j3.le.0.or.j3.gt.n3) CYCLE
+            if(.not.mask(j1,j2,j3)) CYCLE
             wj=w(j)
             thj = sqrt(max(0.d0,ksi(j1,j2,j3)/sgi2-2.d0*L))
             if(thj.gt.vpar(1)) THEN
@@ -290,10 +291,10 @@ C
       implicit logical (a-z)
       integer n1,n2,n3,nw,ind(3,nw)
       logical mask(n1,n2,n3)
-      real*8 s(n1,n2,n3),th(n1,n2,n3),ni(n1*n2*n3),thn(n1*n2*n3),
-     1  sigman(n1*n2*n3),lambda,w(nw),sigma(n1,n2,n3),minni
+      double precision s(n1,n2,n3),th(n1,n2,n3),ni(n1*n2*n3),minni,
+     1  thn(n1*n2*n3),sigman(n1*n2*n3),lambda,w(nw),sigma(n1,n2,n3)
       integer i1,i2,i3,j1,j2,j3,i,j,n
-      real*8 z,sw,sws,sws2,sj,thi,wj,kval,sgi
+      double precision z,sw,sws,sws2,sj,thi,wj,kval,sgi
       n = n1*n2*n3
 C$OMP PARALLEL DEFAULT(SHARED)
 C$OMP& FIRSTPRIVATE(minni,n1,n2,n3)
@@ -373,10 +374,10 @@ C
       implicit logical (a-z)
       integer n1,n2,n3,nw,ind(3,nw)
       logical mask(n1,n2,n3)
-      real*8 y(n1,n2,n3),th(n1,n2,n3),ni(n1*n2*n3),thn(n1*n2*n3),
-     1       sy(n1*n2*n3),lambda,w(nw),sigma,fns(n1,n2,n3)
+      double precision y(n1,n2,n3),th(n1,n2,n3),ni(n1*n2*n3),
+     1  thn(n1*n2*n3),sy(n1*n2*n3),lambda,w(nw),sigma,fns(n1,n2,n3)
       integer i1,i2,i3,j1,j2,j3,i,j,n
-      real*8 z,sw,sw2,swy,swy2,yj,thi,wj,kval,cw,fnsi
+      double precision z,sw,sw2,swy,swy2,yj,thi,wj,kval,cw,fnsi
       n = n1*n2*n3
 C  precompute values of lgamma(corrected df/2) in each voxel
 C$OMP PARALLEL DEFAULT(SHARED)
@@ -458,10 +459,11 @@ C
       implicit logical (a-z)
       integer n1,n2,n3,nw,ind(3,nw),nthreds
       logical mask(n1,n2,n3)
-      real*8 y(n1,n2,n3),th(n1,n2,n3),ni(n1*n2*n3),thn(n1*n2*n3),
-     1  fns(n1,n2,n3),sy(n1*n2*n3),lambda,w(nw),sigma,wad(nw,nthreds)
+      double precision y(n1,n2,n3),th(n1,n2,n3),ni(n1*n2*n3),
+     1       thn(n1*n2*n3),fns(n1,n2,n3),sy(n1*n2*n3),lambda,w(nw),
+     2       sigma,wad(nw,nthreds)
       integer i1,i2,i3,j1,j2,j3,i,j,n,thrednr
-      real*8 z,sw,sw2,swy,swy2,yj,thi,wj,kval,cw,fnsi
+      double precision z,sw,sw2,swy,swy2,yj,thi,wj,kval,cw,fnsi
 !$      integer omp_get_thread_num
 !$      external omp_get_thread_num
       n = n1*n2*n3
@@ -541,10 +543,10 @@ C   Aja-Fernandez Mode Vn (6)
 C
       implicit logical (a-z)
       integer n1,n2,n3
-      real*8 y(n1,n2,n3),sigma(n1,n2,n3),h,vext(2)
+      double precision y(n1,n2,n3),sigma(n1,n2,n3),h,vext(2)
       logical mask(n1,n2,n3)
       integer i1,i2,i3,j1,j2,j3,ih1,ih2,ih3,ni
-      real*8 m1,m2,z
+      double precision m1,m2,z
       ih1=int(h)
       ih2=int(h*vext(1))
       ih3=int(h*vext(2))
@@ -592,10 +594,10 @@ C   Aja-Fernandez Mode Vn (6)
 C
       implicit logical (a-z)
       integer n1,n2,n3
-      real*8 y(n1,n2,n3),sigma(n1,n2,n3),h,vext(2)
+      double precision y(n1,n2,n3),sigma(n1,n2,n3),h,vext(2)
       logical mask(n1,n2,n3)
       integer i1,i2,i3,j1,j2,j3,ih1,ih2,ih3,ni
-      real*8 m1
+      double precision m1
       ih1=int(h)
       ih2=int(h*vext(1))
       ih3=int(h*vext(2))
@@ -633,10 +635,10 @@ C   Aja-Fernandez Mode Vn (6)
 C
       implicit logical (a-z)
       integer n1,n2,n3
-      real*8 y(n1,n2,n3),sm(n1,n2,n3),h,vext(2)
+      double precision y(n1,n2,n3),sm(n1,n2,n3),h,vext(2)
       logical mask(n1,n2,n3)
       integer i1,i2,i3,j1,j2,j3,ih1,ih2,ih3,ni
-      real*8 m2
+      double precision m2
       ih1=int(h)
       ih2=int(h*vext(1))
       ih3=int(h*vext(2))

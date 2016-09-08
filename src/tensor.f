@@ -4,10 +4,10 @@ C  compute residuals
 C
       implicit logical (a-z)
       integer nb,nvox
-      real*8 th0(nvox),D(6,nvox),s(nb,nvox),b(6,nb),res(nb,nvox),
-     1       rss(nvox)
+      double precision th0(nvox),D(6,nvox),s(nb,nvox),b(6,nb),
+     1       res(nb,nvox),rss(nvox)
       integer i,j,k
-      real*8 zrss,z
+      double precision zrss,z
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(nb,nvox,th0,D,s,b,res,rss)
 C$OMP& PRIVATE(i,j,k,z,zrss)
@@ -35,9 +35,9 @@ C  compute f(par)
 C
       implicit logical (a-z)
       integer nb
-      real*8 par(7),s(nb),b(6,nb),vinv(nb),gv(nb),fv
+      double precision par(7),s(nb),b(6,nb),vinv(nb),gv(nb),fv
       integer i
-      real*8 D(6),th0,rss,res
+      double precision D(6),th0,rss,res
       th0=par(1)
 C      call dblepr("par",3,par,7)
       call rho2D(par(2),D)
@@ -68,9 +68,10 @@ C  compute gradient of f(par)
 C
       implicit logical (a-z)
       integer nb
-      real*8 par(7),s(nb),b(6,nb),vinv(nb),gv(nb),fv(nb),grad(7)
+      double precision par(7),s(nb),b(6,nb),vinv(nb),gv(nb),fv(nb),
+     1       grad(7)
       integer i
-      real*8 D(6),th0,z,z1,res
+      double precision D(6),th0,z,z1,res
       th0=par(1)
       call rho2D(par(2),D)
       call sihat(th0,D,b,gv,nb)

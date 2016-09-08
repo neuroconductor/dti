@@ -5,10 +5,10 @@ C  this is based on a regularized tensor similar to Koay et.al. (2006)
 C
       implicit logical (a-z)
       integer nb,n,niter
-      real*8 s(nb,n)
+      double precision s(nb,n)
       logical mask(n)
-      real*8 D(6,n),b(6,nb),res(nb,n),th0(n),eps,rss(n),sdcoef(4),
-     1       varinv(nb)
+      double precision D(6,n),b(6,nb),res(nb,n),th0(n),eps,rss(n),
+     1       sdcoef(4),varinv(nb)
       integer i,j
       DO i=1,n
          if(mask(i)) THEN
@@ -36,8 +36,9 @@ C  res(8,) used for rss
 C  res(9:npar,) used for residuals
       implicit logical (a-z)
       integer nb,n,npar,niter
-      real*8 s(nb,n)
-      real*8 b(6,nb),res(npar,n),th0(n),eps,sdcoef(4),varinv(nb)
+      double precision s(nb,n)
+      double precision b(6,nb),res(npar,n),th0(n),eps,sdcoef(4),
+     1       varinv(nb)
       integer i
       DO i=1,n
             res(1,i) = th0(i)
@@ -57,10 +58,10 @@ C  from Schwetlick (1979)
 C
       implicit logical (a-z)
       integer nb,niter
-      real*8 s(nb)
-      real*8 D(6),rho(6),b(6,nb),th0,F(nb),eps
+      double precision s(nb)
+      double precision D(6),rho(6),b(6,nb),th0,F(nb),eps
       integer i,j,k,info,iter,icount
-      real*8 z,gamma,alpha,delta,varinv(nb),
+      double precision z,gamma,alpha,delta,varinv(nb),
      1       dg(7),pk(7),ak(7,7),ck(7,7),rss,nrss,crss,maxabsdg,
      2       oldrss,relrss,rhon(6),Dn(6),res,X(7),th0n,XX(6),xzvarinv
       logical negdefin
@@ -216,9 +217,10 @@ C  from Schwetlick (1979)
 C
       implicit logical (a-z)
       integer nb,niter
-      real*8 s(nb),D(6),rho(6),b(6,nb),varinv(nb),th0,F(nb),eps
+      double precision s(nb),D(6),rho(6),b(6,nb),varinv(nb),th0,
+     1       F(nb),eps
       integer i,j,k,info,iter,icount
-      real*8 z,gamma,alpha,delta,xzvarinv,
+      double precision z,gamma,alpha,delta,xzvarinv,
      1       dg(7),pk(7),ak(7,7),ck(7,7),rss,nrss,crss,maxabsdg,
      2       oldrss,relrss,rhon(6),Dn(6),res,X(7),th0n,XX(6)
       logical negdefin
@@ -370,7 +372,7 @@ C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine rho2D0(rho,D)
       implicit logical(a-z)
-      real*8 D(6),rho(6),r1,r2,r3,r4,r5,r6
+      double precision D(6),rho(6),r1,r2,r3,r4,r5,r6
       r1=rho(1)
       r2=rho(2)
       r3=rho(3)
@@ -393,9 +395,9 @@ C
 !       subroutine opttensR(par,si,s0,grad,ngrad,sdcoef,erg)
 !       implicit logical (a-z)
 !       integer ngrad
-!       real*8 par(6),si(ngrad),s0,grad(3,ngrad),sdcoef(4),erg
+!       double precision par(6),si(ngrad),s0,grad(3,ngrad),sdcoef(4),erg
 !       integer i
-!       real*8 low,up,g1,g2,g3,s,D(6),z,w
+!       double precision low,up,g1,g2,g3,s,D(6),z,w
 !       low=sdcoef(1)+sdcoef(3)*sdcoef(2)
 !       up=sdcoef(1)+sdcoef(4)*sdcoef(2)
 !       call rho2D0(par,D)
@@ -416,9 +418,9 @@ C
 !       subroutine tensRres(par,si,s0,grad,ngrad,res)
 !       implicit logical (a-z)
 !       integer ngrad
-!       real*8 par(6),si(ngrad),s0,grad(3,ngrad)
+!       double precision par(6),si(ngrad),s0,grad(3,ngrad)
 !       integer i
-!       real*8 g1,g2,g3,D(6),res(ngrad),z
+!       double precision g1,g2,g3,D(6),res(ngrad),z
 !       call rho2D0(par,D)
 !       DO i = 1,ngrad
 !          g1 = grad(1,i)

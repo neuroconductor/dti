@@ -6,9 +6,9 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine eigen3(y,lambda,theta,ierr)
       implicit logical (a-z)
       integer ierr
-      real*8 y(6),a(3,3),lambda(3),theta(3,3)
+      double precision y(6),a(3,3),lambda(3),theta(3,3)
       integer i,j,l,ISUPPZ(6),lwork,iwork(50),liwork,n,m
-      real*8 work(104),vl,vu,eps
+      double precision work(104),vl,vu,eps
       n=3
       m=3
       eps=1.d-50
@@ -33,9 +33,9 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine eigen30(y,lambda,ierr)
       implicit logical (a-z)
       integer ierr
-      real*8 y(6),a(3,3),lambda(3),theta(3,3)
+      double precision y(6),a(3,3),lambda(3),theta(3,3)
       integer i,j,l,ISUPPZ(6),lwork,iwork(50),liwork,n,m
-      real*8 work(104),vl,vu,eps
+      double precision work(104),vl,vu,eps
       n=3
       m=3
       eps=1.d-50
@@ -57,7 +57,7 @@ C
 C    Compute anisotropic distance
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-      real*8 function adist(a,x,y,z,vext)
+      double precision function adist(a,x,y,z,vext)
 C
 C    a - diffusion tensor  ( a_11, a_12, a_13, a_22, a_23, a_33
 C    ix - x-coordinate 
@@ -67,7 +67,7 @@ C    ni -  sum of weights (measures the variability of a
 C    ia,ie -  rane of x values (restricted to the grid)
       implicit logical (a-z)
       integer x,y,z
-      real*8 a(6),xx,yy,zz,vext(3)
+      double precision a(6),xx,yy,zz,vext(3)
       xx=x*vext(1)
       yy=y*vext(2)
       zz=z*vext(3)      
@@ -80,9 +80,9 @@ C
 C    Compute statistical penalty for dti
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-      real*8 function dtidist2(th1,th2,Bcov)
+      double precision function dtidist2(th1,th2,Bcov)
       implicit logical (a-z)
-      real*8 th1(6),th2(6),Bcov(6,6),z,zd,zd2
+      double precision th1(6),th2(6),Bcov(6,6),z,zd,zd2
       integer i,j
       z=0.d0
       DO i=1,6
@@ -112,8 +112,8 @@ C    ni -  sum of weights (measures the variability of a
 C    ia,ie -  rane of x values (restricted to the grid)
       implicit logical (a-z)
       integer ia,ie
-      real*8 a(6),h,vext(3)
-      real*8 p1,p2,p3,p4,p5,p6,z,s,t,p55,p66,p44,h1
+      double precision a(6),h,vext(3)
+      double precision p1,p2,p3,p4,p5,p6,z,s,t,p55,p66,p44,h1
       p1=a(1)
       p2=a(4)
       p3=a(6)
@@ -156,8 +156,8 @@ C    ni -  sum of weights (measures the variability of a
 C    ia,ie -  rane of x values (restricted to the grid)
       implicit logical (a-z)
       integer ja,je,ix
-      real*8 a(6),h,vext(3)
-      real*8 p1,p2,p3,p4,p5,p6,z,s,t,p55,p66,p44,x,h2s
+      double precision a(6),h,vext(3)
+      double precision p1,p2,p3,p4,p5,p6,z,s,t,p55,p66,p44,x,h2s
       x=ix/h*vext(1)
       p1=a(1)
       p2=a(4)
@@ -200,8 +200,8 @@ C    ni -  sum of weights (measures the variability of a
 C    ia,ie -  rane of x values (restricted to the grid)
       implicit logical (a-z)
       integer ka,ke,ix,jy
-      real*8 a(6),h,vext(3)
-      real*8 p3,z,t,x,y,h3
+      double precision a(6),h,vext(3)
+      double precision p3,z,t,x,y,h3
       x=ix/h*vext(1)
       y=jy/h*vext(2)
       h3=h/vext(3)
@@ -227,9 +227,9 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       implicit logical (a-z)
       integer n
       logical mask(n)
-      real*8 D(6,n),fa(n),md(n),adir(3,n)
+      double precision D(6,n),fa(n),md(n),adir(3,n)
       integer i,ierr
-      real*8 lambda(3),evec(3,3),trc,d1,d2,d3,a1,a2,a3,dd
+      double precision lambda(3),evec(3,3),trc,d1,d2,d3,a1,a2,a3,dd
       DO i=1,n
          if(mask(i)) THEN
             call eigen3(D(1,i),lambda,evec,ierr)
@@ -269,9 +269,9 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       implicit logical (a-z)
       integer n
       logical mask(n)
-      real*8 D(6,n),ga(n),md(n),adir(3,n)
+      double precision D(6,n),ga(n),md(n),adir(3,n)
       integer i,ierr
-      real*8 lambda(3),evec(3,3),trc,d1,d2,d3,a1,a2,a3,dd
+      double precision lambda(3),evec(3,3),trc,d1,d2,d3,a1,a2,a3,dd
       DO i=1,n
          if(mask(i)) THEN
             call eigen3(D(1,i),lambda,evec,ierr)
@@ -310,9 +310,9 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine dtiind3D(D,n,fa,ga,md,adir,bary)
       implicit logical (a-z)
       integer n
-      real*8 D(6,n),fa(n),md(n),adir(3,n),bary(3,n),ga(n)
+      double precision D(6,n),fa(n),md(n),adir(3,n),bary(3,n),ga(n)
       integer i,ierr
-      real*8 lambda(3),evec(9),trc,d1,d2,d3,a1,a2,a3,dd
+      double precision lambda(3),evec(9),trc,d1,d2,d3,a1,a2,a3,dd
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(D,n,fa,ga,md,adir,bary)
 C$OMP& PRIVATE(i,ierr,lambda,evec,trc,d1,d2,d3,a1,a2,a3,dd)
@@ -364,9 +364,9 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine dtieigen(D,n,fa,ev,adir)
       implicit logical (a-z)
       integer n
-      real*8 D(6,n),fa(n),ev(3,n),adir(6,n)
+      double precision D(6,n),fa(n),ev(3,n),adir(6,n)
       integer i,ierr
-      real*8 lambda(3),evec(9),trc,d1,d2,d3,a1,a2,a3,dd,fai
+      double precision lambda(3),evec(9),trc,d1,d2,d3,a1,a2,a3,dd,fai
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(D,n,fa,ev,adir)
 C$OMP& PRIVATE(i,ierr,lambda,evec,trc,d1,d2,d3,a1,a2,a3,dd,fai)
@@ -410,9 +410,9 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine dti3Dall(D,n,fa,ga,md,adir,ev)
       implicit logical (a-z)
       integer n
-      real*8 D(6,n),fa(n),md(n),adir(3,n),ev(3,n),ga(n)
+      double precision D(6,n),fa(n),md(n),adir(3,n),ev(3,n),ga(n)
       integer i,ierr
-      real*8 evec(3,3),trc,d1,d2,d3,a1,a2,a3,dd
+      double precision evec(3,3),trc,d1,d2,d3,a1,a2,a3,dd
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(D,n,mask,fa,ga,md,adir,ev)
 C$OMP& PRIVATE(i,ierr,evec,trc,d1,d2,d3,a1,a2,a3,dd)
@@ -461,7 +461,7 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine dti3Dev(D,n,ev)
       implicit logical (a-z)
       integer n
-      real*8 D(6,n),ev(3,n)
+      double precision D(6,n),ev(3,n)
       integer i,ierr
       DO i=1,n
             call eigen30(D(1,i),ev(1,i),ierr)
@@ -476,9 +476,9 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine dti3Dand(D,n,andir)
       implicit logical (a-z)
       integer n
-      real*8 D(6,n),andir(3,n)
+      double precision D(6,n),andir(3,n)
       integer i,ierr
-      real*8 lambda(3),evec(3,3)
+      double precision lambda(3),evec(3,3)
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(D,n,andir)
 C$OMP& PRIVATE(i,lambda,evec,ierr)
@@ -502,9 +502,9 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine dti3DevAll( D, n, andir, evalues)
       implicit logical (a-z)
       integer n
-      real*8 D( 6, n), andir( 9, n), evalues( 3, n)
+      double precision D( 6, n), andir( 9, n), evalues( 3, n)
       integer i, ierr
-      real*8 lambda( 3), evec( 3, 3)
+      double precision lambda( 3), evec( 3, 3)
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(D,n,andir,evalues)
 C$OMP& PRIVATE(i,lambda,evec,ierr)
@@ -537,9 +537,9 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine dti3Dreg(D,n)
       implicit logical (a-z)
       integer n
-      real*8 D(6,n)
+      double precision D(6,n)
       integer i,ierr
-      real*8 lam(3),evec(3,3)
+      double precision lam(3),evec(3,3)
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(D,n)
 C$OMP& PRIVATE(i,lam,evec,ierr)
@@ -575,9 +575,9 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 C  Algorithmus zur Nullstellenbestimmung einer monotonen Funktion auf(0,\infty)
       subroutine gethani(x,y,value,a,vext,eps,bw)
       implicit logical(a-z)
-      real*8 x,y,value,a(6),vext(3),eps,bw
-      real*8 fw1,fw2,fw3,z
-      real*8 sofw3D
+      double precision x,y,value,a(6),vext(3),eps,bw
+      double precision fw1,fw2,fw3,z
+      double precision sofw3D
       external sofw3D
       if(x.ge.y) RETURN
       fw1=sofw3D(a,x,vext)
@@ -612,16 +612,16 @@ C  Algorithmus zur Nullstellenbestimmung einer monotonen Funktion auf(0,\infty)
       END  
       subroutine getvofh(a,bw,vext,vol)
       implicit logical(a-z)
-      real*8 a(6),bw,vext(3),vol,sofw3D
+      double precision a(6),bw,vext(3),vol,sofw3D
       vol=sofw3D(a,bw,vext)
       RETURN
       END
 C  compute sum of weights for anisotropic smoothing      
-      real*8 function sofw3D(a,bw,vext)
+      double precision function sofw3D(a,bw,vext)
       implicit logical(a-z)
-      real*8 a(6),bw,vext(3)
+      double precision a(6),bw,vext(3)
       integer ia1,ie1,ia2,ie2,ia3,ie3,i1,i2,i3
-      real*8 wij,sw,h2,adist
+      double precision wij,sw,h2,adist
       external adist
       h2=bw*bw
       sw=1.d0

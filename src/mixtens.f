@@ -10,9 +10,9 @@ C   code is restricted to m<=6
 C
       implicit logical (a-z)
       integer m,lpar,n
-      real*8 par(lpar),w(m),siq(n),g(3,n),z(n,m),erg
+      double precision par(lpar),w(m),siq(n),g(3,n),z(n,m),erg
       integer i,j
-      real*8 th,sw,sth,z1,p0,p1,d1,d2,d3
+      double precision th,sw,sth,z1,p0,p1,d1,d2,d3
       th = par(1)
       DO i = 1,m
          p0=par(2*i)
@@ -52,13 +52,13 @@ C   code is restricted to m<=6
 C
       implicit logical (a-z)
       integer m,lpar,n
-      real*8 par(lpar),w(m),siq(n),g(3,n),z(n,m),res(n),resd(n),
-     1       dkgj(n,m),dkgj2(n,m),ddkdphig(n,m),ddkdetag(n,m),
+      double precision par(lpar),w(m),siq(n),g(3,n),z(n,m),res(n),
+     1       resd(n),dkgj(n,m),dkgj2(n,m),ddkdphig(n,m),ddkdetag(n,m),
      2       dzdpars(n,m,3),work1(n,m),work2(n,m),dfdparw(*)
       integer i,j
-      real*8 th,m2th,sphi,cphi,seta,ceta,z1,z2,p0,p1,d1,d2,
+      double precision th,m2th,sphi,cphi,seta,ceta,z1,z2,p0,p1,d1,d2,
      1       dphi1,dphi2
-      real*8 ddot
+      double precision ddot
       external ddot
       th = par(1)
       m2th = -2.d0*th
@@ -127,9 +127,9 @@ C   code is restricted to m<=6
 C
       implicit logical (a-z)
       integer m,lpar,n
-      real*8 par(lpar),w(*),siq(n),g(3,n),z(n,m),erg
+      double precision par(lpar),w(*),siq(n),g(3,n),z(n,m),erg
       integer i,j
-      real*8 th,sw,sth,z1,p0,p1,d1,d2,d3
+      double precision th,sw,sth,z1,p0,p1,d1,d2,d3
       th = par(1)
       DO i = 1,m
          p0=par(2*i)
@@ -169,13 +169,13 @@ C   code is restricted to m<=6
 C
       implicit logical (a-z)
       integer m,lpar,n
-      real*8 par(lpar),w(m+1),siq(n),g(3,n),z(n,m),res(n),
+      double precision par(lpar),w(m+1),siq(n),g(3,n),z(n,m),res(n),
      1       resd(n),dkgj(n,m),dkgj2(n,m),ddkdphig(n,m),ddkdetag(n,m),
      3       dzdpars(n,m,3),work1(n,m),work2(n,m),dfdparw(*)
       integer i,j
-      real*8 th,m2th,sphi,cphi,seta,ceta,z1,z2,p0,p1,sres,d1,d2,
-     1       dphi1,dphi2
-      real*8 ddot
+      double precision th,m2th,sphi,cphi,seta,ceta,z1,z2,p0,p1,sres,
+     1       d1,d2,dphi1,dphi2
+      double precision ddot
       external ddot
       th = par(1)
       m2th = -2.d0*th
@@ -246,9 +246,9 @@ C   code is restricted to m<=6
 C
       implicit logical (a-z)
       integer m,lpar,n
-      real*8 par(lpar),siq(n),g(3,n),z(n,m),erg,pen
+      double precision par(lpar),siq(n),g(3,n),z(n,m),erg,pen
       integer i,j,mode,jpvt(6),rank
-      real*8 th,w(n),sw,sth,z1,p0,p1,d1,d2,d3,work(25)
+      double precision th,w(n),sw,sth,z1,p0,p1,d1,d2,d3,work(25)
       th = par(1)
       th = max(th,-5.d0)
       DO i = 1,m
@@ -303,9 +303,9 @@ C   code is restricted to m<=6
 C
       implicit logical (a-z)
       integer m,lpar,n
-      real*8 par(lpar),siq(n),g(3,n),z(n,m),erg,b(n),work1(n)
+      double precision par(lpar),siq(n),g(3,n),z(n,m),erg,b(n),work1(n)
       integer i,j,mode,ind(1000)
-      real*8 th,w(n),sth,z1,p0,p1,d1,d2,d3,work2(10)
+      double precision th,w(n),sth,z1,p0,p1,d1,d2,d3,work2(10)
       th = par(1)
       th = max(th,-5.d0)
       DO i = 1,m
@@ -342,9 +342,9 @@ C   code is restricted to m<=6
 C
       implicit logical (a-z)
       integer m,lpar,n
-      real*8 par(lpar),siq(n),g(3,n),z(n,m),w(m)
+      double precision par(lpar),siq(n),g(3,n),z(n,m),w(m)
       integer i,j
-      real*8 th,sth,z1,p0,p1,d1,d2,d3,rss,res,erg
+      double precision th,sth,z1,p0,p1,d1,d2,d3,rss,res,erg
       th = par(1)
       th = max(th,-5.d0)
       DO i = 1,m
@@ -384,9 +384,9 @@ C   code is restricted to m<=6
 C
       implicit logical (a-z)
       integer m,lpar,n
-      real*8 par(lpar),siq(n),g(3,n),z(n,m),pen,dfdpar(lpar),
+      double precision par(lpar),siq(n),g(3,n),z(n,m),pen,dfdpar(lpar),
      1       w(n),para(lpar),parb(lpar),eps
-      real*8 erga,ergb,deltai
+      double precision erga,ergb,deltai
       integer i
       deltai=0.5d0/eps
       DO i=1,lpar
@@ -412,16 +412,16 @@ C
      2                  dwdpars2,zs,work1,work2,scopy,pen,dfdpar)
       implicit logical (a-z)
       integer m,n,lpar
-      real*8 par(lpar),s(n),g(3,n),z(n,m),v(m,m),dkgj(n,m),
+      double precision par(lpar),s(n),g(3,n),z(n,m),v(m,m),dkgj(n,m),
      1       w(n),dkgj2(n,m),ddkdphig(n,m),ddkdetag(n,m),
      2       dvdth(m,m),dvdphi(m,m,m),dvdeta(m,m,m),
      3       dzdpars(n,m,3),dwdpars(m,lpar),dwdpars2(m,lpar),
      4       zs(n,m),dfdpar(lpar),pen,rcond,ferr(11),berr(11)
       integer i,j,k,l,ind(5),mode,jpvt(5),rank
-      real*8 th,sphi,cphi,seta,ceta,z1,z2,p0,p1,d1,d2,dphi1,dphi2,
-     1       work(250),work1(n,m),work2(n,m),scopy(n),m2th,af(25)
+      double precision th,sphi,cphi,seta,ceta,z1,z2,p0,p1,d1,d2,dphi1,
+     1       dphi2,work(250),work1(n,m),work2(n,m),scopy(n),m2th,af(25)
 C  length of work needs to be larger or equal max(m*m,ngrad)
-      real*8 ddot
+      double precision ddot
       external ddot
       th = par(1)
       th = max(-5.d0,th)
@@ -622,13 +622,13 @@ C
       implicit logical (a-z)
       integer nvox,ngrad,ns,siind(ns,nvox),m,ntry,nth,nv,
      1       isample(m,ntry),indth(nvox)
-      real*8 si(ngrad,nvox),sms(ngrad),dgrad(ngrad,nv),
+      double precision si(ngrad,nvox),sms(ngrad),dgrad(ngrad,nv),
      1       th(nth),egrad(ngrad,nv),z(ngrad,ns),mval(nvox),
      2       vsi(nvox)
       logical mask(nvox)
       integer i,k,ibest,mode,ind(10),l,j,ii,iw,wind(5),nwi(5)
-      real*8 w(1000),krit,work1(1000),work2(10),erg,thj,msi,m2si,
-     1       z1,dng
+      double precision w(1000),krit,work1(1000),work2(10),erg,thj,
+     1       msi,m2si,z1,dng
       dng=ngrad
       iw=m
       DO i=1,m
@@ -736,12 +736,12 @@ C
       implicit logical (a-z)
       integer nvox,ngrad,ns,siind(ns,nvox),m,ntry,nth,nv,
      1       isample(m,ntry),indth(nvox)
-      real*8 si(ngrad,nvox),sms(ngrad),dgrad(ngrad,nv),
+      double precision si(ngrad,nvox),sms(ngrad),dgrad(ngrad,nv),
      1       th(nth),egrad(ngrad,nv),z(ngrad,ns),mval(nvox),
      2       vsi(nvox)
       integer i,k,ibest,mode,ind(10),l,j,ii,iw,wind(5),nwi(5)
-      real*8 w(1000),krit,work1(1000),work2(10),erg,thj,msi,m2si,
-     1       z1,dng
+      double precision w(1000),krit,work1(1000),work2(10),erg,thj,
+     1       msi,m2si,z1,dng
       dng=ngrad
       iw=m
       DO i=1,m
@@ -844,14 +844,14 @@ C
       implicit logical (a-z)
       integer nvox,ngrad,ns,siind(ns,nvox),m,ntry,nth,nv,
      1       isample(*),indth(nvox),iandir(nvox)
-      real*8 si(ngrad,nvox),sms(ngrad),dgrad(ngrad,nv),
+      double precision si(ngrad,nvox),sms(ngrad),dgrad(ngrad,nv),
      1       th(nth),egrad(ngrad,nv),z(ngrad,ns),mval(nvox),
      2       vsi(nvox),dgradv(nv,nv),maxc
       logical mask(nvox),skip
       integer i,k,mode,ind(10),l,j,ii,iw,wind(5),nwi(5),mis,
      1        is(5),isbest(5),ntry0,km1mis
-      real*8 w(1000),krit,work1(1000),work2(10),erg,thj,msi,m2si,
-     1       z1,dng
+      double precision w(1000),krit,work1(1000),work2(10),erg,thj,
+     1       msi,m2si,z1,dng
       dng=ngrad
       mis=m-1
       ntry0=ntry
@@ -973,14 +973,14 @@ C
       implicit logical (a-z)
       integer nvox,ngrad,ns,siind(ns,nvox),m,ntry,nth,nv,
      1       isample(*),indth(nvox),iandir(nvox)
-      real*8 si(ngrad,nvox),sms(ngrad),dgrad(ngrad,nv),
+      double precision si(ngrad,nvox),sms(ngrad),dgrad(ngrad,nv),
      1       th(nth),egrad(ngrad,nv),z(ngrad,ns),mval(nvox),
      2       vsi(nvox),dgradv(nv,nv),maxc
       logical skip
       integer i,k,mode,ind(10),l,j,ii,iw,wind(5),nwi(5),mis,
      1        is(5),isbest(5),ntry0,km1mis
-      real*8 w(1000),krit,work1(1000),work2(10),erg,thj,msi,m2si,
-     1       z1,dng
+      double precision w(1000),krit,work1(1000),work2(10),erg,thj,
+     1       msi,m2si,z1,dng
       dng=ngrad
       mis=m-1
       ntry0=ntry
@@ -1079,11 +1079,11 @@ C   sweep s0 from si to generate  siq
 C   calculate variance of siq
 C
       integer n,ng0,ng1,level
-      real*8si(ng1,n),s0(ng0,n)
-      real*8 siq(ng1,n),ms0(n),vsi(n)
+      double precisionsi(ng1,n),s0(ng0,n)
+      double precision siq(ng1,n),ms0(n),vsi(n)
       logical mask(n),maskk
       integer i,k
-      real*8 s,z,z2,thresh,cv,s0mean,tvsi
+      double precision s,z,z2,thresh,cv,s0mean,tvsi
       thresh = max(1,level*ng0)
       cv=ng1*(ng1-1)
 C$OMP PARALLEL DEFAULT(NONE)
@@ -1139,11 +1139,11 @@ C   sweep s0 from si to generate  siq
 C   calculate variance of siq
 C
       integer n,ng0,ng1,ng2,level
-      real*8 si(ng1,n),s0(ng0,n)
-      real*8 siq(ng2,n)
+      double precision si(ng1,n),s0(ng0,n)
+      double precision siq(ng2,n)
       logical maskk
       integer i,k
-      real*8 s,z,z2,thresh,cv,s0mean,tvsi,siqi(253)
+      double precision s,z,z2,thresh,cv,s0mean,tvsi,siqi(253)
       thresh = max(1,level*ng0)
       cv=ng1*(ng1-1)
 C$OMP PARALLEL DEFAULT(NONE)
@@ -1200,10 +1200,10 @@ C
       subroutine iandir(vico,nvico,andir,nvox,landir,iandi)
       implicit logical(a-z)
       integer nvico,nvox,iandi(nvox)
-      real*8 vico(3,nvico),andir(3,2,nvox)
+      double precision vico(3,nvico),andir(3,2,nvox)
       logical landir(nvox)
       integer i,j,jmax
-      real*8 z,zmax,scprod3
+      double precision z,zmax,scprod3
       external scprod3
       DO i=1,nvox
          if(landir(i)) THEN
@@ -1224,9 +1224,9 @@ C
 C
 C __________________________________________________________________
 C
-      real*8 function scprod3(a,b)
+      double precision function scprod3(a,b)
       implicit logical (a-z) 
-      real*8 a(3),b(3)
+      double precision a(3),b(3)
       scprod3=abs(a(1)*b(1)+a(2)*b(2)+a(3)*b(3))
       RETURN
       END
@@ -1236,7 +1236,7 @@ C
       subroutine selisamp(isample,nguess,maxcomp,dgrad,ndg,ind,maxc)
       implicit logical (a-z)
       integer nguess,maxcomp,ndg,isample(maxcomp,nguess)
-      real*8  dgrad(ndg,ndg),maxc
+      double precision  dgrad(ndg,ndg),maxc
       logical ind(nguess)
       integer i,j,k
       DO i=1,nguess
@@ -1259,7 +1259,7 @@ C
       subroutine zerofill(a,n)
       implicit logical(a-z)
       integer i,n
-      real*8 a(n),ZERO
+      double precision a(n),ZERO
       PARAMETER   ( ZERO = 0.0D+0 )
       DO i=1,n
          a(i) = ZERO 
@@ -1275,7 +1275,7 @@ C   compute component wise product of a and b in c
 C
       implicit logical(a-z)
       integer i,n
-      real*8 a(n),b(n),c(n)
+      double precision a(n),b(n),c(n)
       DO i=1,n
          c(i) = a(i)*b(i)
       END DO
@@ -1290,7 +1290,7 @@ C   compute component wise product of a and b in c
 C
       implicit logical(a-z)
       integer i,n
-      real*8 a(n),b(n),c(n),alpha
+      double precision a(n),b(n),c(n),alpha
       DO i=1,n
          c(i) = a(i)*b(i)*alpha
       END DO

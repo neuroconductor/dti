@@ -1,5 +1,5 @@
       subroutine adsmse3w(y,y0,th,ni,th0,ni0,fsi2,fsi02,mask,ns,n1,
-     1                n2,n3,ngrad,lambda,ws0,ncores,ind,w,n,ind0,w0,
+     1                n2,n3,ngrad,lambda,ws0,ind,w,n,ind0,w0,
      2                n0,thn,nin,th0n,ni0n,sw,swy,thi,nii,fsi2i,
      3                ix,iy,iz,aw,aw0,nw,nw0)
 C   
@@ -22,7 +22,6 @@ C   lambda - skale parameter
 C   ws0  - relative weight for information from s0 images (should be in [0,1])
 C   ncoils - df/2 of \chi distributions
 C   minlev - expectation of central chi distr. (needed in variance estimates)
-C   ncores - number of cores
 C   ind    - index vectors for si weighting schemes 
 C   w    - corresponding weights
 C   n    - number of si weights
@@ -39,20 +38,21 @@ C   location weights in w(i) for si images
 C   ind(.,i)[1:5] are j1-i1,j2-i2,j3-i3, i4 and j4 respectively 
 C
       implicit logical (a-z)
-      integer ns,n1,n2,n3,ngrad,n,n0,ind(5,n),ind0(3,n0),ncores,
+      integer ns,n1,n2,n3,ngrad,n,n0,ind(5,n),ind0(3,n0),
      1        ix,iy,iz,nw,nw0
       logical mask(*)
-      real*8 y(*),y0(*),th(ns,*),ni(ns,*),th0(ns,*),ni0(ns,*),
-     1     fsi2(ns,*),fsi02(ns,*),thn(*),th0n(*),nin(*),ni0n(*),
-     2     aw(nw),aw0(nw0)
+      double precision y(*),y0(*),th(ns,*),ni(ns,*),th0(ns,*),
+     1     ni0(ns,*),fsi2(ns,*),fsi02(ns,*),thn(*),th0n(*),nin(*),
+     2     ni0n(*),aw(nw),aw0(nw0)
 C  * refers to n1*n2*n3*ngrad for y,th,ni,thn,fsi2,nin and to
 C              n1*n2*n3 for y0,th0,ni0,th0n,ni0n,fsi02,mask
-      real*8 w(n),w0(n0),lambda,thi(*),ws0,fsi2i(*),sw(*),swy(*),nii(*)
+      double precision w(n),w0(n0),lambda,thi(*),ws0,fsi2i(*),sw(*),
+     1       swy(*),nii(*)
 C  * refers to ns*ncores in thi, fsi2i, nii and to
 C              ngrad*cores in sw and swy
       integer iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,k,jind,iind4,
      1        jind4,n123,n12,sthrednr,gthrednr,i4gthnr,m1,m01,ixyz
-      real*8 sz,z,sw0,swy0
+      double precision sz,z,sw0,swy0
 !$      integer omp_get_thread_num
 !$      external omp_get_thread_num
       thrednr = 1
@@ -66,7 +66,7 @@ C              ngrad*cores in sw and swy
          aw0(i)=0.d0
       END DO
 C$OMP PARALLEL DEFAULT(NONE)
-C$OMP& SHARED(ns,n1,n2,n3,ngrad,n,n0,ind,ind0,ncoils,ncores,y,y0,
+C$OMP& SHARED(ns,n1,n2,n3,ngrad,n,n0,ind,ind0,ncoils,y,y0,
 C$OMP&       th,ni,th0,ni0,w,w0,thn,th0n,nin,ni0n,thi,sw,swy,nii,
 C$OMP&       lambda,mask,ws0,fsi2,fsi02,fsi2i,ix,iy,iz,nw,nw0,aw,aw0)
 C$OMP& FIRSTPRIVATE(n123,n12,ixyz)

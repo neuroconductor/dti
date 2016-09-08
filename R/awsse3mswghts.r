@@ -120,7 +120,7 @@ dwi.smooth.ms.wghts <- function(object,kstar,lambda=12,kappa0=.5,ncoils=1,sigma=
                   as.integer(ngrad),#ngrad
                   as.double(lambda),#lambda
                   as.double(ws0),# wghts0 rel. weight for s0 image
-                  as.integer(mc.cores),#ncores
+#                  as.integer(mc.cores),#ncores  not needed
                   as.integer(param$ind),#ind
                   as.double(param$w),#w
                   as.integer(param$n),#n

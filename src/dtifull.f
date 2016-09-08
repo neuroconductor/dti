@@ -20,8 +20,8 @@ C   lambda   -  scale factor in the statistical penalty
 C   thnew    -  new smoothed diffusion tensor data
       implicit logical (a-z)
       integer n1,n2,n3,ngrad
-      real*8   s0(n1,n2,n3),si(n1,n2,n3,ngrad)
-      real*8 th(6,n1,n2,n3),thnew(6,n1,n2,n3),h,rho,
+      double precision   s0(n1,n2,n3),si(n1,n2,n3,ngrad)
+      double precision th(6,n1,n2,n3),thnew(6,n1,n2,n3),h,rho,
      1       lambda,bi(n1,n2,n3),ani(n1,n2,n3),andir(3,n1,n2,n3),
      2       det(n1,n2,n3),bcov(6,6),sigma2(n1,n2,n3),vext(3),
      3       solvebtb(6,ngrad),swsi(ngrad),
@@ -29,8 +29,8 @@ C   thnew    -  new smoothed diffusion tensor data
       logical mask(n1,n2,n3)
       integer i1,j1,j1a,j1e,jj1,i2,j2,j2a,j2e,jj2,i3,j3,j3a,j3e,jj3,
      1        ierr,k,l
-      real*8 wij,adist,sw,sws0,h2,thi(6),bii,sqrbii,ew(3),ev(3,3),
-     1       mew,z1,z2,z3,dtidist2,sij,deti,z,sew,eps,eps3,ss2,sw0
+      double precision wij,adist,sw,sws0,h2,thi(6),bii,sqrbii,ew(3),
+     1  ev(3,3),mew,z1,z2,z3,dtidist2,sij,deti,z,sew,eps,eps3,ss2,sw0
       external adist,dtidist2
       logical aws
       aws=lambda.lt.1e20
@@ -221,10 +221,10 @@ C   th       -  observed diffusion tensor data
 C   thnew    -  projected tensor data
       implicit logical (a-z)
       integer n1,n2,n3
-      real*8 th(6,n1,n2,n3),thnew(6,n1,n2,n3),ani(n1,n2,n3),
+      double precision th(6,n1,n2,n3),thnew(6,n1,n2,n3),ani(n1,n2,n3),
      1       dir(3,n1,n2,n3),det(n1,n2,n3),mew
       integer i1,i2,i3,ierr,k
-      real*8 ew(3),ev(3,3),z1,z2,z3,z,eps,eps3
+      double precision ew(3),ev(3,3),z1,z2,z3,z,eps,eps3
 C  compute anisotropy index and direction of main anisotropy (nneded in statistical penalty)
       eps3=eps*eps*eps
       DO i1=1,n1
@@ -305,9 +305,9 @@ C
       subroutine smsigma(sigma2,n1,n2,n3,h,vext,sigma2h)
       implicit logical (a-z)
       integer n1,n2,n3
-      real*8 sigma2(n1,n2,n3),sigma2h(n1,n2,n3),vext(3),h
+      double precision sigma2(n1,n2,n3),sigma2h(n1,n2,n3),vext(3),h
       integer i1,i2,i3,j1,j2,j3,ih1,ih2,ih3
-      real*8 ssig,sw,w,h2,z1,z2,z3,z11,z22,z33
+      double precision ssig,sw,w,h2,z1,z2,z3,z11,z22,z33
       h2=h*h
       ih1=int(h/vext(1))
       DO i1=1,n1

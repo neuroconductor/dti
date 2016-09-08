@@ -9,9 +9,10 @@ C     differs from old version in using S_i instead of the E_i=S_i/S_0
 C     parameter vector: w_1,phi_1,eta_1,...,w0,lambda,alpha
       implicit logical(a-z)
       integer npar,ng
-      real*8 par(npar),g(3,ng),si(ng),b(ng),lambda,alpha,risk,w0
+      double precision par(npar),g(3,ng),si(ng),b(ng),lambda,alpha,
+     1       risk,w0
       integer i
-      real*8 resi,fval
+      double precision resi,fval
       lambda=par(npar-1)
       alpha=par(npar)
       w0=par(npar-2)
@@ -29,9 +30,10 @@ C    tensor-mixture models with lambda2 as parameter, fa fixed
 C     compute sum_i (siq-f(par,g(,i),b(i))^2
       implicit logical(a-z)
       integer npar,ng
-      real*8 par(npar),g(3,ng),si(ng),b(ng),lambda,alpha,risk,w0
+      double precision par(npar),g(3,ng),si(ng),b(ng),lambda,alpha,
+     1       risk,w0
       integer i
-      real*8 resi,fval
+      double precision resi,fval
       lambda=par(npar)
       w0=par(npar-1)
       risk=0.d0
@@ -48,9 +50,10 @@ C    tensor-mixture models with eigenvalues fixed
 C     compute sum_i (siq-f(par,g(,i),b(i))^2
       implicit logical(a-z)
       integer npar,ng
-      real*8 par(npar),g(3,ng),si(ng),b(ng),lambda,alpha,risk,w0
+      double precision par(npar),g(3,ng),si(ng),b(ng),lambda,alpha,
+     1       risk,w0
       integer i
-      real*8 resi,fval
+      double precision resi,fval
       w0=par(npar)
       risk=0.d0
       DO i=1,ng
@@ -70,10 +73,10 @@ C  par(npar) containes  w_1, phi_1, eta_1, ..., w_nc, phi_nc, eta_nc, lambda, c
 C
       implicit logical (a-z)
       integer npar
-      real*8 par(npar),g(3),fval,lambda,alpha,w0
+      double precision par(npar),g(3),fval,lambda,alpha,w0
       integer ncomp,i
-      real*8 w(5),phi(5),eta(5),b,blam,f1
-      real*8 ddot3sq
+      double precision w(5),phi(5),eta(5),b,blam,f1
+      double precision ddot3sq
       external ddot3sq
 C  extract parameters
       ncomp=npar/3
@@ -96,9 +99,10 @@ C    tensor-mixture models with lambda2 and fa as parameters
 C     compute sum_i (siq-f(par,g(,i),b(i))^2
       implicit logical(a-z)
       integer npar,ng
-      real*8 par(npar),g(3,ng),si(ng),b(ng),lambda,alpha,drisk(npar)
+      double precision par(npar),g(3,ng),si(ng),b(ng),lambda,alpha,
+     1       drisk(npar)
       integer i,j
-      real*8 resi,fval,dval(15),drisk0(18),dlam,dalpha,w0,dw0
+      double precision resi,fval,dval(15),drisk0(18),dlam,dalpha,w0,dw0
 C  calculate numerical gradients for comparison
       w0=par(npar-2)
       lambda=par(npar-1)
@@ -131,9 +135,10 @@ C    tensor-mixture models with lambda2 as parameter, fa fixed
 C     compute sum_i (siq-f(par,g(,i),b(i))^2
       implicit logical(a-z)
       integer npar,ng
-      real*8 par(npar),g(3,ng),si(ng),b(ng),lambda,alpha,drisk(npar)
+      double precision par(npar),g(3,ng),si(ng),b(ng),lambda,alpha,
+     1       drisk(npar)
       integer i,j
-      real*8 resi,fval,dval(15),drisk0(17),dlam,w0,dw0
+      double precision resi,fval,dval(15),drisk0(17),dlam,w0,dw0
       w0=par(npar-1)
       lambda=par(npar)
       DO j=1,npar
@@ -160,9 +165,10 @@ C    tensor-mixture models with eigenvalues fixed
 C     compute sum_i (siq-f(par,g(,i),b(i))^2
       implicit logical(a-z)
       integer npar,ng
-      real*8 par(npar),g(3,ng),si(ng),b(ng),lambda,alpha,drisk(npar)
+      double precision par(npar),g(3,ng),si(ng),b(ng),lambda,alpha,
+     1       drisk(npar)
       integer i,j
-      real*8 resi,fval,dval(15),drisk0(16),w0,dw0
+      double precision resi,fval,dval(15),drisk0(16),w0,dw0
       w0=par(npar)
       DO j=1,npar
          drisk0(j)=0.d0   
@@ -188,11 +194,12 @@ C  par(npar) containes  w_1, phi_1, eta_1, ..., w_nc, phi_nc, eta_nc, lambda, al
 C  fval contains function value
       implicit logical (a-z)
       integer npar
-      real*8 par(npar),g(3),dval(npar),w0,alpha,lambda,b,dw0,dlam,
-     1       dalpha
+      double precision par(npar),g(3),dval(npar),w0,alpha,lambda,b,
+     1       dw0,dlam,dalpha
       integer ncomp,i
-      real*8 w(5),phi(5),eta(5),blam
-      real*8 embclgd2(5),dgtd(3,5),fval,f1,f1l,f2l,f2c,adgtd(5)
+      double precision w(5),phi(5),eta(5),blam
+      double precision embclgd2(5),dgtd(3,5),fval,f1,f1l,f2l,f2c,
+     1       adgtd(5)
 C  extract parameters
       ncomp=(npar-3)/3
 C need to have positive alpha to guarantee lambda1 >= lambda2
@@ -248,10 +255,11 @@ C  fval contains function value
 C
       implicit logical (a-z)
       integer npar
-      real*8 par(npar),g(3),dval(npar),alpha,lambda,b,dlam,w0,dw0
+      double precision par(npar),g(3),dval(npar),alpha,lambda,b,dlam,
+     1       w0,dw0
       integer ncomp,i
-      real*8 w(5),phi(5),eta(5),blam
-      real*8 embclgd2(5),dgtd(3,5),fval,f1,f1l,f2l,adgtd(5)
+      double precision w(5),phi(5),eta(5),blam
+      double precision embclgd2(5),dgtd(3,5),fval,f1,f1l,f2l,adgtd(5)
 C  extract parameters
       ncomp=(npar-1)/3
 C need to have positive alpha to guarantee lambda1 >= lambda2
@@ -302,10 +310,10 @@ C  fval contains function value
 C
       implicit logical (a-z)
       integer npar
-      real*8 par(npar),g(3),dval(npar),alpha,lambda,b,dw0,w0
+      double precision par(npar),g(3),dval(npar),alpha,lambda,b,dw0,w0
       integer ncomp,i
-      real*8 w(5),phi(5),eta(5),blam
-      real*8 embclgd2(5),dgtd(3,5),fval,adgtd(5)
+      double precision w(5),phi(5),eta(5),blam
+      double precision embclgd2(5),dgtd(3,5),fval,adgtd(5)
 C  extract parameters
       ncomp=npar/3
 C need to have positive alpha to guarantee lambda1 >= lambda2
@@ -370,11 +378,11 @@ C
       implicit logical (a-z)
       integer nvox,ngrad,ns,siind(ns,nvox),m,ntry,nv,
      1       isample(m,ntry)
-      real*8 si(ngrad,nvox),sms(ngrad),dgrad(ngrad,nv),
+      double precision si(ngrad,nvox),sms(ngrad),dgrad(ngrad,nv),
      1       egrad(ngrad,nv),z(ngrad,ns),mval(nvox),
      2       wi(ns,nvox),bv(ngrad),alpha,lambda,z0(ngrad)
       integer i,k,ibest,mode,ind(10),l,ii,iw,wind(6),nwi(6)
-      real*8 w(1000),krit,work1(1000),work2(12),erg,msi,m2si,
+      double precision w(1000),krit,work1(1000),work2(12),erg,msi,m2si,
      1       z1,dng,albv,lbv,onealpha
       dng=ngrad
       iw=m
@@ -465,10 +473,10 @@ C   sweep s0 from si to generate  siq
 C   calculate variance of siq
 C
       integer n,ng0,level
-      real*8 s0(ng0,n),ms0(n)
+      double precision s0(ng0,n),ms0(n)
       logical mask(n)
       integer i,k
-      real*8 z,thresh
+      double precision z,thresh
       thresh = max(1,level*ng0)
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(s0,n,ng0,ms0,mask,thresh)

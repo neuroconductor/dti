@@ -145,7 +145,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,n
                       as.integer(ddim[3]),#n3
                       as.integer(ngrad),#ngrad
                       as.double(lambda),#lambda
-                      as.integer(ncoils),#ncoils
+#                      as.integer(ncoils),#ncoils
                       as.integer(mc.cores),#ncores
                       as.integer(param$ind),#ind
                       as.double(param$w),#w
@@ -186,7 +186,6 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,n
                       double(ngrad*mc.cores),
                       double(ngrad*mc.cores),
                       as.integer(model),
-                      as.double(minlevel),
                       PACKAGE="dti")[c("ni","th")]
         #     save(z,sb,thk,ni,param,model,ddim,lambda,ngrad,model,minlevel,ncoils,mask,file="tmpi.rsc")
         gc()
@@ -224,7 +223,6 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,n
                    double(prod(ddim)),#ldf (to precompute lgamma)
                    double(param$nstarts),#swi
                    as.integer(model),
-                   as.double(minlevel0),
                    PACKAGE="dti")[c("ni","th0")]
     #     save(z0,s0,th0,ni0,param,model,ddim,lambda,ns0,model,minlevel,ncoils,mask,file="tmp.rsc")
     th0 <- z0$th0

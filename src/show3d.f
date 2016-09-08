@@ -6,9 +6,9 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine adcradii(vert,nv,tens,ntens,radii)
       implicit logical (a-z)
       integer nv,ntens
-      real*8 vert(3,nv),tens(6,ntens),radii(nv,ntens)
+      double precision vert(3,nv),tens(6,ntens),radii(nv,ntens)
       integer i,j
-      real*8 x,y,z,s,xx,xy,xz,yy,yz,zz
+      double precision x,y,z,s,xx,xy,xz,yy,yz,zz
       DO i=1,nv
          x=vert(1,i)
          y=vert(2,i)
@@ -35,9 +35,9 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine ellradii(vert,nv,tens,ntens,radii)
       implicit logical (a-z)
       integer nv,ntens
-      real*8 vert(3,nv),tens(6,ntens),radii(nv,ntens)
+      double precision vert(3,nv),tens(6,ntens),radii(nv,ntens)
       integer ierr,i,j
-      real*8 qform3,ev(3),edir(3,3)
+      double precision qform3,ev(3),edir(3,3)
       DO j=1,ntens
          call eigen3(tens(1,j),ev,edir,ierr)
          if(ev(3).gt.1d-6.and.ierr.eq.0) THEN
@@ -60,9 +60,9 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine odfradii(vert,nv,tens,ntens,radii)
       implicit logical (a-z)
       integer nv,ntens
-      real*8 vert(3,nv),tens(6,ntens),radii(nv,ntens)
+      double precision vert(3,nv),tens(6,ntens),radii(nv,ntens)
       integer ierr,i,j
-      real*8 qform3,ev(3),edir(3,3),z,z1
+      double precision qform3,ev(3),edir(3,3),z,z1
       DO j=1,ntens
          call eigen3(tens(1,j),ev,edir,ierr)
          if(ev(3).gt.1d-6.and.ierr.eq.0) THEN
@@ -80,9 +80,9 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       RETURN
       END
 
-      real*8 function qform3(y,edir,ev)
-      real*8 y(3),edir(3,3),ev(3)
-      real*8 z1,z2,z3
+      double precision function qform3(y,edir,ev)
+      double precision y(3),edir(3,3),ev(3)
+      double precision z1,z2,z3
       z1=y(1)*edir(1,1)+y(2)*edir(2,1)+y(3)*edir(3,1)
       z2=y(1)*edir(1,2)+y(2)*edir(2,2)+y(3)*edir(3,2)
       z3=y(1)*edir(1,3)+y(2)*edir(2,3)+y(3)*edir(3,3)
@@ -109,10 +109,11 @@ C     scale  scaling factor
 C     radii  resulting radii of ODF
 C
       integer nv,nobj,mo,ord(nobj)
-      real*8 vert(3,nv),ev(2,nobj),ori(2,mo,nobj),mix(mo,nobj),
-     1       radii(nv,nobj)
+      double precision vert(3,nv),ev(2,nobj),ori(2,mo,nobj),
+     1       mix(mo,nobj),radii(nv,nobj)
       integer i,j,k
-      real*8 dotprod3,c12,sth,dir(3,5),fourpi,c12fp,z,utd,zk,e1,e2,sm
+      double precision dotprod3,c12,sth,dir(3,5),fourpi,c12fp,z,utd,
+     1       zk,e1,e2,sm
 C     assumes maximum of 5 micxture components
       if(mo.gt.5) THEN
          call intpr("mo restricted to 5, is",18,mo,1)
@@ -162,9 +163,9 @@ C     nobj   number of objects
 C     andir  main diffusion directions
 C
       integer nobj,mo,ord(nobj)
-      real*8 ori(2,mo,nobj),mix(mo,nobj),andir(3,mo,nobj)
+      double precision ori(2,mo,nobj),mix(mo,nobj),andir(3,mo,nobj)
       integer j,k
-      real*8 sth
+      double precision sth
 C     assumes maximum of 5 micxture components
       DO j = 1,nobj
          DO k = 1,mo
@@ -183,9 +184,9 @@ C     assumes maximum of 5 micxture components
       RETURN
       END
 
-      real*8 function dotprod3(a,b)
+      double precision function dotprod3(a,b)
       implicit logical (a-z)
-      real*8 a(3),b(3)
+      double precision a(3),b(3)
       dotprod3=a(1)*b(1)+a(2)*b(2)+a(3)*b(3)
       RETURN
       END
@@ -199,9 +200,9 @@ C     assumes maximum of 5 micxture components
 !       implicit logical (a-z)
 !       integer nvert,ndist,ab(2,ndist)
 ! C  ndist = nvert*(nvert-1)/2
-!       real*8 vert(3,nvert),distab(ndist)
+!       double precision vert(3,nvert),distab(ndist)
 !       integer i,j,k
-!       real*8 dotprod3,z
+!       double precision dotprod3,z
 !       k=1
 !       DO i=1,nvert-1
 !          DO j=i+1,nvert
@@ -223,7 +224,7 @@ C     assumes maximum of 5 micxture components
 !       subroutine triedges(ab,distab,iab,ndist,abc,ntria)
 !       implicit logical (a-z)
 !       integer ndist,ntria,ab(2,ndist),iab(ndist),abc(3,ntria)
-!       real*8 distab(ndist)
+!       double precision distab(ndist)
 !       integer i,it,m1
 ! C
 ! C   Initialization
@@ -264,9 +265,9 @@ C     assumes maximum of 5 micxture components
 !       subroutine findtri(iedge,ab,distab,iab,ndist,abc,it,ierr)
 !       implicit logical (a-z)
 !       integer iedge,ndist,it,ab(2,ndist),iab(ndist),abc(3,it)
-!       real*8 distab(ndist)
+!       double precision distab(ndist)
 !       integer a,b,i,j,k,c,ci,cj
-!       real*8 z,mindist,dab
+!       double precision z,mindist,dab
 !       logical ierr,checktri
 !       external checktri
 !       a=ab(1,iedge)
@@ -413,9 +414,10 @@ C
       subroutine datinter(gradii,n,grad,ng,vert,nv,nn,dnn,inn,vradii)
       implicit logical (a-z)
       integer n,ng,nv,nn,inn(nn)
-      real*8 gradii(ng,n),grad(3,ng),vert(3,nv),dnn(nn),vradii(nv,n)
+      double precision gradii(ng,n),grad(3,ng),vert(3,nv),dnn(nn),
+     1       vradii(nv,n)
       integer i,j,k,mininn
-      real*8 mindnn,z,mdist,sdnn,sz,dotprod3
+      double precision mindnn,z,mdist,sdnn,sz,dotprod3
       external dotprod3
       DO i=1,nv
          mindnn=1.d0

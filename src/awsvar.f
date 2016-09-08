@@ -17,11 +17,11 @@ C
       implicit logical (a-z)
       integer n1,n2,n3
       logical mask(n1,n2,n3)
-      real*8 y(n1,n2,n3),theta(n1,n2,n3),bi(n1,n2,n3),wght(2),hakt,
-     1       lwght(*)
+      double precision y(n1,n2,n3),theta(n1,n2,n3),bi(n1,n2,n3),
+     1       wght(2),hakt,lwght(*)
       integer ih1,ih2,ih3,i1,i2,i3,j1,j2,j3,jind3,jind2,jind,
      1        clw1,clw2,clw3,dlw1,dlw2,dlw3,jw1,jw2,jw3,jwind2,jwind3
-      real*8 swj,swjy,z1,z2,z3,wj,hakt2,hmax2
+      double precision swj,swjy,z1,z2,z3,wj,hakt2,hmax2
       hakt2=hakt*hakt
       ih1=int(hakt)
 C
@@ -134,13 +134,13 @@ C
       implicit logical (a-z)
       integer n1,n2,n3
       logical mask(n1,n2,n3)
-      real*8 y(n1,n2,n3),theta(n1,n2,n3),bi(n1,n2,n3),
+      double precision y(n1,n2,n3),theta(n1,n2,n3),bi(n1,n2,n3),
      1       thetan(n1,n2,n3),lambda,wght(2),hakt,lwght(*),
      2       si2(n1,n2,n3),spmin,hhom(n1,n2,n3),
      3       gi(n1,n2,n3),gi2(n1,n2,n3)
       integer ih1,ih2,ih3,i1,i2,i3,j1,j2,j3,jw1,jw2,jw3,jwind3,jwind2,
      1        jind,jind3,jind2,clw1,clw2,clw3,dlw1,dlw2,dlw3
-      real*8 thetai,bii,sij,swj,swjy,z1,z2,z3,wj,hakt2,
+      double precision thetai,bii,sij,swj,swjy,z1,z2,z3,wj,hakt2,
      1        sv1,sv2,spf,z,hhomi,hhommax,hmax2
       hakt2=hakt*hakt
       spmin=0.25d0

@@ -12,10 +12,10 @@ C  n     - number of local weights/observations
 C
       implicit logical (a-z)
       integer n
-      real*8 sigma,ni,ksi,wj(n),sj(n),L,work(*),erg
+      double precision sigma,ni,ksi,wj(n),sj(n),L,work(*),erg
       integer j
-      real*8 eta,z,sig2,zs,sl,lm1,za
-      real*8 bessliex
+      double precision eta,z,sig2,zs,sl,lm1,za
+      double precision bessliex
       external bessliex
       lm1=L-1
       sig2=sigma*sigma
@@ -39,7 +39,8 @@ C  avoid Inf in besseli (unlikely in optimum, does not change convexity)
          erg=ksi/sig2+log(sig2)+lm1/2.d0*log(sl)-eta/ni
       RETURN
       END
-      real*8 function lncchi2(sigma,ni,ksi,wj,sj,L,clws,n,work)
+      double precision function lncchi2(sigma,ni,ksi,wj,sj,L,clws,n,
+     1                                  work)
 C
 C  compute local weighted noncentral chi^2 log-likelihood * (-1)
 C  
@@ -53,10 +54,10 @@ C  n     - number of local weights/observations
 C
       implicit logical (a-z)
       integer n
-      real*8 sigma,ni,ksi,wj(n),sj(n),L,work(*)
+      double precision sigma,ni,ksi,wj(n),sj(n),L,work(*)
       integer j
-      real*8 eta,z,sig2,zs,pen,sl,lm1,za,clws
-      real*8 bessliex
+      double precision eta,z,sig2,zs,pen,sl,lm1,za,clws
+      double precision bessliex
       external bessliex
       lm1=L-1
       sig2=sigma*sigma
@@ -95,12 +96,13 @@ C
       subroutine localmin(low,up,wj,sj,L,n,tol,maxit,work,xmin,fmin)
       implicit logical (a-z)
       integer n,maxit
-      real*8 low,up,wj(n),sj(n),L,tol,xmin,fmin,work(*)
-      real*8 goldc,a,b,d,e,eps,xm,p,q,r,eps1,eps2,u,v,w,fu,fv,fw,fx,x
-      real*8 ni,ksi,sjj,clws,Lm1
+      double precision low,up,wj(n),sj(n),L,tol,xmin,fmin,work(*)
+      double precision goldc,a,b,d,e,eps,xm,p,q,r,eps1,eps2,u,v,w,fu,
+     1       fv,fw,fx,x
+      double precision ni,ksi,sjj,clws,Lm1
       integer it,j
       logical gsect
-      real*8 lncchi2,lgammaf
+      double precision lncchi2,lgammaf
       external lncchi2,lgammaf
       eps=1d-8
       goldc=0.381966

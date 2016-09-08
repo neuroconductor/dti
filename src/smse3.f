@@ -7,10 +7,10 @@ C   k456,ng (input) contain auxiliary statistics(gradients)
 C
       implicit logical (a-z)
       integer ng,i4,kstar,n,dist
-      real*8 k456(3,ng,ng),vext(2),
+      double precision k456(3,ng,ng),vext(2),
      1       kappa,h(kstar),varred(kstar)
       integer k,n0,maxn
-      real*8 hakt,hakt0,vr,ch,chk,vred,v0r
+      double precision hakt,hakt0,vr,ch,chk,vred,v0r
       ch=1.25d0
       hakt=1.d0
 C   initialize kappa
@@ -59,7 +59,7 @@ C  number of positive weights for last step in n
       END
       subroutine exppm6(p,ex)
       implicit logical (a-z)
-      real*8 p,ex(3,3)
+      double precision p,ex(3,3)
       ex(1,1)=dcos(p)
       ex(1,2)=dsin(p)
       ex(1,3)=0.d0
@@ -73,7 +73,7 @@ C  number of positive weights for last step in n
       END
       subroutine exppm5(p,ex)
       implicit logical (a-z)
-      real*8 p,ex(3,3)
+      double precision p,ex(3,3)
       ex(1,1)=dcos(p)
       ex(1,2)=0.d0
       ex(1,3)=-dsin(p)
@@ -87,8 +87,8 @@ C  number of positive weights for last step in n
       END
       subroutine exppm4(p,b,ex)
       implicit logical (a-z)
-      real*8 b,p,ex(3,3)
-      real*8 D,sqr2,sb,pDs,D2,cpds,spds,spdsh
+      double precision b,p,ex(3,3)
+      double precision D,sqr2,sb,pDs,D2,cpds,spds,spdsh
       sqr2 = dsqrt(2.d0)
       sb = dsin(b)
       D = dsqrt(3.d0-dcos(2.d0*b))
@@ -114,9 +114,9 @@ C  Solve exponential equation for dicrepance parameters
 C  compute ||\prod_{i=4}^6 exp(par[i] m_i) - matm||^2
 C
       implicit logical (a-z)
-      real*8 par(3),b,matm(3,3),erg
+      double precision par(3),b,matm(3,3),erg
       integer i1,i2
-      real*8 s,z,em4(3,3),em5(3,3),em6(3,3),am4(3,3),am5(3,3)
+      double precision s,z,em4(3,3),em5(3,3),em6(3,3),am4(3,3),am5(3,3)
       call exppm4(par(1),b,em4)
       call exppm5(par(2),em5)
       call exppm6(par(3),em6)
@@ -148,9 +148,9 @@ C  compute spherical coordinates for gradient vectors
 C
       implicit logical (a-z)
       integer n
-      real*8 g(3,n),bg(2,n)
+      double precision g(3,n),bg(2,n)
       integer i
-      real*8 z,g1,g2,g3,beta,gamma,onemeps
+      double precision z,g1,g2,g3,beta,gamma,onemeps
       onemeps=1.d0-1d-10
       DO i=1,n
          g1=g(1,i)
@@ -182,9 +182,9 @@ C standardize to length 1
       subroutine bgstats(g,n,bg,bghat)
       implicit logical (a-z)
       integer n
-      real*8 g(3,n),bg(2,n),bghat(2,n,n)
+      double precision g(3,n),bg(2,n),bghat(2,n,n)
       integer i1,i2
-      real*8 dgamma,cb1,sb1,cb2,sb2,betah,cbh,z,gammah,cdg
+      double precision dgamma,cb1,sb1,cb2,sb2,betah,cbh,z,gammah,cdg
 C   first get sperical coordinates in bg
       call abofg(g,n,bg)
       DO i1=1,n
@@ -228,9 +228,9 @@ C    die spherischen Koordinaten der Gradientenpaare (Parameter der Rotationsmat
      1                   vext,ind,wght,n,dist)
       implicit logical (a-z)
       integer ng,n,ind(5,n),i4,dist
-      real*8 h,kappa,k456(3,ng,ng),vext(2),wght(n)
+      double precision h,kappa,k456(3,ng,ng),vext(2),wght(n)
       integer ih1,ih2,ih3,i,j1,j2,j3,j4
-      real*8 h2,kap2,x1,x2,x3,k4,k5,k6,z,z1,vd2,vd3
+      double precision h2,kap2,x1,x2,x3,k4,k5,k6,z,z1,vd2,vd3
       ih1 = int(max(1.d0,h))
       ih2 = int(max(1.d0,h/vext(1)))
       ih3 = int(max(1.d0,h/vext(2)))
@@ -332,9 +332,9 @@ C dist=4
       subroutine lkfse3i0(h,kappa,i4,k456,ng,vext,vred,n,dist)
       implicit logical (a-z)
       integer ng,n,i4,dist
-      real*8 h,kappa,k456(3,ng,ng),vext(2),vred
+      double precision h,kappa,k456(3,ng,ng),vext(2),vred
       integer ih1,ih2,ih3,j1,j2,j3,j4
-      real*8 x1,x2,x3,k4,k5,k6,z,z1,
+      double precision x1,x2,x3,k4,k5,k6,z,z1,
      1       sw,sw2,wght,anz,h2,kap2,vd2,vd3
       ih1 = int(max(1.d0,h))
       ih2 = int(max(1.d0,h/vext(1)))
@@ -437,7 +437,7 @@ C   if j1>0  (-j1,-j2,-j3) gets the same weight, so count it twice
       subroutine lkfulse3(h,kappa,k456,ng,vext,ind,wght,n,dist)
       implicit logical (a-z)
       integer ng,n,ind(5,n),dist
-      real*8 h(ng),kappa(ng),k456(3,ng,ng),vext(2),wght(n)
+      double precision h(ng),kappa(ng),k456(3,ng,ng),vext(2),wght(n)
       integer ns,ni,i
       ns = 0
       DO i = 1,ng
@@ -450,7 +450,7 @@ C   if j1>0  (-j1,-j2,-j3) gets the same weight, so count it twice
       RETURN
       END      
       subroutine adsmse3p(y,th,ni,mask,n1,n2,n3,ngrad,lambda,ncoils,
-     1                    ncores,ind,w,n,thn,ldf,sw,swy,model,minlev)
+     1                    ncores,ind,w,n,thn,ldf,sw,swy,model)
 C   model=1 takes noncentral Chi-sq values in y
 C   model=0 takes noncentral Chi values in y
 C
@@ -465,15 +465,15 @@ c   model=2  Gauss-based KL-distance, y ~ Chi, th on same scale, smooth y^2
       implicit logical (a-z)
       integer n1,n2,n3,ngrad,n,ind(5,n),ncoils,model,ncores
       logical mask(n1,n2,n3)
-      real*8 y(n1,n2,n3,ngrad),thn(n1,n2,n3,ngrad),ni(n1,n2,n3,ngrad),
-     1     ldf(n1,n2,n3,ngrad),th(n1,n2,n3,ngrad)
-      real*8 lambda,w(n),sw(ngrad,ncores),swy(ngrad,ncores),
-     2       lgfi,dgfi,fici,df,minlev
+      double precision y(n1,n2,n3,ngrad),thn(n1,n2,n3,ngrad),
+     1     ni(n1,n2,n3,ngrad),ldf(n1,n2,n3,ngrad),th(n1,n2,n3,ngrad)
+      double precision lambda,w(n),sw(ngrad,ncores),swy(ngrad,ncores),
+     2       lgfi,dgfi,fici,df
       integer iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr
-      real*8 z,thi,nii,thj,ldfi,ldfj,yj
+      double precision z,thi,nii,thj,ldfi,ldfj,yj
 !$      integer omp_get_thread_num 
 !$      external omp_get_thread_num
-      real*8 kldisnc1
+      double precision kldisnc1
       external kldisnc1
       df=2.d0*ncoils
       nii=1.d0
@@ -482,7 +482,7 @@ C just to prevent a compiler warning
 C  precompute values of lgamma(corrected df/2) in each voxel
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(n1,n2,n3,ngrad,ncores,mask,y,thn,ni,ldf,th,w,sw,swy,
-C$OMP& ind,ncoils,model,df,n,lambda,minlev)
+C$OMP& ind,ncoils,model,df,n,lambda)
 C$OMP& FIRSTPRIVATE(nii)
 C$OMP& PRIVATE(iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,z,thi,thj,
 C$OMP& ldfi,ldfj,dgfi,fici,lgfi,yj)
@@ -619,7 +619,7 @@ C$OMP FLUSH(thn,ni)
       RETURN
       END
       subroutine adsmse3m(y,th,ni,sthi,mask,ns,n1,n2,n3,ngrad,lambda,
-     1             ncoils,ncores,ind,w,n,thn,sw,swy,si,thi)
+     1             ncores,ind,w,n,thn,sw,swy,si,thi)
 C   
 C  Multi-shell version (differs in dimension of th 
 C  KL-distance based on all spheres and Gauss-approximation only
@@ -631,23 +631,23 @@ C   ind(.,i)[1:5] are j1-i1,j2-i2,j3-i3, i4 and j4 respectively
 C
 c   model=2  Gauss-based KL-distance, y ~ Chi, th on same scale, smooth y^2
       implicit logical (a-z)
-      integer ns,n1,n2,n3,ngrad,n,ind(5,n),ncoils,ncores
+      integer ns,n1,n2,n3,ngrad,n,ind(5,n),ncores
       logical mask(n1,n2,n3)
-      real*8 y(n1,n2,n3,ngrad),thn(n1,n2,n3,ngrad),ni(n1,n2,n3,ngrad),
-     1     th(ns,n1,n2,n3,ngrad),sthi(ns,n1,n2,n3,ngrad)
-      real*8 lambda,w(n),sw(ngrad,ncores),swy(ngrad,ncores)
+      double precision y(n1,n2,n3,ngrad),thn(n1,n2,n3,ngrad),
+     1 ni(n1,n2,n3,ngrad),th(ns,n1,n2,n3,ngrad),sthi(ns,n1,n2,n3,ngrad)
+      double precision lambda,w(n),sw(ngrad,ncores),swy(ngrad,ncores)
       integer iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,k
-      real*8 sz,z,nii,thj,si(ns,ncores),thi(ns,ncores) 
+      double precision sz,z,nii,si(ns,ncores),thi(ns,ncores) 
 !$      integer omp_get_thread_num
 !$      external omp_get_thread_num
-      real*8 kldisnc1
+      double precision kldisnc1
       external kldisnc1
       nii=1.d0
       thrednr = 1
 C just to prevent a compiler warning
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(n1,n2,n3,ngrad,ncores,mask,y,thn,ni,th,sthi,w,sw,swy,
-C$OMP& ind,ncoils,n,lambda,ns,thi,si)
+C$OMP& ind,n,lambda,ns,thi,si)
 C$OMP& FIRSTPRIVATE(a,b,nii)
 C$OMP& PRIVATE(iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,z,thj,sz)
 C$OMP DO SCHEDULE(GUIDED)
@@ -752,7 +752,7 @@ C$OMP FLUSH(thn,ni)
       RETURN
       END
       subroutine adsmse3s(y,y0,th,ni,th0,ni0,fsi2,fsi02,mask,ns,n1,
-     1                n2,n3,ngrad,lambda,ws0,ncores,ind,w,n,ind0,w0,
+     1                n2,n3,ngrad,lambda,ws0,ind,w,n,ind0,w0,
      2                n0,thn,nin,th0n,ni0n,sw,swy,thi,nii,fsi2i)
 C   
 C  Multi-shell version (differs in dimension of th 
@@ -774,7 +774,6 @@ C   lambda - skale parameter
 C   ws0  - relative weight for information from s0 images (should be in [0,1])
 C   ncoils - df/2 of \chi distributions
 C   minlev - expectation of central chi distr. (needed in variance estimates)
-C   ncores - number of cores
 C   ind    - index vectors for si weighting schemes 
 C   w    - corresponding weights
 C   n    - number of si weights
@@ -791,25 +790,26 @@ C   location weights in w(i) for si images
 C   ind(.,i)[1:5] are j1-i1,j2-i2,j3-i3, i4 and j4 respectively 
 C
       implicit logical (a-z)
-      integer ns,n1,n2,n3,ngrad,n,n0,ind(5,n),ind0(3,n0),ncores
+      integer ns,n1,n2,n3,ngrad,n,n0,ind(5,n),ind0(3,n0)
       logical mask(*)
-      real*8 y(*),y0(*),th(ns,*),ni(ns,*),th0(ns,*),ni0(ns,*),
-     1     fsi2(ns,*),fsi02(ns,*),thn(*),th0n(*),nin(*),ni0n(*)
+      double precision y(*),y0(*),th(ns,*),ni(ns,*),th0(ns,*),
+     1  ni0(ns,*),fsi2(ns,*),fsi02(ns,*),thn(*),th0n(*),nin(*),ni0n(*)
 C  * refers to n1*n2*n3*ngrad for y,th,ni,thn,fsi2,nin and to
 C              n1*n2*n3 for y0,th0,ni0,th0n,ni0n,fsi02,mask
-      real*8 w(n),w0(n0),lambda,thi(*),ws0,fsi2i(*),sw(*),swy(*),nii(*)
+      double precision w(n),w0(n0),lambda,thi(*),ws0,fsi2i(*),sw(*),
+     1       swy(*),nii(*)
 C  * refers to ns*ncores in thi, fsi2i, nii and to
-C              ngrad*cores in sw and swy
+C              ngrad*ncores in sw and swy
       integer iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,k,jind,iind4,
      1        jind4,n123,n12,sthrednr,gthrednr,i4gthnr
-      real*8 sz,z,sw0,swy0
+      double precision sz,z,sw0,swy0
 !$      integer omp_get_thread_num
 !$      external omp_get_thread_num
       thrednr = 1
       n12 = n1*n2
       n123 = n12*n3
 C$OMP PARALLEL DEFAULT(NONE)
-C$OMP& SHARED(ns,n1,n2,n3,ngrad,n,n0,ind,ind0,ncoils,ncores,y,y0,
+C$OMP& SHARED(ns,n1,n2,n3,ngrad,n,n0,ind,ind0,ncoils,y,y0,
 C$OMP&       th,ni,th0,ni0,w,w0,thn,th0n,nin,ni0n,thi,sw,swy,nii,
 C$OMP&       lambda,mask,ws0,fsi2,fsi02,fsi2i)
 C$OMP& FIRSTPRIVATE(n123,n12)
@@ -1004,7 +1004,7 @@ C$OMP FLUSH(thn,nin,th0n,ni0n)
       RETURN
       END
       subroutine asmse30p(y,th,ni,mask,n1,n2,n3,lambda,ncoils,ind,w,
-     1                    n,starts,nstarts,thn,ldf,swi,model,minlev)
+     1                    n,starts,nstarts,thn,ldf,swi,model)
 C   model=1 takes noncentral Chi-sq values in y0
 C   model=0 takes noncentral Chi values in y0
 C   perform adaptive smoothing on R^3
@@ -1019,11 +1019,11 @@ c   model=2  Gauss-based KL-distance, y ~ Chi, th on same scale, smooth y^2
       implicit logical (a-z)
       integer n1,n2,n3,n,ind(5,n),starts(*),nstarts,ncoils,model
       logical mask(n1,n2,n3)
-      real*8 y(n1,n2,n3),th(n1,n2,n3),ni(*),thn(*),minlev,
+      double precision y(n1,n2,n3),th(n1,n2,n3),ni(*),thn(*),
      1       lambda,w(n),sw0,swy0,swi(nstarts),ldf(n1,n2,n3)
       integer i,i0,i1,i2,i3,j1,j2,j3,l1,l2,l3,nn
-      real*8 z,ldfi,lgfi,dgfi,fici,sc,df,yj,maxswi
-      real*8 kldisnc1
+      double precision z,ldfi,lgfi,dgfi,fici,sc,df,yj,maxswi
+      double precision kldisnc1
       external kldisnc1
       df=2.d0*ncoils
       nn=n1*n2*n3
@@ -1042,7 +1042,7 @@ C
       maxswi=1.d0
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(n1,n2,n3,nn,ncoils,mask,y,th,ni,thn,ind,ldf,n,nstarts,
-C$OMP& starts,w,swi,df,minlev)
+C$OMP& starts,w,swi,df)
 C$OMP& FIRSTPRIVATE(model,lambda,maxswi)
 C$OMP& PRIVATE(sw0,swy0,i,i0,i1,i2,i3,j1,j2,j3,l1,l2,l3,z,lgfi,dgfi,
 C$OMP& ldfi,fici,sc,yj)
@@ -1154,9 +1154,9 @@ C
       subroutine lgstats(thi,df,model,lgfi)
       implicit logical (a-z)
       integer model
-      real*8 thi,lgfi,df
-      real*8 mu2i,z1,z2,fi
-      real*8 lgammaf,digammaf
+      double precision thi,lgfi,df
+      double precision mu2i,z1,z2,fi
+      double precision lgammaf,digammaf
       external lgammaf, digammaf
       mu2i = thi
       if(model.eq.0) mu2i = mu2i*mu2i
@@ -1170,9 +1170,9 @@ C
       subroutine ncstats0(thi,lgfi0,df,model,lgfi,dgfi,fici)
       implicit logical (a-z)
       integer model
-      real*8 thi,lgfi0,lgfi,dgfi,fici,df
-      real*8 mu2i,z1,z2,dlci,fi,ci
-      real*8 digammaf
+      double precision thi,lgfi0,lgfi,dgfi,fici,df
+      double precision mu2i,z1,z2,dlci,fi,ci
+      double precision digammaf
       external digammaf
       mu2i = thi
       if(model.eq.0) mu2i = mu2i*mu2i
@@ -1187,7 +1187,7 @@ C
       lgfi = lgfi0+0.5d0*(fi*dlci+fi-fi*dgfi)
       RETURN
       END
-      real*8 function kldisnc1(lgfi,dgfi,fici,thj,lgfj,df,
+      double precision function kldisnc1(lgfi,dgfi,fici,thj,lgfj,df,
      1                          model)
 C    for smoothing noncentral Chi values
 C    thi,thj  current estimates
@@ -1196,8 +1196,8 @@ C    model = 0   smoothing of chi values
 C    model = 1   smoothing of chi^2 values
       implicit logical (a-z)
       integer model
-      real*8 lgfi,dgfi,fici,thj,df,lgfj
-      real*8 mu2j,fj,cj,z1,z2
+      double precision lgfi,dgfi,fici,thj,df,lgfj
+      double precision mu2j,fj,cj,z1,z2
 C  use Chi^2 instead of Chi for KL distance
       mu2j = thj
       if(model.eq.0) mu2j = mu2j*mu2j
@@ -1220,9 +1220,9 @@ C  w    - vector of corresponding weights
 C  n    - number of positive weights (initial value 
 C         (2 int(h)+1)*(2 int(h/vext(1))+1)*(2 int(h/vext(2))+1)
       integer n,ind(3,n)
-      real*8 h,vext(2),w(n)
+      double precision h,vext(2),w(n)
       integer i,i1,i2,i3,ih1,ih2,ih3
-      real*8 hsq,z1,z2,z3
+      double precision hsq,z1,z2,z3
       hsq=h*h
       ih1 = int(h)
       ih2 = int(h/vext(1))
@@ -1252,9 +1252,9 @@ C         (2 int(h)+1)*(2 int(h/vext(1))+1)*(2 int(h/vext(2))+1)
       subroutine lkfuls0(h,vext,ind,wght,n)
       implicit logical (a-z)
       integer n,ind(3,n)
-      real*8 h,vext(2),wght(n)
+      double precision h,vext(2),wght(n)
       integer ih1,ih2,ih3,i,j1,j2,j3
-      real*8 h2,x1,x2,x3,z,z1,vd2,vd3
+      double precision h2,x1,x2,x3,z,z1,vd2,vd3
       vd2 = vext(1)
       vd3 = vext(2)
       ih1 = int(max(1.d0,5.0d0*h))
@@ -1293,10 +1293,10 @@ C  just to prevent compiler warnings
 C   interpolate values of theta on spheres where it was not observed
       implicit logical (a-z)
       integer n,ng,nbv,nbvp1,gind(3,nbv,ng)
-      real*8 theta(n,ng),th0(n),ni(n,ng),ni0(n),gw(3,nbv,ng),
+      double precision theta(n,ng),th0(n),ni(n,ng),ni0(n),gw(3,nbv,ng),
      1       msth(nbvp1,n,ng),msni(nbvp1,n,ng)
       integer i,j,k,i1,i2,i3,ip1
-      real*8 w1,w2,w3
+      double precision w1,w2,w3
 C$OMP PARALLEL DEFAULT(SHARED)
 C$OMP& PRIVATE(i,j,k,w1,w2,w3,i1,i2,i3,ip1)
 C$OMP DO SCHEDULE(GUIDED)
@@ -1337,10 +1337,10 @@ C   interpolate values of theta on spheres where it was not observed
       implicit logical (a-z)
       integer n,ng,nbv,nbvp1,gind(3,nbv,ng)
       logical mask(n)
-      real*8 theta(n,ng),th0(n),ni(n,ng),ni0(n),gw(3,nbv,ng),
+      double precision theta(n,ng),th0(n),ni(n,ng),ni0(n),gw(3,nbv,ng),
      1       msth(nbvp1,n,ng),msni(nbvp1,n,ng)
       integer i,j,k,i1,i2,i3,ip1
-      real*8 w1,w2,w3
+      double precision w1,w2,w3
 C$OMP PARALLEL DEFAULT(SHARED)
 C$OMP& PRIVATE(i,j,k,w1,w2,w3,i1,i2,i3,ip1)
 C$OMP DO SCHEDULE(GUIDED)
@@ -1379,8 +1379,8 @@ C$OMP FLUSH(msth,msni)
       subroutine getmsth0(theta,n,lindi,msth)
       implicit logical (a-z)
       integer n,lindi
-      real*8 theta(n,lindi),msth(n)
-      real*8 s
+      double precision theta(n,lindi),msth(n)
+      double precision s
       integer i,j
 C$OMP PARALLEL DEFAULT(SHARED)
 C$OMP& PRIVATE(i,s,j)
@@ -1399,8 +1399,8 @@ C$OMP END PARALLEL
       subroutine getmsni0(ni,n,lindi,msni)
       implicit logical (a-z)
       integer n,lindi
-      real*8 ni(n,lindi),msni(n)
-      real*8 s
+      double precision ni(n,lindi),msni(n)
+      double precision s
       integer i,j
 C$OMP PARALLEL DEFAULT(SHARED)
 C$OMP& PRIVATE(i,s,j)

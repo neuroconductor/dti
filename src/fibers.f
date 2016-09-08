@@ -8,7 +8,7 @@ C   lengthf(nfibers) -  length(fibers)
       implicit logical (a-z)
       integer sizef,nfibers,mlf,ifiber(3,mlf),startf(nfibers),
      1        lengthf(nfibers),nx,ny,nz,sizenf,nnfiber
-      real*8 fiber(sizef,6),newfiber(sizef,6),vext(3)
+      double precision fiber(sizef,6),newfiber(sizef,6),vext(3)
       logical roi(nx,ny,nz)
       integer i,j,k,j1,istart,ilen,nstart
       logical finroi,inroi
@@ -67,9 +67,9 @@ C     start vector of indices where fibers start
 C     nstart  number of fibers
       implicit logical (a-z)
       integer nfibers,nstart,start(nfibers)
-      real*8 fibers(2,nfibers,3)
+      double precision fibers(2,nfibers,3)
       integer i,ns
-      real*8 zd1,zd2,zd3
+      double precision zd1,zd2,zd3
       start(1)=1
       ns=2
       DO i=1,nfibers-1
@@ -93,9 +93,9 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       implicit logical (a-z)
       integer nsegm,nfibers,startf(nfibers),endf(nfibers)
       logical keep(nfibers)
-      real*8 fibers(3,nsegm),maxd
+      double precision fibers(3,nsegm),maxd
       integer i,il,is,ilong,ishort,ncounts,sfil,efil,nlong
-      real*8 z1,z2,z3,mindist,f1,f2,f3
+      double precision z1,z2,z3,mindist,f1,f2,f3
       DO i=1,nfibers
          keep(i)=.TRUE.
       END DO
@@ -149,9 +149,9 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       implicit logical (a-z)
       integer nsegm,nfibers,startf(nfibers),endf(nfibers)
       logical keep(nfibers)
-      real*8 fibers(3,nsegm),maxd
+      double precision fibers(3,nsegm),maxd
       integer i,il,is,ilong,ishort,ncounts,sfil,efil,nlong
-      real*8 z1,z2,z3,mindist,f1,f2,f3
+      double precision z1,z2,z3,mindist,f1,f2,f3
       DO i=1,nfibers
          keep(i)=.TRUE.
       END DO
@@ -216,9 +216,9 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       implicit logical (a-z)
       integer nsegm1,nfibers1,startf1(nfibers1),endf1(nfibers1),nsegm2
       logical keep(nfibers1)
-      real*8 fibers1(6,nsegm1),fibers2(3,nsegm2),maxdist
+      double precision fibers1(6,nsegm1),fibers2(3,nsegm2),maxdist
       integer i,j,k,l,alength
-      real*8 x1,z1,y1,d
+      double precision x1,z1,y1,d
 C Initialize keep to none
       DO i=1,nfibers1
          keep(i)=.FALSE.

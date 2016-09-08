@@ -4,7 +4,8 @@ C
       subroutine Mofcall(c,kern,nk,ng,n,e,l,fvmofc,res)
       implicit logical (a-z)
       integer nk,ng,n
-      real*8 c(nk,n),kern(nk,nk,ng),e(ng,n),l(nk),fvmofc(n),res(ng,n)
+      double precision c(nk,n),kern(nk,nk,ng),e(ng,n),l(nk),fvmofc(n),
+     1       res(ng,n)
       integer i
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(c,kern,nk,ng,n,e,l,fvmofc,res)
@@ -24,10 +25,10 @@ C
       subroutine Mofc(c,kern,nk,ng,e,l,fvmofc)
       implicit logical (a-z)
       integer nk,ng
-      real*8 c(nk),kern(nk,nk,ng),e(ng),l(nk),fvmofc
+      double precision c(nk),kern(nk,nk,ng),e(ng),l(nk),fvmofc
 C diagonal matrix in l
       integer i,j,k
-      real*8 z,ci,ci2,zz
+      double precision z,ci,ci2,zz
 C  first the penalty term
       z=0.d0
       DO i=1,nk
@@ -55,10 +56,10 @@ C  get residual in zz and penalized sum of squares in z
       subroutine Mofcres(c,kern,nk,ng,e,l,fvmofc,res)
       implicit logical (a-z)
       integer nk,ng
-      real*8 c(nk),kern(nk,nk,ng),e(ng),l(nk),fvmofc,res(ng)
+      double precision c(nk),kern(nk,nk,ng),e(ng),l(nk),fvmofc,res(ng)
 C diagonal matrix in l
       integer i,j,k
-      real*8 z,ci,ci2,zz
+      double precision z,ci,ci2,zz
 C  first the penalty term
       z=0.d0
       DO i=1,nk
@@ -88,10 +89,11 @@ C
       subroutine Dmofcdc(c,kern,nk,ng,e,l,w,mofcdc)
       implicit logical (a-z)
       integer nk,ng
-      real*8 c(nk),kern(nk,nk,ng),e(ng),l(nk),w(nk),mofcdc(nk)
+      double precision c(nk),kern(nk,nk,ng),e(ng),l(nk),w(nk),
+     1       mofcdc(nk)
 C diagonal matrix in l
       integer k
-      real*8 z,ddot
+      double precision z,ddot
       external ddot
 C  first the penalty term  Lambda%*%c
       DO k=1,nk
@@ -114,8 +116,9 @@ C
       subroutine nablmofc(c,kern,nk,ng,e,l,w,nablam)
       implicit logical (a-z)
       integer nk,ng
-      real*8 c(nk),kern(nk,nk,ng),e(ng),l(nk),w(nk),nablam(nk)
-      real*8 z,ddot
+      double precision c(nk),kern(nk,nk,ng),e(ng),l(nk),w(nk),
+     1       nablam(nk)
+      double precision z,ddot
       external ddot
 C  first get  dM(c)/dc in   nablam
       call Dmofcdc(c,kern,nk,ng,e,l,w,nablam)
@@ -130,9 +133,9 @@ C
       subroutine expcv(c,v,nk,dt,r) 
       implicit logical (a-z)
       integer nk
-      real*8 v(nk),c(nk),r(nk),dt
+      double precision v(nk),c(nk),r(nk),dt
       integer i
-      real*8 sv,cv,vn,dnrm2
+      double precision sv,cv,vn,dnrm2
       external dnrm2
       vn = dnrm2(nk,v,1)
       cv = dcos(dt*vn)
@@ -148,9 +151,9 @@ C
       subroutine getnewck(c,kern,nk,ng,m0,e,l,w,nablam,ck1,mdt0,ierr)
       implicit logical (a-z)
       integer nk,ng
-      real*8 c(nk),kern(nk,nk,ng),e(ng),l(nk),w(nk),nablam(nk),
-     1       ck1(nk)
-      real*8 dt0,dnrm2,m0,mdt0,normck
+      double precision c(nk),kern(nk,nk,ng),e(ng),l(nk),w(nk),
+     1       nablam(nk),ck1(nk)
+      double precision dt0,dnrm2,m0,mdt0,normck
       integer i,ierr
       external dnrm2
       ierr=0
@@ -196,11 +199,11 @@ C
       subroutine sqrteap(ei,kern,nk,ng,n,l,w,nablam,ck,ck1,cres)
       implicit logical (a-z)
       integer nk,ng,n
-      real*8 ck(nk,*),kern(nk,nk,ng),ei(ng,n),l(nk),w(nk,*),
+      double precision ck(nk,*),kern(nk,nk,ng),ei(ng,n),l(nk),w(nk,*),
      1       nablam(nk,*),ck1(nk,*),cres(nk,n)
       logical ndone
       integer i,k,ierr,thrnr
-      real*8 mck,mck1
+      double precision mck,mck1
 !$      integer omp_get_thread_num
 !$      external omp_get_thread_num
       thrnr = 1

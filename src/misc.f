@@ -3,7 +3,7 @@ C
 C   project all values to (1,maxvalue) to avoid infinite estimates
 C
       integer n1,n2,n3,nb
-      real*8   si(n1,n2,n3,nb),sii,maxvalue
+      double precision   si(n1,n2,n3,nb),sii,maxvalue
       integer i1,i2,i3,k
       DO i1=1,n1
          DO i2=1,n2
@@ -24,10 +24,10 @@ C   replace physically meaningless Si values by mean S0
 C
       implicit logical(a-z)
       integer n,nb,ls0,s0ind(ls0),siind(*)
-      real*8 si(nb,n),sinew(nb,n)
+      double precision si(nb,n),sinew(nb,n)
       logical ind(n)
       integer i,j1,j,ls0m1
-      real*8 s0,sji
+      double precision s0,sji
       logical changed
       ls0m1=ls0-1
 C$OMP PARALLEL DEFAULT(NONE)
@@ -66,9 +66,9 @@ C   replace physically meaningless Si values by mean S0
 C
       implicit logical(a-z)
       integer n,nb,nb1,ls0,lsi,s0ind(ls0),siind(lsi)
-      real*8 si(nb,n),sinew(nb1,n)
+      double precision si(nb,n),sinew(nb1,n)
       integer i,j1,j,ls0m1,changed
-      real*8 s0,sinn(251),sji
+      double precision s0,sinn(251),sji
       ls0m1=ls0-1
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(s0ind,siind,si,sinew,n,nb,ls0,nb1,lsi)
@@ -108,9 +108,10 @@ C$OMP END PARALLEL
 
       implicit logical(a-z)
       integer n1,n2,n3,nv,lag(3)
-      real*8 scorr,res(nv,n1,n2,n3),sigma(n1,n2,n3),mean(n1,n2,n3)
+      double precision scorr,res(nv,n1,n2,n3),sigma(n1,n2,n3),
+     1       mean(n1,n2,n3)
       logical mask(n1,n2,n3)
-      real*8 vrm,zcorr,z,mi,mj
+      double precision vrm,zcorr,z,mi,mj
       integer i1,i2,i3,i4,l1,l2,l3,k,j1,j2,j3
       l1=lag(1)
       l2=lag(2)
@@ -150,10 +151,10 @@ C  correlation in x
       subroutine msd(res,mask,n,nv,sigma,mean)
       implicit logical(a-z)
       integer n,nv
-      real*8 sigma(n),res(nv,n),mean(n)
+      double precision sigma(n),res(nv,n),mean(n)
       logical mask(n)
       integer i,iv
-      real*8 z,resi,zm,sigi
+      double precision z,resi,zm,sigi
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(res,n,mask,nv,sigma,mean)
 C$OMP& PRIVATE(z,iv,i,resi,zm,sigi)
@@ -185,11 +186,11 @@ C$OMP FLUSH(mean,sigma)
 
       implicit logical(a-z)
       integer n1,n2,n3,nv,l1,l2,l3,lag(3),n
-      real*8 scorr(l1,l2,l3),res(nv,n1,n2,n3),sigma(n1,n2,n3),
-     1       mean(n1,n2,n3)
+      double precision scorr(l1,l2,l3),res(nv,n1,n2,n3),
+     1       sigma(n1,n2,n3),mean(n1,n2,n3)
       logical mask(n1,n2,n3)
       integer i1,i2,i3
-      real*8 sci
+      double precision sci
       n=n1*n2*n3
       call msd(res,mask,n,nv,sigma,mean)
 C$OMP PARALLEL DEFAULT(NONE)
@@ -216,9 +217,9 @@ C$OMP FLUSH(scorr)
 
       implicit logical(a-z)
       integer n1,n2,n3,l1,l2,l3,lag(3)
-      real*8 scorr(l1,l2,l3),w(n1,n2,n3)
+      double precision scorr(l1,l2,l3),w(n1,n2,n3)
       integer i1,i2,i3
-      real*8 z,zcorr
+      double precision z,zcorr
       z=0.d0
       DO i1=1,n1
          DO i2=1,n2
@@ -246,9 +247,9 @@ C$OMP FLUSH(scorr)
 
       implicit logical(a-z)
       integer n1,n2,n3,lag(3)
-      real*8 scorr,w(n1,n2,n3)
+      double precision scorr,w(n1,n2,n3)
       integer i1,i2,i3,c1,c2,c3,j1,j2,j3,l1,l2,l3
-      real*8 z
+      double precision z
       c1=(n1-1)/2
       c2=(n2-1)/2
       c3=(n3-1)/2
@@ -361,11 +362,11 @@ C     first find pixel close to (i1,i2) with segm(j1,j2)=0
       subroutine getmask(s0,n1,n2,n3,ns,level,msize,prop,s0m,mask)
       implicit logical (a-z) 
       integer n1,n2,n3,ns,msize
-      real*8  s0(n1,n2,n3,ns)
-      real*8 s0m(n1,n2,n3),prop,level
+      double precision  s0(n1,n2,n3,ns)
+      double precision s0m(n1,n2,n3),prop,level
       logical mask(n1,n2,n3)
       integer i1,i2,i3,j,j1,j2,j3
-      real*8 z,anz,anz1
+      double precision z,anz,anz1
       DO i1=1,n1
          DO i2=1,n2
             DO i3=1,n3
@@ -408,9 +409,9 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine exceed(x,n,z,nz,exprob)
       implicit logical (a-z)
       integer n,nz
-      real*8 x(n),z(nz),exprob(nz)
+      double precision x(n),z(nz),exprob(nz)
       integer i,j
-      real*8 sk,zj
+      double precision sk,zj
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(n,nz,x,z,exprob)
 C$OMP& PRIVATE(i,j,sk,zj)
@@ -479,10 +480,10 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine hg1f1(a,b,z,n,fz)
       implicit logical (a-z)
       integer n
-      real*8 a,b,z(n),fz(n)
+      double precision a,b,z(n),fz(n)
       integer i
-      real*8 x,y,d,eps,zi,ezi,ai,gofbai
-      real*8 gammaf
+      double precision x,y,d,eps,zi,ezi,ai,gofbai
+      double precision gammaf
       external gammaf
       eps=1.d-15
       gofbai=gammaf(b)/gammaf(b-a)
