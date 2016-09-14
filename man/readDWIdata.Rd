@@ -51,7 +51,7 @@ readDWIdata(gradient, dirlist, format = c("DICOM", "NIFTI", "ANALYZE", "AFNI"),
   An object of class \code{"dtiData"}.
 }
 \references{  
-  \url{http://afni.nimh.nih.gov/pub/dist/src/README.attributes}
+  \url{https://afni.nimh.nih.gov/pub/dist/src/README.attributes}
 }
 \author{ 
   Karsten Tabelow \email{tabelow@wias-berlin.de}\cr 
