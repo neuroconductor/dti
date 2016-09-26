@@ -177,6 +177,8 @@ double* Fibertracking::convertToDouble()
 
 void Fibertracking::nextVoxel_forward()
 {
+  using namespace std;
+
 	int cur_x 	  	  = voxels[cur_voxel_index].getX();
 	int cur_y 	  	  = voxels[cur_voxel_index].getY();
 	int cur_z 	  	  = voxels[cur_voxel_index].getZ();
@@ -367,6 +369,8 @@ void Fibertracking::nextVoxel_forward()
 
 void Fibertracking::nextVoxel_backward()
 {
+  using namespace std;
+
 	int cur_x 	  	  = voxels[cur_voxel_index].getX();
 	int cur_y 	  	  = voxels[cur_voxel_index].getY();
 	int cur_z 	  	  = voxels[cur_voxel_index].getZ();
@@ -557,6 +561,8 @@ void Fibertracking::nextVoxel_backward()
 
 void Fibertracking::trackFiber_forward()
 {
+  using namespace std;
+
 	Voxel *current = &voxels[cur_voxel_index];
 	Vector *curVec;
 	
@@ -610,6 +616,8 @@ void Fibertracking::trackFiber_forward()
 
 void Fibertracking::trackFiber_backward()
 {
+  using namespace std;
+
 	Voxel *current = &voxels[cur_voxel_index];
 	Vector *curVec;
 //	current->setVisited(false);
@@ -680,20 +688,17 @@ void Fibertracking::findAllFibers()
 	
 	while (last_start_voxel < dim_x*dim_y*dim_z)
 	{
-	        R_CheckUserInterrupt();
+	  R_CheckUserInterrupt();
 
 		if (voxels[last_start_voxel].getAnisotropy() > min_anisotropy && voxels[last_start_voxel].isStartable())
 		{
 
 			for (int i = 0; i < voxels[last_start_voxel].getOrder(); i++) 
 			{
-			        num_fibers++;
+			  num_fibers++;
 
 				currentFiber = *new Fiber();
 				curVectorList = *new VectorList(); 
-				
-//				Rprintf("Fiber found!\n");
-//				Rprintf("============\n");
 	
 				cur_voxel_index = voxels[last_start_voxel].getX() + voxels[last_start_voxel].getY()*dim_x + voxels[last_start_voxel].getZ()*dim_x*dim_y;
 				
@@ -718,9 +723,6 @@ void Fibertracking::findAllFibers()
 				
 				currentFiber.unvisit();
 			}
-
-//			Rprintf("============\n");
-//			Rprintf("Searching continued...\n");
 		}
 		
 		last_start_voxel++;
@@ -730,8 +732,6 @@ void Fibertracking::findAllFibers()
 	{
 		allVectors.del_at_start();
 	}
-	
-//	Rprintf("End of searching.\n");
 }
 
 void Fibertracking::findMarkedFibers(int* ranges)
@@ -763,21 +763,18 @@ void Fibertracking::findMarkedFibers(int* ranges)
 	
 	while (last_start_voxel < length)
 	{
-	        R_CheckUserInterrupt();
+	  R_CheckUserInterrupt();
 
 		if (marked[last_start_voxel].getAnisotropy() > min_anisotropy && marked[last_start_voxel].isStartable())
 		{
 
 			for (int i = 0; i < marked[last_start_voxel].getOrder(); i++) 
 			{
-			        num_fibers++;
+			  num_fibers++;
 
 				currentFiber = *new Fiber();
 				curVectorList = *new VectorList(); 
 				
-//				Rprintf("Fiber found!\n");
-//				Rprintf("============\n");
-	
 				cur_voxel_index = marked[last_start_voxel].getX() + marked[last_start_voxel].getY()*dim_x + marked[last_start_voxel].getZ()*dim_x*dim_y;
 				
 				voxels[cur_voxel_index].setDir_Index(i);
@@ -801,9 +798,6 @@ void Fibertracking::findMarkedFibers(int* ranges)
 				
 				currentFiber.unvisit();
 			}
-
-//			Rprintf("============\n");
-//			Rprintf("Searching continued...\n");
 		}
 		
 		last_start_voxel++;
@@ -813,14 +807,6 @@ void Fibertracking::findMarkedFibers(int* ranges)
 	{
 		allVectors.del_at_start();
 	}
-	
-//	Rprintf("End of searching.\n");
-	
-//	double all_abort = n_visited+n_angle+n_aniso+n_border+n_turn;
-
-//	Rprintf("Abort fibers because of:\nvisited\t=\t%d ( %f% )\naniso\t=\t%d ( %f% )\nangle\t=\t%d ( %f% )\nborder\t=\t%d ( %f% )\nturn\t=\t%d ( %f% )\n", n_visited, (double)n_visited*100./all_abort, n_aniso, (double)n_aniso*100./all_abort, n_angle, (double)n_angle*100./all_abort, n_border, (double)n_border*100./all_abort, n_turn, (double)n_turn*100./all_abort);
-	
-//	Rprintf("num_fibers = %d\n", num_fibers);
 	
 	n_angle = 0;
 	n_visited = 0;

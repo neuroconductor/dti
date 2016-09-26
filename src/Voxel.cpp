@@ -2,7 +2,7 @@
 
 Voxel::Voxel()
 {
-	this->order = 0;
+	this->order = 1;
 	this->dir_index = 0;
 	this->position = Vector(-1, -1, -1);
 	this->directions = new Vector[order];
@@ -37,24 +37,6 @@ Voxel::Voxel(int x_in, int y_in, int z_in, int order_in, Vector& directions_in, 
 	next = NULL;
 	prev = NULL;
 }
-
-//Voxel::Voxel(int x, int y, int z, int order, Vector* directions, double anisotropy)
-//{
-//	this->order = order;
-//	this->directions = directions;
-//	this->anisotropy = anisotropy;
-//	this->x = x;
-//	this->y = y;
-//	this->z = z;
-//
-//	this->position = Vector((double)this->x,(double)this->y,(double)this->z);
-//	
-//	visited = false;
-//	startable = true;
-//	
-//	next = NULL;
-//	prev = NULL;
-//}
 
 //Voxel::~Voxel()
 //{

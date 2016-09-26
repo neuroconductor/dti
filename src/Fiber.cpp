@@ -83,19 +83,14 @@ void Fiber::unvisit()
 		return;
 	}
 	
-	Voxel* aktuell = start;
+	Voxel* current = start;
 	
 	int i;
 	
 	for (i = 0; i < length; i++)
 	{
-		aktuell->setVisited(false);
-		aktuell = aktuell->getNext();
-		
-//		if (aktuell == NULL)
-//		{
-//			break;
-//		}	
+		current->setVisited(false);
+		current = current->getNext();
 	}
 }
 
@@ -106,18 +101,13 @@ void Fiber::print()
 		return;
 	}
 	
-	Voxel* aktuell = start;
+	Voxel* current = start;
 	
 	int i;
 	
 	for (i = 0; i < length; i++)
 	{
-		aktuell->print();
-		aktuell = aktuell->getNext();
-		
-//		if (aktuell == NULL)
-//		{
-//			break;
-//		}	
+		current->print();
+		current = current->getNext();
 	}
 }

@@ -4,6 +4,7 @@
 .Rproj.user
 .Rhistory
 .RData
+Doxyfile
 dti.Rproj
 src/*.o
 src/*.so
