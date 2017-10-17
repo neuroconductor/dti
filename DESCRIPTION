@@ -26,4 +26,8 @@ Copyright: This package is
            Copyright (C) 2005-2016 Weierstrass Institute for 
                                    Applied Analysis and Stochastics.
 URL: http://www.wias-berlin.de/research/ats/imaging/
+Suggests: 
+    covr
+RoxygenNote: 6.0.1.9000
+Encoding: UTF-8
 

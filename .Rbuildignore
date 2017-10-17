@@ -4,3 +4,7 @@
 \.settings
 ^\.Rproj\.user$
 ^.*\.Rproj$
+^appveyor\.yml$
+^README\.Rmd$
+^\.travis\.yml$
+^codecov\.yml$
