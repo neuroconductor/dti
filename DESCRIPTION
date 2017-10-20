@@ -31,6 +31,6 @@ Suggests:
     covr
 RoxygenNote: 6.0.1.9000
 Encoding: UTF-8
-Remotes: neuroconductor/oro.nifti@c25f6bcb1200506a3e39127f550bcca7766b0107,
-    neuroconductor/oro.dicom@a59a6cf8c3c892946f8ce8355203b1545aa8b02f
 biocViews: 
+Remotes: neuroconductor/oro.nifti@e066bff259d77de5614a3ffc1c293310ab4eb997,
+    neuroconductor/oro.dicom@bb125119a2a2e417793f0370843d20e70b2ac9d8
