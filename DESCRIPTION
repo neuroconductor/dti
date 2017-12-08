@@ -32,5 +32,5 @@ Suggests:
 RoxygenNote: 6.0.1.9000
 Encoding: UTF-8
 biocViews: 
-Remotes: neuroconductor/oro.nifti@248fafa9254064c3290286abd3ecf2dd791286fb,
-    neuroconductor/oro.dicom@97083ab9b34007dc384c88efceead1a100553ae0
+Remotes: neuroconductor/oro.nifti@ce05d267c1e3d4cec38c536dd4e506e1c09c2c4d,
+    neuroconductor/oro.dicom@0b9dba6bfcf8b2ac425245f8a6f976b00080e344
