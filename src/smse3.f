@@ -1,11 +1,11 @@
       subroutine ghfse3i(i4,kstar,k456,ng,
      1                    kappa,vext,h,varred,n,dist)
 C
-C   compute bandwidth sequence for given kappa and gradients  
+C   compute bandwidth sequence for given kappa and gradients
 C   lkfse3i0 computes weighting schemes and corresponding variance reduction
 C   k456,ng (input) contain auxiliary statistics(gradients)
 C
-      implicit logical (a-z)
+      implicit none
       integer ng,i4,kstar,n,dist
       double precision k456(3,ng,ng),vext(2),
      1       kappa,h(kstar),varred(kstar)
@@ -22,15 +22,15 @@ C   loop over steps
       DO k=1,kstar
          call lkfse3i0(hakt,kappa/hakt,i4,k456,ng,
      1                   vext,vr,n,dist)
-C  search for new hakt   
+C  search for new hakt
          vred=vr/chk
-         DO WHILE (vred.lt.1) 
+         DO WHILE (vred.lt.1)
             hakt=hakt*1.05
             call lkfse3i0(hakt,kappa/hakt,i4,k456,ng,
      1                   vext,vr,n,dist)
             vred=vr/chk
          END DO
-         DO WHILE (vred.gt.1.01) 
+         DO WHILE (vred.gt.1.01)
             hakt0=hakt
             v0r=vr
             n0=n
@@ -58,7 +58,7 @@ C  number of positive weights for last step in n
       RETURN
       END
       subroutine exppm6(p,ex)
-      implicit logical (a-z)
+      implicit none
       double precision p,ex(3,3)
       ex(1,1)=dcos(p)
       ex(1,2)=dsin(p)
@@ -72,7 +72,7 @@ C  number of positive weights for last step in n
       RETURN
       END
       subroutine exppm5(p,ex)
-      implicit logical (a-z)
+      implicit none
       double precision p,ex(3,3)
       ex(1,1)=dcos(p)
       ex(1,2)=0.d0
@@ -86,7 +86,7 @@ C  number of positive weights for last step in n
       RETURN
       END
       subroutine exppm4(p,b,ex)
-      implicit logical (a-z)
+      implicit none
       double precision b,p,ex(3,3)
       double precision D,sqr2,sb,pDs,D2,cpds,spds,spdsh
       sqr2 = dsqrt(2.d0)
@@ -113,7 +113,7 @@ C
 C  Solve exponential equation for dicrepance parameters
 C  compute ||\prod_{i=4}^6 exp(par[i] m_i) - matm||^2
 C
-      implicit logical (a-z)
+      implicit none
       double precision par(3),b,matm(3,3),erg
       integer i1,i2
       double precision s,z,em4(3,3),em5(3,3),em6(3,3),am4(3,3),am5(3,3)
@@ -146,7 +146,7 @@ C
 C
 C  compute spherical coordinates for gradient vectors
 C
-      implicit logical (a-z)
+      implicit none
       integer n
       double precision g(3,n),bg(2,n)
       integer i
@@ -170,7 +170,7 @@ C standardize to length 1
             ELSE
                gamma=1.570796327d0-sign(1.570796327d0,z)
             END IF
-         ELSE 
+         ELSE
             gamma=0.d0
          END IF
          if(g2.gt.0.d0) gamma = -gamma
@@ -180,7 +180,7 @@ C standardize to length 1
       RETURN
       END
       subroutine bgstats(g,n,bg,bghat)
-      implicit logical (a-z)
+      implicit none
       integer n
       double precision g(3,n),bg(2,n),bghat(2,n,n)
       integer i1,i2
@@ -221,12 +221,12 @@ C   this should not happen
             bghat(2,i1,i2)=gammah
 C    die spherischen Koordinaten der Gradientenpaare (Parameter der Rotationsmatix)
          END DO
-      END DO  
+      END DO
       RETURN
       END
       subroutine lkfse3i(h,kappa,i4,k456,ng,
      1                   vext,ind,wght,n,dist)
-      implicit logical (a-z)
+      implicit none
       integer ng,n,ind(5,n),i4,dist
       double precision h,kappa,k456(3,ng,ng),vext(2),wght(n)
       integer ih1,ih2,ih3,i,j1,j2,j3,j4
@@ -250,15 +250,15 @@ C  just to prevent compiler warnings
             k6 = k456(3,i4,j4)
          END IF
          SELECT CASE (dist)
-            CASE (1) 
+            CASE (1)
                z = (k4*k4+k5*k5+abs(k6))/kap2
-            CASE (2) 
+            CASE (2)
                z = (k4*k4+k5*k5+k6*k6)/kap2
-            CASE (3) 
+            CASE (3)
                z = k4*k4/kap2
-            CASE (4) 
+            CASE (4)
                z = abs(k4)/kappa
-            CASE DEFAULT 
+            CASE DEFAULT
                z = abs(k4)/kappa
          END SELECT
          if(dist.le.3) THEN
@@ -294,7 +294,7 @@ C   last three komponents already to large
                END DO
             END DO
          ELSE
-C dist=4 
+C dist=4
             if(z.gt.h) CYCLE
             DO j1 = 0,ih1
                x1 = j1
@@ -330,7 +330,7 @@ C dist=4
       RETURN
       END
       subroutine lkfse3i0(h,kappa,i4,k456,ng,vext,vred,n,dist)
-      implicit logical (a-z)
+      implicit none
       integer ng,n,i4,dist
       double precision h,kappa,k456(3,ng,ng),vext(2),vred
       integer ih1,ih2,ih3,j1,j2,j3,j4
@@ -357,15 +357,15 @@ C  just to prevent compiler warnings
             k6 = k456(3,i4,j4)
          END IF
          SELECT CASE (dist)
-            CASE (1) 
+            CASE (1)
                z = (k4*k4+k5*k5+abs(k6))/kap2
-            CASE (2) 
+            CASE (2)
                z = (k4*k4+k5*k5+k6*k6)/kap2
-            CASE (3) 
+            CASE (3)
                z = k4*k4/kap2
-            CASE (4) 
+            CASE (4)
                z = abs(k4)/kappa
-            CASE DEFAULT 
+            CASE DEFAULT
                z = abs(k4)/kappa
          END SELECT
          if(dist.le.3) THEN
@@ -435,7 +435,7 @@ C   if j1>0  (-j1,-j2,-j3) gets the same weight, so count it twice
       RETURN
       END
       subroutine lkfulse3(h,kappa,k456,ng,vext,ind,wght,n,dist)
-      implicit logical (a-z)
+      implicit none
       integer ng,n,ind(5,n),dist
       double precision h(ng),kappa(ng),k456(3,ng,ng),vext(2),wght(n)
       integer ns,ni,i
@@ -448,21 +448,21 @@ C   if j1>0  (-j1,-j2,-j3) gets the same weight, so count it twice
       END DO
       n = ns
       RETURN
-      END      
+      END
       subroutine adsmse3p(y,th,ni,mask,n1,n2,n3,ngrad,lambda,ncoils,
      1                    ncores,ind,w,n,thn,ldf,sw,swy,model)
 C   model=1 takes noncentral Chi-sq values in y
 C   model=0 takes noncentral Chi values in y
 C
-C   perform adaptive smoothing on SE(3) 
+C   perform adaptive smoothing on SE(3)
 C   ind(.,i) contains coordinate indormation corresponding to positive
 C   location weights in w(i)
-C   ind(.,i)[1:5] are j1-i1,j2-i2,j3-i3, i4 and j4 respectively 
+C   ind(.,i)[1:5] are j1-i1,j2-i2,j3-i3, i4 and j4 respectively
 C
 c   model=0  Chi^2-based KL-distance, y ~ Chi, th on same scale, smooth y
 c   model=1  Chi^2-based KL-distance, y ~ Chi^2, th on same scale, smooth y
 c   model=2  Gauss-based KL-distance, y ~ Chi, th on same scale, smooth y^2
-      implicit logical (a-z)
+      implicit none
       integer n1,n2,n3,ngrad,n,ind(5,n),ncoils,model,ncores
       logical mask(n1,n2,n3)
       double precision y(n1,n2,n3,ngrad),thn(n1,n2,n3,ngrad),
@@ -471,7 +471,7 @@ c   model=2  Gauss-based KL-distance, y ~ Chi, th on same scale, smooth y^2
      2       lgfi,dgfi,fici,df
       integer iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr
       double precision z,thi,nii,thj,ldfi,ldfj,yj
-!$      integer omp_get_thread_num 
+!$      integer omp_get_thread_num
 !$      external omp_get_thread_num
       double precision kldisnc1
       external kldisnc1
@@ -503,7 +503,7 @@ C  not needed for Gauss approximation
             END DO
          END IF
       END DO
-C$OMP END DO 
+C$OMP END DO
 C$OMP BARRIER
 C$OMP DO SCHEDULE(GUIDED)
       DO iind=1,n1*n2*n3
@@ -513,7 +513,7 @@ C returns value in 0:(ncores-1)
          if(i1.eq.0) i1=n1
          i2=mod((iind-i1)/n1+1,n2)
          if(i2.eq.0) i2=n2
-         i3=(iind-i1-(i2-1)*n1)/n1/n2+1         
+         i3=(iind-i1-(i2-1)*n1)/n1/n2+1
          if(.not.mask(i1,i2,i3)) CYCLE
          DO i4=1,ngrad
             sw(i4,thrednr)=0.d0
@@ -537,9 +537,9 @@ C   by construction ind(4,.) should have same values consequtively
             if(j2.le.0.or.j2.gt.n2) CYCLE
             j3=i3+ind(3,i)
             if(j3.le.0.or.j3.gt.n3) CYCLE
-            if(.not.mask(j1,j2,j3)) CYCLE          
+            if(.not.mask(j1,j2,j3)) CYCLE
             j4=ind(5,i)
-C adaptation 
+C adaptation
             if(lambda.lt.1d10) THEN
                thj=th(j1,j2,j3,j4)
                if(model.ge.2) THEN
@@ -549,7 +549,7 @@ C adaptation
                   ldfj=ldf(j1,j2,j3,j4)
                   z=nii*kldisnc1(lgfi,dgfi,fici,thj,ldfj,df,model)
                END IF
-C  do not adapt on the sphere !!! 
+C  do not adapt on the sphere !!!
             ELSE
             z=0.d0
             END IF
@@ -574,7 +574,7 @@ C   by construction ind(4,.) should have same values consequtively
                nii = ni(i1,i2,i3,i4)/lambda
             END IF
 C
-C   handle case j1-i1 < 0 which is not contained in ind 
+C   handle case j1-i1 < 0 which is not contained in ind
 C   using axial symmetry
 C
             j1=i1-ind(1,i)
@@ -583,7 +583,7 @@ C
             if(j2.le.0.or.j2.gt.n2) CYCLE
             j3=i3-ind(3,i)
             if(j3.le.0.or.j3.gt.n3) CYCLE
-            if(.not.mask(j1,j2,j3)) CYCLE          
+            if(.not.mask(j1,j2,j3)) CYCLE
             j4=ind(5,i)
             if(lambda.lt.1d10) THEN
                thj=th(j1,j2,j3,j4)
@@ -594,7 +594,7 @@ C
                   ldfj=ldf(j1,j2,j3,j4)
                   z=nii*kldisnc1(lgfi,dgfi,fici,thj,ldfj,df,model)
                END IF
-C  do not adapt on the sphere !!! 
+C  do not adapt on the sphere !!!
             ELSE
                z=0.d0
             END IF
@@ -620,24 +620,24 @@ C$OMP FLUSH(thn,ni)
       END
       subroutine adsmse3m(y,th,ni,sthi,mask,ns,n1,n2,n3,ngrad,lambda,
      1             ncores,ind,w,n,thn,sw,swy,si,thi)
-C   
-C  Multi-shell version (differs in dimension of th 
+C
+C  Multi-shell version (differs in dimension of th
 C  KL-distance based on all spheres and Gauss-approximation only
 C
-C   perform adaptive smoothing on SE(3) 
+C   perform adaptive smoothing on SE(3)
 C   ind(.,i) contains coordinate indormation corresponding to positive
 C   location weights in w(i)
-C   ind(.,i)[1:5] are j1-i1,j2-i2,j3-i3, i4 and j4 respectively 
+C   ind(.,i)[1:5] are j1-i1,j2-i2,j3-i3, i4 and j4 respectively
 C
 c   model=2  Gauss-based KL-distance, y ~ Chi, th on same scale, smooth y^2
-      implicit logical (a-z)
+      implicit none
       integer ns,n1,n2,n3,ngrad,n,ind(5,n),ncores
       logical mask(n1,n2,n3)
       double precision y(n1,n2,n3,ngrad),thn(n1,n2,n3,ngrad),
      1 ni(n1,n2,n3,ngrad),th(ns,n1,n2,n3,ngrad),sthi(ns,n1,n2,n3,ngrad)
       double precision lambda,w(n),sw(ngrad,ncores),swy(ngrad,ncores)
       integer iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,k
-      double precision sz,z,nii,si(ns,ncores),thi(ns,ncores) 
+      double precision sz,z,nii,si(ns,ncores),thi(ns,ncores)
 !$      integer omp_get_thread_num
 !$      external omp_get_thread_num
       double precision kldisnc1
@@ -648,8 +648,8 @@ C just to prevent a compiler warning
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(n1,n2,n3,ngrad,ncores,mask,y,thn,ni,th,sthi,w,sw,swy,
 C$OMP& ind,n,lambda,ns,thi,si)
-C$OMP& FIRSTPRIVATE(a,b,nii)
-C$OMP& PRIVATE(iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,z,thj,sz)
+C$OMP& FIRSTPRIVATE(nii)
+C$OMP& PRIVATE(iind,i,i1,i2,i3,i4,j1,j2,j3,j4,thrednr,z,sz)
 C$OMP DO SCHEDULE(GUIDED)
       DO iind=1,n1*n2*n3
 !$       thrednr = omp_get_thread_num()+1
@@ -658,7 +658,7 @@ C returns value in 0:(ncores-1)
          if(i1.eq.0) i1=n1
          i2=mod((iind-i1)/n1+1,n2)
          if(i2.eq.0) i2=n2
-         i3=(iind-i1-(i2-1)*n1)/n1/n2+1 
+         i3=(iind-i1-(i2-1)*n1)/n1/n2+1
          if(.not.mask(i1,i2,i3)) CYCLE
          DO i4=1,ngrad
             sw(i4,thrednr)=0.d0
@@ -682,9 +682,9 @@ C   thast the approximated standard deviation
             if(j2.le.0.or.j2.gt.n2) CYCLE
             j3=i3+ind(3,i)
             if(j3.le.0.or.j3.gt.n3) CYCLE
-            if(.not.mask(j1,j2,j3)) CYCLE          
+            if(.not.mask(j1,j2,j3)) CYCLE
             j4=ind(5,i)
-C adaptation 
+C adaptation
             if(lambda.lt.1d10) THEN
                sz=0.d0
                DO k=1,ns
@@ -692,7 +692,7 @@ C adaptation
                   sz=sz+z*z
                END DO
                z=nii*sz
-C  do not adapt on the sphere !!! 
+C  do not adapt on the sphere !!!
             ELSE
                z=0.d0
             END IF
@@ -714,7 +714,7 @@ C   by construction ind(4,.) should have same values consequtively
                nii = ni(i1,i2,i3,i4)/lambda
             END IF
 C
-C   handle case j1-i1 < 0 which is not contained in ind 
+C   handle case j1-i1 < 0 which is not contained in ind
 C   using axial symmetry
 C
             j1=i1-ind(1,i)
@@ -723,7 +723,7 @@ C
             if(j2.le.0.or.j2.gt.n2) CYCLE
             j3=i3-ind(3,i)
             if(j3.le.0.or.j3.gt.n3) CYCLE
-            if(.not.mask(j1,j2,j3)) CYCLE          
+            if(.not.mask(j1,j2,j3)) CYCLE
             j4=ind(5,i)
             if(lambda.lt.1d10) THEN
                sz=0.d0
@@ -732,7 +732,7 @@ C
                   sz=sz+z*z
                END DO
                z=nii*sz
-C  do not adapt on the sphere !!! 
+C  do not adapt on the sphere !!!
             ELSE
                z=0.d0
             END IF
@@ -754,10 +754,10 @@ C$OMP FLUSH(thn,ni)
       subroutine adsmse3s(y,y0,th,ni,th0,ni0,fsi2,fsi02,mask,ns,n1,
      1                n2,n3,ngrad,lambda,ws0,ind,w,n,ind0,w0,
      2                n0,thn,nin,th0n,ni0n,sw,swy,thi,nii,fsi2i)
-C   
-C  Multi-shell version (differs in dimension of th 
+C
+C  Multi-shell version (differs in dimension of th
 C  KL-distance based on all spheres and Gauss-approximation only
-C  see ~polzehl/latex/1211_simplemetric/Rcode/Figuregaussapprox.r 
+C  see ~polzehl/latex/1211_simplemetric/Rcode/Figuregaussapprox.r
 C  for approximative KL-distance between non-central chi distributions
 C
 C   perform adaptive smoothing on SE(3) multishell including s0
@@ -765,7 +765,7 @@ C   y  -  si images
 C   y0 -  mean s0 image
 C   th -  estimated/interpolated \E si on all shells (including 0 shell)
 C   ni -  corresponding sum of weights
-C   th0 -  estimated/interpolated \E s0 and mean_g(\E si) on all other shells  
+C   th0 -  estimated/interpolated \E s0 and mean_g(\E si) on all other shells
 C   ni0 -  corresponding sum of weights
 C   mask - head mask
 C   ns   - number of shells (including 0 shell)
@@ -774,10 +774,10 @@ C   lambda - skale parameter
 C   ws0  - relative weight for information from s0 images (should be in [0,1])
 C   ncoils - df/2 of \chi distributions
 C   minlev - expectation of central chi distr. (needed in variance estimates)
-C   ind    - index vectors for si weighting schemes 
+C   ind    - index vectors for si weighting schemes
 C   w    - corresponding weights
 C   n    - number of si weights
-C   ind0    - index vectors for s0 weighting schemes 
+C   ind0    - index vectors for s0 weighting schemes
 C   w0    - corresponding weights
 C   n0    - number of s0 weights
 C   thn   - new estimates of \E si
@@ -787,9 +787,9 @@ C   ni0n   - new sum of weight for s0
 C...sw,swy,si,thi,nii - working areas
 C   ind(.,i) contains coordinate indormation corresponding to positive
 C   location weights in w(i) for si images
-C   ind(.,i)[1:5] are j1-i1,j2-i2,j3-i3, i4 and j4 respectively 
+C   ind(.,i)[1:5] are j1-i1,j2-i2,j3-i3, i4 and j4 respectively
 C
-      implicit logical (a-z)
+      implicit none
       integer ns,n1,n2,n3,ngrad,n,n0,ind(5,n),ind0(3,n0)
       logical mask(*)
       double precision y(*),y0(*),th(ns,*),ni(ns,*),th0(ns,*),
@@ -809,7 +809,7 @@ C              ngrad*ncores in sw and swy
       n12 = n1*n2
       n123 = n12*n3
 C$OMP PARALLEL DEFAULT(NONE)
-C$OMP& SHARED(ns,n1,n2,n3,ngrad,n,n0,ind,ind0,ncoils,y,y0,
+C$OMP& SHARED(ns,n1,n2,n3,ngrad,n,n0,ind,ind0,y,y0,
 C$OMP&       th,ni,th0,ni0,w,w0,thn,th0n,nin,ni0n,thi,sw,swy,nii,
 C$OMP&       lambda,mask,ws0,fsi2,fsi02,fsi2i)
 C$OMP& FIRSTPRIVATE(n123,n12)
@@ -826,7 +826,7 @@ C returns value in 0:(ncores-1)
          if(i1.eq.0) i1=n1
          i2=mod((iind-i1)/n1+1,n2)
          if(i2.eq.0) i2=n2
-         i3=(iind-i1-(i2-1)*n1)/n1/n2+1         
+         i3=(iind-i1-(i2-1)*n1)/n1/n2+1
          if(.not.mask(iind)) CYCLE
          DO i4=1,ngrad
             sw(i4+gthrednr)=0.d0
@@ -854,10 +854,10 @@ C   by construction ind(4,.) should have same values consequtively
             j3=i3+ind(3,i)
             if(j3.le.0.or.j3.gt.n3) CYCLE
             jind=j1+(j2-1)*n1+(j3-1)*n12
-            if(.not.mask(jind)) CYCLE          
+            if(.not.mask(jind)) CYCLE
             j4=ind(5,i)
             jind4=jind+(j4-1)*n123
-C adaptation 
+C adaptation
             if(lambda.lt.1d10) THEN
                sz=0.d0
                DO k=1,ns
@@ -865,7 +865,7 @@ C adaptation
                   sz=sz+nii(k+sthrednr)*z*z/
      1                        (fsi2(k,jind4)+fsi2i(k+sthrednr))
                END DO
-C  do not adapt on the sphere !!! 
+C  do not adapt on the sphere !!!
             ELSE
                sz=0.d0
             END IF
@@ -893,7 +893,7 @@ C  first component corresponds to S0 image, ws0 is used to downweight its influe
 C  when smoothing diffusion weighted data
             END IF
 C
-C   handle case j1-i1 < 0 which is not contained in ind 
+C   handle case j1-i1 < 0 which is not contained in ind
 C   using axial symmetry
 C
             j1=i1-ind(1,i)
@@ -903,7 +903,7 @@ C
             j3=i3-ind(3,i)
             if(j3.le.0.or.j3.gt.n3) CYCLE
             jind=j1+(j2-1)*n1+(j3-1)*n12
-            if(.not.mask(jind)) CYCLE          
+            if(.not.mask(jind)) CYCLE
             j4=ind(5,i)
             jind4=jind+(j4-1)*n123
             if(lambda.lt.1d10) THEN
@@ -913,7 +913,7 @@ C
                   sz=sz+nii(k+sthrednr)*z*z/
      1                        (fsi2(k,jind4)+fsi2i(k+sthrednr))
                END DO
-C  do not adapt on the sphere !!! 
+C  do not adapt on the sphere !!!
             ELSE
                sz=0.d0
             END IF
@@ -944,8 +944,8 @@ C    now the s0 image in iind
             j3=i3+ind0(3,i)
             if(j3.le.0.or.j3.gt.n3) CYCLE
             jind=j1+(j2-1)*n1+(j3-1)*n12
-            if(.not.mask(jind)) CYCLE          
-C adaptation 
+            if(.not.mask(jind)) CYCLE
+C adaptation
             if(lambda.lt.1d10) THEN
                sz=0.d0
                DO k=1,ns
@@ -953,7 +953,7 @@ C adaptation
                   sz=sz+nii(k+sthrednr)*z*z/
      1                        (fsi02(k,jind)+fsi2i(k+sthrednr))
                END DO
-C  do not adapt on the sphere !!! 
+C  do not adapt on the sphere !!!
             ELSE
                sz=0.d0
             END IF
@@ -967,7 +967,7 @@ C  now opposite directions
          DO i=1,n0
             if(ind0(1,i).eq.0) CYCLE
 C
-C   handle case j1-i1 < 0 which is not contained in ind 
+C   handle case j1-i1 < 0 which is not contained in ind
 C   using axial symmetry
 C
             j1=i1-ind0(1,i)
@@ -977,7 +977,7 @@ C
             j3=i3-ind0(3,i)
             if(j3.le.0.or.j3.gt.n3) CYCLE
             jind=j1+(j2-1)*n1+(j3-1)*n12
-            if(.not.mask(jind)) CYCLE          
+            if(.not.mask(jind)) CYCLE
             if(lambda.lt.1d10) THEN
                sz=0.d0
                DO k=1,ns
@@ -985,7 +985,7 @@ C
                   sz=sz+nii(k+sthrednr)*z*z/
      1                        (fsi02(k,jind)+fsi2i(k+sthrednr))
                END DO
-C  do not adapt on the sphere !!! 
+C  do not adapt on the sphere !!!
             ELSE
                sz=0.d0
             END IF
@@ -1010,13 +1010,13 @@ C   model=0 takes noncentral Chi values in y0
 C   perform adaptive smoothing on R^3
 C   ind(.,i) contains coordinate indormation corresponding to positive
 C   location weights in w(i)
-C   ind(.,i)[1:5] are j1-i1,j2-i2,j3-i3, i4 and j4 respectively 
+C   ind(.,i)[1:5] are j1-i1,j2-i2,j3-i3, i4 and j4 respectively
 C
 c   model=0  Chi^2-based KL-distance, y ~ Chi, th on same scale, smooth y
 c   model=1  Chi^2-based KL-distance, y ~ Chi^2, th on same scale, smooth y
 c   model=2  Gauss-based KL-distance, y ~ Chi, th on same scale, smooth y^2
 
-      implicit logical (a-z)
+      implicit none
       integer n1,n2,n3,n,ind(5,n),starts(*),nstarts,ncoils,model
       logical mask(n1,n2,n3)
       double precision y(n1,n2,n3),th(n1,n2,n3),ni(*),thn(*),
@@ -1028,7 +1028,7 @@ c   model=2  Gauss-based KL-distance, y ~ Chi, th on same scale, smooth y^2
       df=2.d0*ncoils
       nn=n1*n2*n3
 C
-C  compute location weights in swi(i0) as sum of location weights used for same 
+C  compute location weights in swi(i0) as sum of location weights used for same
 C  relative voxel in R3 and coinciding gradients (sum over gradients)
 C
       maxswi = 0.d0
@@ -1068,7 +1068,7 @@ C$OMP DO SCHEDULE(GUIDED)
          if(i1.eq.0) i1=n1
          i2=mod((i-i1)/n1+1,n2)
          if(i2.eq.0) i2=n2
-         i3=(i-i1-(i2-1)*n1)/n1/n2+1         
+         i3=(i-i1-(i2-1)*n1)/n1/n2+1
          if(.not.mask(i1,i2,i3)) CYCLE
          sw0=0.d0
          swy0=0.d0
@@ -1152,7 +1152,7 @@ C
 C   variant with precomputed quantities
 C
       subroutine lgstats(thi,df,model,lgfi)
-      implicit logical (a-z)
+      implicit none
       integer model
       double precision thi,lgfi,df
       double precision mu2i,z1,z2,fi
@@ -1168,7 +1168,7 @@ C
       RETURN
       END
       subroutine ncstats0(thi,lgfi0,df,model,lgfi,dgfi,fici)
-      implicit logical (a-z)
+      implicit none
       integer model
       double precision thi,lgfi0,lgfi,dgfi,fici,df
       double precision mu2i,z1,z2,dlci,fi,ci
@@ -1194,7 +1194,7 @@ C    thi,thj  current estimates
 C    df= 2 * number of coils
 C    model = 0   smoothing of chi values
 C    model = 1   smoothing of chi^2 values
-      implicit logical (a-z)
+      implicit none
       integer model
       double precision lgfi,dgfi,fici,thj,df,lgfj
       double precision mu2j,fj,cj,z1,z2
@@ -1212,12 +1212,12 @@ C  Approximation by Patnaik (1949)
       RETURN
       END
       subroutine paramw3(h,vext,ind,w,n)
-C  compute a description of local weights 
+C  compute a description of local weights
 C  h    - bandwidth
 C  vext - vector (length 2) of relative voxel extensions
 C  ind  - integer array dim (3,n) containing relative indices in xyz
 C  w    - vector of corresponding weights
-C  n    - number of positive weights (initial value 
+C  n    - number of positive weights (initial value
 C         (2 int(h)+1)*(2 int(h/vext(1))+1)*(2 int(h/vext(2))+1)
       integer n,ind(3,n)
       double precision h,vext(2),w(n)
@@ -1250,7 +1250,7 @@ C         (2 int(h)+1)*(2 int(h/vext(1))+1)*(2 int(h/vext(2))+1)
       RETURN
       END
       subroutine lkfuls0(h,vext,ind,wght,n)
-      implicit logical (a-z)
+      implicit none
       integer n,ind(3,n)
       double precision h,vext(2),wght(n)
       integer ih1,ih2,ih3,i,j1,j2,j3
@@ -1291,7 +1291,7 @@ C  just to prevent compiler warnings
       subroutine ipolsp(theta,th0,ni,ni0,n,ng,gind,gw,nbv,nbvp1,
      1                    msth,msni)
 C   interpolate values of theta on spheres where it was not observed
-      implicit logical (a-z)
+      implicit none
       integer n,ng,nbv,nbvp1,gind(3,nbv,ng)
       double precision theta(n,ng),th0(n),ni(n,ng),ni0(n),gw(3,nbv,ng),
      1       msth(nbvp1,n,ng),msni(nbvp1,n,ng)
@@ -1334,7 +1334,7 @@ C$OMP FLUSH(msth,msni)
       subroutine ipolsp1(theta,th0,ni,ni0,mask,n,ng,gind,gw,nbv,nbvp1,
      1                    msth,msni)
 C   interpolate values of theta on spheres where it was not observed
-      implicit logical (a-z)
+      implicit none
       integer n,ng,nbv,nbvp1,gind(3,nbv,ng)
       logical mask(n)
       double precision theta(n,ng),th0(n),ni(n,ng),ni0(n),gw(3,nbv,ng),
@@ -1377,7 +1377,7 @@ C$OMP FLUSH(msth,msni)
       RETURN
       END
       subroutine getmsth0(theta,n,lindi,msth)
-      implicit logical (a-z)
+      implicit none
       integer n,lindi
       double precision theta(n,lindi),msth(n)
       double precision s
@@ -1395,9 +1395,9 @@ C$OMP DO SCHEDULE(GUIDED)
 C$OMP END DO NOWAIT
 C$OMP END PARALLEL
       return
-      end     
+      end
       subroutine getmsni0(ni,n,lindi,msni)
-      implicit logical (a-z)
+      implicit none
       integer n,lindi
       double precision ni(n,lindi),msni(n)
       double precision s

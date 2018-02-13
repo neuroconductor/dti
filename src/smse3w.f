@@ -2,10 +2,10 @@
      1                n2,n3,ngrad,lambda,ws0,ind,w,n,ind0,w0,
      2                n0,thn,nin,th0n,ni0n,sw,swy,thi,nii,fsi2i,
      3                ix,iy,iz,aw,aw0,nw,nw0)
-C   
-C  Multi-shell version (differs in dimension of th 
+C
+C  Multi-shell version (differs in dimension of th
 C  KL-distance based on all spheres and Gauss-approximation only
-C  see ~polzehl/latex/1211_simplemetric/Rcode/Figuregaussapprox.r 
+C  see ~polzehl/latex/1211_simplemetric/Rcode/Figuregaussapprox.r
 C  for approximative KL-distance between non-central chi distributions
 C
 C   perform adaptive smoothing on SE(3) multishell including s0
@@ -13,7 +13,7 @@ C   y  -  si images
 C   y0 -  mean s0 image
 C   th -  estimated/interpolated \E si on all shells (including 0 shell)
 C   ni -  corresponding sum of weights
-C   th0 -  estimated/interpolated \E s0 and mean_g(\E si) on all other shells  
+C   th0 -  estimated/interpolated \E s0 and mean_g(\E si) on all other shells
 C   ni0 -  corresponding sum of weights
 C   mask - head mask
 C   ns   - number of shells (including 0 shell)
@@ -22,10 +22,10 @@ C   lambda - skale parameter
 C   ws0  - relative weight for information from s0 images (should be in [0,1])
 C   ncoils - df/2 of \chi distributions
 C   minlev - expectation of central chi distr. (needed in variance estimates)
-C   ind    - index vectors for si weighting schemes 
+C   ind    - index vectors for si weighting schemes
 C   w    - corresponding weights
 C   n    - number of si weights
-C   ind0    - index vectors for s0 weighting schemes 
+C   ind0    - index vectors for s0 weighting schemes
 C   w0    - corresponding weights
 C   n0    - number of s0 weights
 C   thn   - new estimates of \E si
@@ -35,9 +35,9 @@ C   ni0n   - new sum of weight for s0
 C...sw,swy,si,thi,nii - working areas
 C   ind(.,i) contains coordinate indormation corresponding to positive
 C   location weights in w(i) for si images
-C   ind(.,i)[1:5] are j1-i1,j2-i2,j3-i3, i4 and j4 respectively 
+C   ind(.,i)[1:5] are j1-i1,j2-i2,j3-i3, i4 and j4 respectively
 C
-      implicit logical (a-z)
+      implicit none
       integer ns,n1,n2,n3,ngrad,n,n0,ind(5,n),ind0(3,n0),
      1        ix,iy,iz,nw,nw0
       logical mask(*)
@@ -66,7 +66,7 @@ C              ngrad*cores in sw and swy
          aw0(i)=0.d0
       END DO
 C$OMP PARALLEL DEFAULT(NONE)
-C$OMP& SHARED(ns,n1,n2,n3,ngrad,n,n0,ind,ind0,ncoils,y,y0,
+C$OMP& SHARED(ns,n1,n2,n3,ngrad,n,n0,ind,ind0,y,y0,
 C$OMP&       th,ni,th0,ni0,w,w0,thn,th0n,nin,ni0n,thi,sw,swy,nii,
 C$OMP&       lambda,mask,ws0,fsi2,fsi02,fsi2i,ix,iy,iz,nw,nw0,aw,aw0)
 C$OMP& FIRSTPRIVATE(n123,n12,ixyz)
@@ -87,7 +87,7 @@ C returns value in 0:(ncores-1)
          if(i1.eq.0) i1=n1
          i2=mod((iind-i1)/n1+1,n2)
          if(i2.eq.0) i2=n2
-         i3=(iind-i1-(i2-1)*n1)/n1/n2+1         
+         i3=(iind-i1-(i2-1)*n1)/n1/n2+1
          if(.not.mask(iind)) CYCLE
          DO i4=1,ngrad
             sw(i4+gthrednr)=0.d0
@@ -116,10 +116,10 @@ C   by construction ind(4,.) should have same values consequtively
             j3=i3+ind(3,i)
             if(j3.le.0.or.j3.gt.n3) CYCLE
             jind=j1+(j2-1)*n1+(j3-1)*n12
-            if(.not.mask(jind)) CYCLE          
+            if(.not.mask(jind)) CYCLE
             j4=ind(5,i)
             jind4=jind+(j4-1)*n123
-C adaptation 
+C adaptation
             if(lambda.lt.1d10) THEN
                sz=0.d0
                DO k=1,ns
@@ -127,7 +127,7 @@ C adaptation
                   sz=sz+nii(k+sthrednr)*z*z/
      1                        (fsi2(k,jind4)+fsi2i(k+sthrednr))
                END DO
-C  do not adapt on the sphere !!! 
+C  do not adapt on the sphere !!!
             ELSE
                sz=0.d0
             END IF
@@ -157,7 +157,7 @@ C  first component corresponds to S0 image, ws0 is used to downweight its influe
 C  when smoothing diffusion weighted data
             END IF
 C
-C   handle case j1-i1 < 0 which is not contained in ind 
+C   handle case j1-i1 < 0 which is not contained in ind
 C   using axial symmetry
 C
             j1=i1-ind(1,i)
@@ -167,7 +167,7 @@ C
             j3=i3-ind(3,i)
             if(j3.le.0.or.j3.gt.n3) CYCLE
             jind=j1+(j2-1)*n1+(j3-1)*n12
-            if(.not.mask(jind)) CYCLE          
+            if(.not.mask(jind)) CYCLE
             j4=ind(5,i)
             jind4=jind+(j4-1)*n123
             if(lambda.lt.1d10) THEN
@@ -177,7 +177,7 @@ C
                   sz=sz+nii(k+sthrednr)*z*z/
      1                        (fsi2(k,jind4)+fsi2i(k+sthrednr))
                END DO
-C  do not adapt on the sphere !!! 
+C  do not adapt on the sphere !!!
             ELSE
                sz=0.d0
             END IF
@@ -210,8 +210,8 @@ C    now the s0 image in iind
             j3=i3+ind0(3,i)
             if(j3.le.0.or.j3.gt.n3) CYCLE
             jind=j1+(j2-1)*n1+(j3-1)*n12
-            if(.not.mask(jind)) CYCLE          
-C adaptation 
+            if(.not.mask(jind)) CYCLE
+C adaptation
             if(lambda.lt.1d10) THEN
                sz=0.d0
                DO k=1,ns
@@ -219,7 +219,7 @@ C adaptation
                   sz=sz+nii(k+sthrednr)*z*z/
      1                        (fsi02(k,jind)+fsi2i(k+sthrednr))
                END DO
-C  do not adapt on the sphere !!! 
+C  do not adapt on the sphere !!!
             ELSE
                sz=0.d0
             END IF
@@ -234,7 +234,7 @@ C  now opposite directions
          DO i=1,n0
             if(ind0(1,i).eq.0) CYCLE
 C
-C   handle case j1-i1 < 0 which is not contained in ind 
+C   handle case j1-i1 < 0 which is not contained in ind
 C   using axial symmetry
 C
             if(ixyz.eq.iind) m01=m01+1
@@ -245,7 +245,7 @@ C
             j3=i3-ind0(3,i)
             if(j3.le.0.or.j3.gt.n3) CYCLE
             jind=j1+(j2-1)*n1+(j3-1)*n12
-            if(.not.mask(jind)) CYCLE          
+            if(.not.mask(jind)) CYCLE
             if(lambda.lt.1d10) THEN
                sz=0.d0
                DO k=1,ns
@@ -253,7 +253,7 @@ C
                   sz=sz+nii(k+sthrednr)*z*z/
      1                        (fsi02(k,jind)+fsi2i(k+sthrednr))
                END DO
-C  do not adapt on the sphere !!! 
+C  do not adapt on the sphere !!!
             ELSE
                sz=0.d0
             END IF

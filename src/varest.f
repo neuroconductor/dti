@@ -1,24 +1,5 @@
-      subroutine fmedian1(x,n,med)
-C
-C  compute the median using a select algorithm instead of sorting
-C
-      implicit logical (a-z)
-      integer n
-      double precision x(n),med,fmedian
-      external fmedian
-      if(n.gt.2) THEN
-         med = fmedian(x,n)
-      ELSE IF (n.eq.2) THEN
-         med = (x(1)+x(2))/2
-      ELSE   
-         med = x(1)
-      END IF
-C      
-      return
-      end
-      
       subroutine swap(x,k,l)
-      implicit logical (a-z)
+      implicit none
       integer k,l
       double precision x(*),t
       t = x(k)
@@ -26,13 +7,13 @@ C
       x(l) = t
       return
       end
-      
+
       subroutine qselect(x,n,k)
 C
 C  partial sorting using a select algorithm
 C  output x(k) contains the kth element of sort(x)
 C
-      implicit logical (a-z)
+      implicit none
       integer k,n
       double precision x(n)
       integer lft,rght,cur,i
@@ -64,8 +45,8 @@ C
 C
 C  compute the median using a select algorithm instead of sorting
 C  used in mediansm
-C      
-      implicit logical (a-z)
+C
+      implicit none
       integer n
       double precision x(n)
       integer m
@@ -86,7 +67,7 @@ C   3D median smoother of y with neighborhood defined by ind
 C   results in yout
 C   size of work needs to be 2*nind
 C
-      implicit logical (a-z)
+      implicit none
       integer n1,n2,n3,nind,ind(3,nind),ncores
       logical mask(n1,n2,n3)
       double precision y(n1,n2,n3),yout(n1,n2,n3),work(nind,ncores)
@@ -123,8 +104,8 @@ C$OMP DO SCHEDULE(GUIDED)
                IF(k.gt.1) THEN
                   yout(i1,i2,i3) = fmedian(work(1,thrednr),k)
 C                  call qsort3(work(1,thrednr),1,k)
-C                  IF (mod(k,2) == 0) THEN    
-C                     yout(i1,i2,i3) = 
+C                  IF (mod(k,2) == 0) THEN
+C                     yout(i1,i2,i3) =
 C     1               (work(k/2,thrednr)+work(k/2+1,thrednr))/2.d0
 C                  ELSE
 C                     yout(i1,i2,i3) = work(k/2+1,thrednr)
@@ -145,7 +126,7 @@ C$OMP FLUSH(yout)
 C
 C  local variance estimation using (adaptive) weighted likelihood
 C
-C   Takes observed intensities in s and 
+C   Takes observed intensities in s and
 C     initial estimates of \sigma in sigma
 C   perform adaptive smoothing on R^3
 C   th containes previous estimates of E S
@@ -154,16 +135,16 @@ C   mask - logical mask (use if mask==TRUE)
 C   n1,n2,n3 - dimensions
 C   ind  - integer array dim (3,n) containing relative indices in xyz
 C   w    - vector of corresponding location weights
-C   nw   - number of positive weights (initial value 
-C   
+C   nw   - number of positive weights (initial value
+C
 C   lambda   - kritical value for pairwise tests
 C   thn      - new estimate sum_j w_a(j) S_j
 C   ind(.,i) contains coordinate indormation corresponding to positive
 C   location weights in w(i)
-C   ind(.,i)[1:3] are j1-i1,j2-i2 and j3-i3 respectively 
+C   ind(.,i)[1:3] are j1-i1,j2-i2 and j3-i3 respectively
 C   wad, sad - array for weights>0 and corresponding observed s
 C
-      implicit logical (a-z)
+      implicit none
       integer n1,n2,n3,nw,ind(3,nw),nthreds,iL
       logical mask(n1,n2,n3)
       double precision s(n1,n2,n3),ni(n1*n2*n3),thn(n1*n2*n3),
@@ -190,7 +171,7 @@ C$OMP DO SCHEDULE(GUIDED)
          if(i1.eq.0) i1=n1
          i2=mod((i-i1)/n1+1,n2)
          if(i2.eq.0) i2=n2
-         i3=(i-i1-(i2-1)*n1)/n1/n2+1         
+         i3=(i-i1-(i2-1)*n1)/n1/n2+1
          if(.not.mask(i1,i2,i3)) CYCLE
 !$         thrednr = omp_get_thread_num()+1
          sw=0.d0
@@ -227,7 +208,7 @@ C   thats the estimated standard deviation of s(i1,i2,i3)
                fnsj = max(vpar(2),vz/(vz+1))
             ELSE
                fnsj = vpar(2)
-            END IF            
+            END IF
             z=thi-thj
             z=z*z/(fnsi+fnsj)
             if(z.ge.kval) CYCLE
@@ -243,7 +224,7 @@ C   thats the estimated standard deviation of s(i1,i2,i3)
          ni(i) = sw
          if(sw.gt.minni) THEN
             ksin(i1,i2,i3) = sws2/sw
-C needed for the next iteration 
+C needed for the next iteration
 C            low = max(sqrt(ksin(i1,i2,i3)/2.d0/L),sgi/1d1)
              low = sgi/1d1
 C  sqrt(ksin(i1,i2,i3)/2.d0/L) is the solution in the central case !
@@ -265,93 +246,6 @@ C$OMP END PARALLEL
 C$OMP FLUSH(thn,ni,sigman)
       RETURN
       END
-      subroutine awslgaus(s,th,ni,sigma,mask,n1,n2,n3,ind,w,nw,
-     1            minni,lambda,thn,sigman)
-C
-C  local variance estimation using (adaptive) weighted likelihood
-C
-C   Takes observed intensities in s and 
-C     initial estimates of \sigma in sigma
-C   perform adaptive smoothing on R^3
-C   th containes previous estimates of E S
-C   ni containes previous sum of weights
-C   mask - logical mask (use if mask==TRUE)
-C   n1,n2,n3 - dimensions
-C   ind  - integer array dim (3,n) containing relative indices in xyz
-C   w    - vector of corresponding location weights
-C   nw   - number of positive weights (initial value 
-C   
-C   lambda   - kritical value for pairwise tests
-C   thn      - new estimate sum_j w_a(j) S_j
-C   ind(.,i) contains coordinate indormation corresponding to positive
-C   location weights in w(i)
-C   ind(.,i)[1:3] are j1-i1,j2-i2 and j3-i3 respectively 
-C   wad, sad - array for weights>0 and corresponding observed s
-C
-      implicit logical (a-z)
-      integer n1,n2,n3,nw,ind(3,nw)
-      logical mask(n1,n2,n3)
-      double precision s(n1,n2,n3),th(n1,n2,n3),ni(n1*n2*n3),minni,
-     1  thn(n1*n2*n3),sigman(n1*n2*n3),lambda,w(nw),sigma(n1,n2,n3)
-      integer i1,i2,i3,j1,j2,j3,i,j,n
-      double precision z,sw,sws,sws2,sj,thi,wj,kval,sgi
-      n = n1*n2*n3
-C$OMP PARALLEL DEFAULT(SHARED)
-C$OMP& FIRSTPRIVATE(minni,n1,n2,n3)
-C$OMP& PRIVATE(i,j,i1,i2,i3,j1,j2,j3,z,sw,sws,sws2,thi,kval,wj,sj,sgi)
-C$OMP DO SCHEDULE(GUIDED)
-      DO i=1,n
-         i1=mod(i,n1)
-         if(i1.eq.0) i1=n1
-         i2=mod((i-i1)/n1+1,n2)
-         if(i2.eq.0) i2=n2
-         i3=(i-i1-(i2-1)*n1)/n1/n2+1         
-         if(.not.mask(i1,i2,i3)) CYCLE
-         sgi=sigma(i1,i2,i3)
-         sigman(i)=sgi
-         thi = th(i1,i2,i3)
-         thn(i) = thi
-         sw=0.d0
-         sws=0.d0
-         sws2=0.d0
-C   thats the estimated standard deviation of s(i1,i2,i3)
-         kval = lambda/ni(i)*sgi*sgi
-         DO j=1,nw
-            j1=i1+ind(1,j)
-            if(j1.le.0.or.j1.gt.n1) CYCLE
-            j2=i2+ind(2,j)
-            if(j2.le.0.or.j2.gt.n2) CYCLE
-            j3=i3+ind(3,j)
-            if(j3.le.0.or.j3.gt.n3) CYCLE
-            wj=w(j)
-            z=thi-th(j1,j2,j3)
-            z=z*z
-            if(z.ge.kval) CYCLE
-            wj=wj*min(1.d0,2.d0-2.d0*z/kval)
-            sw=sw+wj
-            sj=s(j1,j2,j3)
-            sws=sws+wj*sj
-            sws2=sws2+wj*sj*sj
-         END DO
-         ni(i) = sw
-         sws = sws / sw
-         thn(i) = sws
-         if(sw.gt.minni) THEN
-            sws2 = (sws2/sw-sws*sws)*sw/(sw-1)
-            if(sws2.gt.0.d0) THEN
-               sigman(i)=sqrt(sws2)
-            ELSE
-               sigman(i)=sgi
-            END IF
-         ELSE
-            sigman(i)=sgi
-         END IF
-      END DO
-C$OMP END DO NOWAIT
-C$OMP END PARALLEL
-C$OMP FLUSH(thn,ni,sigman)
-      RETURN
-      END
       subroutine awsvchi(y,th,ni,fns,mask,n1,n2,n3,ind,w,nw,lambda,
      1                    sigma,thn,sy)
 C   Takes noncentral Chi values in y
@@ -362,16 +256,16 @@ C   mask - logical mask (use if mask==TRUE)
 C   n1,n2,n3 - dimensions
 C   ind  - integer array dim (3,n) containing relative indices in xyz
 C   w    - vector of corresponding location weights
-C   nw   - number of positive weights (initial value 
+C   nw   - number of positive weights (initial value
 C   lambda   - kritical value for pairwise tests
 C   sigma    - actual estimate of sigma
 C   thn      - new estimate sum_j w_a(j) Y_j
 C   th2      - sum_j w_a(j) Y_j^2
 C   ind(.,i) contains coordinate indormation corresponding to positive
 C   location weights in w(i)
-C   ind(.,i)[1:5] are j1-i1,j2-i2,j3-i3, i4 and j4 respectively 
+C   ind(.,i)[1:5] are j1-i1,j2-i2,j3-i3, i4 and j4 respectively
 C
-      implicit logical (a-z)
+      implicit none
       integer n1,n2,n3,nw,ind(3,nw)
       logical mask(n1,n2,n3)
       double precision y(n1,n2,n3),th(n1,n2,n3),ni(n1*n2*n3),
@@ -389,7 +283,7 @@ C$OMP DO SCHEDULE(GUIDED)
          if(i1.eq.0) i1=n1
          i2=mod((i-i1)/n1+1,n2)
          if(i2.eq.0) i2=n2
-         i3=(i-i1-(i2-1)*n1)/n1/n2+1         
+         i3=(i-i1-(i2-1)*n1)/n1/n2+1
          if(.not.mask(i1,i2,i3)) CYCLE
          sw=0.d0
          swy=0.d0
@@ -419,12 +313,12 @@ C   thats the estimated standard deviation of y(i1,i2,i3)
          END DO
          thi = swy/sw
          z = swy2/sw
-C  z2-thi^2  is an estimate of the variance of y(i) 
+C  z2-thi^2  is an estimate of the variance of y(i)
          cw = 1.d0-sw2/sw/sw
          IF(cw.gt.0.d0) THEN
             sy(i) = sqrt((z-thi*thi)/cw)
-C  sy(i)  is an estimate of sigma corrected for 
-C       simultaneously estimating the mean and for non-central chi-bias 
+C  sy(i)  is an estimate of sigma corrected for
+C       simultaneously estimating the mean and for non-central chi-bias
          ELSE
             sy(i) = 0.d0
 C  case ni(i) = 1
@@ -447,16 +341,16 @@ C   mask - logical mask (use if mask==TRUE)
 C   n1,n2,n3 - dimensions
 C   ind  - integer array dim (3,n) containing relative indices in xyz
 C   w    - vector of corresponding location weights
-C   nw   - number of positive weights (initial value 
+C   nw   - number of positive weights (initial value
 C   lambda   - kritical value for pairwise tests
 C   sigma    - actual estimate of sigma
 C   thn      - new estimate sum_j w_a(j) Y_j
 C   th2      - sum_j w_a(j) Y_j^2
 C   ind(.,i) contains coordinate indormation corresponding to positive
 C   location weights in w(i)
-C   ind(.,i)[1:5] are j1-i1,j2-i2,j3-i3, i4 and j4 respectively 
+C   ind(.,i)[1:5] are j1-i1,j2-i2,j3-i3, i4 and j4 respectively
 C
-      implicit logical (a-z)
+      implicit none
       integer n1,n2,n3,nw,ind(3,nw),nthreds
       logical mask(n1,n2,n3)
       double precision y(n1,n2,n3),th(n1,n2,n3),ni(n1*n2*n3),
@@ -478,7 +372,7 @@ C$OMP DO SCHEDULE(GUIDED)
          if(i1.eq.0) i1=n1
          i2=mod((i-i1)/n1+1,n2)
          if(i2.eq.0) i2=n2
-         i3=(i-i1-(i2-1)*n1)/n1/n2+1         
+         i3=(i-i1-(i2-1)*n1)/n1/n2+1
          if(.not.mask(i1,i2,i3)) CYCLE
 !$         thrednr = omp_get_thread_num()+1
          sw=0.d0
@@ -523,8 +417,8 @@ C  z  is an estimate of the standard deviation of y(i) by mean absolute deviatio
          cw = 1.d0-sw2/sw/sw
          IF(cw.gt.0.d0) THEN
             sy(i) = z/sqrt(cw)
-C  sy(i)  is an estimate of sigma corrected for 
-C       simultaneously estimating the mean and for non-central chi-bias 
+C  sy(i)  is an estimate of sigma corrected for
+C       simultaneously estimating the mean and for non-central chi-bias
          ELSE
             sy(i) = 0.d0
 C  case ni(i) = 1
@@ -541,7 +435,7 @@ C$OMP FLUSH(thn,ni,sy)
 C
 C   Aja-Fernandez Mode Vn (6)
 C
-      implicit logical (a-z)
+      implicit none
       integer n1,n2,n3
       double precision y(n1,n2,n3),sigma(n1,n2,n3),h,vext(2)
       logical mask(n1,n2,n3)
@@ -592,7 +486,7 @@ C
 C
 C   Aja-Fernandez Mode Vn (6)
 C
-      implicit logical (a-z)
+      implicit none
       integer n1,n2,n3
       double precision y(n1,n2,n3),sigma(n1,n2,n3),h,vext(2)
       logical mask(n1,n2,n3)
@@ -633,7 +527,7 @@ C
 C
 C   Aja-Fernandez Mode Vn (6)
 C
-      implicit logical (a-z)
+      implicit none
       integer n1,n2,n3
       double precision y(n1,n2,n3),sm(n1,n2,n3),h,vext(2)
       logical mask(n1,n2,n3)
@@ -650,7 +544,7 @@ C
                   m2=0.d0
                   DO j1=i1-ih1,i1+ih1
                      if(j1.le.0.or.j1.gt.n1) CYCLE
-                     DO j2=i2-ih2,i2+ih2   
+                     DO j2=i2-ih2,i2+ih2
                         if(j2.le.0.or.j2.gt.n2) CYCLE
                         DO j3=i3-ih3,i3+ih3
                            if(j3.le.0.or.j3.gt.n3) CYCLE

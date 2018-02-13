@@ -2,9 +2,9 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 C
 C   Compute all eigenvalues (lambda) of a 3x3 matrix and the corresponding EV (theta)
 C
-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC      
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine eigen3(y,lambda,theta,ierr)
-      implicit logical (a-z)
+      implicit none
       integer ierr
       double precision y(6),a(3,3),lambda(3),theta(3,3)
       integer i,j,l,ISUPPZ(6),lwork,iwork(50),liwork,n,m
@@ -27,11 +27,11 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 C
-C   Compute all eigenvalues (lambda) of a 3x3 matrix 
+C   Compute all eigenvalues (lambda) of a 3x3 matrix
 C
-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC      
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine eigen30(y,lambda,ierr)
-      implicit logical (a-z)
+      implicit none
       integer ierr
       double precision y(6),a(3,3),lambda(3),theta(3,3)
       integer i,j,l,ISUPPZ(6),lwork,iwork(50),liwork,n,m
@@ -60,17 +60,17 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       double precision function adist(a,x,y,z,vext)
 C
 C    a - diffusion tensor  ( a_11, a_12, a_13, a_22, a_23, a_33
-C    ix - x-coordinate 
+C    ix - x-coordinate
 C    h - bandwidth
 C    rh0 - regularization parameter    ( use  a+ rho/ni I  to define ellipsoid )
 C    ni -  sum of weights (measures the variability of a
 C    ia,ie -  rane of x values (restricted to the grid)
-      implicit logical (a-z)
+      implicit none
       integer x,y,z
       double precision a(6),xx,yy,zz,vext(3)
       xx=x*vext(1)
       yy=y*vext(2)
-      zz=z*vext(3)      
+      zz=z*vext(3)
       adist=a(1)*xx*xx+a(4)*yy*yy+a(6)*zz*zz+
      1               2.d0*(a(2)*xx*yy+a(3)*xx*zz+a(5)*yy*zz)
       RETURN
@@ -81,7 +81,7 @@ C    Compute statistical penalty for dti
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       double precision function dtidist2(th1,th2,Bcov)
-      implicit logical (a-z)
+      implicit none
       double precision th1(6),th2(6),Bcov(6,6),z,zd,zd2
       integer i,j
       z=0.d0
@@ -110,7 +110,7 @@ C    h - bandwidth
 C    rh0 - regularization parameter    ( use  a+ rho/ni I  to define ellipsoid )
 C    ni -  sum of weights (measures the variability of a
 C    ia,ie -  rane of x values (restricted to the grid)
-      implicit logical (a-z)
+      implicit none
       integer ia,ie
       double precision a(6),h,vext(3)
       double precision p1,p2,p3,p4,p5,p6,z,s,t,p55,p66,p44,h1
@@ -133,7 +133,7 @@ C    ia,ie -  rane of x values (restricted to the grid)
       z=s/z
       if(z.le.0) THEN
          z=0.d0
-      ELSE 
+      ELSE
          z=sqrt(z)
       END IF
       h1=h/vext(1)
@@ -149,12 +149,12 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine rangey(a,ix,h,ja,je,vext)
 C
 C    a - diffusion tensor  ( a_11, a_12, a_13, a_22, a_23, a_33
-C    ix - x-coordinate 
+C    ix - x-coordinate
 C    h - bandwidth
 C    rh0 - regularization parameter    ( use  a+ rho/ni I  to define ellipsoid )
 C    ni -  sum of weights (measures the variability of a
 C    ia,ie -  rane of x values (restricted to the grid)
-      implicit logical (a-z)
+      implicit none
       integer ja,je,ix
       double precision a(6),h,vext(3)
       double precision p1,p2,p3,p4,p5,p6,z,s,t,p55,p66,p44,x,h2s
@@ -176,7 +176,7 @@ C    ia,ie -  rane of x values (restricted to the grid)
       z=(p44*p3*p3-2.d0*p4*p3*p6*p5+p66*p55-p1*p3*s+p55*s)*x*x+p3*s
       if(z.le.0) THEN
          z=0.d0
-      ELSE 
+      ELSE
          z=sqrt(z)
       END IF
       h2s=h/vext(2)/s
@@ -193,12 +193,12 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine rangez(a,ix,jy,h,ka,ke,vext)
 C
 C    a - diffusion tensor  ( a_11, a_12, a_13, a_22, a_23, a_33
-C    ix - x-coordinate 
+C    ix - x-coordinate
 C    h - bandwidth
 C    rh0 - regularization parameter    ( use  a+ rho/ni I  to define ellipsoid )
 C    ni -  sum of weights (measures the variability of a
 C    ia,ie -  rane of x values (restricted to the grid)
-      implicit logical (a-z)
+      implicit none
       integer ka,ke,ix,jy
       double precision a(6),h,vext(3)
       double precision p3,z,t,x,y,h3
@@ -211,7 +211,7 @@ C    ia,ie -  rane of x values (restricted to the grid)
       z=(-z*t - a(4)*y*y - a(1)*x*x - 2.d0*a(2)*x*y + 1.d0)/p3
       if(z.le.0) THEN
          z=0.d0
-      ELSE 
+      ELSE
          z=sqrt(z)
       END IF
       ka=int((t-z)*h3)
@@ -224,7 +224,7 @@ C    Compute FA for a slice  (used in plot.r only)
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine dti2Dfa(D,n,mask,fa,md,adir)
-      implicit logical (a-z)
+      implicit none
       integer n
       logical mask(n)
       double precision D(6,n),fa(n),md(n),adir(3,n)
@@ -266,7 +266,7 @@ C    Compute GA for a slice  (used in plot.r only)
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine dti2Dga(D,n,mask,ga,md,adir)
-      implicit logical (a-z)
+      implicit none
       integer n
       logical mask(n)
       double precision D(6,n),ga(n),md(n),adir(3,n)
@@ -308,7 +308,7 @@ C    Compute DTI-Indices for a volume
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine dtiind3D(D,n,fa,ga,md,adir,bary)
-      implicit logical (a-z)
+      implicit none
       integer n
       double precision D(6,n),fa(n),md(n),adir(3,n),bary(3,n),ga(n)
       integer i,ierr
@@ -362,7 +362,7 @@ C    Compute subset of DTI-Indices for a volume
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine dtieigen(D,n,fa,ev,adir)
-      implicit logical (a-z)
+      implicit none
       integer n
       double precision D(6,n),fa(n),ev(3,n),adir(6,n)
       integer i,ierr
@@ -404,62 +404,11 @@ C$OMP FLUSH(fa,adir,ev)
       END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 C
-C    Compute DTI-Indices for a volume
-C
-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-      subroutine dti3Dall(D,n,fa,ga,md,adir,ev)
-      implicit logical (a-z)
-      integer n
-      double precision D(6,n),fa(n),md(n),adir(3,n),ev(3,n),ga(n)
-      integer i,ierr
-      double precision evec(3,3),trc,d1,d2,d3,a1,a2,a3,dd
-C$OMP PARALLEL DEFAULT(NONE)
-C$OMP& SHARED(D,n,mask,fa,ga,md,adir,ev)
-C$OMP& PRIVATE(i,ierr,evec,trc,d1,d2,d3,a1,a2,a3,dd)
-C$OMP DO SCHEDULE(STATIC)
-      DO i=1,n
-         call eigen3(D(1,i),ev(1,i),evec,ierr)
-         a1=dmax1(1d-12,ev(1,i))
-         a2=dmax1(1d-12,ev(2,i))
-         a3=dmax1(1d-12,ev(3,i))
-         trc=(a1+a2+a3)/3.d0
-         adir(1,i)=evec(1,3)
-         adir(2,i)=evec(2,3)
-         adir(3,i)=evec(3,3)
-         md(i)=trc
-         d1=a1-trc
-         d2=a2-trc
-         d3=a3-trc
-         dd=a1*a1+a2*a2+a3*a3
-         IF(dd.gt.1.d-12) THEN
-            fa(i)=sqrt(1.5d0*(d1*d1+d2*d2+d3*d3)/dd)
-         ELSE
-            fa(i)=0.d0
-            ev(1,i)=0.d0
-            ev(2,i)=0.d0
-            ev(3,i)=0.d0
-         ENDIF
-         d1=log(a1)
-         d2=log(a2)
-         d3=log(a3)
-         dd=(d1+d2+d3)/3.d0
-         d1=d1-dd
-         d2=d2-dd
-         d3=d3-dd
-         ga(i)=sqrt(d1*d1+d2*d2+d3*d3)
-      END DO
-C$OMP END DO NOWAIT
-C$OMP END PARALLEL
-C$OMP FLUSH(fa,ga,md,adir,ev)
-      RETURN
-      END
-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-C
 C    Compute DTI-eigenvalues for a volume
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine dti3Dev(D,n,ev)
-      implicit logical (a-z)
+      implicit none
       integer n
       double precision D(6,n),ev(3,n)
       integer i,ierr
@@ -470,11 +419,11 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 C
-C    Compute DTI-eigenvectors for a volume 
+C    Compute DTI-eigenvectors for a volume
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine dti3Dand(D,n,andir)
-      implicit logical (a-z)
+      implicit none
       integer n
       double precision D(6,n),andir(3,n)
       integer i,ierr
@@ -496,11 +445,11 @@ C$OMP FLUSH(andir)
       END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 C
-C    Compute all(!) DTI-eigenvectors for a volume 
+C    Compute all(!) DTI-eigenvectors for a volume
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine dti3DevAll( D, n, andir, evalues)
-      implicit logical (a-z)
+      implicit none
       integer n
       double precision D( 6, n), andir( 9, n), evalues( 3, n)
       integer i, ierr
@@ -535,7 +484,7 @@ C    Regularize tensors bu setting eigenvalues to zero
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine dti3Dreg(D,n)
-      implicit logical (a-z)
+      implicit none
       integer n
       double precision D(6,n)
       integer i,ierr
@@ -566,15 +515,66 @@ C$OMP END PARALLEL
 C$OMP FLUSH(D)
       RETURN
       END
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+C
+C    Compute DTI-Indices for a volume
+C
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+      subroutine dti3Dall(D,n,fa,ga,md,adir,ev)
+      implicit none
+      integer n
+      double precision D(6,n),fa(n),md(n),adir(3,n),ev(3,n),ga(n)
+      integer i,ierr
+      double precision evec(3,3),trc,d1,d2,d3,a1,a2,a3,dd
+C$OMP PARALLEL DEFAULT(NONE)
+C$OMP& SHARED(D,n,fa,ga,md,adir,ev)
+C$OMP& PRIVATE(i,ierr,evec,trc,d1,d2,d3,a1,a2,a3,dd)
+C$OMP DO SCHEDULE(STATIC)
+      DO i=1,n
+          call eigen3(D(1,i),ev(1,i),evec,ierr)
+          a1=dmax1(1d-12,ev(1,i))
+          a2=dmax1(1d-12,ev(2,i))
+          a3=dmax1(1d-12,ev(3,i))
+          trc=(a1+a2+a3)/3.d0
+          adir(1,i)=evec(1,3)
+          adir(2,i)=evec(2,3)
+          adir(3,i)=evec(3,3)
+          md(i)=trc
+          d1=a1-trc
+          d2=a2-trc
+          d3=a3-trc
+          dd=a1*a1+a2*a2+a3*a3
+          IF(dd.gt.1.d-12) THEN
+            fa(i)=sqrt(1.5d0*(d1*d1+d2*d2+d3*d3)/dd)
+          ELSE
+            fa(i)=0.d0
+            ev(1,i)=0.d0
+            ev(2,i)=0.d0
+            ev(3,i)=0.d0
+          ENDIF
+          d1=log(a1)
+          d2=log(a2)
+          d3=log(a3)
+          dd=(d1+d2+d3)/3.d0
+          d1=d1-dd
+          d2=d2-dd
+          d3=d3-dd
+          ga(i)=sqrt(d1*d1+d2*d2+d3*d3)
+      END DO
+C$OMP END DO NOWAIT
+C$OMP END PARALLEL
+C$OMP FLUSH(fa,ga,md,adir,ev)
+      RETURN
+      END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 C
-C   determine sum of location weights for a given geometry a(6) and given 
+C   determine sum of location weights for a given geometry a(6) and given
 C   bandwidth
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 C  Algorithmus zur Nullstellenbestimmung einer monotonen Funktion auf(0,\infty)
       subroutine gethani(x,y,value,a,vext,eps,bw)
-      implicit logical(a-z)
+      implicit none
       double precision x,y,value,a(6),vext(3),eps,bw
       double precision fw1,fw2,fw3,z
       double precision sofw3D
@@ -609,16 +609,16 @@ C  Algorithmus zur Nullstellenbestimmung einer monotonen Funktion auf(0,\infty)
           bw=y-(fw2-value)/(fw2-fw1)*(y-x)
       ENDIF
       RETURN
-      END  
+      END
       subroutine getvofh(a,bw,vext,vol)
-      implicit logical(a-z)
+      implicit none
       double precision a(6),bw,vext(3),vol,sofw3D
       vol=sofw3D(a,bw,vext)
       RETURN
       END
-C  compute sum of weights for anisotropic smoothing      
+C  compute sum of weights for anisotropic smoothing
       double precision function sofw3D(a,bw,vext)
-      implicit logical(a-z)
+      implicit none
       double precision a(6),bw,vext(3)
       integer ia1,ie1,ia2,ie2,ia3,ie3,i1,i2,i3
       double precision wij,sw,h2,adist

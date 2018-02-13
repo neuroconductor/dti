@@ -9,16 +9,16 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 C
 C   y        -  observed diffusion tensor data
 C   th       -  smoothed diffusion tensor data
-C   bi       -  voxelwise sum of weights 
-C   ani      -  anisotropy index 
-C   dir      -  direction of main anisotropy 
+C   bi       -  voxelwise sum of weights
+C   ani      -  anisotropy index
+C   dir      -  direction of main anisotropy
 C   det      -  det(A)
 C   n1,n2,n3 -  spatial dimensions
 C   rho      -  regularization parameter for anisotropic neighborhoods
-C               (X,y,z) ( A(theta)+ rho/bi I ) (X,y,z)^T  = h^2  defines the elloispid 
+C               (X,y,z) ( A(theta)+ rho/bi I ) (X,y,z)^T  = h^2  defines the elloispid
 C   lambda   -  scale factor in the statistical penalty
 C   thnew    -  new smoothed diffusion tensor data
-      implicit logical (a-z)
+      implicit none
       integer n1,n2,n3,ngrad
       double precision   s0(n1,n2,n3),si(n1,n2,n3,ngrad)
       double precision th(6,n1,n2,n3),thnew(6,n1,n2,n3),h,rho,
@@ -36,7 +36,7 @@ C   thnew    -  new smoothed diffusion tensor data
       aws=lambda.lt.1e20
       h2=h*h
       eps3=eps*eps*eps
-C  now anisotropic smoothing 
+C  now anisotropic smoothing
       DO i1=1,n1
          DO i2=1,n2
             DO i3=1,n3
@@ -141,7 +141,7 @@ C  use Plateau kernel
                ELSE
                   DO k=1,ngrad
                      swsi(k)=0.d0
-                  END DO 
+                  END DO
                   sigma2n(i1,i2,i3)=sigma2h(i1,i2,i3)
                END IF
                DO k=1,6
@@ -219,7 +219,7 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 C
 C   th       -  observed diffusion tensor data
 C   thnew    -  projected tensor data
-      implicit logical (a-z)
+      implicit none
       integer n1,n2,n3
       double precision th(6,n1,n2,n3),thnew(6,n1,n2,n3),ani(n1,n2,n3),
      1       dir(3,n1,n2,n3),det(n1,n2,n3),mew
@@ -241,9 +241,9 @@ C
                   thnew(4,i1,i2,i3)=eps
                   thnew(5,i1,i2,i3)=0.d0
                   thnew(6,i1,i2,i3)=eps
-C               ELSE IF(dmin1(ew(1),ew(2)).lt.dmax1(1.d-5,1d-5*ew(3))) 
+C               ELSE IF(dmin1(ew(1),ew(2)).lt.dmax1(1.d-5,1d-5*ew(3)))
 C     1            THEN
-               ELSE IF(min(ew(1),ew(2),ew(3)).lt.eps) THEN 
+               ELSE IF(min(ew(1),ew(2),ew(3)).lt.eps) THEN
 C
 C       negative eigenvalue of tensor, project to space of positive definite tensors
 C
@@ -303,7 +303,7 @@ C
       RETURN
       END
       subroutine smsigma(sigma2,n1,n2,n3,h,vext,sigma2h)
-      implicit logical (a-z)
+      implicit none
       integer n1,n2,n3
       double precision sigma2(n1,n2,n3),sigma2h(n1,n2,n3),vext(3),h
       integer i1,i2,i3,j1,j2,j3,ih1,ih2,ih3
@@ -328,7 +328,7 @@ C
                      DO j3=i3-ih3,i3+ih3
                         if(j3.lt.1.or.j3.gt.n3) CYCLE
                         z3=(j3-i3)*vext(3)
-                        z33=z22+z3*z3                     
+                        z33=z22+z3*z3
                         w=1.d0-z33/h2
                         sw=sw+w
                         ssig=ssig+w*sigma2(j1,j2,j3)

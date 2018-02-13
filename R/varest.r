@@ -1,39 +1,3 @@
-likesigmaf <- function(sigma,wj,Sj,L){
-  ni <- sum(wj)
-  ksi <- sum(wj*Sj^2)/ni
-  if(ksi-2*L*sigma^2 > 0){
-    z <- .Fortran("lncchi",as.double(sigma),
-                  as.double(ni),
-                  as.double(ksi),
-                  as.double(wj),
-                  as.double(Sj),
-                  as.double(L),
-                  as.integer(length(Sj)),
-                  double(floor(L+10)),
-                  ergs=double(1),
-                  PACKAGE="dti")$ergs-L
-  } else {# central case
-    #z <- -(2*L-1)*sum(wj*log(Sj))/ni+ksi/2/sigma^2+2*L*log(sigma)+(L-1)*log(2)+lgamma(L)
-    z <- -(L-1)*sum(wj*log(Sj))/ni+ksi/2/sigma^2+2*L*log(sigma)+(L-1)*log(2)+lgamma(L)
-  }
-  z
-}
-
-
-mlikesigmaf <- function(sigma,wj,Sj,L){
-  .Fortran("localmin",as.double(sigma/10),
-           as.double(sigma*10),
-           as.double(wj),
-           as.double(Sj),
-           as.double(L),
-           as.integer(length(Sj)),
-           as.double(1e-8),
-           as.integer(100),
-           double(floor(L+10)),
-           xmin=double(1),
-           fmin=double(1),
-           PACKAGE="dti")[c("xmin","fmin")]
-}
 #
 #
 #      estimate variance parameter in a multicoil system
@@ -55,46 +19,13 @@ awslsigmc <- function(y,                 # data
                       #bc=FALSE # bias correction ...
 ) {
   ## some functions for pilot estimates
-  
-  #   IQQ <- function (x, q = .25, na.rm = FALSE, type = 7) 
+
+  #   IQQ <- function (x, q = .25, na.rm = FALSE, type = 7)
   #     diff(quantile(as.numeric(x), c(q, 1-q), na.rm = na.rm, names = FALSE, type = type))
-  
+
   if(trace) tergs <- array(0,c(steps,4,sum(mask))) else tergs <- NULL
   family <- match.arg(family)
-  
-  IQQ <- function (x, q = .25, na.rm = FALSE, type = 7){ 
-    cqz <- qnorm(.05)/qnorm(q)
-    x <- as.numeric(x)
-    z <- diff(quantile(x, c(q, 1-q), na.rm = na.rm, names = FALSE, type = type))
-    z0 <- 0
-    while(abs(z-z0)>1e-5*z0){
-      # outlier removal
-      z0 <- z
-      #       cat(sum(x>(z0*cqz))," ")
-      x <- x[x<(z0*cqz)]
-      z <- diff(quantile(x, c(q, 1-q), na.rm = na.rm, names = FALSE, type = type))  
-      #       cat(z0,z,"\n")
-    }
-    z
-  }
-  
-  IQQdiff <- function(y, mask, q = .25, verbose = FALSE) {
-    cq <- qnorm(1-q)*sqrt(2)*2
-    sx <- IQQ( diff(y[mask]), q)/cq
-    sy <- IQQ( diff(aperm(y,c(2,1,3))[aperm(mask,c(2,1,3))]), q)/cq
-    sz <- IQQ( diff(aperm(y,c(3,1,2))[aperm(mask,c(3,1,2))]), q)/cq
-    if(verbose) cat( "Pilot estimates of sigma", sx, sy, sz, "\n")
-    min( sx, sy, sz)
-  }
-  
-  estsigma <- function(y, mask, q, L, sigma, verbose=FALSE){
-    meany <- mean(y[mask]^2)
-    eta <- sqrt(max( 0, meany/sigma^2-2*L))
-    m <- sqrt(pi/2)*gamma(L+1/2)/gamma(L)/gamma(3/2)*hg1f1(-1/2,L,-eta^2/2)
-    v <- max( .01, 2*L+eta^2-m^2)
-    if(verbose) cat( eta, m, v, "\n")
-    IQQdiff( y, mask, q)/sqrt(v)
-  }
+
   varstats <- sofmchi(ncoils)
   if("NCchi" == family){
     th <- seq(0,30,.01)
@@ -105,22 +36,22 @@ awslsigmc <- function(y,                 # data
     z <- z[z>min(z)]
     nz <- nls(z~(a*th+b*th*th+c*th*th*th+d)/(a*th+b*th*th+c*th*th*th+1+d),data=list(th=th,z=z),start=list(a=1,b=1,c=1,d=1))
     vpar <- c(minth,minz,coef(nz))
-    ##  this provides an excellent approximation for the variance reduction in case of low ncp 
+    ##  this provides an excellent approximation for the variance reduction in case of low ncp
   }
-  
+
   if(length(vext)==3) vext <- vext[2:3]/vext[1]
   ## dimension and size of cubus
   ddim <- dim(y)
   n <- prod(ddim)
-  
+
   ## test dimension
   if (length(ddim) != 3) stop("first argument should be a 3-dimentional array")
-  
+
   ## check mask
   if (is.null(mask)) mask <- array(TRUE, ddim)
   if(length(mask) != n) stop("dimensions of data array and mask should coincide")
-  
-  ## initial value for sigma_0 
+
+  ## initial value for sigma_0
   if(is.null(sigma)){
     # sigma <- sqrt( mean( y[mask]^2) / 2 / ncoils)
     sigma <- IQQdiff( y, mask, .25, verbose=verbose)
@@ -166,7 +97,7 @@ awslsigmc <- function(y,                 # data
   dim(parammd$ind) <- c(3,nwmd)
   ## iterate PS starting with bandwidth h0
   for (i in 1:steps) {
-    
+
     h <- 1.25^((i-1)/3)
     nw <- prod(2*as.integer(h/c(1,vext))+1)
     #    cat("nw=",nw,"h/vext=",h/c(1,1/vext),"ih=",as.integer(h/c(1,1/vext)),"\n")
@@ -180,7 +111,7 @@ awslsigmc <- function(y,                 # data
     nw <- param$n
     param$ind <- param$ind[1:(3*nw)]
     dim(param$ind) <- c(3,nw)
-    param$w   <- param$w[1:nw]    
+    param$w   <- param$w[1:nw]
       ## perform one step PS with bandwidth h
       z <- .Fortran("awslchi2",
                     as.double(y),        # data
@@ -215,7 +146,7 @@ awslsigmc <- function(y,                 # data
     ni <- array(z$ni,ddim)
     mask[z$sigman==0] <- FALSE
     nmask <- sum(mask)
-    if(verbose) cat("local estimation in step ",i," completed",format(Sys.time()),"\n") 
+    if(verbose) cat("local estimation in step ",i," completed",format(Sys.time()),"\n")
     ##
     ##  nonadaptive smoothing of estimated standard deviations
     ##
@@ -236,10 +167,10 @@ awslsigmc <- function(y,                 # data
                       as.integer(mc.cores),
                       sigman = double(n),
                       PACKAGE = "dti")$sigman
-    } 
+    }
     dim(sigma) <- ddim
     mask[sigma==0] <- FALSE
-    if(verbose) cat("local median smoother in step ",i," completed",format(Sys.time()),"\n") 
+    if(verbose) cat("local median smoother in step ",i," completed",format(Sys.time()),"\n")
     ##
     ##  diagnostics
     ##
@@ -282,12 +213,47 @@ awslsigmc <- function(y,                 # data
   ## this is the result (th is expectation, not the non-centrality parameter !!!)
   invisible(list(sigma = sigma,
                  sigmal = array(z$sigman,ddim),
-                 theta = th, 
+                 theta = th,
                  thchi = thchi,
                  ni  = ni,
                  tergs = tergs,
                  mask = mask))
 }
+
+IQQ <- function (x, q = .25, na.rm = FALSE, type = 7){
+  cqz <- qnorm(.05)/qnorm(q)
+  x <- as.numeric(x)
+  z <- diff(quantile(x, c(q, 1-q), na.rm = na.rm, names = FALSE, type = type))
+  z0 <- 0
+  while(abs(z-z0)>1e-5*z0){
+    # outlier removal
+    z0 <- z
+    #       cat(sum(x>(z0*cqz))," ")
+    x <- x[x<(z0*cqz)]
+    z <- diff(quantile(x, c(q, 1-q), na.rm = na.rm, names = FALSE, type = type))
+    #       cat(z0,z,"\n")
+  }
+  z
+}
+
+IQQdiff <- function(y, mask, q = .25, verbose = FALSE) {
+  cq <- qnorm(1-q)*sqrt(2)*2
+  sx <- IQQ( diff(y[mask]), q)/cq
+  sy <- IQQ( diff(aperm(y,c(2,1,3))[aperm(mask,c(2,1,3))]), q)/cq
+  sz <- IQQ( diff(aperm(y,c(3,1,2))[aperm(mask,c(3,1,2))]), q)/cq
+  if(verbose) cat( "Pilot estimates of sigma", sx, sy, sz, "\n")
+  min( sx, sy, sz)
+}
+
+  estsigma <- function(y, mask, q, L, sigma, verbose=FALSE){
+    meany <- mean(y[mask]^2)
+    eta <- sqrt(max( 0, meany/sigma^2-2*L))
+    m <- sqrt(pi/2)*gamma(L+1/2)/gamma(L)/gamma(3/2)*hg1f1(-1/2,L,-eta^2/2)
+    v <- max( .01, 2*L+eta^2-m^2)
+    if(verbose) cat( eta, m, v, "\n")
+    IQQdiff( y, mask, q)/sqrt(v)
+  }
+
 #
 #
 #      estimate variance parameter in a multicoil system
@@ -300,7 +266,7 @@ awssigmc <- function(y,                 # data
                      vext = c( 1, 1),   # voxel extensions
                      lambda = 20,       # adaptation parameter for PS
                      h0 = 2,            # initial bandwidth for first step in PS
-                     verbose = FALSE, 
+                     verbose = FALSE,
                      sequence = FALSE,  # return estimated sigma for intermediate steps of PS?
                      hadj = 1,          # adjust parameter for density() call for mode estimation
                      q = .25,  # for IQR
@@ -308,42 +274,21 @@ awssigmc <- function(y,                 # data
                      method=c("VAR","MAD")  # for variance, alternative "MAD" for mean absolute deviation
 ) {
   method <- match.arg(method)
-  ## some functions for pilot estimates
-  IQQ <- function (x, q = .25, na.rm = FALSE, type = 7) 
-    diff(quantile(as.numeric(x), c(q, 1-q), na.rm = na.rm, names = FALSE, type = type))
-  
-  IQQdiff <- function(y, mask, q = .25, verbose = FALSE) {
-    cq <- qnorm(1-q)*sqrt(2)*2
-    sx <- IQQ( diff(y[mask]), q)/cq
-    sy <- IQQ( diff(aperm(y,c(2,1,3))[aperm(mask,c(2,1,3))]), q)/cq
-    sz <- IQQ( diff(aperm(y,c(3,1,2))[aperm(mask,c(3,1,2))]), q)/cq
-    if(verbose) cat( "Pilot estimates of sigma", sx, sy, sz, "\n")
-    min( sx, sy, sz)
-  }
-  
-  estsigma <- function(y, mask, q, L, sigma, verbose=FALSE){
-    meany <- mean(y[mask]^2)
-    eta <- sqrt(max( 0, meany/sigma^2-2*L))
-    m <- sqrt(pi/2)*gamma(L+1/2)/gamma(L)/gamma(3/2)*hg1f1(-1/2,L,-eta^2/2)
-    v <- max( .01, 2*L+eta^2-m^2)
-    if(verbose) cat( eta, m, v, "\n")
-    IQQdiff( y, mask, q)/sqrt(v)
-  }
   
   varstats <- sofmchi(ncoils)
   if(length(vext)==3) vext <- vext[2:3]/vext[1]
   ## dimension and size of cubus
   ddim <- dim(y)
   n <- prod(ddim)
-  
+
   ## test dimension
   if (length(ddim) != 3) stop("first argument should be a 3-dimentional array")
-  
+
   ## check mask
   if (is.null(mask)) mask <- array(TRUE, ddim)
   if(length(mask) != n) stop("dimensions of data array and mask should coincide")
-  
-  ## initial value for sigma_0 
+
+  ## initial value for sigma_0
   # sigma <- sqrt( mean( y[mask]^2) / 2 / ncoils)
   sigma <- IQQdiff( y, mask, q, verbose=verbose)
   #  cat( "sigmahat1", sigma, "\n")
@@ -353,7 +298,7 @@ awssigmc <- function(y,                 # data
   #  cat( "sigmahat3", sigma, "\n")
   sigma <- estsigma( y, mask, q, ncoils, sigma, verbose=verbose)
   #  cat( "sigmahat4", sigma,"\n")
-  
+
   ## define initial arrays for parameter estimates and sum of weights (see PS)
   th <- array( 1, ddim)
   ni <- array( 1, ddim)
@@ -363,7 +308,7 @@ awssigmc <- function(y,                 # data
   mc.cores <- setCores(,reprt=FALSE)
   ## iterate PS starting with bandwidth h0
   for (i in 1:steps) {
-    
+
     h <- h0 * 1.25^((i-1)/3)
     nw <- prod(2*as.integer(h/c(1,vext))+1)
     #    cat("nw=",nw,"h/vext=",h/c(1,1/vext),"ih=",as.integer(h/c(1,1/vext)),"\n")
@@ -377,7 +322,7 @@ awssigmc <- function(y,                 # data
     nw <- param$n
     param$ind <- param$ind[1:(3*nw)]
     dim(param$ind) <- c(3,nw)
-    param$w   <- param$w[1:nw]    
+    param$w   <- param$w[1:nw]
     fncchi <- fncchiv(th/sigma,varstats)
     ## correction factor for variance of NC Chi distribution
     ## perform one step PS with bandwidth h
@@ -419,27 +364,27 @@ awssigmc <- function(y,                 # data
                     as.integer(mc.cores), # nthreds
                     th = double(n), # thn(n1*n2*n3)
                     sy = double(n), # sy(n1*n2*n3)
-                    PACKAGE = "dti")[c("ni","th","sy")]       
+                    PACKAGE = "dti")[c("ni","th","sy")]
     }
     ## extract sum of weigths (see PS) and consider only voxels with ni larger then mean
     th <- z$th
     ni <- z$ni
     ni[!mask]<-1
     ind <- (ni > .9999*quantile(ni[ni>1],qni))#&(z$th>sigma*minlev)
-    ## use correction factor for sd of NC Chi distribution 
+    ## use correction factor for sd of NC Chi distribution
     sy1 <- z$sy[ind]
     th1 <- th[ind]
     sy1 <- sy1/fncchis(th1/sigma,varstats)
     ## use the maximal mode of estimated local sd parameters, exclude largest values for better precision
     dsigma <- density( sy1[sy1>0], n = 4092, adjust = hadj, to = min( max(sy1[sy1>0]), median(sy1[sy1>0])*5) )
     sigma <- dsigma$x[dsigma$y == max(dsigma$y)][1]
-    
+
     if (sequence) {
       sigmas[i] <- sigma
       lind[i] <- sum(ind)
       minni[i] <- min(ni[ind])
     }
-    
+
     if (verbose) {
       plot(dsigma, main = paste( "estimated sigmas step", i, "h=", signif(h,3)))
       cat( "step", i, "h=", signif( h, 3), "quantiles of ni", signif( quantile(ni[ind]), 3), "mean", signif( mean(ni[ind]), 3), "\n")
@@ -447,12 +392,12 @@ awssigmc <- function(y,                 # data
     }
   }
   ## END PS iteration
-  
-  
+
+
   ## this is the result (th is expectation, not the non-centrality parameter !!!)
   invisible(list(sigma = if(sequence) sigmas else sigma,
-                 theta = th, 
-                 lind  = if(sequence) lind else sum(ind), 
+                 theta = th,
+                 lind  = if(sequence) lind else sum(ind),
                  minni  = if(sequence) minni else min(ni[ind])))
 }
 
@@ -468,7 +413,7 @@ aflsigmc <- function(y,ncoils,level=NULL,mask=NULL,h=2,hadj=1,vext = c( 1, 1)){
   #    vmlb  -  Var(M_L(x)|x \in B)
   #    vmlbx -  Var(M_L(x)|x \in B)_x
   #    phix  -  \hat{\Phi}_n(x)
-  #    
+  #
   ddim <- dim(y)
   n <- prod(ddim)
   if(is.null(level)&is.null(mask)){
@@ -480,7 +425,7 @@ aflsigmc <- function(y,ncoils,level=NULL,mask=NULL,h=2,hadj=1,vext = c( 1, 1)){
   mask1 <- array(TRUE,ddim)
   ##
   ##  local variance estimates in vx
-  ## 
+  ##
   vx <- .Fortran("afmodevn",
                  as.double(y),
                  as.integer(ddim[1]),
@@ -557,10 +502,10 @@ afsigmc <- function(y,                 # data
   ## dimension and size of cubus
   ddim <- dim(y)
   n <- prod(ddim)
-  
+
   ## test dimension
   if (length(ddim) != 3) stop("first argument should be a 3-dimentional array")
-  
+
   ## check mask
   if (is.null(mask)) mask <- array(TRUE, ddim)
   if(!is.null(level)){
@@ -571,7 +516,7 @@ afsigmc <- function(y,                 # data
     }
   }
   if(length(mask) != n) stop("dimensions of data array and mask should coincide")
-  
+
   ## let FORTRAN do the calculation
   if(method%in%c("modevn","modem1chi")){
     if(method=="modevn"){
@@ -624,10 +569,10 @@ afsigmc <- function(y,                 # data
 
 #
 #    R - function  aws  for likelihood  based  Adaptive Weights Smoothing (AWS)
-#    for local constant Gaussian, Bernoulli, Exponential, Poisson, Weibull and  
-#    Volatility models                                                         
+#    for local constant Gaussian, Bernoulli, Exponential, Poisson, Weibull and
+#    Volatility models
 #
-#    emaphazises on the propagation-separation approach 
+#    emaphazises on the propagation-separation approach
 #
 #    Copyright (C) 2006 Weierstrass-Institut fuer
 #                       Angewandte Analysis und Stochastik (WIAS)
@@ -650,7 +595,7 @@ afsigmc <- function(y,                 # data
 #  USA.
 #
 #     default parameters:  see function setawsdefaults
-#       
+#
 awslinsd <- function(y,hmax=NULL,hpre=NULL,h0=NULL,mask=NULL,
                      ladjust=1,wghts=NULL,varprop=.1,A0,A1)
 {
@@ -659,7 +604,7 @@ awslinsd <- function(y,hmax=NULL,hpre=NULL,h0=NULL,mask=NULL,
   #
   homogen <- TRUE
   wghts <- NULL
-  
+
   args <- match.call()
   dy<-dim(y)
   if(length(dy)!=3) stop("Image should be 3D")
@@ -678,8 +623,8 @@ awslinsd <- function(y,hmax=NULL,hpre=NULL,h0=NULL,mask=NULL,
   kstar <- cpar$kstar
   hmax <- cpar$hmax
   n<-length(y)
-  # 
-  #   family dependent transformations 
+  #
+  #   family dependent transformations
   #
   zfamily <- awsgfamily(y,h0,3)
   sigma2 <- zfamily$sigma2
@@ -693,7 +638,7 @@ awslinsd <- function(y,hmax=NULL,hpre=NULL,h0=NULL,mask=NULL,
   n3 <- dy[3]
   #
   #    Initialize  for the iteration
-  #  
+  #
   zobj<-list(ai=y, bi= rep(1,n), theta= y, fix=!mask)
   mae<-NULL
   lambda0<-1e50 # that removes the stochstic term for the first step, initialization by kernel estimates
@@ -725,7 +670,7 @@ awslinsd <- function(y,hmax=NULL,hpre=NULL,h0=NULL,mask=NULL,
     hakt <- gethani(1,10,1.25^k,c(1,0,0,1,0,1),c(1,wghts),1e-4)
     dlw<-(2*trunc(hakt/c(1,wghts))+1)[1:3]
     if(any(h0>0)) lambda0<-lambda0*Spatialvar.gauss(hakt0/0.42445/4,h0,3)/Spatialvar.gauss(hakt0/0.42445/4,1e-5,3)
-    # Correction for spatial correlation depends on h^{(k)} 
+    # Correction for spatial correlation depends on h^{(k)}
     hakt0<-hakt
     # heteroskedastic Gaussian case
     zobj <- .Fortran("cgaws",as.double(y),
@@ -748,8 +693,8 @@ awslinsd <- function(y,hmax=NULL,hpre=NULL,h0=NULL,mask=NULL,
     dim(zobj$theta)<-dim(zobj$gi)<-dim(zobj$gi2)<-dim(zobj$bi)<-dy
     hhom <- zobj$hhom
     #
-    #    Calculate MAE and MSE if true parameters are given in u 
-    #    this is for demonstration and testing for propagation (parameter adjustments) 
+    #    Calculate MAE and MSE if true parameters are given in u
+    #    this is for demonstration and testing for propagation (parameter adjustments)
     #    only.
     #
     #   Prepare for next iteration
@@ -771,9 +716,9 @@ awslinsd <- function(y,hmax=NULL,hpre=NULL,h0=NULL,mask=NULL,
   }
   close(pb)
   # cat("\n")
-  ###                                                                       
-  ###            end iterations now prepare results                                                  
-  ###                                 
+  ###
+  ###            end iterations now prepare results
+  ###
   list(theta = zobj$theta, vcoef=coef, mask=mask)
 }
 ###########################################################################
@@ -791,7 +736,7 @@ awsgfamily <- function(y,h0,d){
   #  cat("Estimated variance: ", signif(sigma2,4),"\n")
   sigma2 <- rep(sigma2, length(y))
   dim(sigma2) <- dim(y)
-  sigma2 <- 1/sigma2 #  taking the invers yields simpler formulaes 
+  sigma2 <- 1/sigma2 #  taking the invers yields simpler formulaes
   list(sigma2=sigma2,h0=h0)
 }
 ############################################################################
