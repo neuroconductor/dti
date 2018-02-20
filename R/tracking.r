@@ -8,22 +8,22 @@ tracking <- function(obj,  ...) cat("Fiber tracking not implemented for this cla
 
 setGeneric("tracking", function(obj,  ...) standardGeneric("tracking"))
 
-setMethod("tracking","dtiTensor", function(obj, roix=NULL, roiy=NULL, roiz=NULL, 
+setMethod("tracking","dtiTensor", function(obj, roix=NULL, roiy=NULL, roiz=NULL,
                                            mask=NULL, method="LINEPROP", minfa=0.3, maxangle=30, subsample=1)
 {
-  
+
   args <- sys.call(-1)
   args <- c(obj@call,args)
   imethod <- switch(method, "LINEPROP" = 1,
                     1)
-  
+
   dimx <- obj@ddim[1]
   dimy <- obj@ddim[2]
   dimz <- obj@ddim[3]
   if(obj@orientation[1]==1||obj@orientation[2]==3||obj@orientation[3]==4){
-    xind <- if (obj@orientation[1]==1) dimx:1 else 1:dimx 
-    yind <- if (obj@orientation[2]==3) dimy:1 else 1:dimy 
-    zind <- if (obj@orientation[3]==4) dimz:1 else 1:dimz 
+    xind <- if (obj@orientation[1]==1) dimx:1 else 1:dimx
+    yind <- if (obj@orientation[2]==3) dimy:1 else 1:dimy
+    zind <- if (obj@orientation[3]==4) dimz:1 else 1:dimz
     if (!is.null(roix) & obj@orientation[1]==1) roix <- dimx+1-roix
     if (!is.null(roiy) & obj@orientation[2]==3) roiy <- dimy+1-roiy
     if (!is.null(roiz) & obj@orientation[3]==4) roiz <- dimz+1-roiz
@@ -42,18 +42,18 @@ setMethod("tracking","dtiTensor", function(obj, roix=NULL, roiy=NULL, roiz=NULL,
     mask <- array(FALSE,obj@ddim)
     mask[roix,roiy,roiz] <- TRUE
   }
-  
+
   dtind <- dtiIndices(obj);
   if(sum(dtind@fa[roix,roiy,roiz]>minfa)==0){
     cat("No fiber with sufficint FA in region of interest\n")
     return(invisible(FALSE))
   }
-  
+
   andir <- dtind@andir
   fa <- dtind@fa
   rm(dtind)
   gc()
-  
+
   if ((subsample != as.integer(subsample)) | (subsample < 1)) subsample <- 1
   if (subsample > 1) {
     indx <- rep(1:dimx, rep(subsample,dimx))
@@ -71,9 +71,9 @@ setMethod("tracking","dtiTensor", function(obj, roix=NULL, roiy=NULL, roiz=NULL,
     roiza <- (roiza-1)*subsample+1
     roize <- roize*subsample
   }
-  
-  
-  dd <- .Call("interface_tracking",
+
+
+  dd <- .Call(C_interface_tracking,
               as.double(andir),
               as.double(fa),
               as.logical(mask),
@@ -90,10 +90,8 @@ setMethod("tracking","dtiTensor", function(obj, roix=NULL, roiy=NULL, roiz=NULL,
               as.double(obj@voxelext[2]/subsample),
               as.double(obj@voxelext[3]/subsample),
               as.double(minfa), # not yet used
-              as.double(maxangle),   # not yet used
-              #             as.integer(imethod),    # not yet used (for tracking method)
-              PACKAGE="dti")
-  
+              as.double(maxangle))   # not yet used
+
   dim(dd) <- c(length(dd)/6,6);
   istartfiber <- ident.fibers(dd[,1:3])
   z <- compactFibers(dd,istartfiber)
@@ -130,19 +128,19 @@ setMethod("tracking","dtiIndices", function( obj,
                                              roix=NULL, roiy=NULL, roiz=NULL, mask=NULL, method="LINEPROP",
                                              minfa=0.3, maxangle=30, subsample = 1)
 {
-  
+
   args <- sys.call(-1)
   args <- c(obj@call,args)
   imethod <- switch(method, "LINEPROP" = 1,
                     1)
-  
+
   dimx <- obj@ddim[1]
   dimy <- obj@ddim[2]
   dimz <- obj@ddim[3]
   if(obj@orientation[1]==1||obj@orientation[2]==3||obj@orientation[3]==4){
-    xind <- if (obj@orientation[1]==1) dimx:1 else 1:dimx 
-    yind <- if (obj@orientation[2]==3) dimy:1 else 1:dimy 
-    zind <- if (obj@orientation[3]==4) dimz:1 else 1:dimz 
+    xind <- if (obj@orientation[1]==1) dimx:1 else 1:dimx
+    yind <- if (obj@orientation[2]==3) dimy:1 else 1:dimy
+    zind <- if (obj@orientation[3]==4) dimz:1 else 1:dimz
     if (!is.null(roix) & obj@orientation[1]==1) roix <- dimx+1-roix
     if (!is.null(roiy) & obj@orientation[2]==3) roiy <- dimy+1-roiy
     if (!is.null(roiz) & obj@orientation[3]==4) roiz <- dimz+1-roiz
@@ -165,10 +163,10 @@ setMethod("tracking","dtiIndices", function( obj,
     cat("No fiber with sufficint FA in region of interest\n")
     return(invisible(FALSE))
   }
-  
+
   andir <- obj@andir
   fa <- obj@fa
-  
+
   if ((subsample != as.integer(subsample)) | (subsample < 1)) subsample <- 1
   if (subsample > 1) {
     indx <- rep(1:dimx, rep(subsample,dimx))
@@ -186,9 +184,9 @@ setMethod("tracking","dtiIndices", function( obj,
     roiza <- (roiza-1)*subsample+1
     roize <- roize*subsample
   }
-  
-  
-  dd <- .Call("interface_tracking",
+
+
+  dd <- .Call(C_interface_tracking,
               as.double(andir),
               as.double(fa),
               as.logical(mask),
@@ -205,10 +203,8 @@ setMethod("tracking","dtiIndices", function( obj,
               as.double(obj@voxelext[2]/subsample),
               as.double(obj@voxelext[3]/subsample),
               as.double(minfa), # not yet used
-              as.double(maxangle),   # not yet used
-              #             as.integer(imethod),    # not yet used (for tracking method)
-              PACKAGE="dti")
-  
+              as.double(maxangle))
+
   dim(dd) <- c(length(dd)/6,6);
   istartfiber <- ident.fibers(dd[,1:3])
   z <- compactFibers(dd,istartfiber)
@@ -241,8 +237,8 @@ setMethod("tracking","dtiIndices", function( obj,
   )
 })
 
-setMethod("tracking", "dwiMixtensor", function(obj, roix=NULL, roiy=NULL, 
-                                               roiz=NULL, mask=NULL, method="LINEPROP", minfa=0.3, maxangle=30, 
+setMethod("tracking", "dwiMixtensor", function(obj, roix=NULL, roiy=NULL,
+                                               roiz=NULL, mask=NULL, method="LINEPROP", minfa=0.3, maxangle=30,
                                                subsample = 1, mincompartsize=0)
 {
   args <- sys.call(-1)
@@ -254,9 +250,9 @@ setMethod("tracking", "dwiMixtensor", function(obj, roix=NULL, roiy=NULL,
   dimy <- obj@ddim[2]
   dimz <- obj@ddim[3]
   if(obj@orientation[1]==1||obj@orientation[2]==3||obj@orientation[3]==4){
-    xind <- if (obj@orientation[1]==1) dimx:1 else 1:dimx 
-    yind <- if (obj@orientation[2]==3) dimy:1 else 1:dimy 
-    zind <- if (obj@orientation[3]==4) dimz:1 else 1:dimz 
+    xind <- if (obj@orientation[1]==1) dimx:1 else 1:dimx
+    yind <- if (obj@orientation[2]==3) dimy:1 else 1:dimy
+    zind <- if (obj@orientation[3]==4) dimz:1 else 1:dimz
     if (!is.null(roix) & obj@orientation[1]==1) roix <- dimx+1-roix
     if (!is.null(roiy) & obj@orientation[2]==3) roiy <- dimy+1-roiy
     if (!is.null(roiz) & obj@orientation[3]==4) roiz <- dimz+1-roiz
@@ -276,14 +272,14 @@ setMethod("tracking", "dwiMixtensor", function(obj, roix=NULL, roiy=NULL,
     mask <- array(FALSE,obj@ddim)
     mask[roix,roiy,roiz] <- TRUE
   }
-  
+
   ex <- extract(obj, c("andir", "order", "fa", "mix"))
-  
+
   if(sum(ex$fa[roix,roiy,roiz] > minfa)==0){
     cat("No fiber with sufficint FA in region of interest\n")
     return(invisible(FALSE))
   }
-  
+
   if ((subsample != as.integer(subsample)) | (subsample < 1)) subsample <- 1
   if (subsample > 1) {
     indx <- rep(1:dimx, rep(subsample,dimx))
@@ -305,8 +301,8 @@ setMethod("tracking", "dwiMixtensor", function(obj, roix=NULL, roiy=NULL,
   }
   maxorder <- dim(ex$andir)[2]
   gc()
-  
-  dd <- .Call("interface_tracking_mixtensor",
+
+  dd <- .Call(C_interface_tracking_mixtensor,
               as.double(ex$andir), # dim = c(3, maxorder, dimx, dimy, dimz)
               as.integer(ex$order), # NEW! dim = c(dimx, dimy, dimz)
               as.double(ex$fa),    # dim = c(dimx, dimy, dimz)
@@ -326,10 +322,8 @@ setMethod("tracking", "dwiMixtensor", function(obj, roix=NULL, roiy=NULL,
               as.double(obj@voxelext[2]/subsample),
               as.double(obj@voxelext[3]/subsample),
               as.double(minfa),
-              as.double(maxangle), 
-              #             as.integer(imethod),    # not yet used (for tracking method)
-              PACKAGE="dti")
-  
+              as.double(maxangle))
+
   dim(dd) <- c(length(dd)/6,6);
   istartfiber <- ident.fibers(dd[,1:3])
   z <- compactFibers(dd,istartfiber)
@@ -364,7 +358,7 @@ setMethod("tracking", "dwiMixtensor", function(obj, roix=NULL, roiy=NULL,
 
 reduceMixtens <- function(mtobj, mincompartsize=0){
   ##
-  ##  remove small compartments from tensor mixture 
+  ##  remove small compartments from tensor mixture
   ##  for internal use with tracking only !!!
   ##
   if(mincompartsize>0){

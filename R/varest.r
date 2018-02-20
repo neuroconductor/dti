@@ -85,13 +85,12 @@ awslsigmc <- function(y,                 # data
   mc.cores <- setCores(,reprt=FALSE)
   ## preparations for median smoothing
   nwmd <- (2*as.integer(hsig)+1)^3
-  parammd <- .Fortran("paramw3",
+  parammd <- .Fortran(C_paramw3,
                       as.double(hsig),
                       as.double(c(1,1)),
                       ind=integer(3*nwmd),
                       w=double(nwmd),
-                      n=as.integer(nwmd),
-                      PACKAGE = "dti")[c("ind","w","n")]
+                      n=as.integer(nwmd))[c("ind","w","n")]
   nwmd <- parammd$n
   parammd$ind <- parammd$ind[1:(3*nwmd)]
   dim(parammd$ind) <- c(3,nwmd)
@@ -101,19 +100,18 @@ awslsigmc <- function(y,                 # data
     h <- 1.25^((i-1)/3)
     nw <- prod(2*as.integer(h/c(1,vext))+1)
     #    cat("nw=",nw,"h/vext=",h/c(1,1/vext),"ih=",as.integer(h/c(1,1/vext)),"\n")
-    param <- .Fortran("paramw3",
+    param <- .Fortran(C_paramw3,
                       as.double(h),
                       as.double(vext),
                       ind=integer(3*nw),
                       w=double(nw),
-                      n=as.integer(nw),
-                      PACKAGE = "dti")[c("ind","w","n")]
+                      n=as.integer(nw))[c("ind","w","n")]
     nw <- param$n
     param$ind <- param$ind[1:(3*nw)]
     dim(param$ind) <- c(3,nw)
     param$w   <- param$w[1:nw]
       ## perform one step PS with bandwidth h
-      z <- .Fortran("awslchi2",
+      z <- .Fortran(C_awslchi2,
                     as.double(y),        # data
                     as.double(ksi),# \sum w_ij S_j^2
                     ni = as.double(ni),
@@ -136,8 +134,7 @@ awslsigmc <- function(y,                 # data
                     double(floor(ncoils)*mc.cores), # work(L,nthreds)
                     th = double(n),
                     sigman = double(n),
-                    ksi = double(n),
-                    PACKAGE = "dti")[c("ni","ksi","th","sigman")]
+                    ksi = double(n))[c("ni","ksi","th","sigman")]
       thchi <- z$th
       ksi <- z$ksi
       thchi[!mask] <- 0
@@ -155,7 +152,7 @@ awslsigmc <- function(y,                 # data
     ##
     ##  avoid ties in local neighborhood cubes of z$sigman
     ##
-       sigma <- .Fortran("mediansm",
+       sigma <- .Fortran(C_mediansm,
                       as.double(z$sigman),
                       as.logical(mask),
                       as.integer(ddim[1]),
@@ -165,8 +162,7 @@ awslsigmc <- function(y,                 # data
                       as.integer(nwmd),
                       double(nwmd*mc.cores), # work(nw,nthreds)
                       as.integer(mc.cores),
-                      sigman = double(n),
-                      PACKAGE = "dti")$sigman
+                      sigman = double(n))$sigman
     }
     dim(sigma) <- ddim
     mask[sigma==0] <- FALSE
@@ -274,7 +270,7 @@ awssigmc <- function(y,                 # data
                      method=c("VAR","MAD")  # for variance, alternative "MAD" for mean absolute deviation
 ) {
   method <- match.arg(method)
-  
+
   varstats <- sofmchi(ncoils)
   if(length(vext)==3) vext <- vext[2:3]/vext[1]
   ## dimension and size of cubus
@@ -312,13 +308,12 @@ awssigmc <- function(y,                 # data
     h <- h0 * 1.25^((i-1)/3)
     nw <- prod(2*as.integer(h/c(1,vext))+1)
     #    cat("nw=",nw,"h/vext=",h/c(1,1/vext),"ih=",as.integer(h/c(1,1/vext)),"\n")
-    param <- .Fortran("paramw3",
+    param <- .Fortran(C_paramw3,
                       as.double(h),
                       as.double(vext),
                       ind=integer(3*nw),
                       w=double(nw),
-                      n=as.integer(nw),
-                      PACKAGE = "dti")[c("ind","w","n")]
+                      n=as.integer(nw))[c("ind","w","n")]
     nw <- param$n
     param$ind <- param$ind[1:(3*nw)]
     dim(param$ind) <- c(3,nw)
@@ -327,7 +322,7 @@ awssigmc <- function(y,                 # data
     ## correction factor for variance of NC Chi distribution
     ## perform one step PS with bandwidth h
     if(method=="VAR"){
-      z <- .Fortran("awsvchi",
+      z <- .Fortran(C_awsvchi,
                     as.double(y),        # data
                     as.double(th),       # previous estimates
                     ni = as.double(ni),
@@ -342,11 +337,10 @@ awssigmc <- function(y,                 # data
                     as.double(lambda),
                     as.double(sigma),
                     th = double(n),
-                    sy = double(n),
-                    PACKAGE = "dti")[c("ni","th","sy")]
+                    sy = double(n))[c("ni","th","sy")]
     } else {
       #    cat("n",n,prod(ddim[1:3]),"ly",length(y),"lth",length(th),"lni",length(ni),"lfns",length(fncchi),"lmask",length(mask),"nw",nw,"lind",length(param$ind),"lw",length(param$w),"mc.cores",mc.cores,"\n")
-      z <- .Fortran("awsadchi",
+      z <- .Fortran(C_awsadchi,
                     as.double(y),        # y(n1,n2,n3)
                     as.double(th),       # th(n1,n2,n3)
                     ni = as.double(ni),  # ni(n1,n2,n3)
@@ -363,8 +357,7 @@ awssigmc <- function(y,                 # data
                     double(nw*mc.cores), # wad(nw,nthreds)
                     as.integer(mc.cores), # nthreds
                     th = double(n), # thn(n1*n2*n3)
-                    sy = double(n), # sy(n1*n2*n3)
-                    PACKAGE = "dti")[c("ni","th","sy")]
+                    sy = double(n))[c("ni","th","sy")]
     }
     ## extract sum of weigths (see PS) and consider only voxels with ni larger then mean
     th <- z$th
@@ -426,7 +419,7 @@ aflsigmc <- function(y,ncoils,level=NULL,mask=NULL,h=2,hadj=1,vext = c( 1, 1)){
   ##
   ##  local variance estimates in vx
   ##
-  vx <- .Fortran("afmodevn",
+  vx <- .Fortran(C_afmodevn,
                  as.double(y),
                  as.integer(ddim[1]),
                  as.integer(ddim[2]),
@@ -434,8 +427,7 @@ aflsigmc <- function(y,ncoils,level=NULL,mask=NULL,h=2,hadj=1,vext = c( 1, 1)){
                  as.logical(mask1),
                  as.double(h),
                  as.double(vext),
-                 sigma = double(n),
-                 PACKAGE = "dti")$sigma
+                 sigma = double(n))$sigma
   dim(vx) <- ddim
   vxb <- vx[indB]
   vxs <- vx[!indB]
@@ -443,7 +435,7 @@ aflsigmc <- function(y,ncoils,level=NULL,mask=NULL,h=2,hadj=1,vext = c( 1, 1)){
   sh2B <- dv2b$x[dv2b$y == max(dv2b$y)][1]
   dv2s <- density( vxs[vxs>0], n = 4092, adjust = hadj, to = min( max(vxs[vxs>0]), median(vxs[vxs>0])*5) )
   sh2eS <- dv2s$x[dv2s$y == max(dv2s$y)][1]
-  m2 <- .Fortran("afmodem2",
+  m2 <- .Fortran(C_afmodem2,
                  as.double(y),
                  as.integer(ddim[1]),
                  as.integer(ddim[2]),
@@ -451,8 +443,7 @@ aflsigmc <- function(y,ncoils,level=NULL,mask=NULL,h=2,hadj=1,vext = c( 1, 1)){
                  as.logical(mask1),
                  as.double(h),
                  as.double(vext),
-                 sm = double(n),
-                 PACKAGE = "dti")$sm
+                 sm = double(n))$sm
   dim(m2) <- ddim
   m2b <- m2[indB]
   dm2b <- density( m2b[m2b>0], n = 4092, adjust = hadj, to = min( max(m2b[m2b>0]), median(m2b[m2b>0])*5) )
@@ -520,7 +511,7 @@ afsigmc <- function(y,                 # data
   ## let FORTRAN do the calculation
   if(method%in%c("modevn","modem1chi")){
     if(method=="modevn"){
-      sigma <- .Fortran("afmodevn",
+      sigma <- .Fortran(C_afmodevn,
                         as.double(y),
                         as.integer(ddim[1]),
                         as.integer(ddim[2]),
@@ -528,13 +519,12 @@ afsigmc <- function(y,                 # data
                         as.logical(mask),
                         as.double(h),
                         as.double(vext),
-                        sigma = double(n),
-                        PACKAGE = "dti")$sigma
+                        sigma = double(n))$sigma
       sigma <- sigma/2/(ncoils-gamma(ncoils+.5)^2/gamma(ncoils)^2)
       sigma <- array( sqrt(sigma), ddim)
     } else {
       afactor <- sqrt(1/2)*gamma(ncoils)/gamma(ncoils+.5)
-      sigma <- .Fortran("afmodem1",
+      sigma <- .Fortran(C_afmodem1,
                         as.double(y),
                         as.integer(ddim[1]),
                         as.integer(ddim[2]),
@@ -542,8 +532,7 @@ afsigmc <- function(y,                 # data
                         as.logical(mask),
                         as.double(h),
                         as.double(vext),
-                        sigma = double(n),
-                        PACKAGE = "dti")$sigma
+                        sigma = double(n))$sigma
       sigma <- array( afactor*sigma, ddim)
     }
     ##  use the maximal mode of estimated local variance parameters, exclude largest values for better precision
@@ -647,7 +636,7 @@ awslinsd <- function(y,hmax=NULL,hpre=NULL,h0=NULL,mask=NULL,
   #
   if(is.null(hpre)) hpre<-20^(1/3)
   dlw<-(2*trunc(hpre/c(1,wghts))+1)[1:3]
-  hobj <- .Fortran("caws03d",as.double(y),
+  hobj <- .Fortran(C_caws03d,as.double(y),
                    as.logical(mask),
                    as.integer(n1),
                    as.integer(n2),
@@ -656,8 +645,7 @@ awslinsd <- function(y,hmax=NULL,hpre=NULL,h0=NULL,mask=NULL,
                    theta=as.double(zobj$theta),
                    bi=as.double(zobj$bi),
                    double(prod(dlw)),
-                   as.double(wghts),
-                   PACKAGE="dti")[c("bi","theta")]
+                   as.double(wghts))[c("bi","theta")]
   dim(hobj$theta) <- dim(hobj$bi) <- dy
   #
   #   iteratate until maximal bandwidth is reached
@@ -673,7 +661,7 @@ awslinsd <- function(y,hmax=NULL,hpre=NULL,h0=NULL,mask=NULL,
     # Correction for spatial correlation depends on h^{(k)}
     hakt0<-hakt
     # heteroskedastic Gaussian case
-    zobj <- .Fortran("cgaws",as.double(y),
+    zobj <- .Fortran(C_cgaws,as.double(y),
                      as.logical(mask),
                      as.double(sigma2),
                      as.integer(n1),
@@ -688,8 +676,7 @@ awslinsd <- function(y,hmax=NULL,hpre=NULL,h0=NULL,mask=NULL,
                      gi2=double(n),
                      theta=double(n),
                      double(prod(dlw)),
-                     as.double(wghts),
-                     PACKAGE="dti")[c("bi","hhom","theta","gi","gi2","hakt")]
+                     as.double(wghts))[c("bi","hhom","theta","gi","gi2","hakt")]
     dim(zobj$theta)<-dim(zobj$gi)<-dim(zobj$gi2)<-dim(zobj$bi)<-dy
     hhom <- zobj$hhom
     #

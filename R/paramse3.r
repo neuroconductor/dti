@@ -1,4 +1,4 @@
-gethseqfullse3 <- function (kstar, gradstats, kappa=NULL, vext = c(1, 1)) 
+gethseqfullse3 <- function (kstar, gradstats, kappa=NULL, vext = c(1, 1))
 {
   ngrad <- dim(gradstats$bghat)[2]
   h  <- vr  <- matrix(0,ngrad,kstar)
@@ -8,7 +8,7 @@ gethseqfullse3 <- function (kstar, gradstats, kappa=NULL, vext = c(1, 1))
   cat("get sequences of bw, kappa up to kstar=", kstar, " ")
   n <- 0
   for(i in 1:ngrad){
-    z <- .Fortran("ghfse3i",
+    z <- .Fortran(C_ghfse3i,
                   as.integer(i),#i4
                   as.integer(kstar),#kstar
                   as.double(gradstats$k456),
@@ -18,15 +18,14 @@ gethseqfullse3 <- function (kstar, gradstats, kappa=NULL, vext = c(1, 1))
                   h=double(kstar),
                   vr=double(kstar),#
                   n=integer(1),#
-                  as.integer(gradstats$dist),
-                  PACKAGE="dti")[c("h","vr","n")]
+                  as.integer(gradstats$dist))[c("h","vr","n")]
     h[i,] <- z$h
-    vr[i,] <- z$vr 
+    vr[i,] <- z$vr
     n <- n+z$n
     cat(".")
   }
-  cat("\n number of positive weights:",n,"mean maximal bandwidth",signif(mean(h[,kstar]),3),"time elapsed:", 
-      format(difftime(Sys.time(), prt0), digits = 3), 
+  cat("\n number of positive weights:",n,"mean maximal bandwidth",signif(mean(h[,kstar]),3),"time elapsed:",
+      format(difftime(Sys.time(), prt0), digits = 3),
       "\n")
   list(h=h,kappa=kappa,vred=vr,n=n)
 }
@@ -45,5 +44,3 @@ reduceparam <- function(param){
   param$starts <- c(0,starts)
   param
 }
-
-

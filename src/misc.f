@@ -450,7 +450,7 @@ C     use of estimated tensors (linearized model) as initial values
 C     for nonlinear regression
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-      subroutine D2Rall(D,rho,nvox)
+      subroutine d2rall(D,rho,nvox)
         implicit none
         integer nvox
         double precision D(6,nvox),rho(6,nvox)
@@ -486,7 +486,7 @@ C
 C     get D from rho
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-      subroutine R2Dall(rho,D,nvox)
+      subroutine r2dall(rho,D,nvox)
       implicit none
       integer nvox,i
       double precision D(6,nvox),rho(6,nvox),eps
@@ -596,5 +596,19 @@ C  as components of d
       d(1)=z*z
       d(2)=2.d0*z*zp
       d(3)=2.d0*z*ze
+      RETURN
+      END
+      subroutine besselq(x,n,fw)
+      implicit none
+      integer n
+      double precision x(n),fw(n)
+      external besseli
+      double precision besseli
+      integer i
+      DO i=1,n
+          x(i)=i*1.d-2
+C  avoid transform to zero for numerical stability
+          fw(i)=besseli(x(i),1.d0,2.d0)/besseli(x(i),0.d0,2.d0)
+      END DO
       RETURN
       END

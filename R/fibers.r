@@ -35,14 +35,14 @@ setMethod("selectFibers","dwiFiber", function(obj, roix=NULL, roiy=NULL, roiz=NU
     #
     #    no region of interest specified otherwise
     #
-    if(is.null(mask)){ 
+    if(is.null(mask)){
       mask <- array(0,obj@ddim)
       if(is.null(roix)) roix <- 1:obj@ddim[1]
       if(is.null(roiy)) roiy <- 1:obj@ddim[2]
       if(is.null(roiz)) roiz <- 1:obj@ddim[3]
       mask[roix,roiy,roiz] <- 1
     }
-    if(is.null(roimask)){ 
+    if(is.null(roimask)){
       roimask <- array(0,obj@ddim)
       if(is.null(roix)) roix <- 1:obj@ddim[1]
       if(is.null(roiy)) roiy <- 1:obj@ddim[2]
@@ -51,7 +51,7 @@ setMethod("selectFibers","dwiFiber", function(obj, roix=NULL, roiy=NULL, roiz=NU
     }
     lnewmask <- as.integer(log(mroimask,2))+1
     roimask[mask>0] <- roimask[mask>0]+2^lnewmask
-    z <- .Fortran("roifiber",
+    z <- .Fortran(C_roifiber,
                   as.double(fibers),
                   newfibers=double(prod(dim(fibers))),#new fibers
                   as.integer(dim(fibers)[1]),
@@ -66,8 +66,7 @@ setMethod("selectFibers","dwiFiber", function(obj, roix=NULL, roiy=NULL, roiz=NU
                   as.integer(obj@ddim[3]),
                   as.double(obj@voxelext),
                   sizenf=integer(1),
-                  nfiber=integer(1),
-                  PACKAGE="dti")[c("newfibers","sizenf","start","nfiber")]
+                  nfiber=integer(1))[c("newfibers","sizenf","start","nfiber")]
     if(z$sizenf>1) {
       fibers <- array(z$newfibers,dim(fibers))[1:z$sizenf,]
       fiberstart <- z$start[1:z$nfiber]
@@ -117,26 +116,24 @@ setMethod("reduceFibers","dwiFiber", function(obj, maxdist=1, ends=TRUE)
   endf <- c(startf[-1]-1,nsegm)
   nfibers <- length(startf)
   if(ends){
-    keep <- .Fortran("reducefe",
+    keep <- .Fortran(C_reducefe,
                      as.double(t(fibers)),
                      as.integer(nsegm),
                      as.integer(startf),
                      as.integer(endf),
                      as.integer(nfibers),
                      keep=logical(nfibers),
-                     as.double(maxdist),
-                     PACKAGE="dti")$keep
+                     as.double(maxdist))$keep
   } else {
-    keep <- .Fortran("reducefi",
+    keep <- .Fortran(C_reducefi,
                      as.double(t(fibers)),
                      as.integer(nsegm),
                      as.integer(startf),
                      as.integer(endf),
                      as.integer(nfibers),
                      keep=logical(nfibers),
-                     as.double(maxdist),
-                     PACKAGE="dti")$keep
-  } 
+                     as.double(maxdist))$keep
+  }
   startf <- startf[keep]
   endf <- endf[keep]
   ind <- rep(startf,endf-startf+1)+sequence(endf-startf+1)-1
@@ -156,12 +153,11 @@ ident.fibers <- function(mat){
     warning("Incorrect dimensions for fiber array")
   }
   dd <- dd[1]
-  z <- .Fortran("fibersta",
+  z <- .Fortran(C_fibersta,
                 as.double(mat),
                 as.integer(dd/2),
                 fiberstarts=integer(dd/2),#thats more the maximum needed
-                nfibers=integer(1),
-                PACKAGE="dti")[c("fiberstarts","nfibers")]
+                nfibers=integer(1))[c("fiberstarts","nfibers")]
   z$fiberstarts[1:z$nfibers]
 }
 
@@ -179,7 +175,7 @@ sortFibers <- function(obj){
   obj@fibers <- obj@fibers[ind,]
   obj@startind <- as.integer(c(0,cumsum(ends[of]-starts[of]+1))[1:length(starts)]+1)
   obj
-} 
+}
 
 compactFibers <- function(fibers,startind){
   n <- dim(fibers)[1]
@@ -189,7 +185,20 @@ compactFibers <- function(fibers,startind){
   list(fibers=fibers[ind,],startind=(startind-1)/2+1:length(startind))
 }
 
-expandFibers <- function(fibers,startind){
+expandFibers <- function(fibers,startind,delta=0){
+  if(delta > 0){
+     fobj <- .Fortran(C_cfibers,
+                  fibers=as.double(fibers),
+                  startind=as.integer(c(startind,dim(fibers)[1]+1)),
+                  as.integer(dim(fibers)[1]),
+                  as.integer(length(startind)+1),
+                  as.double(delta),
+                  lfibers=integer(1))[c("fibers","startind","lfibers")]
+    dim(fobj$fibers) <- dim(fibers)
+    fibers <- fobj$fibers[1:fobj$lfibers,]
+    startind <- fobj$startind[1:length(startind)]
+    cat("reduced to ",dim(fibers)[1]-1," fiber segments")
+  }
   n <- dim(fibers)[1]
   endind <- c(startind[-1]-1,n)
   ind <- rep(2,max(endind))
@@ -227,7 +236,7 @@ setMethod("combineFibers",c("dwiFiber","dwiFiber"), function(obj,obj2){
   obj@fibers <- fibers[ind,]
   obj@startind <- as.integer(c(0,cumsum(ends[of]-starts[of]+1))[1:length(starts)]+1)
   obj
-} 
+}
 )
 
 touchingFibers <- function(obj, obj2, ...) cat("No Fiber operations for this class:",class(obj),class(obj2),"\n")
@@ -244,7 +253,7 @@ setMethod("touchingFibers",c("dwiFiber","dwiFiber"), function(obj,obj2,maxdist=1
   nfibers1 <- length(startf1)
   fibers2 <- obj2@fibers[,1:3]
   nsegm2 <- dim(fibers2)[1]
-  z <- .Fortran("touchfi",
+  z <- .Fortran(C_touchfi,
                 fibers=as.double(t(fibers1)),
                 nsegm1=as.integer(nsegm1),
                 startf=as.integer(startf1),
@@ -253,8 +262,7 @@ setMethod("touchingFibers",c("dwiFiber","dwiFiber"), function(obj,obj2,maxdist=1
                 logical(nfibers1),
                 as.double(t(fibers2)),
                 as.integer(nsegm2),
-                as.double(maxdist),
-                PACKAGE="dti")[c("fibers","startf","nfibers","nsegm1")]
+                as.double(maxdist))[c("fibers","startf","nfibers","nsegm1")]
   startf <- z$startf[1:z$nfibers]
   fibers <- t(matrix(z$fibers,6,nsegm1)[,1:z$nsegm1])
   obj@call <- args

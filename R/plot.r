@@ -19,10 +19,10 @@ setMethod("plot", "dtiData", function(x, y,slice=1, gradient=NULL, view= "axial"
     warning("gradient number out of range, show s0 image")
     gradient <- x@s0ind[1]
   }
-  if(density) { 
+  if(density) {
     z <- density(x@si[xind,yind,zind,gradient])
     if(show) {
-      plot(z,main="Density of S0-values") 
+      plot(z,main="Density of S0-values")
       lines(c(x@level,x@level),c(0,max(z$y)),col=2)
     }
     return(invisible(z))
@@ -83,23 +83,21 @@ setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, mi
     n2 <- length(yind)
   }
   if(what=="GA"){
-    z <- .Fortran("dti2Dga",
+    z <- .Fortran(C_dti2dga,
                   as.double(D),
                   as.integer(n1*n2),
                   as.logical(mask),
                   fa=double(n1*n2),
                   md=double(n1*n2),
-                  andir=double(3*n1*n2),
-                  PACKAGE="dti")[c("fa","md","andir")]
+                  andir=double(3*n1*n2))[c("fa","md","andir")]
   } else {
-    z <- .Fortran("dti2Dfa",
+    z <- .Fortran(C_dti2dfa,
                   as.double(D),
                   as.integer(n1*n2),
                   as.logical(mask),
                   fa=double(n1*n2),
                   md=double(n1*n2),
-                  andir=double(3*n1*n2),
-                  PACKAGE="dti")[c("fa","md","andir")]
+                  andir=double(3*n1*n2))[c("fa","md","andir")]
   }
   oldpar <- par(mfrow=c(3,3),mar=mar,mgp=mgp,...)
   #  now draw information to graphical device
@@ -228,11 +226,11 @@ setMethod("plot", "dtiIndices", function(x, y, slice=1, view= "axial", method=1,
   if(is.null(xind)) xind<-(1:x@ddim[1])
   if(is.null(yind)) yind<-(1:x@ddim[2])
   if(is.null(zind)) zind<-(1:x@ddim[3])
-  if(density) { 
+  if(density) {
     x <- x[xind,yind,zind]
     z <- density(if(what=="fa") x@fa[x@fa>0] else x@ga[x@ga>0])
     if(show) {
-      plot(z,main=paste("Density of positive",what,"-values")) 
+      plot(z,main=paste("Density of positive",what,"-values"))
     }
     return(invisible(z))
   }
@@ -357,7 +355,7 @@ setMethod("plot", "dtiIndices", function(x, y, slice=1, view= "axial", method=1,
     img.data <- array(0, dim=c(dim(anindex), 3))
     for (i in 1:dim(anindex)[1]) { # i dont like for loops in R!
       for (j in 1:dim(anindex)[2]) {
-        img.data[i,j,] <- colqFA[, 255 * anindex[i, j] + 1] 
+        img.data[i,j,] <- colqFA[, 255 * anindex[i, j] + 1]
       }
     }
     img <- make.image(img.data, gammatype="ITU")
@@ -386,31 +384,31 @@ setMethod("plot", "dwiFiber", function(x, y, ...) {
   invisible(NULL)
 })
 
-setMethod("plot", "dkiIndices", function(x, 
-                                         y, 
-                                         slice = 1, 
-                                         #view = "axial", 
+setMethod("plot", "dkiIndices", function(x,
+                                         y,
+                                         slice = 1,
+                                         #view = "axial",
                                          what = c("md", "fa", "mk", "mk2"),
-                                         #method = 1, 
-                                         #quant = 0, 
-                                         #minfa = NULL, 
-                                         #show = TRUE, 
-                                         #identify = FALSE, 
-                                         #density = FALSE, 
+                                         #method = 1,
+                                         #quant = 0,
+                                         #minfa = NULL,
+                                         #show = TRUE,
+                                         #identify = FALSE,
+                                         #density = FALSE,
                                          #contrast.enh = 1,
                                          #xind = NULL,
                                          #yind = NULL,
-                                         #zind = NULL, 
+                                         #zind = NULL,
                                          #mar = c(3, 3, 3, .3),
-                                         #mgp = c(2, 1, 0), 
+                                         #mgp = c(2, 1, 0),
                                          ...) {
-  
+
   switch(what,
          md = image(x@md[, , slice], col=grey(0:255/255), ...),
          fa = image(x@fa[, , slice], col=grey(0:255/255), ...),
          mk = image(x@mk[, , slice], col=grey(0:255/255), ...),
          mk2 = image(x@mk2[, , slice], col=grey(0:255/255), ...))
-  
-  
-  
+
+
+
 })

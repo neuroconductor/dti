@@ -1,12 +1,11 @@
 betagamma <- function(g){
   dg <- dim(g)
   ngrad <- if(!is.null(dg)) dg[2] else 1
-  bghat <- .Fortran("bgstats",
+  bghat <- .Fortran(C_bgstats,
                     as.double(g),
                     as.integer(ngrad),
                     double(2*ngrad),
-                    bghat = double(2*ngrad*ngrad),
-                    PACKAGE = "dti")$bghat
+                    bghat = double(2*ngrad*ngrad))$bghat
   dim(bghat) <- c(2, ngrad, ngrad)
   ## sphaerische Coordinaten fuer Gradienten-Paare
   bghat
@@ -32,12 +31,11 @@ getkappas <- function(grad, trace = 0, dist = 1){
   #
   krit <- function(par, matm, beta){
     ## sum((matm-expm(par[1]*m4)%*%expm(par[2]*m5)%*%expm(par[3]*m6))^2)
-    .Fortran("k456krb",
+    .Fortran(C_k456krb,
              as.double(par),
              as.double(beta),
              as.double(matm),
-             erg = double(1),
-             PACKAGE = "dti")$erg
+             erg = double(1))$erg
   }
   krit5 <- function(x,p,pk4,matm,beta){
     # for line search with respect to k5 to get second solution

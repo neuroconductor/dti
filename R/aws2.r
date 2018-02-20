@@ -37,7 +37,7 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
   ddim <- object@ddim
   z <- sioutlier(object@si,s0ind)
   si <- array(z$si,c(ngrad,ddim))
-  index <- z$index 
+  index <- z$index
   rm(z)
   gc()
   xind <- object@xind
@@ -54,7 +54,7 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
   n2<-dimy[3]
   n3<-dimy[4]
   n<-n1*n2*n3
-  z <- .Fortran("projdt2",
+  z <- .Fortran(C_projdt2,
                 as.double(D),
                 as.integer(n1),
                 as.integer(n2),
@@ -63,12 +63,11 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
                 anindex=double(n),
                 andirection=double(3*n),
                 det=double(n),
-                as.double(eps),
-                PACKAGE="dti")[c("D","anindex","andirection","det")]
+                as.double(eps))[c("D","anindex","andirection","det")]
   dim(z$D) <- dimy
   z$th0 <- th0
   dim(z$anindex) <-dim(z$det) <- dimy[-1]
-  dim(z$andirection) <- c(3,dimy[-1]) 
+  dim(z$andirection) <- c(3,dimy[-1])
   z$sihat <- si
   z$bi <- rep(1,n)
 #
@@ -126,7 +125,7 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
   }
   hincr <- 1.25^(1/3)
   maxvol <- getvofh(hmax,c(1,0,0,1,0,1),vext)
-  kstar <- as.integer(log(maxvol)/log(1.25)) 
+  kstar <- as.integer(log(maxvol)/log(1.25))
   if(is.null(hinit)){
   hakt0 <- 1
   hakt <- hincr
@@ -156,10 +155,10 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
        lambda0 <- lambda0 * corrfactor
        cat("Correction factor for spatial correlation",signif(corrfactor,3),"\n")
     }
-    z <- .Fortran("awsrgdti",
+    z <- .Fortran(C_awsrgdti,
                     as.double(si),
                     sihat=as.double(z$sihat), # needed for statistical penalty
-                    double(ngrad*n),# array for predicted Si's from the tensor model 
+                    double(ngrad*n),# array for predicted Si's from the tensor model
                     as.integer(ngrad),
                     as.integer(n1),
                     as.integer(n2),
@@ -187,17 +186,16 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
                     double(ngrad),#F
                     double(ngrad),#var
                     as.double(eps),
-                    as.logical(rician), 
+                    as.logical(rician),
                     as.integer(maxnw),# maximum number of positive weights
                     integer(ngrad),# auxiliary for number of iterations
                     double(maxnw*ngrad),# auxiliary for aktive data
                     integer(maxnw*3),# auxiliary for index of aktive data
                     double(maxnw),# auxiliary for weights
-                    double(ngrad),# auxiliary for variances
-                    PACKAGE="dti")[c("th0","D","bi","anindex","andirection","det","sigma2r","sihat")] 
+                    double(ngrad))[c("th0","D","bi","anindex","andirection","det","sigma2r","sihat")]
      dim(z$th0) <- dim(z$bi) <- dim(z$anindex) <- dim(z$det) <- dim(z$sigma2r) <- dimy[-1]
      dim(z$D) <- dimy
-     dim(z$andirection) <- c(3,dimy[-1]) 
+     dim(z$andirection) <- c(3,dimy[-1])
      n <- n1*n2*n3
      if(any(is.na(z$th0))){
         indna <- is.na(z$th0)
@@ -211,7 +209,7 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
         mask[indna] <- FALSE
      }
 ##
-##  set mask to FALSE on voxel where we observe extreme 
+##  set mask to FALSE on voxel where we observe extreme
 ##  values of z$det
 ##  this is an indication for numerical problems caused
 ##  e.g. by registration artifacts
@@ -280,7 +278,7 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
      }
      cat("h=",signif(hakt,3),"Quantiles (.5, .75, .9, .95, 1) of anisotropy index",signif(quantile(z$anindex[mask],c(.5, .75, .9, .95, 1)),3),"\n")
     k <- k+1
-     lambda0 <- lambda 
+     lambda0 <- lambda
      gc()
   }
   dimsi <- dim(si)
@@ -341,22 +339,19 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
 }
 
 gethani <- function(x,y,value,a,vext,eps=1e-2){
-.Fortran("gethani",
+.Fortran(C_gethani,
          as.double(x),
          as.double(y),
          as.double(value),
          as.double(a),
          as.double(vext),
          as.double(eps),
-         bw=double(1),
-         PACKAGE="dti")$bw
+         bw=double(1))$bw
 }
 getvofh <- function(bw,a,vext){
-.Fortran("getvofh",
+.Fortran(C_getvofh,
          as.double(a),
          as.double(bw),
          as.double(vext),
-         vol=double(1),
-         PACKAGE="dti")$vol
+         vol=double(1))$vol
 }
-
