@@ -9,26 +9,26 @@ dtiTensor <- function(object,  ...) cat("No DTI tensor calculation defined for t
 setGeneric("dtiTensor", function(object,  ...) standardGeneric("dtiTensor"))
 
 setMethod( "dtiTensor", "dtiData",
-           function( object, 
+           function( object,
                      method = c( "nonlinear", "linear", "quasi-likelihood"),
-                     sigma = NULL, L = 1, 
+                     sigma = NULL, L = 1,
                      mc.cores = setCores( , reprt = FALSE)) {
-             
-             ## check method! available are: 
+
+             ## check method! available are:
              ##   "linear" - use linearized model (log-transformed)
              ##   "nonlinear" - use nonlinear model with parametrization according to Koay et.al. (2006)
-             ##   "quasi-likelihood" - use nonlinear model Gaussian Approximation to \chi 
+             ##   "quasi-likelihood" - use nonlinear model Gaussian Approximation to \chi
              ##
              ## in case of method="quasi-likelihood" we need estimates of sigma
-             ##    possible formats: 
+             ##    possible formats:
              ##       - scalar value    (global sigma, not recomended)
              ##       - array dim=ddim  (same sigma for all b-vaues (including 0), recommended for
              ##                         single shell experiments)
-             ##       - array dim=c(ddim,nbv) (separate sigma for unique bvalues as given by 
+             ##       - array dim=c(ddim,nbv) (separate sigma for unique bvalues as given by
              ##         function unifybvalues )
-             ##       - array dim=c(ddim,ngrad)  
+             ##       - array dim=c(ddim,ngrad)
              method <- match.arg(method)
-             
+
              if(is.null(mc.cores)) mc.cores <- 1
              mc.cores <- min(mc.cores,detectCores())
              args <- sys.call(-1)
@@ -58,7 +58,7 @@ setMethod( "dtiTensor", "dtiData",
              ttt[(ttt == Inf)] <- 0
              ttt[(ttt == -Inf)] <- 0
              cat("Data transformation completed ",format(Sys.time()),"\n")
-             
+
              D <- matrix(0,6,ntotal)
              btbsvd <- svd(btb[,-s0ind])
              solvebtb <- btbsvd$u %*% diag(1/btbsvd$d) %*% t(btbsvd$v)
@@ -86,7 +86,7 @@ setMethod( "dtiTensor", "dtiData",
                sdcoef[-2] <- sdcoef[-2]/ms0# effect of rescaling of signal
                cat("start nonlinear regression",format(Sys.time()),"\n")
                if(mc.cores==1){
-                 param <- matrix(.C("dtens",
+                 param <- matrix(.C(C_dtens,
                                     as.integer(nvox),
                                     param=as.double(param),
                                     as.double(z$si/ms0),
@@ -94,10 +94,9 @@ setMethod( "dtiTensor", "dtiData",
                                     as.double(btb/mbv),
                                     as.double(sdcoef),
                                     as.double(rep(0,ngrad)),#si
-                                    as.double(rep(1,ngrad)),#var                         
+                                    as.double(rep(1,ngrad)),#var
                                     as.integer(1000),#maxit
-                                    as.double(1e-7),#reltol
-                                    PACKAGE="dti")$param,7,nvox)
+                                    as.double(1e-7))$param,7,nvox)
                } else {
                  x <- matrix(0,ngrad+7,nvox)
                  x[1:7,] <- param
@@ -110,7 +109,7 @@ setMethod( "dtiTensor", "dtiData",
                cat("successfully completed nonlinear regression ",format(Sys.time()),"\n")
              }
              res <- matrix(0,ngrad,ntotal)
-             zz <- .Fortran("tensres",
+             zz <- .Fortran(C_tensres,
                             as.double(th0[mask]),
                             as.double(D[,mask]),
                             as.double(z$si),
@@ -118,8 +117,7 @@ setMethod( "dtiTensor", "dtiData",
                             as.integer(ngrad),
                             as.double(btb),
                             res = double(ngrad*nvox),
-                            rss = double(nvox),
-                            PACKAGE="dti")[c("res","rss")]
+                            rss = double(nvox))[c("res","rss")]
              res <- matrix(0,ngrad,ntotal)
              res[,mask] <- zz$res
              rss <- numeric(ntotal)
@@ -159,7 +157,7 @@ setMethod( "dtiTensor", "dtiData",
              scorr <- mcorr(res,mask,ddim,ngrad0,lags=c(5,5,3),mc.cores=mc.cores)
              if(method=="quasi-likelihood"){
                if(is.null(sigma)||any(sigma<=0)){
-                 cat("Please specify a valid estimate of sigma for quasi-likelihood\n 
+                 cat("Please specify a valid estimate of sigma for quasi-likelihood\n
             returning result for method='nonlinear' \n")
                  method <- "nonlinear"
                }
@@ -178,13 +176,13 @@ setMethod( "dtiTensor", "dtiData",
                }
                else if(all(dim(sigma)==c(ddim,ngrad))){
                  sigma <- array(sigma,c(prod(ddim),ngrad))[mask,]
-               } 
+               }
                else if(all(dim(sigma)==c(ddim,nbv))){
                  sigmain <- array(sigma,c(prod(ddim),nbv))
                  sigma <- array(0,c(nvox,ngrad))
                  for(i in 1:nbv) sigma[,ubv==uniquebv[i]] <- sigmain[mask,i]
                } else {
-                 cat("Please specify a compatible estimate of sigma for quasi-likelihood\n 
+                 cat("Please specify a compatible estimate of sigma for quasi-likelihood\n
             returning result for method='nonlinear' \n")
                  method <- "nonlinear"
                }
@@ -224,17 +222,17 @@ setMethod( "dtiTensor", "dtiData",
                cat("successfully completed quasi-likelihood ",format(Sys.time()),"\n")
              }
              ev <- dti3Dev(D,mask,mc.cores=mc.cores)
-             dim(ev) <- c(3,ddim)   
-             dim(D) <- c(6,ddim)   
+             dim(ev) <- c(3,ddim)
+             dim(D) <- c(6,ddim)
              scale <- quantile(ev[3,,,][mask],.95,na.rm=TRUE)
-             cat("estimated scale information",format(Sys.time()),"\n")  
+             cat("estimated scale information",format(Sys.time()),"\n")
              invisible(new("dtiTensor",
                            call  = args,
                            D     = D,
                            th0   = th0,
                            sigma = rss,
-                           scorr = scorr$scorr, 
-                           bw = scorr$bw, 
+                           scorr = scorr$scorr,
+                           bw = scorr$bw,
                            mask = mask,
                            hmax = 1,
                            gradient = object@gradient,
@@ -265,11 +263,10 @@ D2Rall <- function(D){
   # in case of negative eigenvalues this uses c(1,0,0,1,0,1) for initial rho
   #
   nvox <- dim(D)[2]
-  matrix(.Fortran("D2Rall",
+  matrix(.Fortran(C_d2rall,
                   as.double(D),
                   rho=double(6*nvox),
-                  as.integer(nvox),
-                  PACKAGE="dti")$rho,6,nvox)
+                  as.integer(nvox))$rho,6,nvox)
 }
 R2Dall <- function(R){
   #
@@ -277,11 +274,10 @@ R2Dall <- function(R){
   # in case of negative eigenvalues this uses c(1,0,0,1,0,1) for initial rho
   #
   nvox <- dim(R)[2]
-  matrix(.Fortran("R2Dall",
+  matrix(.Fortran(C_r2dall,
                   as.double(R),
                   D=double(6*nvox),
-                  as.integer(nvox),
-                  PACKAGE="dti")$D,6,nvox)
+                  as.integer(nvox))$D,6,nvox)
 }
 #############
 #############
@@ -351,32 +347,19 @@ tchi <- function(param,si,sigma,btb,L,CL){
   ##   sigma should be of length ng here
   ng <- dim(btb)[2]
 #  cat("param",signif(param,4),"value")
-  D <- .Fortran("rho2D0",
+  D <- .Fortran(C_rho2d0,
                 as.double(param[-1]),
-                D=double(6),
-                PACKAGE="dti")$D
+                D=double(6))$D
   logth <- param[1]
   if(logth>12) logth <- 12+log(logth/12)
   # logth should be < 12 for the solution
   # gDg <- D%*%btb ## b_i*g_i^TD g_i (i=1,ngrad)
   gvalue <- exp(logth-D%*%btb)/sigma
-  #    mgvh <- -gvalue*gvalue/2
-  #    muL <- CL*.C("hyperg_1F1_e",
-  #               as.double(rep(-.5,ng)),
-  #               as.double(rep(L,ng)),
-  #               as.double(mgvh),
-  #               as.integer(ng),
-  #               val=as.double(mgvh),
-  #               err=as.double(mgvh),
-  #               status=as.integer(0*mgvh),
-  #               PACKAGE="gsl")$val
-  muL <- CL*hg1f1(rep(-.5,ng),rep(L,ng),-gvalue*gvalue/2)
-#  vL <- 2*L+gvalue^2-muL^2
+    muL <- CL*hg1f1(rep(-.5,ng),rep(L,ng),-gvalue*gvalue/2)
   vL <- pmax(1e-8,2*L+gvalue^2-muL^2)
   ## avoid negative variances that may result due to approximations
-  ## within the iteration process 
+  ## within the iteration process
 
   ## factor sigma in muL and sigma^2 in vL cancels in the quotient
   sum((si/sigma-muL)^2/vL)
 }
-

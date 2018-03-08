@@ -1,5 +1,4 @@
-#useDynLib(dti,.registration=TRUE)
-useDynLib(dti)
+useDynLib(dti, .registration = TRUE, .fixes = "C_")
 
 #exportPattern("^[^\\.]")
 
@@ -19,10 +18,10 @@ importFrom("utils", "data", "setTxtProgressBar", "txtProgressBar")
 exportClasses("dwi", "dtiData", "dtiTensor", "dtiIndices", "dwiQball",
               "dwiMixtensor", "dwiFiber", "dkiTensor", "dkiIndices")
 exportMethods("show", "plot", "print", "summary", "dti.smooth", "dtiTensor",
-              "dtiIndices", "dwiQball", "dwiMixtensor", "dwiMtCombine", 
+              "dtiIndices", "dwiQball", "dwiMixtensor", "dwiMtCombine",
               "dwiRiceBias", "dkiTensor", "dkiIndices")
 exportMethods("extract", "show3d", "tracking", "selectFibers", "reduceFibers",
-              "touchingFibers", "combineFibers", "getmask", "sdpar", 
+              "touchingFibers", "combineFibers", "getmask", "sdpar",
               "getsdofsb", "dwi.smooth", "dwi.smooth.ms")
 export(dtiData, readDWIdata, subsetg, combineDWIdata, awssigmc, awslsigmc, afsigmc,
        aflsigmc, dkiIndices, showFAColorScale, tensor2medinria, medinria2tensor)

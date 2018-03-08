@@ -3,12 +3,12 @@ C __________________________________________________________________
 C
       subroutine mfunpl(par,w,siq,g,m,lpar,n,z,erg)
 C
-C   model without isotropic compartment 
+C   model without isotropic compartment
 C   with explicit parametrization of weights
 C
 C   code is restricted to m<=6
 C
-      implicit logical (a-z)
+      implicit none
       integer m,lpar,n
       double precision par(lpar),w(m),siq(n),g(3,n),z(n,m),erg
       integer i,j
@@ -37,7 +37,7 @@ C
       erg=sw
       call rchkusr()
       RETURN
-      END 
+      END
 C
 C __________________________________________________________________
 C
@@ -45,12 +45,12 @@ C
      1                 ddkdphig,ddkdetag,dzdpars,work1,work2,dfdparw)
 C
 C   analytical gradients for c(par,w)
-C   model without isotropic compartment 
+C   model without isotropic compartment
 C   with explicit parametrization of weights
 C
 C   code is restricted to m<=6
 C
-      implicit logical (a-z)
+      implicit none
       integer m,lpar,n
       double precision par(lpar),w(m),siq(n),g(3,n),z(n,m),res(n),
      1       resd(n),dkgj(n,m),dkgj2(n,m),ddkdphig(n,m),ddkdetag(n,m),
@@ -114,18 +114,18 @@ C Now compute gradient
       END DO
       call rchkusr()
       RETURN
-      END 
+      END
 C
 C __________________________________________________________________
 C
       subroutine mfunpli(par,w,siq,g,m,lpar,n,z,erg)
 C
-C   model with isotropic compartment 
+C   model with isotropic compartment
 C   with explicit parametrization of weights in w(m+1)
 C
 C   code is restricted to m<=6
 C
-      implicit logical (a-z)
+      implicit none
       integer m,lpar,n
       double precision par(lpar),w(*),siq(n),g(3,n),z(n,m),erg
       integer i,j
@@ -154,7 +154,7 @@ C
       erg=sw
       call rchkusr()
       RETURN
-      END 
+      END
 C
 C __________________________________________________________________
 C
@@ -162,12 +162,12 @@ C
      1           dkgj2,ddkdphig,ddkdetag,dzdpars,work1,work2,dfdparw)
 C
 C   analytical gradients for c(par,w)
-C   model with isotropic compartment 
+C   model with isotropic compartment
 C   with explicit parametrization of weights
 C
 C   code is restricted to m<=6
 C
-      implicit logical (a-z)
+      implicit none
       integer m,lpar,n
       double precision par(lpar),w(m+1),siq(n),g(3,n),z(n,m),res(n),
      1       resd(n),dkgj(n,m),dkgj2(n,m),ddkdphig(n,m),ddkdetag(n,m),
@@ -233,18 +233,18 @@ C Now compute gradient
       END DO
       call rchkusr()
       RETURN
-      END 
+      END
 C
 C __________________________________________________________________
 C
       subroutine mfunpl0(par,siq,g,m,lpar,n,pen,z,w,erg)
 C
-C   model without isotropic compartment 
+C   model without isotropic compartment
 C   same as mfunpl but with unconstrained least squares for weights
 C
 C   code is restricted to m<=6
 C
-      implicit logical (a-z)
+      implicit none
       integer m,lpar,n
       double precision par(lpar),siq(n),g(3,n),z(n,m),erg,pen
       integer i,j,mode,jpvt(6),rank
@@ -264,13 +264,13 @@ C
          END DO
          jpvt(i)=0
       END DO
-C  
+C
 C    siq will be replaced, need to copy it if C-version of optim is used
 C
       call dcopy(n,siq,1,w,1)
       call dgelsy(n,m,1,z,n,w,n,jpvt,1d-8,rank,work,25,
      1            mode)
-C  1d-6  is a limit for condition number 
+C  1d-6  is a limit for condition number
       IF(mode.ne.0) THEN
          call intpr("mode",4,mode,1)
       ELSE
@@ -289,58 +289,18 @@ C penalize for negative weights
       END IF
       call rchkusr()
       RETURN
-      END 
-C
-C __________________________________________________________________
-C
-      subroutine mfunpl0h(par,siq,g,m,lpar,n,z,w,b,
-     1                    work1,erg)
-C
-C   model without isotropic compartment using Larsson-Hansson code
-C   same as mfunpl but with unconstrained least squares for weights
-C
-C   code is restricted to m<=6
-C
-      implicit logical (a-z)
-      integer m,lpar,n
-      double precision par(lpar),siq(n),g(3,n),z(n,m),erg,b(n),work1(n)
-      integer i,j,mode,ind(1000)
-      double precision th,w(n),sth,z1,p0,p1,d1,d2,d3,work2(10)
-      th = par(1)
-      th = max(th,-5.d0)
-      DO i = 1,m
-         p0=par(2*i)
-         p1=par(2*i+1)
-         sth = sin(p0)
-         d1 = sth*cos(p1)
-         d2 = sth*sin(p1)
-         d3 = cos(p0)
-         DO j = 1,n
-            z1 = d1*g(1,j)+d2*g(2,j)+d3*g(3,j)
-            z(j,i) = exp(-th*z1*z1)
-         END DO
-      END DO
-C  
-C    siq will be replaced, need to copy it if C-version of optim is used
-C
-      call dcopy(n,siq,1,b,1)
-      call nnls(z,n,n,m,b,w,erg,work2,work1,ind,mode)
-      IF(mode.eq.2) erg = 1d10
-      if(th.lt.0.d0) erg=erg-1.d2*th
-      call rchkusr()
-      RETURN
-      END 
+      END
 C
 C __________________________________________________________________
 C
       subroutine mfunpl0w(par,w,siq,g,m,lpar,n,z,erg)
 C
-C   model without isotropic compartment 
+C   model without isotropic compartment
 C   same as mfunpl but with unconstrained least squares for weights
 C
 C   code is restricted to m<=6
 C
-      implicit logical (a-z)
+      implicit none
       integer m,lpar,n
       double precision par(lpar),siq(n),g(3,n),z(n,m),w(m)
       integer i,j
@@ -377,12 +337,12 @@ C
       subroutine mfpl0gn(par,siq,g,m,lpar,n,pen,eps,z,w,para,parb,
      1                   dfdpar)
 C
-C   model without isotropic compartment 
+C   model without isotropic compartment
 C   same as mfunpl but with unconstrained least squares for weights
 C
 C   code is restricted to m<=6
 C
-      implicit logical (a-z)
+      implicit none
       integer m,lpar,n
       double precision par(lpar),siq(n),g(3,n),z(n,m),pen,dfdpar(lpar),
      1       w(n),para(lpar),parb(lpar),eps
@@ -410,7 +370,7 @@ C
       subroutine mfunpl0g(par,s,g,m,lpar,n,z,v,w,dkgj,dkgj2,ddkdphig,
      1                  ddkdetag,dvdth,dvdphi,dvdeta,dzdpars,dwdpars,
      2                  dwdpars2,zs,work1,work2,scopy,pen,dfdpar)
-      implicit logical (a-z)
+      implicit none
       integer m,n,lpar
       double precision par(lpar),s(n),g(3,n),z(n,m),v(m,m),dkgj(n,m),
      1       w(n),dkgj2(n,m),ddkdphig(n,m),ddkdetag(n,m),
@@ -458,14 +418,14 @@ C         deta2 = sphi*ceta
       DO i=1,m
          jpvt(i)=0
       END DO
-C  
+C
 C   we now have d, dkgj,dddphi, dddeta, z, ddkdphig, ddkdetag
 C   next w
 C
       call dcopy(n,s,1,w,1)
       call dcopy(n*m,z,1,work1,1)
       call dgelsy(n,m,1,work1,n,w,n,jpvt,1d-8,rank,work,25,mode)
-C  1d-6  is a limit for condition number 
+C  1d-6  is a limit for condition number
       IF(mode.gt.1) THEN
          call intpr("mode",4,mode,1)
       END IF
@@ -515,12 +475,12 @@ C
          dwdpars(k,1) = ddot(n,dzdpars(1,k,1),1,s,1) -
      1                         ddot(m,dVdth(1,k),1,w,1)
          DO l=1,m
-            dwdpars(k,1+l) = -ddot(m,dVdphi(1,k,l),1,w,1)    
-            dwdpars(k,1+m+l) = -ddot(m,dVdeta(1,k,l),1,w,1)    
+            dwdpars(k,1+l) = -ddot(m,dVdphi(1,k,l),1,w,1)
+            dwdpars(k,1+m+l) = -ddot(m,dVdeta(1,k,l),1,w,1)
          END DO
-         dwdpars(k,1+k) = dwdpars(k,1+k) + 
+         dwdpars(k,1+k) = dwdpars(k,1+k) +
      1                    ddot(n,dzdpars(1,k,2),1,s,1)
-         dwdpars(k,1+m+k) = dwdpars(k,1+m+k) + 
+         dwdpars(k,1+m+k) = dwdpars(k,1+m+k) +
      1                    ddot(n,dzdpars(1,k,3),1,s,1)
       END DO
 C
@@ -558,8 +518,8 @@ C   use work for intermediate results
          if(w(k).lt.0.d0) dfdpar(1)=dfdpar(1)-pen*dwdpars(k,1)
       END DO
 C    thats derivative with respect to theta
-C 
-C    dzdpars contains dw/dpars 
+C
+C    dzdpars contains dw/dpars
 C
       DO i = 1,m
          DO j = 1,n
@@ -593,7 +553,7 @@ C   thats derivative with respect to eta
 C
       call rchkusr()
       RETURN
-      END 
+      END
 C
 C __________________________________________________________________
 C
@@ -601,13 +561,13 @@ C
      1     nth,indth,egrad,isample,ntry,sms,z,siind,mval,ns,mask)
 C
 C  compute diagnostics for initial estimates in siind
-C  siind(1,i1,i2,i3) will contain the model order 
-C  
+C  siind(1,i1,i2,i3) will contain the model order
+C
 C  si     - array of si-values
 C  m      - model order
 C  maxc   - maximum of cos(angle between directions)
 C  th     - theta1
-C  egrad - exp(-theta1*dgrad^2) 
+C  egrad - exp(-theta1*dgrad^2)
 C  isample - guesses for gradient directions
 C  ntry   - number of guesses
 C  sms    - copies of si
@@ -619,7 +579,7 @@ C  mval   - aktual best risk
 C
 C  restricted to ngrad<=1000 and m <=10
 C
-      implicit logical (a-z)
+      implicit none
       integer nvox,ngrad,ns,siind(ns,nvox),m,ntry,nth,nv,
      1       isample(m,ntry),indth(nvox)
       double precision si(ngrad,nvox),sms(ngrad),dgrad(ngrad,nv),
@@ -670,7 +630,7 @@ C  now search for minima of sms (or weighted sms
                   IF(mode.gt.1) THEN
                      call intpr("mode",4,mode,1)
                      call intpr("isample",7,isample(1,k),m)
-                  ELSE 
+                  ELSE
                      IF(erg.lt.krit) THEN
                         krit=erg
                         ibest=k
@@ -682,9 +642,9 @@ C  now search for minima of sms (or weighted sms
                            ELSE
                               nwi(ii-iw)=ii
 C   nonactive directions
-                           END IF 
+                           END IF
                         END DO
-                     END IF  
+                     END IF
                   END IF
                END DO
                if(ibest.gt.0) THEN
@@ -716,12 +676,12 @@ C
 C
 C  compute diagnostics for initial estimates in siind
 C  siind(1,i1,i2,i3) will contain the model order (mc parallel version)
-C  
+C
 C  si     - array of si-values
 C  m      - model order
 C  maxc   - maximum of cos(angle between directions)
 C  th     - theta1
-C  egrad - exp(-theta1*dgrad^2) 
+C  egrad - exp(-theta1*dgrad^2)
 C  isample - guesses for gradient directions
 C  ntry   - number of guesses
 C  sms    - copies of si
@@ -733,7 +693,7 @@ C  mval   - aktual best risk
 C
 C  restricted to ngrad<=1000 and m <=10
 C
-      implicit logical (a-z)
+      implicit none
       integer nvox,ngrad,ns,siind(ns,nvox),m,ntry,nth,nv,
      1       isample(m,ntry),indth(nvox)
       double precision si(ngrad,nvox),sms(ngrad),dgrad(ngrad,nv),
@@ -778,7 +738,7 @@ C  now search for minima of sms (or weighted sms
                IF(mode.gt.1) THEN
                   call intpr("mode",4,mode,1)
                   call intpr("isample",7,isample(1,k),m)
-               ELSE 
+               ELSE
                   IF(erg.lt.krit) THEN
                      krit=erg
                      ibest=k
@@ -790,9 +750,9 @@ C  now search for minima of sms (or weighted sms
                         ELSE
                            nwi(ii-iw)=ii
 C   nonactive directions
-                        END IF 
+                        END IF
                      END DO
-                  END IF  
+                  END IF
                END IF
             END DO
             if(ibest.gt.0) THEN
@@ -823,13 +783,13 @@ C
      2     dgradv,maxc)
 C
 C  compute diagnostics for initial estimates in siind
-C  siind(1,i1,i2,i3) will contain the model order 
-C  
+C  siind(1,i1,i2,i3) will contain the model order
+C
 C  si     - array of si-values
 C  m      - model order
 C  maxc   - maximum of cos(angle between directions)
 C  th     - theta1
-C  egrad - exp(-theta1*dgrad^2) 
+C  egrad - exp(-theta1*dgrad^2)
 C  isample - guesses for gradient directions
 C  ntry   - number of guesses
 C  sms    - copies of si
@@ -841,7 +801,7 @@ C  mval   - aktual best risk
 C
 C  restricted to ngrad<=1000 and m <=10
 C
-      implicit logical (a-z)
+      implicit none
       integer nvox,ngrad,ns,siind(ns,nvox),m,ntry,nth,nv,
      1       isample(*),indth(nvox),iandir(nvox)
       double precision si(ngrad,nvox),sms(ngrad),dgrad(ngrad,nv),
@@ -909,7 +869,7 @@ C  now search for minima of sms (or weighted sms)
                   IF(mode.gt.1) THEN
                      call intpr("mode",4,mode,1)
                      call intpr("isample",7,is,m)
-                  ELSE 
+                  ELSE
                      IF(erg.lt.krit) THEN
                         krit=erg
                         iw=0
@@ -921,9 +881,9 @@ C  now search for minima of sms (or weighted sms)
                            ELSE
                               nwi(ii-iw)=ii
 C   nonactive directions
-                           END IF 
+                           END IF
                         END DO
-                     END IF  
+                     END IF
                   END IF
                END DO
                siind(1,i)=iw
@@ -953,13 +913,13 @@ C
      2     dgradv,maxc)
 C
 C  compute diagnostics for initial estimates in siind
-C  siind(1,i1,i2,i3) will contain the model order 
-C  
+C  siind(1,i1,i2,i3) will contain the model order
+C
 C  si     - array of si-values
 C  m      - model order
 C  maxc   - maximum of cos(angle between directions)
 C  th     - theta1
-C  egrad - exp(-theta1*dgrad^2) 
+C  egrad - exp(-theta1*dgrad^2)
 C  isample - guesses for gradient directions
 C  ntry   - number of guesses
 C  sms    - copies of si
@@ -970,7 +930,7 @@ C  mval   - aktual best risk
 C
 C  restricted to ngrad<=1000 and m <=10
 C
-      implicit logical (a-z)
+      implicit none
       integer nvox,ngrad,ns,siind(ns,nvox),m,ntry,nth,nv,
      1       isample(*),indth(nvox),iandir(nvox)
       double precision si(ngrad,nvox),sms(ngrad),dgrad(ngrad,nv),
@@ -1033,7 +993,7 @@ C  now search for minima of sms (or weighted sms)
                IF(mode.gt.1) THEN
                   call intpr("mode",4,mode,1)
                   call intpr("isample",7,is,m)
-               ELSE 
+               ELSE
                   IF(erg.lt.krit) THEN
                      krit=erg
                      iw=0
@@ -1045,9 +1005,9 @@ C  now search for minima of sms (or weighted sms)
                         ELSE
                            nwi(ii-iw)=ii
 C   nonactive directions
-                        END IF 
+                        END IF
                      END DO
-                  END IF  
+                  END IF
                END IF
             END DO
             siind(1,i)=iw
@@ -1198,7 +1158,7 @@ C
 C __________________________________________________________________
 C
       subroutine iandir(vico,nvico,andir,nvox,landir,iandi)
-      implicit logical(a-z)
+      implicit none
       integer nvico,nvox,iandi(nvox)
       double precision vico(3,nvico),andir(3,2,nvox)
       logical landir(nvox)
@@ -1225,7 +1185,7 @@ C
 C __________________________________________________________________
 C
       double precision function scprod3(a,b)
-      implicit logical (a-z) 
+      implicit none
       double precision a(3),b(3)
       scprod3=abs(a(1)*b(1)+a(2)*b(2)+a(3)*b(3))
       RETURN
@@ -1234,7 +1194,7 @@ C
 C __________________________________________________________________
 C
       subroutine selisamp(isample,nguess,maxcomp,dgrad,ndg,ind,maxc)
-      implicit logical (a-z)
+      implicit none
       integer nguess,maxcomp,ndg,isample(maxcomp,nguess)
       double precision  dgrad(ndg,ndg),maxc
       logical ind(nguess)
@@ -1257,12 +1217,12 @@ C
 C _________________________________________________________________
 C
       subroutine zerofill(a,n)
-      implicit logical(a-z)
+      implicit none
       integer i,n
       double precision a(n),ZERO
       PARAMETER   ( ZERO = 0.0D+0 )
       DO i=1,n
-         a(i) = ZERO 
+         a(i) = ZERO
       END DO
       RETURN
       END
@@ -1273,7 +1233,7 @@ C
 C
 C   compute component wise product of a and b in c
 C
-      implicit logical(a-z)
+      implicit none
       integer i,n
       double precision a(n),b(n),c(n)
       DO i=1,n
@@ -1288,7 +1248,7 @@ C
 C
 C   compute component wise product of a and b in c
 C
-      implicit logical(a-z)
+      implicit none
       integer i,n
       double precision a(n),b(n),c(n),alpha
       DO i=1,n
@@ -1296,4 +1256,3 @@ C
       END DO
       RETURN
       END
-     

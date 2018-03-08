@@ -1,10 +1,10 @@
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 C
-C     regularize D 
+C     regularize D
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine regularD(D,negdefin)
-      implicit logical(a-z)
+      implicit none
       logical negdefin
       double precision D(6),ew(3),ev(3,3)
       integer ierr
@@ -34,11 +34,11 @@ C  first regularize
       END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 C
-C     get rho from D 
+C     get rho from D
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine D2rho(D,rho)
-      implicit logical(a-z)
+      implicit none
       double precision D(6),rho(6),eps
       eps=1.d-8
       rho(1)=sqrt(D(1)+eps)
@@ -47,128 +47,6 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       rho(4)=sqrt(D(4)-rho(2)*rho(2)+eps)
       rho(5)=(D(5)-rho(2)*rho(3))/rho(4)
       rho(6)=sqrt(D(6)-rho(3)*rho(3)-rho(5)*rho(5)+eps)
-      RETURN
-      END
-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-C
-C     get rho from D (with regularization of D)
-C
-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-!       subroutine D2rho0(D,rho)
-!       implicit logical(a-z)
-!       double precision D(6),rho(6)
-!       logical negdefin
-!       call regularD(D,negdefin)
-!       rho(1)=sqrt(max(1d-12,D(1)))
-!       rho(2)=D(2)/rho(1)
-!       rho(3)=D(3)/rho(1)
-!       rho(4)=sqrt(max(1d-12,D(4)-rho(2)*rho(2)))
-!       rho(5)=(D(5)-rho(2)*rho(3))/rho(4)
-!       rho(6)=sqrt(max(1d-12,D(6)-rho(3)*rho(3)-rho(5)*rho(5)))
-!       RETURN
-!       END
-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-C
-C     get rho from D (uses c(1,0,0,1,0,1) in case of inplausible D
-C     use of estimated tensors (linearized model) as initial values
-C     for nonlinear regression
-C
-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-      subroutine D2Rall(D,rho,nvox)
-      implicit logical(a-z)
-      integer nvox
-      double precision D(6,nvox),rho(6,nvox)
-      integer i,ierr
-      double precision ew(3),ev(3,3),r1,r2,r3,r4,r5
-      DO i=1,nvox
-         call eigen3(D(1,i),ew,ev,ierr)
-         if(ew(1).le.1.d-6) THEN
-            rho(1,i) = 1.d-2
-            rho(2,i) = 0.d0
-            rho(3,i) = 0.d0
-            rho(4,i) = 1.d-2
-            rho(5,i) = 0.d0
-            rho(6,i) = 1.d-2           
-         ELSE         
-            r1=sqrt(max(1d-12,D(1,i)))
-            r2=D(2,i)/r1
-            r3=D(3,i)/r1
-            r4=sqrt(max(1d-12,D(4,i)-r2*r2))
-            r5=(D(5,i)-r2*r3)/r4
-            rho(6,i)=sqrt(max(1d-16,D(6,i)-r3*r3-r5*r5))
-            rho(5,i)=r5
-            rho(4,i)=r4
-            rho(3,i)=r3
-            rho(2,i)=r2
-            rho(1,i)=r1
-         END IF
-      END DO
-      RETURN
-      END
-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-C
-C     get D from rho 
-C
-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-      subroutine rho2D(rho,D)
-      implicit logical(a-z)
-      double precision D(6),rho(6),eps
-      eps=0.d-12
-      D(1)=rho(1)*rho(1)+eps
-      D(2)=rho(1)*rho(2)
-      D(3)=rho(1)*rho(3)
-      D(4)=rho(2)*rho(2)+rho(4)*rho(4)+eps
-      D(5)=rho(2)*rho(3)+rho(4)*rho(5)
-      D(6)=rho(3)*rho(3)+rho(5)*rho(5)+rho(6)*rho(6)+eps
-C      call testreg2(D,rho,111)
-      RETURN
-      END
-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-C
-C     get D from rho 
-C
-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-      subroutine R2Dall(rho,D,nvox)
-      implicit logical(a-z)
-      integer nvox,i
-      double precision D(6,nvox),rho(6,nvox),eps
-      double precision r1,r2,r3,r4,r5,r6
-      eps=0.d-12
-      DO i=1,nvox
-         r1=rho(1,i)
-         r2=rho(2,i)
-         r3=rho(3,i)
-         r4=rho(4,i)
-         r5=rho(5,i)
-         r6=rho(6,i)
-         D(1,i)=r1*r1+eps
-         D(2,i)=r1*r2
-         D(3,i)=r1*r3
-         D(4,i)=r2*r2+r4*r4+eps
-         D(5,i)=r2*r3+r4*r5
-         D(6,i)=r3*r3+r5*r5+r6*r6+eps
-      END DO
-C      call testreg2(D,rho,111)
-      RETURN
-      END
-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-C
-C     calculate fitted values of si
-C
-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-      subroutine sihat(th0i,Di,btb,F,nb)
-      implicit logical (a-z)
-      integer nb
-      double precision th0i,Di(6),btb(6,nb),F(nb)
-      integer j,k
-      double precision z
-      DO k=1,nb
-         z=0.d0
-         DO j=1,6
-            z=z+btb(j,k)*Di(j)
-         END DO
-         F(k)=th0i*exp(-z)
-      END DO
       RETURN
       END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
@@ -193,19 +71,19 @@ C   th0n     -  new  estimate of mean s_0 values (output)
 C   D        -  current estimate of tensor
 C   Dn       -  new estimate of tensor (output)
 C   bi       -  sum of weights
-C   ani      -  anisotropy index 
-C   dir      -  direction of main anisotropy 
+C   ani      -  anisotropy index
+C   dir      -  direction of main anisotropy
 C   det      -  det(D)
 C   h        -  actual bandwidth
 C   niter    -  number of iterations for imbedded nl-regression
-C   zext     -  
+C   zext     -
 C   rho      -  regularization parameter for anisotropic neighborhoods
-C               (X,y,z) ( A(theta)+ rho/bi I ) (X,y,z)^T  = h^2  defines the elloispid 
+C               (X,y,z) ( A(theta)+ rho/bi I ) (X,y,z)^T  = h^2  defines the elloispid
 C   lambda   -  scale factor in the statistical penalty
 C   swsi     -  auxiliary for sum_j w_j si(j)
 C   F        -  auxiliary for function values in LSE
 C   eps      -  something small and positive
-      implicit logical (a-z)
+      implicit none
       integer n1,n2,n3,nb,niter,nw,nriter(nb),isel(3,nw)
       double precision siest(nb,n1,n2,n3),si(nb,n1,n2,n3),sisel(nb,nw)
       double precision btb(6,nb),swsi2(nb),sdcoef(4),th0(n1,n2,n3),
@@ -230,7 +108,7 @@ C   eps      -  something small and positive
       END IF
       h1=exp(log(vol*vext(1)*vext(2)*vext(3))/3.d0)
       h0=exp(log(vol*vext(1)*vext(2)*vext(3))/3.d0)/1.4
-C  first fill predicted 
+C  first fill predicted
       DO i1=1,n1
          DO i2=1,n2
             DO i3=1,n3
@@ -239,7 +117,7 @@ C  first fill predicted
             END DO
          END DO
       END DO
-C  now anisotropic smoothing 
+C  now anisotropic smoothing
       ns0=0
       DO k=1,nb
          if(sbind(k)) THEN
@@ -363,7 +241,7 @@ C  use Plateau kernel
                           if(nselect.ge.nw) THEN
 C                              call intpr("nselect>nw",10,nselect,1)
                               CYCLE
-                           ENDIF 
+                           ENDIF
                            nselect=nselect+1
                            isel(1,nselect)=jj1
                            isel(2,nselect)=jj2
@@ -380,7 +258,7 @@ C                              call intpr("nselect>nw",10,nselect,1)
                bi(i1,i2,i3)=sw
                Do k=1,nb
                   swsi(k)=swsi(k)/sw
-               END DO                  
+               END DO
                if(rician.and.sw.gt.1.d0) THEN
                   ssigma2=0.d0
 C                  ns0=0
@@ -443,7 +321,7 @@ C   this also adjusts for eliminating \theta by combining the second and 4th mom
       RETURN
       END
       double precision function dtidisrg(si,sj,varinv,nb)
-      implicit logical (a-z)
+      implicit none
       integer nb
       double precision si(nb)
       double precision sj(nb),varinv(nb)
@@ -457,18 +335,18 @@ C   this also adjusts for eliminating \theta by combining the second and 4th mom
       dtidisrg=z
       RETURN
       END
-      subroutine islvdti(s,nb,b,sdcoef,varinv,th0,D,F,niter,eps,rss)
+      subroutine dslvdti(s,nb,b,sdcoef,varinv,th0,D,F,niter,eps,rss)
 C
 C  Implements the regularized Gauss-Newton Algortithm (10.2.8)
 C  from Schwetlick (1979)
 C  same as solvedti except that s is double
 C
-      implicit logical (a-z)
+      implicit none
       integer nb,niter
-      double precision s(nb)
-      double precision D(6),b(6,nb),varinv(nb),th0,F(nb),eps,sdcoef(4)
+      double precision s(nb),D(6),b(6,nb),varinv(nb),th0,F(nb),eps,
+     1       sdcoef(4)
       integer i,j,k,info,iter,icount
-      logical negdefin
+      logical negdefin,notacc
       double precision z,gamma,alpha,delta,xzvarinv,
      1       dg(7),pk(7),ak(7,7),ck(7,7),rss,nrss,crss,maxabsdg,
      2       oldrss,relrss,Dn(6),res,X(7),th0n,zsd,low,up
@@ -521,7 +399,7 @@ C  first check if D defines a positive definite densor
                DO k=j,7
                   ak(j,k)=ak(j,k)+xzvarinv*X(k)
                END DO
-            END DO 
+            END DO
          END DO
          maxabsdg=0.d0
          DO j=1,7
@@ -533,7 +411,7 @@ C  prepare things for return if gradient is close to 0
             call regularD(D,negdefin)
             if(negdefin) THEN
 C  estimate using reparametrization
-               call islvdtir(s,nb,b,varinv,th0,D,F,niter,eps,rss)
+               call dslvdtir(s,nb,b,varinv,th0,D,F,niter,eps,rss)
             ENDIF
             RETURN
          END IF
@@ -541,7 +419,7 @@ C  estimate using reparametrization
 C  End of step 3
          notacc=.TRUE.
          icount = 10
-         DO WHILE (notacc.and.icount.gt.0) 
+         DO WHILE (notacc.and.icount.gt.0)
             icount = icount-1
             call rchkusr()
             IF(gamma.lt.1.d0) THEN
@@ -564,172 +442,13 @@ C   we may still need ak and dg so copy them to pk and ck
             END DO
 C   Now solve  ak%*%dtheta= dg
             call dposv("U",7,1,ck,7,pk,7,info)
-C  Step 4 we have pk 
+C  Step 4 we have pk
             IF(info.ne.0) THEN
                gamma=alpha*gamma
 C  thats step 6
             ELSE
-C  comute things needed for decision in step 5 
-C  if successful F, nrss, and theta will be reused in the  
-C  next iteration
-               DO j=1,6
-                  Dn(j)=D(j)-gamma*pk(j)
-               END DO
-               th0n=th0-gamma*pk(7)
-               nrss=0.d0
-               DO i=1,nb
-                  z=b(1,i)*Dn(1)
-                  DO j=2,6
-                     z=z+b(j,i)*Dn(j)
-                  END DO
-                  res=s(i)-th0n*exp(-z)
-                  nrss=nrss+res*res*varinv(i)
-                  F(i)=res
-               END DO
-               crss=dg(1)*pk(1)
-               DO j=2,7
-                  crss=crss+dg(j)*pk(j)
-               END DO
-               crss=rss-delta*gamma*crss
-               IF(nrss.le.crss) THEN
-                  notacc=.FALSE.
-C  accept new estimate, prepare for next iteration
-               ELSE
-                  gamma=alpha*gamma
-C  decrease gamma and try new regularization
-               END IF
-            END IF
-         END DO
-         th0=th0n
-C  check if tensor is positive definite
-         DO j=1,6
-            D(j)=Dn(j)
-         END DO
-         oldrss=rss
-         rss=nrss
-         call rchkusr()
-      END DO
-      call regularD(D,negdefin)
-      if(negdefin) THEN
-C  estimate using reparametrization
-         call islvdtir(s,nb,b,varinv,th0,D,F,niter,eps,rss)
-      ENDIF
-      RETURN
-      END
-      subroutine dslvdti(s,nb,b,sdcoef,varinv,th0,D,F,niter,eps,rss)
-C
-C  Implements the regularized Gauss-Newton Algortithm (10.2.8)
-C  from Schwetlick (1979)
-C  same as solvedti except that s is double
-C
-      implicit logical (a-z)
-      integer nb,niter
-      double precision s(nb),D(6),b(6,nb),varinv(nb),th0,F(nb),eps,
-     1       sdcoef(4)
-      integer i,j,k,info,iter,icount
-      logical negdefin
-      double precision z,gamma,alpha,delta,xzvarinv,
-     1       dg(7),pk(7),ak(7,7),ck(7,7),rss,nrss,crss,maxabsdg,
-     2       oldrss,relrss,Dn(6),res,X(7),th0n,zsd,low,up
-C  first check if D defines a positive definite densor
-      call regularD(D,negdefin)
-      delta=0.25D0
-      gamma=1.d0
-      alpha=0.7d0
-      oldrss=1.d50
-      rss=0.d0
-      low=sdcoef(1)+sdcoef(3)*sdcoef(2)
-      up=sdcoef(1)+sdcoef(4)*sdcoef(2)
-      DO i=1,nb
-         zsd=sdcoef(1)+s(i)*sdcoef(2)
-         if(s(i).lt.sdcoef(3)) zsd=low
-         if(s(i).gt.sdcoef(4)) zsd=up
-         varinv(i)=1.d0/zsd/zsd
-         z=b(1,i)*D(1)
-         DO j=2,6
-            z=z+b(j,i)*D(j)
-         END DO
-         z=exp(-z)
-         res=s(i)-th0*z
-         rss=rss+res*res*varinv(i)
-         F(i)=res
-      END DO
-      th0n = th0
-      nrss = rss
-      DO iter=1,niter
-         DO j=1,7
-            dg(j)=0.d0
-            DO k=j,7
-               ak(j,k)=0.d0
-            END DO
-         END DO
-         DO i=1,nb
-            z=b(1,i)*D(1)
-            DO j=2,6
-               z=z+b(j,i)*D(j)
-            END DO
-            z=exp(-z)
-            X(7)= -z
-            z=z*th0
-            DO j=1,6
-               X(j)=b(j,i)*z
-            END DO
-            DO j=1,7
-               xzvarinv=X(j)*varinv(i)
-               dg(j)=dg(j)+xzvarinv*F(i)
-               DO k=j,7
-                  ak(j,k)=ak(j,k)+xzvarinv*X(k)
-               END DO
-            END DO 
-         END DO
-         maxabsdg=0.d0
-         DO j=1,7
-            maxabsdg=max(maxabsdg,abs(dg(j)))
-         END DO
-         relrss = (oldrss-rss)/rss
-         IF(maxabsdg.lt.eps.or.relrss.lt.1d-6) THEN
-C  prepare things for return if gradient is close to 0
-            call regularD(D,negdefin)
-            if(negdefin) THEN
-C  estimate using reparametrization
-               call dslvdtir(s,nb,b,varinv,th0,D,F,niter,eps,rss)
-            ENDIF
-            RETURN
-         END IF
-         gamma=min(gamma/alpha,1.d0)
-C  End of step 3
-         notacc=.TRUE.
-         icount = 10
-         DO WHILE (notacc.and.icount.gt.0)
-            icount = icount-1 
-            call rchkusr()
-            IF(gamma.lt.1.d0) THEN
-               DO j=1,7
-                  DO k=j,7
-                     ck(j,k)=gamma*ak(j,k)
-                  END DO
-                  ck(j,j)=ck(j,j)+1.d0-gamma
-               END DO
-            ELSE
-C   we may still need ak and dg so copy them to pk and ck
-               DO j=1,7
-                  DO k=j,7
-                     ck(j,k)=ak(j,k)
-                  END DO
-               END DO
-            END IF
-            DO j=1,7
-               pk(j)=dg(j)
-            END DO
-C   Now solve  ak%*%dtheta= dg
-            call dposv("U",7,1,ck,7,pk,7,info)
-C  Step 4 we have pk 
-            IF(info.ne.0) THEN
-               gamma=alpha*gamma
-C  thats step 6
-            ELSE
-C  comute things needed for decision in step 5 
-C  if successful F, nrss, and theta will be reused in the  
+C  comute things needed for decision in step 5
+C  if successful F, nrss, and theta will be reused in the
 C  next iteration
                DO j=1,6
                   Dn(j)=D(j)-gamma*pk(j)

@@ -5,7 +5,7 @@ C   newfiber(sizef,6) - fibers in real coordinates  (out)
 C   ifiber(max(lengthf(nfibers))/2,3) - fiber in voxelcoords
 C   startf(nfibers)  -  startpoints of fibers
 C   lengthf(nfibers) -  length(fibers)
-      implicit logical (a-z)
+      implicit none
       integer sizef,nfibers,mlf,ifiber(3,mlf),startf(nfibers),
      1        lengthf(nfibers),nx,ny,nz,sizenf,nnfiber
       double precision fiber(sizef,6),newfiber(sizef,6),vext(3)
@@ -40,7 +40,7 @@ C  we now have the voxelcoords for this fiber
       RETURN
       END
       logical function finroi(ifiber,sf,roi,nx,ny,nz)
-      implicit logical (a-z)
+      implicit none
       integer sf,ifiber(3,sf),nx,ny,nz
       logical roi(nx,ny,nz)
       integer i
@@ -65,7 +65,7 @@ C
 C     fibers array of fiber segments (2,nfiber,3)
 C     start vector of indices where fibers start
 C     nstart  number of fibers
-      implicit logical (a-z)
+      implicit none
       integer nfibers,nstart,start(nfibers)
       double precision fibers(2,nfibers,3)
       integer i,ns
@@ -90,7 +90,7 @@ C   Remove fibers that have a distance less than maxd to longer ones
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine reducefi(fibers,nsegm,startf,endf,nfibers,keep,maxd)
-      implicit logical (a-z)
+      implicit none
       integer nsegm,nfibers,startf(nfibers),endf(nfibers)
       logical keep(nfibers)
       double precision fibers(3,nsegm),maxd
@@ -146,7 +146,7 @@ C   Remove fibers that have a distance less than maxd to longer ones
 C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine reducefe(fibers,nsegm,startf,endf,nfibers,keep,maxd)
-      implicit logical (a-z)
+      implicit none
       integer nsegm,nfibers,startf(nfibers),endf(nfibers)
       logical keep(nfibers)
       double precision fibers(3,nsegm),maxd
@@ -213,7 +213,7 @@ C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine touchfi(fibers1,nsegm1,startf1,endf1,nfibers1,
      1                   keep,fibers2,nsegm2,maxdist)
-      implicit logical (a-z)
+      implicit none
       integer nsegm1,nfibers1,startf1(nfibers1),endf1(nfibers1),nsegm2
       logical keep(nfibers1)
       double precision fibers1(6,nsegm1),fibers2(3,nsegm2),maxdist
@@ -248,7 +248,7 @@ C$OMP DO SCHEDULE(GUIDED)
             END IF
          END DO
       END DO
-C$OMP END DO 
+C$OMP END DO
 C$OMP END PARALLEL
 C$OMP FLUSH(keep)
 C now reorganize fibers1, keeping only the fibers touching fibers2
@@ -270,3 +270,91 @@ C now reorganize fibers1, keeping only the fibers touching fibers2
 C we now have the touching fibers described by fibers1, startf1 and nfibers1
       RETURN
       END
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+C
+C   compactify fibers joining consecetive segments with almost same direction
+C
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+      subroutine cfibers0(fibers,sind,nf,nsi,delta,nnf)
+      implicit NONE
+      integer nf,nsi,sind(nsi),nnf
+      double precision fibers(nf,6),delta
+      integer i,j,k,l
+      double precision z,zx1,zy1,zz1,zx2,zy2,zz2,omd
+      logical infiber
+      nnf = nf
+      omd=1.d0-delta
+      DO i=1,nsi-1
+        j=sind(i)+1
+        infiber=(j+1).lt.sind(i+1)
+        DO while (infiber)
+           zx1=fibers(j,4)-fibers(j-1,4)
+           zy1=fibers(j,5)-fibers(j-1,5)
+           zz1=fibers(j,6)-fibers(j-1,6)
+           zx2=fibers(j+1,4)-fibers(j,4)
+           zy2=fibers(j+1,5)-fibers(j,5)
+           zz2=fibers(j+1,6)-fibers(j,6)
+           z = zx1*zx2+zy1*zy2+zz1*zz2
+           if(cos(z).gt.omd) then
+C  remove entry j
+              nnf=nnf-1
+              DO k=j,nnf
+                 Do l=1,6
+                    fibers(k,l)=fibers(k+1,l)
+                 END do
+              END do
+              DO k=i+1,nsi
+                sind(k)=sind(k)-1
+              end do
+            else
+              j=j+1
+            end if
+            infiber=(j+1).lt.sind(i+1)
+        end do
+      end do
+      return
+      end
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+C
+C   compactify fibers joining consecetive segments with almost same direction
+C
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+      subroutine cfibers(fibers,sind,nf,nsi,delta,nnf)
+      implicit NONE
+      integer nf,nsi,sind(nsi),nnf
+      double precision fibers(nf,6),delta
+      integer i,j,k,l
+      double precision z,zx1,zy1,zz1,zx2,zy2,zz2,omd
+      logical infiber
+      nnf = nf
+      omd=1.d0-delta
+      DO i=1,nsi-1
+        j=sind(i)+1
+        infiber=(j+1).lt.sind(i+1)
+        DO while (infiber)
+            zx1=fibers(j,4)
+            zy1=fibers(j,5)
+            zz1=fibers(j,6)
+            zx2=fibers(j-1,4)
+            zy2=fibers(j-1,5)
+            zz2=fibers(j-1,6)
+            z = zx1*zx2+zy1*zy2+zz1*zz2
+            if(z.gt.omd) then
+C  remove entry j
+              nnf=nnf-1
+              DO k=j,nnf
+                  Do l=1,6
+                    fibers(k,l)=fibers(k+1,l)
+                  END do
+              END do
+              DO k=i+1,nsi
+                sind(k)=sind(k)-1
+              end do
+            else
+              j=j+1
+            end if
+            infiber=(j+1).lt.sind(i+1)
+        end do
+      end do
+      return
+      end

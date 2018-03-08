@@ -1,20 +1,6 @@
-      subroutine besselq(x,n,fw)
-      implicit logical (a-z) 
-      integer n
-      double precision x(n),fw(n)
-      external besseli
-      double precision besseli
-      integer i
-      DO i=1,n
-         x(i)=i*1.d-2
-C  avoid transform to zero for numerical stability
-         fw(i)=besseli(x(i),1.d0,2.d0)/besseli(x(i),0.d0,2.d0)
-      END DO
-      RETURN
-      END
       subroutine ricecorr(si,w,n,nb,sbind,ns0,niter,sw,th,s2,sigma2,
      1                    fw)
-      implicit logical (a-z) 
+      implicit none
       integer n,nb,niter(nb)
       double precision si(nb,n)
       double precision w(n),th(nb),s2(nb),sigma2,sw,fw(10000)
@@ -60,26 +46,4 @@ C  just avoid extreme corrections caused by overestimated variances
       END DO
       RETURN
       END
-      double precision function Lhalf(x)
-      double precision x,mxh,bi(10)
-      double precision bessliex
-      external bessliex
-      mxh = -0.5d0*x
-C      Lhalf = (1.d0-x)*besseli(mxh,0.d0,2.d0)-x*besseli(mxh,1.d0,2.d0)
-      Lhalf = (1.d0-x)*bessliex(mxh,0.d0,2.d0,bi)-
-     1               x*bessliex(mxh,1.d0,2.d0,bi)
-      Return
-      End
-      double precision function erice(x)
-      double precision x
-      double precision Lhalf
-      external Lhalf
-      if(x.gt.5d1) THEN
-         erice = x
-      ELSE
-         erice = 1.253314137d0*Lhalf(-0.5d0*x*x)
-      END IF
-      RETURN
-      END
-      
       

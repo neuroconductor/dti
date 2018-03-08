@@ -1,4 +1,4 @@
-# This file contains the implementation of dti.smooth() for 
+# This file contains the implementation of dti.smooth() for
 # "dtiData" Adaptive smoothing in SE(3)
 
 dwi.smooth <- function(object, ...) cat("No DTI smoothing defined for this class:",class(object),"\n")
@@ -9,7 +9,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,n
                                             vred=4,xind=NULL,yind=NULL,zind=NULL,verbose=FALSE,dist=1,model=
                                               c("Gapprox","Gapprox2","Chi","Chi2")){
   ## check model
-  model <- match.arg(model)  
+  model <- match.arg(model)
   args <- sys.call(-1)
   args <- c(object@call,args)
   sdcoef <- object@sdcoef
@@ -31,13 +31,13 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,n
   model <- switch(model,"Chi2"=1,"Chi"=0,"Gapprox2"=2,"Gapprox"=3,1)
   if(model>=2) varstats <- sofmchi(ncoils)
   #
-  #  Chi2 uses approx of noncentral Chi^2 by rescaled central Chi^2 with adjusted DF 
+  #  Chi2 uses approx of noncentral Chi^2 by rescaled central Chi^2 with adjusted DF
   #        and smoothes Y^2
-  #  Chi uses approx of noncentral Chi^2 by rescaled central Chi^2 with adjusted DF  
+  #  Chi uses approx of noncentral Chi^2 by rescaled central Chi^2 with adjusted DF
   #        and smoothes Y
   #   uses approximation of noncentral Chi by a Gaussian (with correct mean and variance)
   #        and smoothes Y
-  
+
   #
   if(!(is.null(xind)&is.null(yind)&is.null(zind))){
     if(is.null(xind)) xind <- 1:object@ddim[1]
@@ -79,7 +79,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,n
   if(ns0>1){
     dim(s0) <- c(prod(ddim),ns0)
     if(model%in%c(1,2)){
-      s0 <- sqrt(s0^2%*%rep(1,ns0))        
+      s0 <- sqrt(s0^2%*%rep(1,ns0))
       mask <- s0 > sqrt(ns0)*level
     } else {
       s0 <- s0%*%rep(1,ns0)
@@ -115,7 +115,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,n
   hseq <- hseq$h
   # make it nonrestrictive for the first step
   ni <- array(1,dim(sb))
-  minlevel <- if(model==1) 2*ncoils else sqrt(2)*gamma(ncoils+.5)/gamma(ncoils)  
+  minlevel <- if(model==1) 2*ncoils else sqrt(2)*gamma(ncoils+.5)/gamma(ncoils)
   minlevel0 <- if(model==1) 2*ns0*ncoils else sqrt(2)*gamma(ns0*ncoils+.5)/gamma(ns0*ncoils)
   #  z <- list(th=pmax(sb,minlevel), ni = ni)
   z <- list(th=array(minlevel,dim(sb)), ni = ni)
@@ -130,10 +130,10 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,n
     hakt <- hseq[,k+1]
     if(multishell){
       thmsh <- interpolatesphere(z$th,msstructure)
-      param <- lkfullse3msh(hakt,kappa0/hakt,gradstats,vext,nind) 
+      param <- lkfullse3msh(hakt,kappa0/hakt,gradstats,vext,nind)
       #       save(z,thmsh,param,msstructure,file=paste("thmsh",k,".rsc",sep=""))
       if(length(sigma)==1) {
-        z <- .Fortran("adsmse3m",
+        z <- .Fortran(C_adsmse3m,
                       as.double(sb),#y
                       as.double(thmsh),#th
                       ni=as.double(z$ni),#ni
@@ -145,7 +145,6 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,n
                       as.integer(ddim[3]),#n3
                       as.integer(ngrad),#ngrad
                       as.double(lambda),#lambda
-#                      as.integer(ncoils),#ncoils
                       as.integer(mc.cores),#ncores
                       as.integer(param$ind),#ind
                       as.double(param$w),#w
@@ -154,8 +153,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,n
                       double(ngrad*mc.cores),#sw
                       double(ngrad*mc.cores),#swy
                       double(nshell*mc.cores),#si
-                      double(nshell*mc.cores),#thi
-                      PACKAGE="dti")[c("ni","th")]
+                      double(nshell*mc.cores))[c("ni","th")]
         dim(z$th) <- dim(z$ni) <- c(ddim,ngrad)
         gc()
       } else {
@@ -164,9 +162,9 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,n
         return(object)
       }
     } else {
-      param <- lkfullse3(hakt,kappa0/hakt,gradstats,vext,nind) 
+      param <- lkfullse3(hakt,kappa0/hakt,gradstats,vext,nind)
       if(length(sigma)==1) {
-        z <- .Fortran("adsmse3p",
+        z <- .Fortran(C_adsmse3p,
                       as.double(sb),
                       as.double(z$th),
                       ni=as.double(z$ni/if(model>=2) fncchiv(z$th,varstats) else 1),
@@ -185,8 +183,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,n
                       double(prod(ddim)*ngrad),#ldf (to precompute lgamma)
                       double(ngrad*mc.cores),
                       double(ngrad*mc.cores),
-                      as.integer(model),
-                      PACKAGE="dti")[c("ni","th")]
+                      as.integer(model))[c("ni","th")]
         #     save(z,sb,thk,ni,param,model,ddim,lambda,ngrad,model,minlevel,ncoils,mask,file="tmpi.rsc")
         gc()
       } else {
@@ -204,7 +201,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,n
       cat(".")
     }
     param <- reduceparam(param)
-    z0 <- .Fortran("asmse30p",
+    z0 <- .Fortran(C_asmse30p,
                    as.double(s0),
                    as.double(th0),
                    ni=as.double(ni0/if(model==2) fncchiv(th0,varstats) else 1),
@@ -222,8 +219,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,n
                    th0=double(prod(ddim)),
                    double(prod(ddim)),#ldf (to precompute lgamma)
                    double(param$nstarts),#swi
-                   as.integer(model),
-                   PACKAGE="dti")[c("ni","th0")]
+                   as.integer(model))[c("ni","th0")]
     #     save(z0,s0,th0,ni0,param,model,ddim,lambda,ns0,model,minlevel,ncoils,mask,file="tmp.rsc")
     th0 <- z0$th0
     ni0 <- z0$ni
@@ -263,7 +259,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,n
 lkfullse3 <- function(h,kappa,gradstats,vext,n){
   ngrad <- dim(gradstats$bghat)[2]
   if(length(h)<ngrad) h <- rep(h[1],ngrad)
-  z <- .Fortran("lkfulse3",
+  z <- .Fortran(C_lkfulse3,
                 as.double(h),
                 as.double(kappa),
                 as.double(gradstats$k456),
@@ -272,10 +268,7 @@ lkfullse3 <- function(h,kappa,gradstats,vext,n){
                 ind=integer(5*n),
                 w=double(n),
                 n=as.integer(n),
-                as.integer(gradstats$dist),
-                PACKAGE="dti")[c("ind","w","n")]
+                as.integer(gradstats$dist))[c("ind","w","n")]
   dim(z$ind) <- c(5,n)
   list(h=h,kappa=kappa,ind=z$ind[,1:z$n],w=z$w[1:z$n],nind=z$n)
 }
-
-
