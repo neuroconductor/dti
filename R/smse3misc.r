@@ -1,20 +1,19 @@
 betagamma <- function(g){
   dg <- dim(g)
   ngrad <- if(!is.null(dg)) dg[2] else 1
-  bghat <- .Fortran("bgstats",
+  bghat <- .Fortran(C_bgstats,
                     as.double(g),
                     as.integer(ngrad),
                     double(2*ngrad),
-                    bghat = double(2*ngrad*ngrad),
-                    PACKAGE = "dti")$bghat
+                    bghat = double(2*ngrad*ngrad))$bghat
   dim(bghat) <- c(2, ngrad, ngrad)
   ## sphaerische Coordinaten fuer Gradienten-Paare
   bghat
 }
 
 matrm <- function(b, g){
-  matrix(c(cos(b), 0, sin(b), 
-           sin(b)*sin(g), cos(g), -cos(b)*sin(g), 
+  matrix(c(cos(b), 0, sin(b),
+           sin(b)*sin(g), cos(g), -cos(b)*sin(g),
            -cos(g)*sin(b), sin(g), cos(b)*cos(g)),
          3, 3)
 }
@@ -32,12 +31,11 @@ getkappas <- function(grad, trace = 0, dist = 1){
   #
   krit <- function(par, matm, beta){
     ## sum((matm-expm(par[1]*m4)%*%expm(par[2]*m5)%*%expm(par[3]*m6))^2)
-    .Fortran("k456krb",
+    .Fortran(C_k456krb,
              as.double(par),
              as.double(beta),
              as.double(matm),
-             erg = double(1),
-             PACKAGE = "dti")$erg
+             erg = double(1))$erg
   }
   krit5 <- function(x,p,pk4,matm,beta){
     # for line search with respect to k5 to get second solution
@@ -134,18 +132,3 @@ suggestkappa <- function(grad,vred=1,dist=1){
   }
   list(kappa=kappa,vred=vredk)
 }
-vredsphere <- function(grad,kappa,dist=1){
-  #
-  #  compute initial variance reduction on the sphere 
-  #  for given kappa
-  #
-  gstats <- getkappas(grad,dist=dist)
-  ngrad <- dim(grad)[2]
-  d <- switch(dist,apply(gstats$k456[1:2,,]^2,2:3,sum)+abs(gstats$k456[3,,]),
-              apply(gstats$k456^2,2:3,sum),
-              apply(gstats$k456^2,2:3,sum))
-  w <- matrix(pmax(1-d/kappa^2,0),ngrad,ngrad)
-  mean(apply(w,1,sum)^2/apply(w^2,1,sum))
-}
-
-

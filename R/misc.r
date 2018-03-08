@@ -1,6 +1,6 @@
 sioutlier1 <- function( si, s0ind, level, mc.cores = 1, verbose = TRUE){
   ##
-  ##   replace si values that are larger than s0 
+  ##   replace si values that are larger than s0
   ##   create mask and reduce data to region covered by mask
   ##
   dsi <- dim(si)
@@ -10,16 +10,16 @@ sioutlier1 <- function( si, s0ind, level, mc.cores = 1, verbose = TRUE){
   siind <- (1:ng)[-s0ind]
   dim(si) <- c(n,ng)
   si <- t(si)
-  
+
   if (verbose) cat("outlier: ")
-  
+
   if(mc.cores>1){
     mc.cores.old <- setCores(,reprt=FALSE)
     setCores(mc.cores)
   }
   t1 <- Sys.time()
   if(mc.cores==1||ng>250){
-    z <- .Fortran("outlier",
+    z <- .Fortran(C_outlier,
                   as.double(si),
                   as.integer(n),
                   as.integer(ng),
@@ -27,13 +27,12 @@ sioutlier1 <- function( si, s0ind, level, mc.cores = 1, verbose = TRUE){
                   as.integer(siind),
                   as.integer(ns0),
                   si=double(n*ng),
-                  index=logical(n),
-                  PACKAGE="dti")[c("si","index")]
+                  index=logical(n))[c("si","index")]
     zz <- matrix(z$si,ng,n)
     index <- (1:n)[z$index]
     rm(z)
   } else {
-    zz <- matrix(.Fortran("outlierp",
+    zz <- matrix(.Fortran(C_outlierp,
                           as.double(si),
                           as.integer(n),
                           as.integer(ng),
@@ -42,8 +41,7 @@ sioutlier1 <- function( si, s0ind, level, mc.cores = 1, verbose = TRUE){
                           as.integer(siind),
                           as.integer(ng-ns0),
                           si=double(n*(ng+1)),
-                          as.integer(ng+1),
-                          PACKAGE="dti")$si,ng+1,n)
+                          as.integer(ng+1))$si,ng+1,n)
     t2 <- Sys.time()
     if(mc.cores>1) setCores(mc.cores.old,reprt=FALSE)
     index <- (1:n)[as.logical(zz[ng+1,])]
@@ -58,7 +56,7 @@ sioutlier1 <- function( si, s0ind, level, mc.cores = 1, verbose = TRUE){
   mask <- array(s0 > level,dsi[-length(dsi)])
   mask <- connect.mask(mask)
   nvox <- sum(mask)
-  
+
   t2 <- Sys.time()
   if (verbose) cat( difftime( t2, t1), attr(difftime( t2, t1), "units"), "for", n, "voxel\n")
   if(mc.cores>1) setCores(mc.cores.old,reprt=FALSE)
@@ -72,16 +70,16 @@ sioutlier <- function( si, s0ind, mc.cores = 1, verbose = TRUE){
   siind <- (1:ng)[-s0ind]
   dim(si) <- c(n,ng)
   si <- t(si)
-  
+
   if (verbose) cat("outlier: ")
-  
+
   if(mc.cores>1){
     mc.cores.old <- setCores(,reprt=FALSE)
     setCores(mc.cores)
   }
   t1 <- Sys.time()
   if(mc.cores==1||ng>250){
-    z <- .Fortran("outlier",
+    z <- .Fortran(C_outlier,
                   as.double(si),
                   as.integer(n),
                   as.integer(ng),
@@ -89,10 +87,9 @@ sioutlier <- function( si, s0ind, mc.cores = 1, verbose = TRUE){
                   as.integer(siind),
                   as.integer(ns0),
                   si=double(n*ng),
-                  index=logical(n),
-                  PACKAGE="dti")[c("si","index")]
+                  index=logical(n))[c("si","index")]
   } else {
-    zz <- matrix(.Fortran("outlierp",
+    zz <- matrix(.Fortran(C_outlierp,
                           as.double(si),
                           as.integer(n),
                           as.integer(ng),
@@ -101,12 +98,11 @@ sioutlier <- function( si, s0ind, mc.cores = 1, verbose = TRUE){
                           as.integer(siind),
                           as.integer(ng-ns0),
                           si=double(n*(ng+1)),
-                          as.integer(ng+1),
-                          PACKAGE="dti")$si,ng+1,n)
+                          as.integer(ng+1))$si,ng+1,n)
     t2 <- Sys.time()
     if (verbose) cat( difftime( t2, t1), attr(difftime( t2, t1), "units"), "for", n, "voxel\n")
     if(mc.cores>1) setCores(mc.cores.old,reprt=FALSE)
-    return(list(si=zz[1:ng,],index=(1:n)[as.logical(zz[ng+1,])]))         
+    return(list(si=zz[1:ng,],index=(1:n)[as.logical(zz[ng+1,])]))
   }
   t2 <- Sys.time()
   if (verbose) cat( difftime( t2, t1), attr(difftime( t2, t1), "units"), "for", n, "voxel\n")
@@ -122,7 +118,7 @@ mcorr <- function(res,mask,ddim,ngrad0,lags=c(5,5,3),mc.cores=1){
     setCores(min(mc.cores,lags[1]))
   }
   t1 <- Sys.time()
-  scorr <- .Fortran("mcorr",as.double(res),
+  scorr <- .Fortran(C_mcorr,as.double(res),
                     as.logical(mask),
                     as.integer(ddim[1]),
                     as.integer(ddim[2]),
@@ -133,8 +129,7 @@ mcorr <- function(res,mask,ddim,ngrad0,lags=c(5,5,3),mc.cores=1){
                     scorr = double(prod(lags)),
                     as.integer(lags[1]),
                     as.integer(lags[2]),
-                    as.integer(lags[3]),
-                    PACKAGE="dti")$scorr
+                    as.integer(lags[3]))$scorr
   t2 <- Sys.time()
   cat(difftime(t2,t1),"\n")
   if(mc.cores>1) setCores(mc.cores.old,reprt=FALSE)
@@ -159,10 +154,9 @@ dti3Dreg <- function(D,mc.cores=1){
     setCores(mc.cores)
   }
   t1 <- Sys.time()
-  D <- .Fortran("dti3Dreg",
+  D <- .Fortran(C_dti3dreg,
                 D=as.double(D),
-                as.integer(nvox),
-                PACKAGE="dti")$D
+                as.integer(nvox))$D
   t2 <- Sys.time()
   cat(difftime(t2,t1)," for",nvox,"voxel\n")
   if(mc.cores>1) setCores(mc.cores.old,reprt=FALSE)
@@ -180,11 +174,10 @@ dti3Dev <- function(D,mask,mc.cores=1){
   }
   ev <- matrix(0,3,nvox)
   t1 <- Sys.time()
-  ev[,mask] <- .Fortran("dti3Dev",
+  ev[,mask] <- .Fortran(C_dti3dev,
                         as.double(D[,mask]),
                         as.integer(nvox0),
-                        ev=double(3*nvox0),
-                        PACKAGE="dti")$ev
+                        ev=double(3*nvox0))$ev
   t2 <- Sys.time()
   cat(difftime(t2,t1)," for",nvox0,"voxel\n")
   if(mc.cores>1) setCores(mc.cores.old,reprt=FALSE)
@@ -203,11 +196,10 @@ dti3Dand <- function(D,mask,mc.cores=1){
   }
   andir <- matrix(0,3,nvox)
   t1 <- Sys.time()
-  andir[,mask] <- .Fortran("dti3Dand",
+  andir[,mask] <- .Fortran(C_dti3dand,
                            as.double(D[,mask]),
                            as.integer(nvox0),
-                           andir=double(3*nvox0),
-                           PACKAGE="dti")$andir
+                           andir=double(3*nvox0))$andir
   t2 <- Sys.time()
   cat(difftime(t2,t1)," for",nvox0,"voxel\n")
   if(mc.cores>1) setCores(mc.cores.old,reprt=FALSE)
@@ -227,15 +219,14 @@ dti3Dall <- function(D,mask,mc.cores=1){
   ev <- andir <- matrix(0,3,nvox)
   fa <- ga <- md <- numeric(nvox)
   t1 <- Sys.time()
-  z <- .Fortran("dti3Dall",
+  z <- .Fortran(C_dti3dall,
                 as.double(D[,mask]),
                 as.integer(nvox0),
                 fa=double(nvox0),
                 ga=double(nvox0),
                 md=double(nvox0),
                 andir=double(3*nvox0),
-                ev=double(3*nvox0),
-                PACKAGE="dti")[c("fa","ga","md","andir","ev")]
+                ev=double(3*nvox0))[c("fa","ga","md","andir","ev")]
   t2 <- Sys.time()
   cat(difftime(t2,t1)," for",nvox0,"voxel\n")
   if(mc.cores>1) setCores(mc.cores.old,reprt=FALSE)
@@ -260,13 +251,12 @@ dtieigen <- function(D,mask,mc.cores=1){
   andir <- matrix(0,6,nvox)
   fa <-numeric(nvox)
   t1 <- Sys.time()
-  z <- .Fortran("dtieigen",
+  z <- .Fortran(C_dtieigen,
                 as.double(D[,mask]),
                 as.integer(nvox0),
                 fa=double(nvox0),
                 ev=double(3*nvox0),
-                andir=double(6*nvox0),
-                PACKAGE="dti")[c("fa","ev","andir")]
+                andir=double(6*nvox0))[c("fa","ev","andir")]
   t2 <- Sys.time()
   cat(difftime(t2,t1)," for",nvox0,"voxel\n")
   if(mc.cores>1) setCores(mc.cores.old,reprt=FALSE)
@@ -288,15 +278,14 @@ dtiind3D <- function( D, mask, mc.cores = 1, verbose = TRUE){
   bary <- andir <- matrix(0,3,nvox)
   fa <- ga <- md <- numeric(nvox)
   t1 <- Sys.time()
-  z <- .Fortran("dtiind3D",
+  z <- .Fortran(C_dtiind3d,
                 as.double(D[ , mask]),
                 as.integer(nvox0),
                 fa      = double(nvox0),
                 ga      = double(nvox0),
                 md      = double(nvox0),
                 andir   = double(3*nvox0),
-                bary    = double(3*nvox0),
-                PACKAGE = "dti")[c( "fa", "ga", "md", "andir", "bary")]
+                bary    = double(3*nvox0))[c( "fa", "ga", "md", "andir", "bary")]
   if(mc.cores>1) setCores(mc.cores.old,reprt=FALSE)
   t2 <- Sys.time()
   if ( verbose) cat( "dtiind3: calculation took ", difftime( t2, t1), attr(difftime( t2, t1), "units"), " for", nvox0, "voxel\n")
@@ -332,7 +321,7 @@ fwhm2bw <- function(hfwhm) hfwhm/sqrt(8*log(2))
 
 replind <- function(gradient){
   #
-  #  determine replications in the design that may be used for 
+  #  determine replications in the design that may be used for
   #  variance estimates
   #
   if (dim(gradient)[1]!=3) stop("Not a valid gradient matrix")
@@ -380,18 +369,18 @@ fncchiv <- function(mu,varstats){
 
 Spatialvar.gauss<-function(h,h0,d,interv=1){
   #
-  #   Calculates the factor of variance reduction obtained for Gaussian Kernel and bandwidth h in 
+  #   Calculates the factor of variance reduction obtained for Gaussian Kernel and bandwidth h in
   #
   #   case of colored noise that was produced by smoothing with Gaussian kernel and bandwidth h0
   #
-  #   Spatialvar.gauss(lkern,h,h0,d)/Spatialvar.gauss(lkern,h,1e-5,d) gives the 
-  #   a factor for lambda to be used with bandwidth h 
+  #   Spatialvar.gauss(lkern,h,h0,d)/Spatialvar.gauss(lkern,h,1e-5,d) gives the
+  #   a factor for lambda to be used with bandwidth h
   #
   #
   #  interv allows for further discretization of the Gaussian Kernel, result depends on
-  #  interv for small bandwidths. interv=1  is correct for kernel smoothing, 
-  #  interv>>1 should be used to handle intrinsic correlation (smoothing preceeding 
-  #  discretisation into voxel) 
+  #  interv for small bandwidths. interv=1  is correct for kernel smoothing,
+  #  interv>>1 should be used to handle intrinsic correlation (smoothing preceeding
+  #  discretisation into voxel)
   #
   h0 <- pmax(h0,1e-5)
   h <- pmax(h,1e-5)
@@ -475,7 +464,7 @@ thcorr3D <- function(bw,lag=rep(5,3)){
   gwght <- outer(gw1,outer(gw2,gw3,"*"),"*")
   gwght <- gwght/sum(gwght)
   dgw <- dim(gwght)
-  scorr <- .Fortran("thcorr",
+  scorr <- .Fortran(C_thcorr,
                     as.double(gwght),
                     as.integer(dgw[1]),
                     as.integer(dgw[2]),
@@ -483,8 +472,7 @@ thcorr3D <- function(bw,lag=rep(5,3)){
                     scorr=double(prod(lag)),
                     as.integer(lag[1]),
                     as.integer(lag[2]),
-                    as.integer(lag[3]),
-                    PACKAGE="dti")$scorr
+                    as.integer(lag[3]))$scorr
   # bandwidth in FWHM in voxel units
   dim(scorr) <- lag
   scorr
@@ -527,7 +515,7 @@ andir2.image <- function(dtobject,slice=1,method=1,quant=0,minfa=NULL,show=TRUE,
   #    image(anindex,...)
   #  }
   invisible(andirection)
-} 
+}
 
 andir.image <- function(anindex,andirection,quant=0,minfa=NULL){
   dimg <- dim(anindex)
@@ -542,7 +530,7 @@ andir.image <- function(anindex,andirection,quant=0,minfa=NULL){
   dim(andirection)<-c(dimg,3)
   show.image(make.image(andirection))
   invisible(NULL)
-} 
+}
 
 connect.mask <- function(mask){
   dm <- dim(mask)
@@ -550,7 +538,7 @@ connect.mask <- function(mask){
   n2 <- dm[2]
   n3 <- dm[3]
   n <- n1*n2*n3
-  mask1 <- .Fortran("lconnect",
+  mask1 <- .Fortran(C_lconnect,
                     as.logical(mask),
                     as.integer(n1),
                     as.integer(n2),
@@ -561,8 +549,7 @@ connect.mask <- function(mask){
                     integer(n),
                     integer(n),
                     integer(n),
-                    mask=logical(n),
-                    PACKAGE="dti")$mask
+                    mask=logical(n))$mask
   dim(mask1) <- dm
   mask1
 }
@@ -578,38 +565,12 @@ sphcoord <- function(ccoord){
 }
 
 
-# gettriangles <- function(gradients){
-#   dgrad <- dim(gradients)
-#   if(dgrad[2]==3) gradients <- t(gradients)
-#   ngrad <- dim(gradients)[2]
-#   ndist <- ngrad*(ngrad-1)/2
-#   z <- .Fortran("distvert",
-#                  as.double(gradients),
-#                  as.integer(ngrad),
-#                  ab=integer(2*ndist),
-#                  distab=double(ndist),
-#                  as.integer(ndist),
-#                  PACKAGE="dti")[c("ab","distab")]
-#   o <- order(z$distab)
-#   distab <- z$distab[o]
-#   ab <- matrix(z$ab,2,ndist)[,o]
-#   z <- .Fortran("triedges",
-#                  as.integer(ab),
-#                  as.double(distab),
-#                  iab=integer(ndist),
-#                  as.integer(ndist),
-#                  triangles=integer(3*5*ngrad),
-#                  ntriangles=as.integer(5*ngrad),
-#                  PACKAGE="dti")[c("iab","triangles","ntriangles")]
-#   list(triangles=matrix(z$triangles,3,5*ngrad)[,1:z$ntriangle], edges=ab[,z$iab==2])
-# }
-
 create.designmatrix.dti <- function(gradient) {
   dgrad <- dim(gradient)
   if (dgrad[2]==3) gradient <- t(gradient)
   dgrad <- dim(gradient)
   if (dgrad[1]!=3) stop("Not a valid gradient matrix")
-  
+
   btb <- matrix(0,6,dgrad[2])
   btb[1,] <- gradient[1,]*gradient[1,]
   btb[4,] <- gradient[2,]*gradient[2,]
@@ -617,7 +578,7 @@ create.designmatrix.dti <- function(gradient) {
   btb[2,] <- 2*gradient[1,]*gradient[2,]
   btb[3,] <- 2*gradient[1,]*gradient[3,]
   btb[5,] <- 2*gradient[2,]*gradient[3,]
-  
+
   btb
 }
 
@@ -645,38 +606,6 @@ identifyFA <- function(view,slice,xind,yind,zind){
   coord
 }
 
-mthomogen <- function(object,minw=.1,maxangle=30){
-  #
-  #  homogenize Mt-objects (used to construct pseudo-realistic examples)
-  #
-  andir <- extract(object,"andir")$andir
-  mix <- extract(object,"mix")$mix
-  order <- extract(object,"order")$order
-  mask <- extract(object,"mask")$mask
-  ddim <- object@ddim
-  z <- .Fortran("mthomog",
-                as.double(andir),
-                mix=as.double(mix),
-                order=as.integer(order),
-                as.integer(ddim[1]),
-                as.integer(ddim[2]),
-                as.integer(ddim[3]),
-                as.integer(dim(mix)[1]),
-                as.logical(mask),
-                as.double(minw),
-                as.double(maxangle/180*pi),
-                as.double(object@voxelext),
-                andir=as.double(andir),
-                PACKAGE="dti")[c("andir","order","mix")]
-  object@orient <- array(.Fortran("parofor",
-                                  as.double(z$andir),
-                                  as.integer(prod(dim(mix))),
-                                  orient=double(2*prod(dim(mix))),
-                                  PACKAGE="dti")$orient,c(2,dim(mix)))
-  object@mix <- array(z$mix,dim(mix))
-  object@order <- array(z$order,ddim)
-  object
-}
 
 vcrossp <- function(a, b) {
   c(a[2] * b[3] - a[3] * b[2],
@@ -696,55 +625,14 @@ showFAColorScale <- function(filename = "FAcolorscale.png") {
 hg1f1 <- function(a,b,z){
 ##
 ##  Confluent Hypergeometric 1F1 (a,b scalar, z vector)
-##  rel accuracy 1e-13 for z in -1400:700 for a=-.5, .5 
-##  rel accuracy 2e-4 for z < -1400 for a=-.5, .5 
+##  rel accuracy 1e-13 for z in -1400:700 for a=-.5, .5
+##  rel accuracy 2e-4 for z < -1400 for a=-.5, .5
 ##
    n <- length(z)
-   .Fortran("hg1f1",
+   .Fortran(C_hg1f1,
             as.double(a),
             as.double(b),
             as.double(z),
             as.integer(n),
-            fz=double(n),
-            PACKAGE="dti")$fz
+            fz=double(n))$fz
 }
-
-mediansm3d <- function(y,mask,h){
-   nwmd <- (2*as.integer(h)+1)^3
-   ddim <- dim(y)
-   n <- prod(ddim)
-   parammd <- .Fortran("paramw3",
-                       as.double(h),
-                       as.double(c(1,1)),
-                       ind=integer(3*nwmd),
-                       w=double(nwmd),
-                       n=as.integer(nwmd),
-                       PACKAGE = "dti")[c("ind","w","n")]
-    mc.cores <- setCores(,reprt=FALSE)
-    if(diff(range(y))>0){
-    yhat <- .Fortran("mediansm",
-                         as.double(y),
-                         as.logical(mask),
-                         as.integer(ddim[1]),
-                         as.integer(ddim[2]),
-                         as.integer(ddim[3]),
-                         as.integer(parammd$ind),
-                         as.integer(nwmd),
-                         double(nwmd*mc.cores), # work(nw,nthreds)
-                         as.integer(mc.cores),
-                         yhat = double(n),
-                         PACKAGE = "dti")$yhat
-   }
-   dim(yhat) <- ddim
-   yhat
-}
-
-median1 <- function(x){
-   n <- length(x)
-   .Fortran("fmedian1",
-            as.double(x),
-            as.integer(n),
-            med=double(1),
-            PACKAGE = "dti")$med
-}
-

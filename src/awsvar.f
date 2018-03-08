@@ -14,7 +14,7 @@ C   bi       \sum  Wi   (output)
 C   ai       \sum  Wi Y     (output)
 C   wght     scaling factor for second and third dimension (larger values shrink)
 C
-      implicit logical (a-z)
+      implicit none
       integer n1,n2,n3
       logical mask(n1,n2,n3)
       double precision y(n1,n2,n3),theta(n1,n2,n3),bi(n1,n2,n3),
@@ -73,7 +73,7 @@ C  first stochastic term
          DO i2=1,n2
              DO i1=1,n1
                IF (mask(i1,i2,i3)) CYCLE
-C    nothing to do, final estimate is already fixed by control 
+C    nothing to do, final estimate is already fixed by control
 C   scaling of sij outside the loop
                swj=0.d0
                swjy=0.d0
@@ -131,7 +131,7 @@ C   model    specifies the probablilistic model for the KL-Distance
 C   kern     specifies the location kernel
 C   wght     scaling factor for second and third dimension (larger values shrink)
 C
-      implicit logical (a-z)
+      implicit none
       integer n1,n2,n3
       logical mask(n1,n2,n3)
       double precision y(n1,n2,n3),theta(n1,n2,n3),bi(n1,n2,n3),
@@ -197,7 +197,7 @@ C  first stochastic term
                hhomi=hhomi*hhomi
                hhommax=hmax2
                IF (.not.mask(i1,i2,i3)) CYCLE
-C    nothing to do, final estimate is already fixed by control 
+C    nothing to do, final estimate is already fixed by control
                thetai=theta(i1,i2,i3)
                bii=bi(i1,i2,i3)/lambda
 C   scaling of sij outside the loop

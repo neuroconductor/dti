@@ -2,7 +2,7 @@
 C
 C  compute residuals
 C
-      implicit logical (a-z)
+      implicit none
       integer nb,nvox
       double precision th0(nvox),D(6,nvox),s(nb,nvox),b(6,nb),
      1       res(nb,nvox),rss(nvox)
@@ -25,15 +25,15 @@ C$OMP DO SCHEDULE(GUIDED)
          END DO
          rss(i) = zrss
       END DO
-C$OMP END DO 
+C$OMP END DO
 C$OMP END PARALLEL
       RETURN
       END
       subroutine ftensor(par,s,nb,b,vinv,gv,fv)
 C
-C  compute f(par) 
+C  compute f(par)
 C
-      implicit logical (a-z)
+      implicit none
       integer nb
       double precision par(7),s(nb),b(6,nb),vinv(nb),gv(nb),fv
       integer i
@@ -64,9 +64,9 @@ C
       END
       subroutine gtensor(par,s,nb,b,vinv,gv,fv,grad)
 C
-C  compute gradient of f(par) 
+C  compute gradient of f(par)
 C
-      implicit logical (a-z)
+      implicit none
       integer nb
       double precision par(7),s(nb),b(6,nb),vinv(nb),gv(nb),fv(nb),
      1       grad(7)
@@ -109,11 +109,11 @@ C
          z1=2.d0*b(6,i)*par(6)+b(5,i)*par(5)
          grad(6)=grad(6)+z*z1
          z1=2.d0*b(6,i)*par(7)
-         grad(7)=grad(7)+z*z1         
-      END DO       
+         grad(7)=grad(7)+z*z1
+      END DO
 C      call dblepr("grad",4,grad,7)
 C
 C     We now have the gradient in grad
-C      
+C
       RETURN
       END

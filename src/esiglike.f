@@ -1,49 +1,8 @@
-      subroutine lncchi(sigma,ni,ksi,wj,sj,L,n,work,erg)
-C
-C  compute local weighted noncentral chi^2 log-likelihood * (-1)
-C  
-C  sigma - parameter to estimate
-C  ni    - sum(wj)
-C  ksi   - sum(wj*Sj^2)/ni
-C  wj    - local weights
-C  sj    - observed values
-C  L     - df/2
-C  n     - number of local weights/observations
-C
-      implicit logical (a-z)
-      integer n
-      double precision sigma,ni,ksi,wj(n),sj(n),L,work(*),erg
-      integer j
-      double precision eta,z,sig2,zs,sl,lm1,za
-      double precision bessliex
-      external bessliex
-      lm1=L-1
-      sig2=sigma*sigma
-      eta=0.d0
-      sl=ksi-2.d0*L*sig2
-         z=sqrt(sl)
-         zs=z/sig2
-         DO j=1,n
-            if(wj(j).gt.0.d0) THEN
-               za=sj(j)*zs
-               if(za.le.1d2) THEN
-                  za=log(bessliex(za,lm1,1.d0,work))
-               ELSE
-                  za=za-log(za*6.283185d0)/2.d0
-C  large value approximation
-               END IF
-C  avoid Inf in besseli (unlikely in optimum, does not change convexity)
-               eta=eta+wj(j)*za
-            END IF
-         END DO
-         erg=ksi/sig2+log(sig2)+lm1/2.d0*log(sl)-eta/ni
-      RETURN
-      END
       double precision function lncchi2(sigma,ni,ksi,wj,sj,L,clws,n,
      1                                  work)
 C
 C  compute local weighted noncentral chi^2 log-likelihood * (-1)
-C  
+C
 C  sigma - parameter to estimate
 C  ni    - sum(wj)
 C  ksi   - sum(wj*Sj^2)/ni
@@ -52,7 +11,7 @@ C  sj    - observed values
 C  L     - df/2
 C  n     - number of local weights/observations
 C
-      implicit logical (a-z)
+      implicit none
       integer n
       double precision sigma,ni,ksi,wj(n),sj(n),L,work(*)
       integer j
@@ -88,13 +47,13 @@ C            END IF
       END IF
       RETURN
       END
-C    
+C
 C    Minimization of noncentral chi2-likelihood
 C    Adapted from procedure localmin in Richard Brent, Algorithms for
 C    Minimization without Derivatives, Prentice-Hall, Inc. (1973)
 C
       subroutine localmin(low,up,wj,sj,L,n,tol,maxit,work,xmin,fmin)
-      implicit logical (a-z)
+      implicit none
       integer n,maxit
       double precision low,up,wj(n),sj(n),L,tol,xmin,fmin,work(*)
       double precision goldc,a,b,d,e,eps,xm,p,q,r,eps1,eps2,u,v,w,fu,
@@ -123,7 +82,7 @@ C         END IF
       END DO
       clws=-Lm1*clws/ni+Lm1*log(2.d0)+lgammaf(L)
       ksi=ksi/ni
-      a=low 
+      a=low
       b=up
       v=a+goldc*(b-a)
       w=v
@@ -134,15 +93,15 @@ C         END IF
       fv=fx
       fw=fx
 C  Search for minimum
-      DO it=1,maxit   
+      DO it=1,maxit
          xm=0.5d0*(a+b)
          eps1=eps*abs(x)+tol/3.d0
          eps2=2.d0*eps1
-         IF (abs(x-xm).le.(eps2-0.5d0*(b-a)) ) EXIT 
+         IF (abs(x-xm).le.(eps2-0.5d0*(b-a)) ) EXIT
          gsect = .TRUE.
-         IF (abs(e) .gt. eps1) THEN  
+         IF (abs(e) .gt. eps1) THEN
             gsect = .FALSE.
-            r=(x-w)*(fx-fv) 
+            r=(x-w)*(fx-fv)
             q=(x-v)*(fx-fw)
             p=(x-v)*q-(x-w)*r
             q=2.d0*(q-r)
@@ -154,20 +113,20 @@ C  Search for minimum
      1                  p.le.q*(a-x).or.p.ge.q*(b-x)) THEN
                 gsect = .TRUE.
             ELSE
-               d=p/q   
+               d=p/q
                u=x+d
                IF ((u-a).lt.eps2.or.(b-u).lt.eps2) d=sign(eps1,xm-x)
             END IF
          END IF
-         IF (gsect) THEN 
-            IF (x .ge. xm) THEN  
+         IF (gsect) THEN
+            IF (x .ge. xm) THEN
                e=a-x
             ELSE
                e=b-x
             END IF
             d=goldc*e
          END IF
-         IF (abs(d) .ge. eps1) THEN  
+         IF (abs(d) .ge. eps1) THEN
             u=x+d
          ELSE
             u=x+sign(eps1,d)
@@ -206,5 +165,4 @@ C  Search for minimum
 C this seems to correct the bias
       fmin=fx
       RETURN
-      END 
- 
+      END

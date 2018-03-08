@@ -1,8 +1,8 @@
-# This file contains the implementation of dti.smooth() for 
+# This file contains the implementation of dti.smooth() for
 # "dtiData" lines 12--
-# and 
+# and
 # "dtiTensor" lines 225--
-# objects. The latter can be done with 
+# objects. The latter can be done with
 # "Euclidian Metric" lines 237--
 # "Riemann Metric" lines 414--
 
@@ -43,7 +43,7 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
   object@si <- si
   index <- z$index
   s0 <- si[,,,s0ind]
-  if(length(s0ind)>1) s0 <- apply(s0,1:3,mean) 
+  if(length(s0ind)>1) s0 <- apply(s0,1:3,mean)
   si <- si[,,,-s0ind]
   xind <- object@xind
   yind <- object@yind
@@ -74,7 +74,7 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
   n3<-dimy[4]
   n<-n1*n2*n3
   sigma2[sigma2<=mean(sigma2)*1e-5]<- mean(sigma2)*1e-5
-  z <- .Fortran("projdt2",
+  z <- .Fortran(C_projdt2,
                 as.double(y),
                 as.integer(n1),
                 as.integer(n2),
@@ -83,22 +83,20 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
                 anindex=double(n),
                 andirection=double(3*n),
                 det=double(n),
-                as.double(eps),
-                PACKAGE="dti")[c("D","anindex","andirection","det")]
+                as.double(eps))[c("D","anindex","andirection","det")]
   y <- array(z$D,dimy)
   z$bi <- 1/sigma2
   dim(z$D) <- dimy
   dim(z$anindex) <-dim(z$det) <- dimy[-1]
-  dim(z$andirection) <- c(3,dimy[-1]) 
-  sigma2hat <- .Fortran("smsigma",
+  dim(z$andirection) <- c(3,dimy[-1])
+  sigma2hat <- .Fortran(C_smsigma,
                        as.double(sigma2),
                        as.integer(n1),
                        as.integer(n2),
                        as.integer(n3),
                        as.double(hsig),
                        as.double(vext),
-                       sigma2hat=double(n1*n2*n3),
-                       PACKAGE="dti")$sigma2hat
+                       sigma2hat=double(n1*n2*n3))$sigma2hat
    z$sigma2hat <- sigma2hat
 #
 #  initial state for h=1
@@ -176,7 +174,7 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
        lambda0 <- lambda0 * corrfactor
        cat("Correction factor for spatial correlation",signif(corrfactor,3),"\n")
     }
-     z <- .Fortran("awssidti",
+     z <- .Fortran(C_awssidti,
                 as.double(s0),
                 as.double(si),
                 as.logical(mask),
@@ -200,15 +198,14 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
                 D=double(6*n),
                 sigma2hat=double(n),
                 double(ngrad),
-                as.double(eps),
-                PACKAGE="dti")[c("D","bi","anindex","andirection","det","sigma2hat")]
+                as.double(eps))[c("D","bi","anindex","andirection","det","sigma2hat")]
      if(hakt<hsig){
         eta <- (hsig^3 - hakt^3)/hsig^3
         z$sigma2hat <- eta*sigma2hat+(1-eta)*z$sigma2hat
      }
      dim(z$bi) <- dim(z$anindex) <- dim(z$det) <- dim(z$sigma2hat) <- dimy[-1]
      dim(z$D) <- dimy
-     dim(z$andirection) <- c(3,dimy[-1]) 
+     dim(z$andirection) <- c(3,dimy[-1])
      if(graph){
      class(z) <- "dti"
      img<-z$D[1,,,slice]
@@ -259,9 +256,9 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
     x <- (prod(1.25^(k-1)/c(1,1,1)))^(1/3)
     scorrfactor <- (c1+x)/(c1*prod(h0+1)+x)
     k <- k+1
-    lambda0 <- lambda*lseq[k]*scorrfactor     
+    lambda0 <- lambda*lseq[k]*scorrfactor
   }
-#  replace non-tensors (with negative eigenvalues) by a small isotropic tensor 
+#  replace non-tensors (with negative eigenvalues) by a small isotropic tensor
       ind <- array(dti3Dev(z$D,mask),c(3,n1,n2,n3))[1,,,]<1e-6
        if(sum(ind&mask)>0){
            dim(z$D) <- c(6,n1*n2*n3)
@@ -269,7 +266,7 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
            z$D[c(2,3,5),ind&mask] <- 0
            dim(z$D) <- c(6,n1,n2,n3)
        }
-  
+
   invisible(new("dtiTensor",
                 list( hmax = hmax, ni=z$bi),
                 call = args,
@@ -278,9 +275,9 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
                 gradient = object@gradient,
                 bvalue = object@bvalue,
                 btb   = btb,
-                sigma = z$sigma2hat, 
+                sigma = z$sigma2hat,
                 scorr = scorr,
-                bw    = h0, 
+                bw    = h0,
                 mask  = mask,
                 hmax  = 1,
                 ngrad = ngrad+length(s0ind), # = dim(btb)[2]
@@ -300,4 +297,3 @@ dtilin.smooth <- function(object,hmax=5,hinit=NULL,lambda=52,
             )
 
 }
-

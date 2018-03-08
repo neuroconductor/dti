@@ -7,7 +7,7 @@ C    tensor-mixture models with lambda2 and fa as parameters
 C     compute sum_i (si-f(par,g(,i),b(i))^2
 C     differs from old version in using S_i instead of the E_i=S_i/S_0
 C     parameter vector: w_1,phi_1,eta_1,...,w0,lambda,alpha
-      implicit logical(a-z)
+      implicit none
       integer npar,ng
       double precision par(npar),g(3,ng),si(ng),b(ng),lambda,alpha,
      1       risk,w0
@@ -28,7 +28,7 @@ C     parameter vector: w_1,phi_1,eta_1,...,w0,lambda,alpha
 C
 C    tensor-mixture models with lambda2 as parameter, fa fixed
 C     compute sum_i (siq-f(par,g(,i),b(i))^2
-      implicit logical(a-z)
+      implicit none
       integer npar,ng
       double precision par(npar),g(3,ng),si(ng),b(ng),lambda,alpha,
      1       risk,w0
@@ -48,7 +48,7 @@ C     compute sum_i (siq-f(par,g(,i),b(i))^2
 C
 C    tensor-mixture models with eigenvalues fixed
 C     compute sum_i (siq-f(par,g(,i),b(i))^2
-      implicit logical(a-z)
+      implicit none
       integer npar,ng
       double precision par(npar),g(3,ng),si(ng),b(ng),lambda,alpha,
      1       risk,w0
@@ -71,7 +71,7 @@ C
 C  compute expected value
 C  par(npar) containes  w_1, phi_1, eta_1, ..., w_nc, phi_nc, eta_nc, lambda, c
 C
-      implicit logical (a-z)
+      implicit none
       integer npar
       double precision par(npar),g(3),fval,lambda,alpha,w0
       integer ncomp,i
@@ -97,7 +97,7 @@ C  extract parameters
 C
 C    tensor-mixture models with lambda2 and fa as parameters
 C     compute sum_i (siq-f(par,g(,i),b(i))^2
-      implicit logical(a-z)
+      implicit none
       integer npar,ng
       double precision par(npar),g(3,ng),si(ng),b(ng),lambda,alpha,
      1       drisk(npar)
@@ -108,11 +108,11 @@ C  calculate numerical gradients for comparison
       lambda=par(npar-1)
       alpha=par(npar)
       DO j=1,npar
-         drisk0(j)=0.d0   
+         drisk0(j)=0.d0
       END DO
       DO i=1,ng
          call dfmb2(par,npar,w0,lambda,alpha,g(1,i),b(i),fval,dval,
-     1                  dw0,dlam,dalpha)         
+     1                  dw0,dlam,dalpha)
          resi=si(i)-fval
          DO j=1,npar-3
             drisk0(j)=drisk0(j)-resi*dval(j)
@@ -122,7 +122,7 @@ C  calculate numerical gradients for comparison
          drisk0(npar)=drisk0(npar)-resi*dalpha
       END DO
       DO j=1,npar
-         drisk(j)=2.d0*drisk0(j)   
+         drisk(j)=2.d0*drisk0(j)
       END DO
       RETURN
       END
@@ -133,7 +133,7 @@ C
 C
 C    tensor-mixture models with lambda2 as parameter, fa fixed
 C     compute sum_i (siq-f(par,g(,i),b(i))^2
-      implicit logical(a-z)
+      implicit none
       integer npar,ng
       double precision par(npar),g(3,ng),si(ng),b(ng),lambda,alpha,
      1       drisk(npar)
@@ -142,7 +142,7 @@ C     compute sum_i (siq-f(par,g(,i),b(i))^2
       w0=par(npar-1)
       lambda=par(npar)
       DO j=1,npar
-         drisk0(j)=0.d0   
+         drisk0(j)=0.d0
       END DO
       DO i=1,ng
          call dfmb1(par,npar,w0,lambda,alpha,g(1,i),b(i),fval,dval,
@@ -155,7 +155,7 @@ C     compute sum_i (siq-f(par,g(,i),b(i))^2
          drisk0(npar)=drisk0(npar)-resi*dlam
       END DO
       DO j=1,npar
-         drisk(j)=2.d0*drisk0(j)   
+         drisk(j)=2.d0*drisk0(j)
       END DO
       RETURN
       END
@@ -163,7 +163,7 @@ C     compute sum_i (siq-f(par,g(,i),b(i))^2
 C
 C    tensor-mixture models with eigenvalues fixed
 C     compute sum_i (siq-f(par,g(,i),b(i))^2
-      implicit logical(a-z)
+      implicit none
       integer npar,ng
       double precision par(npar),g(3,ng),si(ng),b(ng),lambda,alpha,
      1       drisk(npar)
@@ -171,7 +171,7 @@ C     compute sum_i (siq-f(par,g(,i),b(i))^2
       double precision resi,fval,dval(15),drisk0(16),w0,dw0
       w0=par(npar)
       DO j=1,npar
-         drisk0(j)=0.d0   
+         drisk0(j)=0.d0
       END DO
       DO i=1,ng
          call dfmb0(par,npar,w0,lambda,alpha,g(1,i),b(i),fval,dval,dw0)
@@ -181,7 +181,7 @@ C     compute sum_i (siq-f(par,g(,i),b(i))^2
          END DO
       END DO
       DO j=1,npar-1
-         drisk(j)=2.d0*drisk0(j)   
+         drisk(j)=2.d0*drisk0(j)
       END DO
       drisk0(npar)=drisk0(npar)-resi*dw0
       RETURN
@@ -192,7 +192,7 @@ C
 C  compute partial derivatives with respect to w_i, phi_i, eta_i, lambda and alpha
 C  par(npar) containes  w_1, phi_1, eta_1, ..., w_nc, phi_nc, eta_nc, lambda, alpha
 C  fval contains function value
-      implicit logical (a-z)
+      implicit none
       integer npar
       double precision par(npar),g(3),dval(npar),w0,alpha,lambda,b,
      1       dw0,dlam,dalpha
@@ -253,7 +253,7 @@ C  compute partial derivatives with respect to w_i, phi_i, eta_i and lambda
 C  par(npar) containes  w_1, phi_1, eta_1, ..., w_nc, phi_nc, eta_nc, lambda
 C  fval contains function value
 C
-      implicit logical (a-z)
+      implicit none
       integer npar
       double precision par(npar),g(3),dval(npar),alpha,lambda,b,dlam,
      1       w0,dw0
@@ -308,7 +308,7 @@ C  compute partial derivatives with respect to w_i, phi_i, eta_i and lambda
 C  par(npar) containes  w_1, phi_1, eta_1, ..., w_nc, phi_nc, eta_nc, lambda
 C  fval contains function value
 C
-      implicit logical (a-z)
+      implicit none
       integer npar
       double precision par(npar),g(3),dval(npar),alpha,lambda,b,dw0,w0
       integer ncomp,i
@@ -349,21 +349,21 @@ C  derivative with respect to eta_i
       dw0=exp(-blam*(alpha+1.d0))
 C  derivative with respect to w0
       RETURN
-      END      
+      END
 C
 C __________________________________________________________________
 C
-      subroutine getsiibv(si,ngrad,nvox,m,dgrad,bv,nv,alpha,
-     1        lambda,egrad,isample,ntry,sms,z0,z,siind,wi,mval,ns)
+      subroutine getsii(si,vsi,ngrad,nvox,m,dgrad,bv,nv,alpha,
+     1        lambda,egrad,isample,ntry,sms,z0,z,siind,mval,ns)
 C
 C  compute diagnostics for initial estimates in siind
-C  siind(1,i1,i2,i3) will contain the model order 
-C  
+C  siind(1,i1,i2,i3) will contain the model order
+C
 C  si     - array of si-values
 C  m      - model order
 C  maxc   - maximum of cos(angle between directions)
 C  th     - theta1
-C  egrad - exp(-theta1*dgrad^2) 
+C  egrad - exp(-theta1*dgrad^2)
 C  isample - guesses for gradient directions
 C  ntry   - number of guesses
 C  sms    - copies of si
@@ -375,123 +375,86 @@ C  mval   - aktual best risk
 C
 C  restricted to ngrad<=1000 and m <=10
 C
-      implicit logical (a-z)
+      implicit none
       integer nvox,ngrad,ns,siind(ns,nvox),m,ntry,nv,
      1       isample(m,ntry)
       double precision si(ngrad,nvox),sms(ngrad),dgrad(ngrad,nv),
      1       egrad(ngrad,nv),z(ngrad,ns),mval(nvox),
-     2       wi(ns,nvox),bv(ngrad),alpha,lambda,z0(ngrad)
+     2       vsi(nvox),bv(ngrad),alpha,lambda,z0(ngrad)
       integer i,k,ibest,mode,ind(10),l,ii,iw,wind(6),nwi(6)
       double precision w(1000),krit,work1(1000),work2(12),erg,msi,m2si,
-     1       z1,dng,albv,lbv,onealpha
+     1       z1,dng,albv,lbv
       dng=ngrad
       iw=m
-      onealpha=1.d0+alpha
       DO i=1,m
-         wind(i)=i
-         nwi(i)=i
+          wind(i)=i
+          nwi(i)=i
       END DO
       ibest=1
       DO i=1,nvox
-         msi=0.d0
-         m2si=0.d0
+          msi=0.d0
+          m2si=0.d0
+          z1=vsi(i)
+          mval(i)=sqrt(dng*z1)
       END DO
       call rchkusr()
       DO k=1,ngrad
-         lbv = lambda*bv(k)
-         z0(k) = dexp(-lbv*onealpha)
-         DO l=1,nv
+          lbv = lambda*bv(k)
+          z0(k) = dexp(-lbv*(1.d0+alpha))
+          DO l=1,nv
             albv = alpha*lbv
             z1 = dgrad(k,l)
             egrad(k,l)=dexp(-lbv-albv*z1*z1)
-         END DO
+          END DO
       END DO
       DO i=1,nvox
 C  now search for minima of sms (or weighted sms
-         ibest=0
-         krit=1d20
-         DO k=1,ntry
-C  need to generate z(,1) and sms for every k since they are modified in nnls 
+          ibest=0
+          krit=mval(i)
+          DO k=1,ntry
             call dcopy(ngrad,si(1,i),1,sms,1)
             call dcopy(ngrad,z0,1,z(1,1),1)
             DO l=1,m
-               call dcopy(ngrad,egrad(1,isample(l,k)),1,z(1,l+1),1)
+                call dcopy(ngrad,egrad(1,isample(l,k)),1,z(1,l+1),1)
             END DO
-         call nnls(z,ngrad,ngrad,m+1,sms,w,erg,work2,work1,ind,mode)
-C
-C  thats the Hansson-Larsson code for linear regression with positivity
-C          constraints
-C
-            IF(mode.gt.1) THEN
-               call intpr("mode",4,mode,1)
-               call intpr("isample",7,isample(1,k),m)
-            ELSE 
-               IF(erg.lt.krit) THEN
-                  krit=erg
-                  ibest=k
-                  iw=0
-                  wi(1,i)=w(1)
-                  DO ii=2,m+1
-                     if(w(ii).gt.1.d-12) THEN
-                        iw=iw+1
-                        wind(iw)=ii-1
-                        wi(iw+1,i)=w(ii)
-                     ELSE
-                        nwi(ii-iw-1)=ii-1
+            if(i.eq.16) THEN
+          END IF
+          call nnls(z,ngrad,ngrad,m+1,sms,w,erg,work2,work1,ind,mode)
+          IF(mode.gt.1) THEN
+              call intpr("mode",4,mode,1)
+              call intpr("isample",7,isample(1,k),m)
+          ELSE
+              IF(erg.lt.krit) THEN
+                krit=erg
+                ibest=k
+                iw=0
+                DO ii=2,m+1
+                    if(w(ii).gt.1.d-12) THEN
+                      iw=iw+1
+                      wind(iw)=ii-1
+                    ELSE
+                      nwi(ii-iw-1)=ii-1
 C   nonactive directions
-                     END IF 
-                  END DO
-               END IF  
+                    END IF
+                END DO
+              END IF
             END IF
-         END DO
-         if(ibest.gt.0) THEN
+          END DO
+          if(ibest.gt.0) THEN
             siind(1,i)=iw
             IF (iw.ge.1) THEN
-               DO l=1,iw
+                DO l=1,iw
                   siind(l+1,i)=isample(wind(l),ibest)
-               END DO
+                END DO
             END IF
             IF (iw.lt.m) THEN
-               DO l=1,m-iw
+                DO l=1,m-iw
                   siind(m-l+2,i)=isample(nwi(l),ibest)
-                  wi(m-l+2,i)=0.d0
-               END DO
+                END DO
             END IF
             mval(i)=krit
-         END IF
+          END IF
       END DO
       RETURN
       END
 C
-C __________________________________________________________________
-C
-      subroutine means0(s0,n,ng0,level,ms0,mask)
-C
-C   calculate mean s0 value
-C   generate mask
-C   sweep s0 from si to generate  siq
-C   calculate variance of siq
-C
-      integer n,ng0,level
-      double precision s0(ng0,n),ms0(n)
-      logical mask(n)
-      integer i,k
-      double precision z,thresh
-      thresh = max(1,level*ng0)
-C$OMP PARALLEL DEFAULT(NONE)
-C$OMP& SHARED(s0,n,ng0,ms0,mask,thresh)
-C$OMP& PRIVATE(i,k,z)
-C$OMP DO SCHEDULE(STATIC)
-      DO i=1,n
-         z=0.d0
-         DO k=1,ng0
-            z=z+s0(k,i)
-         END DO
-         ms0(i) = z/ng0
-         mask(i) = z.ge.thresh
-      END DO
-C$OMP END DO NOWAIT
-C$OMP END PARALLEL
-C$OMP FLUSH(mask,ms0)
-      RETURN
-      END
