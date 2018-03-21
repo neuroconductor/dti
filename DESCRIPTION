@@ -30,6 +30,6 @@ URL: http://www.wias-berlin.de/research/ats/imaging/
 Suggests:
     covr
 RoxygenNote: 6.0.1.9000
-Remotes: neuroconductor/oro.nifti@b2b5e408785973e074bdf2f520720a79c23b6ffa,
-    neuroconductor/oro.dicom@8e81a1369f25174f3c5ed7470be300398d1aaeea
 biocViews: 
+Remotes: neuroconductor/oro.nifti@a3d3633139b9095f1d502e4fc43e1b86cab3ddd5,
+    neuroconductor/oro.dicom@7c06398f48c907e1a5a8bd722cd656a0b803baea
