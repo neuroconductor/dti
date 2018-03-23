@@ -31,5 +31,5 @@ Suggests:
     covr
 RoxygenNote: 6.0.1.9000
 biocViews: 
-Remotes: neuroconductor/oro.nifti@a3d3633139b9095f1d502e4fc43e1b86cab3ddd5,
-    neuroconductor/oro.dicom@7c06398f48c907e1a5a8bd722cd656a0b803baea
+Remotes: neuroconductor/oro.nifti@36474ce8faeb769d00c7bab606f9bb1ca46ccba8,
+    neuroconductor/oro.dicom@996b1dd0db67644dbd55dafe196871eb9843de31
