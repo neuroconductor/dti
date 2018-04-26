@@ -57,7 +57,7 @@ deploy:
   on:
     tags: true
   api-key:
-    secure: aQNSvDJ2QrLWY04CvhfhTI2mVHhmXLSwxASBXDz36hmg/72uXVms8bU9OaVUQjR+Rv1cpVU/WRB2+DCwf2Opo1KIN4eshgXoEcyOzTUtyeAvz9+BAzWnlDDpfOVfW8K1zN5U6xNtKzWH2avP77bXy+MPlUHKNY8hFW8/Mpp3gD5eND2RKUskmYHOly/T6+xJ6unHWSGxV7m+SKWoacV8aGOepkyRFkvjg+VP6mzVsS/5cVtfTubRaTSs6TJHzZpDoj/Te1k9h8sr69Kk3tB0qoNwy7PRoRqBodQaPbHHVmiNqDWSAGjH8/z/S2sI5ZjfKx/SphI+BP/NT/ILmwcFOUYdmn5XLOWA+RdjDfn/QCSOZRSGXrAqQ8tag6qUdnkaaBnoC4SR0xjPXhJ6H0Eouox/XUdu484ufprlhVs04/LmTca3l6CIeqge8qZS/F7ZBTrhNhoFsQMWHUPO9a2ZP4yrgx9JDXCFGer9ms1RaJaYns1U0Tr8NlqW/oHBnEXIy0ZTOaZx5g1tiNGJQKb1CNdJ5bSy/MfcQ8DHO/loAHGL4T6dwE2lqQ3iTlEL+6zPnTcCspjTyEFuOhbJQM64ch90o6uZ5zPvxosop86DkyXypv9JSZPkg8tiX0WbkH7YpgW18j/9Qe/Jgt98/FWeZ/aCEoKyM9aya+qQaCoJKBI=
+    secure: jn3m6+ADrN/7onC1OQ6no3ZcAJfHoUT701RIPIcF3V/YbZi3Ts7Ust9ifY90C5soTU/GaSk8i9ef2EFR1XmIRkexlc3tRxjYaN+bL3DnJsFou+8yFiMWzUwig2mPBkGgauj8QIMpbn47HmQ1ktRASwhYfiQq6+hqYUf9ChJJ9IijTEkcVEnVLCkZVlzX2tase63SzrSw9/PKEmUDFmpU+XiUATFxKVvWeshE2mZ/0AhyV/IAwaVzPs1ZFBiRBWTRqV47aCKQMdgK1nCHT6pbAQgq8dc1Fh55RbUXsxqaEwuhORIWjiQL2+pK7O4sz7alFhshZJYw7hSNdvsY2YN+LkKFYDAuxWBZBqlc4ulCqEjVwoXrGOTI89A8Os440cHSBELfA7GpvIo7lsWk4wsgkAwQgnzeK5pPaC26JSEwMoFytqLPVqcbVArxc/eVwCeQDVAROnn2MCbZM+kkSiZWCoUHmgkr5ncE8s6M4O6pNdB0/HoDSUxvMorjFYn7WaDIdy3RCGUFa24hNeDFA45bXxLBsyH4weu+1aA122SFeBveybAYCpvP6cwWwlwkPt7u6plp+iR9OygTrIZCdrC9DPaPQ1d68kxjVLFtb2/L1pEe5S9aw93aaSmtB/MYhhHzE3c9IUponl6nGKZEpqFFNEw3qIlQ3MiNSq3eLp9FfxM=
 after_deploy:
 - if [[ "${TRAVIS_OS_NAME}" == "linux" ]]; then echo 'covr::coveralls(type = "all")'
   > neuroc_covr.R ; travis_wait 100 Rscript neuroc_covr.R ; rm neuroc_covr.R ; fi
