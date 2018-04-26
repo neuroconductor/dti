@@ -30,7 +30,7 @@ before_install:
 - cat ${fname}; source ${fname}; rm ${fname}
 - cat DESCRIPTION
 - start_xvfb ;
-- no_open_mp ;
+- if [ "$TRAVIS_OS_NAME" = "osx" ]; then no_open_mp ; fi
 - Rscript -e 'source("https://install-github.me/mangothecat/callr")'
 - remove_neuroc_packages
 - cat DESCRIPTION
@@ -57,7 +57,7 @@ deploy:
   on:
     tags: true
   api-key:
-    secure: 3qUFHvS7e34bzrAj4cMnBNqP3lg6I/EClbljKyF2E33GQ5cBF/Fm9fkY9EgfjhTkzNNRAv3AYrZ3A9cWqEx57o1jsexXyPyXnxRykYytbGRgkXMtN0hXbsoKynoYXIqVwBCaDNcO+reKxvgqScQME1Oc2aBrFqJ8IjctgOGl4nd9S955mN7Jld0YQ1EpL/hi4fuU9IeWt9BJWQIzMK2h3CGD+QWW3W4U9Cy21T9+fx2tdmqjWpBA6ujQHCcLm1hgwRP1LDdYOzr5WRVw2vgDsxbNHI7DmUS1dcB4NGKduDmI5vM6flDg+M8uPcQr03iA+VvsQkpEoVS4FYyNkJTnJnl2U2kudKboq4Fuwh5xTR2oPBELbyKRbZU5bIq48sRGfwtd5/lIJLAwmFGvtErgx36ug2N6B5kVDTtiCYoNo4jVAHITiQXZUglBXvsL4xPqwYU6+d12Gevfv2FHBZQjaWqjk4s1ytSFCaunAr3E1doh9VJscXqfz5llEAkmvEl12XyBNuP3EaqLBN435lhe6d8ZViqAOgRkexgBfXwNfd8eCPVJVbBf0qxmqgSXZ89QrxquvA3zUwfamu3MvAxh5e7UBChJFv+YZnQxpCCYufH8T1L3+AFab3vm+NbLraiv6OcwvSdzia4c1jq3FDwphyWxiM9kQ4owkXKh69mew+k=
+    secure: aQNSvDJ2QrLWY04CvhfhTI2mVHhmXLSwxASBXDz36hmg/72uXVms8bU9OaVUQjR+Rv1cpVU/WRB2+DCwf2Opo1KIN4eshgXoEcyOzTUtyeAvz9+BAzWnlDDpfOVfW8K1zN5U6xNtKzWH2avP77bXy+MPlUHKNY8hFW8/Mpp3gD5eND2RKUskmYHOly/T6+xJ6unHWSGxV7m+SKWoacV8aGOepkyRFkvjg+VP6mzVsS/5cVtfTubRaTSs6TJHzZpDoj/Te1k9h8sr69Kk3tB0qoNwy7PRoRqBodQaPbHHVmiNqDWSAGjH8/z/S2sI5ZjfKx/SphI+BP/NT/ILmwcFOUYdmn5XLOWA+RdjDfn/QCSOZRSGXrAqQ8tag6qUdnkaaBnoC4SR0xjPXhJ6H0Eouox/XUdu484ufprlhVs04/LmTca3l6CIeqge8qZS/F7ZBTrhNhoFsQMWHUPO9a2ZP4yrgx9JDXCFGer9ms1RaJaYns1U0Tr8NlqW/oHBnEXIy0ZTOaZx5g1tiNGJQKb1CNdJ5bSy/MfcQ8DHO/loAHGL4T6dwE2lqQ3iTlEL+6zPnTcCspjTyEFuOhbJQM64ch90o6uZ5zPvxosop86DkyXypv9JSZPkg8tiX0WbkH7YpgW18j/9Qe/Jgt98/FWeZ/aCEoKyM9aya+qQaCoJKBI=
 after_deploy:
 - if [[ "${TRAVIS_OS_NAME}" == "linux" ]]; then echo 'covr::coveralls(type = "all")'
   > neuroc_covr.R ; travis_wait 100 Rscript neuroc_covr.R ; rm neuroc_covr.R ; fi
