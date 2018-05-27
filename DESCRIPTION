@@ -6,6 +6,9 @@ Authors@R: c(person("Karsten", "Tabelow", role = c("aut", "cre"), email
         = "karsten.tabelow@wias-berlin.de"), person("Joerg", "Polzehl",
         role = c("aut"), email = "joerg.polzehl@wias-berlin.de"),
         person("Felix", "Anker", role = c("ctb")))
+Author: Karsten Tabelow [aut, cre], Joerg Polzehl [aut], Felix Anker
+        [ctb]
+Maintainer: Karsten Tabelow <karsten.tabelow@wias-berlin.de>
 Depends: R (>= 3.1.0), awsMethods (>= 1.0-1), adimpro, rgl
 SystemRequirements: gsl
 Imports: methods, parallel, oro.nifti (>= 0.3.9), oro.dicom, gsl,
@@ -28,7 +31,7 @@ Copyright: This package is Copyright (C) 2005-2018 Weierstrass
 URL: http://www.wias-berlin.de/research/ats/imaging/
 Suggests: covr
 RoxygenNote: 6.0.1.9000
-biocViews:
 Remotes:  
     neuroconductor/oro.nifti@654f99fc85fdaf21253e3eca6bfb1678d46f41c9,
     neuroconductor/oro.dicom@596cf1374c4cd1cf5c40208973b50316a07fb62a
+biocViews: 
