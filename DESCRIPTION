@@ -29,9 +29,11 @@ License: GPL (>= 2)
 Copyright: This package is Copyright (C) 2005-2018 Weierstrass
         Institute for Applied Analysis and Stochastics.
 URL: http://www.wias-berlin.de/research/ats/imaging/
-Suggests: covr
+Suggests: 
+    covr,
+    testthat
 RoxygenNote: 6.0.1.9000
-Remotes:  
-    neuroconductor/oro.nifti@654f99fc85fdaf21253e3eca6bfb1678d46f41c9,
-    neuroconductor/oro.dicom@596cf1374c4cd1cf5c40208973b50316a07fb62a
-biocViews: 
+biocViews:
+Remotes: 
+    neuroconductor/oro.nifti@15b6d610da5856c45fdca71728f2e40f93503f05,
+    neuroconductor/oro.dicom@64bfcb7031a491a383d76947f3c4ae6593ea3b2e
