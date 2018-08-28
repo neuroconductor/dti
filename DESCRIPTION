@@ -32,8 +32,6 @@ Copyright: This package is
                                    Applied Analysis and Stochastics.
 URL: http://www.wias-berlin.de/research/ats/imaging/
 Suggests:
-    covr,
-    fmri,
-    aws
+    covr
 RoxygenNote: 6.1.0
 Encoding: UTF-8
