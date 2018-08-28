@@ -32,5 +32,8 @@ Copyright: This package is
                                    Applied Analysis and Stochastics.
 URL: http://www.wias-berlin.de/research/ats/imaging/
 Suggests:
-    covr
-RoxygenNote: 6.0.1.9000
+    covr,
+    fmri,
+    aws
+RoxygenNote: 6.1.0
+Encoding: UTF-8
