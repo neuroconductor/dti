@@ -7,6 +7,10 @@ Authors@R: c(person("Karsten", "Tabelow", role = c("aut", "cre"),
              person("Joerg", "Polzehl", role = c("aut"),
                     email = "joerg.polzehl@wias-berlin.de"),
              person("Felix", "Anker", role = c("ctb")))
+Author: Karsten Tabelow [aut, cre],
+        Joerg Polzehl [aut],
+        Felix Anker [ctb]
+Maintainer: Karsten Tabelow <karsten.tabelow@wias-berlin.de>
 Depends: R (>= 3.1.0), awsMethods (>= 1.0-1), adimpro, rgl
 SystemRequirements: gsl
 Imports: methods, parallel, oro.nifti (>= 0.3.9), oro.dicom, gsl, quadprog
@@ -29,5 +33,5 @@ Copyright: This package is
 URL: http://www.wias-berlin.de/research/ats/imaging/
 Suggests:
     covr
-RoxygenNote: 6.0.1.9000
+RoxygenNote: 6.1.0
 Encoding: UTF-8

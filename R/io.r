@@ -10,7 +10,7 @@ dtiData <- function(gradient,imagefile,ddim,bvalue=NULL,xind=NULL,yind=NULL,zind
   if (dim(gradient)[2]==3) gradient <- t(gradient)
   if (dim(gradient)[1]!=3) stop("Not a valid gradient matrix")
   ngrad <- dim(gradient)[2]
-  s0ind <- (1:ngrad)[apply(abs(gradient),2,max)==0] 
+  s0ind <- (1:ngrad)[apply(abs(gradient),2,max)==0]
   if(length(s0ind)>0){
      d <- diag(t(gradient[,-s0ind])%*%gradient[,-s0ind])
      gradient[,-s0ind] <- t(t(gradient[,-s0ind])/sqrt(d))
@@ -18,9 +18,9 @@ dtiData <- function(gradient,imagefile,ddim,bvalue=NULL,xind=NULL,yind=NULL,zind
         bvalue <- rep(1,ngrad)
         bvalue[s0ind] <- 0
      } else {
-       if(length(bvalue)!=ngrad || max(bvalue[s0ind]) > 10*min(bvalue[-s0ind])) 
+       if(length(bvalue)!=ngrad || max(bvalue[s0ind]) > 10*min(bvalue[-s0ind]))
          stop("invalid b-values")
-     }   
+     }
   } else {
 ## some datasets have small b-values assigned to unweighted data, e.g. HCP
 ## define s0ind as set of minimal b-values
@@ -35,9 +35,9 @@ dtiData <- function(gradient,imagefile,ddim,bvalue=NULL,xind=NULL,yind=NULL,zind
   if (!(file.exists(imagefile))) stop("Image file does not exist")
   cat("Start Data reading",format(Sys.time()), "\n")
   zz <- file(imagefile,"rb")
-  #  si now contains all images (S_0 and S_I), ngrad includes 
+  #  si now contains all images (S_0 and S_I), ngrad includes
   #  number of zero gradients
-  
+
   if (is.null(xind)) xind <- 1:ddim[1]
   if (is.null(yind)) yind <- 1:ddim[2]
   if (is.null(zind)) zind <- 1:ddim[3]
@@ -51,9 +51,9 @@ dtiData <- function(gradient,imagefile,ddim,bvalue=NULL,xind=NULL,yind=NULL,zind
   close(zz)
   dim(si) <- c(length(xind),length(yind),length(zind),ngrad)
   dimsi <- dim(si)
-  
+
   cat("Data successfully read",format(Sys.time()), "\n")
-  
+
   #
   #   set correct orientation
   #
@@ -70,28 +70,27 @@ dtiData <- function(gradient,imagefile,ddim,bvalue=NULL,xind=NULL,yind=NULL,zind
     gradient[xyz,] <- gradient
   }
   if(swap[1]==1) {
-    si <- si[dimsi[1]:1,,,] 
+    si <- si[dimsi[1]:1,,,]
     gradient[1,] <- -gradient[1,]
   }
   if(swap[2]==1) {
-    si <- si[,dimsi[2]:1,,]  
+    si <- si[,dimsi[2]:1,,]
     gradient[2,] <- -gradient[2,]
   }
   if(swap[3]==0) {
-    si <- si[,,dimsi[3]:1,]    
+    si <- si[,,dimsi[3]:1,]
     gradient[3,] <- -gradient[3,]
   }
   #
   #   orientation set to radiological convention
   #
-  si <- .Fortran("initdata",
+  si <- .Fortran(C_initdata,
                  si=as.double(si),
                  as.integer(dimsi[1]),
                  as.integer(dimsi[2]),
                  as.integer(dimsi[3]),
                  as.integer(dimsi[4]),
-                 as.double(maxvalue),
-                 PACKAGE="dti")$si
+                 as.double(maxvalue))$si
   #  this replaces the content off all voxel with elements <=0 or >maxvalue by 0
   if(all(si==as.integer(si))) si <- as.integer(si)
   ##  reduce memory requirements if possible
@@ -99,7 +98,7 @@ dtiData <- function(gradient,imagefile,ddim,bvalue=NULL,xind=NULL,yind=NULL,zind
   level <- max(mins0value,level*mean(si[,,,s0ind][si[,,,s0ind]>0])) # set level to level*mean  of positive s_0 values
   ddim0 <- as.integer(ddim)
   ddim <- as.integer(dim(si)[1:3])
-  
+
   cat("Create auxiliary statistics",format(Sys.time()), " \n")
   rind <- replind(gradient)
   design <- create.designmatrix.dti(gradient)
@@ -131,8 +130,8 @@ dtiData <- function(gradient,imagefile,ddim,bvalue=NULL,xind=NULL,yind=NULL,zind
 
 ## TODO: what about siemens mosaic?
 ##       the loop over files contains many not neccessary operations (voxelext etc)
-readDWIdata <- function(gradient, dirlist, 
-                        format = c("DICOM", "NIFTI", "ANALYZE", "AFNI"), 
+readDWIdata <- function(gradient, dirlist,
+                        format = c("DICOM", "NIFTI", "ANALYZE", "AFNI"),
                         nslice = NULL, order = NULL, bvalue = NULL,
                         xind = NULL, yind = NULL, zind = NULL,
                         level = 0, mins0value = 1, maxvalue = 32000,
@@ -140,9 +139,9 @@ readDWIdata <- function(gradient, dirlist,
                         pattern = NULL,
                         SPM2 = TRUE,
                         verbose = FALSE) {
-  
+
   args <- list(sys.call())
-  
+
   ## basic consistency checks
   format <- match.arg(format)
   if ((format == "DICOM") & is.null(nslice))
@@ -159,9 +158,9 @@ readDWIdata <- function(gradient, dirlist,
         bvalue <- rep(1,ngrad)
         bvalue[s0ind] <- 0
      } else {
-        if(length(bvalue)!=ngrad || max(bvalue[s0ind]) > 10*min(bvalue[-s0ind])) 
+        if(length(bvalue)!=ngrad || max(bvalue[s0ind]) > 10*min(bvalue[-s0ind]))
            stop("invalid b-values")
-     } 
+     }
   } else {
 ## some datasets have small b-values assigned to unweighted data, e.g. HCP
 ## define s0ind as set of minimal b-values
@@ -226,7 +225,7 @@ readDWIdata <- function(gradient, dirlist,
     }
   }
   nfiles <- length(filelist)
-  
+
   ## read all files
   if (verbose) cat("readDWIdata: Start reading data", format(Sys.time()), "\n")
   si <- numeric()
@@ -270,9 +269,9 @@ readDWIdata <- function(gradient, dirlist,
       if (is.null(zind)) zind <- 1:nslice
       delta <- dd@DELTA
       imageOrientationPatient <- diag(3)
-    } 
+    }
     ddim <- if (format == "DICOM") c(dim(dd$img)[1:2], nslice, ngrad) else c(dim(dd)[1:2], nslice, ngrad)
-    
+
     if (is.null(voxelext)) {
       if (length(delta) == 3) {
         voxelext <- delta
@@ -286,7 +285,7 @@ readDWIdata <- function(gradient, dirlist,
           warning("readDWIdata: Voxel extension", voxelext, "is not match its value in data files:", delta)
       }
     }
-    
+
     if (is.null(rotation)) {
       if (any(imageOrientationPatient != 0)) {
         rotation <- imageOrientationPatient
@@ -298,11 +297,11 @@ readDWIdata <- function(gradient, dirlist,
         warning("readDWIdata: Rotation matrices differ: ", imageOrientationPatient)
       }
     }
-    
+
     if (is.null(xind)) xind <- 1:ddim[1]
     if (is.null(yind)) yind <- 1:ddim[2]
     if (format == "DICOM") {
-      if (first) { 
+      if (first) {
         ttt <- dd$img[xind, yind]
         nttt <- dim(ttt)
         si <- numeric(nfiles * prod(nttt))
@@ -316,7 +315,7 @@ readDWIdata <- function(gradient, dirlist,
       if (length(filelist) > 1) { # list of 3D files
         ## for dti_leipzig data we got length(dim(dd))==4
         if(length(dim(dd))==4&&dim(dd)[4]==1) dim(dd) <- dim(dd)[1:3]
-        if (first) { 
+        if (first) {
           ttt <- dd[xind, yind, zind]
           nttt <- dim(ttt)
           si <- numeric(nfiles * prod(nttt))
@@ -335,7 +334,7 @@ readDWIdata <- function(gradient, dirlist,
   dim(si) <- c(length(xind), length(yind), length(zind), ngrad)
   dimsi <- dim(si)
   if (verbose) cat("readDWIdata: Data successfully read", format(Sys.time()), "\n")
-  
+
   # redefine orientation
   xyz <- (orientation)%/%2+1
   swap <- orientation%%2
@@ -350,37 +349,36 @@ readDWIdata <- function(gradient, dirlist,
     gradient[xyz,] <- gradient
   }
   if(swap[1]==1) {
-    si <- si[dimsi[1]:1,,,] 
+    si <- si[dimsi[1]:1,,,]
     gradient[1,] <- -gradient[1,]
   }
   if(swap[2]==1) {
-    si <- si[,dimsi[2]:1,,]  
+    si <- si[,dimsi[2]:1,,]
     gradient[2,] <- -gradient[2,]
   }
   if(swap[3]==0) {
-    si <- si[,,dimsi[3]:1,]    
+    si <- si[,,dimsi[3]:1,]
     gradient[3,] <- -gradient[3,]
   }
   # orientation set to radiological convention
-  
+
   ## this replaces the content off all voxel with elements <=0 or >maxvalue by 0
-  si <- .Fortran("initdata",
+  si <- .Fortran(C_initdata,
                  si = as.double(si),
                  as.integer(dimsi[1]),
                  as.integer(dimsi[2]),
                  as.integer(dimsi[3]),
                  as.integer(dimsi[4]),
-                 as.double(maxvalue),
-                 PACKAGE = "dti")$si
+                 as.double(maxvalue))$si
   if(all(si==as.integer(si))) si <- as.integer(si)
   ##  reduce memory requirements if possible
   dim(si) <- dimsi
-  
+
   ## set level to level*mean  of positive s_0 values
   level <- max(mins0value, level * mean(si[ , , , s0ind][si[ , , , s0ind] > 0]))
   if (verbose) cat("readDWIdata: Create auxiliary statistics",format(Sys.time()), " \n")
   design <- create.designmatrix.dti(gradient)
-  
+
   invisible(new("dtiData",
                 call        = args,
                 si          = si,
@@ -464,7 +462,7 @@ setMethod("print", "dwiMixtensor",
             cat("  Number of S0 images  :", paste(ns0, collapse="x"), "\n")
             cat("  Number of Gradients  :", paste(x@ngrad-ns0, collapse="x"), "\n")
             cat("  Source-Filename      :", x@source, "\n")
-            cat("  Naximal number od mixture components:",max(x@order),"\n") 
+            cat("  Naximal number od mixture components:",max(x@order),"\n")
             cat("  Slots                :\n")
             print(slotNames(x))
             invisible(NULL)
@@ -586,7 +584,7 @@ setMethod("show", "dwiMixtensor",
             cat("  Number of S0 images  :", paste(ns0, collapse="x"), "\n")
             cat("  Number of Gradients  :", paste(object@ngrad-ns0, collapse="x"), "\n")
             cat("  Source-Filename      :", object@source, "\n")
-            cat("  Naximal number od mixture components:",max(object@order),"\n") 
+            cat("  Naximal number od mixture components:",max(object@order),"\n")
             cat("  Slots                :\n")
             print(slotNames(object))
             invisible(NULL)
@@ -737,7 +735,7 @@ setMethod("summary", "dwiMixtensor",
             cat("  hmax                  :", paste(object@hmax, collapse="x"), "\n")
             if(length(object@outlier)>0) cat("  Number of outliers    :", paste(length(object@outlier), collapse="x"), "\n")
             nofmc <- table(object@order[object@mask])
-            cat("  Numbers of mixture components:") 
+            cat("  Numbers of mixture components:")
             cat(paste(names(nofmc),": ",nofmc,"  ",sep=""))
             cat("\n\n")
             invisible(NULL)
@@ -843,14 +841,14 @@ setMethod("summary","dwiFiber",
 ################################################################
 
 tensor2medinria <- function(obj, filename, xind=NULL, yind=NULL, zind=NULL) {
-  
+
   if (is.null(xind)) xind <- 1:obj@ddim[1]
   if (is.null(yind)) yind <- 1:obj@ddim[2]
   if (is.null(zind)) zind <- 1:obj@ddim[3]
   if (obj@orientation[1]==1) xind <- min(xind)+max(xind)-xind
   if (obj@orientation[2]==3) yind <- min(yind)+max(yind)-yind
   if (obj@orientation[3]==4) zind <- min(zind)+max(zind)-zind
-  
+
   D <- aperm( obj@D, c( 2:4, 1))[ xind, yind, zind, c( 1, 2, 4, 3, 5, 6)]
   dim(D) <- c( length(xind), length(yind), length(zind), 1, 6)
   nim <- nifti(D,
@@ -868,14 +866,14 @@ tensor2medinria <- function(obj, filename, xind=NULL, yind=NULL, zind=NULL) {
                srow_y = c( 0, obj@voxelext[2], 0, 0),
                srow_z = c( 0, 0, obj@voxelext[3], 0)
   )
-  
+
   writeNIfTI( nim, filename)
 }
 
 medinria2tensor <- function(filename) {
-  args <- sys.call() 
+  args <- sys.call()
   data <- readNIfTI(filename, reorient = FALSE)
-  
+
   invisible(new("dtiTensor",
                 call  = list(args),
                 D     = aperm(data, c( 5, 1:4))[ c( 1, 2, 4, 3, 5, 6), , , , , drop = TRUE],
@@ -901,5 +899,5 @@ medinria2tensor <- function(filename) {
                 scale = 1,
                 source= "unknown")
   )
-  
+
 }

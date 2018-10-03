@@ -2,7 +2,7 @@
 #                                                              #
 # Section for Utility functions                                #
 #                                                              #
-################################################################ 
+################################################################
 
 sdpar <- function(object,  ...) cat("No method defined for class:",class(object),"\n")
 
@@ -105,7 +105,7 @@ setMethod("sdpar", "dtiData", function(object,
       #  A0a provides a guess for a threshold based on upper quantiles of intensities
       #  in cubes located at the edges (probably only containing noise
       level0 <- A0 <- min(A0a,A0b)*threshfactor
-    } 
+    }
   }
   A0 <- max(level0,A1/200,1)
   # avoid A0=0 since this may lead to Inf weights in dtiTensor
@@ -174,7 +174,7 @@ setMethod("getsdofsb","dtiData", function(object,qA0=.1,qA1=.98,nsb=NULL,level=N
   A0 <- quantile(sb,qA0)
   A1 <- quantile(sb,qA1)
   sdcoef1 <- coef1 <- coef2 <- numeric(nsb)
-  for(i in 1:nsb) {     
+  for(i in 1:nsb) {
     z <- awslinsd(sb[,,,i],hmax=5,mask=mask,A0=A0,A1=A1)$vcoef
     cat("standard deviation parameters trial i",z,"\n")
     coef1[i] <- z[1]
@@ -244,7 +244,7 @@ subsetg <- function(x, ind){
   args <- sys.call(-1)
   args <- c(x@call,args)
   if (missing(ind)) ind <- 1:x@ngrad
-  s0ind <- (1:length(ind))[ind%in%x@s0ind]  
+  s0ind <- (1:length(ind))[ind%in%x@s0ind]
   invisible(new("dtiData",
                 call   = args,
                 si     = x@si[,,,ind,drop=FALSE],
@@ -281,17 +281,17 @@ combineDWIdata <- function(x1, x2, s0strategy="first"){
   if(s0strategy%in%c("both","rsecond","rboth")) dim(s02) <- c(prod(x2@ddim),ls02)
   grad1 <- x1@gradient[,-x1@s0ind]
   grad2 <- x2@gradient[,-x2@s0ind]
-  s0 <- switch(s0strategy,"first" = s01, 
-               "second" = s02, 
+  s0 <- switch(s0strategy,"first" = s01,
+               "second" = s02,
                "both" = array(c(s01,s02),c(x1@ddim,ls01+ls02)),
-               "rfirst" = s01%*%rep(1/ls01,ls01), 
-               "rsecond" = s02%*%rep(1/ls02,ls02), 
+               "rfirst" = s01%*%rep(1/ls01,ls01),
+               "rsecond" = s02%*%rep(1/ls02,ls02),
                "rboth" = cbind(s01,s02)%*%rep(1/(ls01+ls02),ls01+ls02))
-  ls0 <- switch(s0strategy,"first" = ls01, 
-                "second" = ls02, 
+  ls0 <- switch(s0strategy,"first" = ls01,
+                "second" = ls02,
                 "both" = ls01+ls02,
-                "rfirst" = 1, 
-                "rsecond" = 1, 
+                "rfirst" = 1,
+                "rsecond" = 1,
                 "rboth" = 1)
   ns1 <- x1@ngrad-ls01
   ns2 <- x2@ngrad-ls02
@@ -322,7 +322,7 @@ combineDWIdata <- function(x1, x2, s0strategy="first"){
                 rotation = x1@rotation,
                 source = x1@source)
   )
-  
+
 }
 
 ##############
@@ -372,13 +372,13 @@ setMethod("[","dtiTensor",function(x, i, j, k, drop=FALSE){
   } else {
     outlier <- numeric(0)
   }
-  
+
   invisible(new("dtiTensor",
-                call  = args, 
+                call  = args,
                 D     = D[,i,j,k,drop=FALSE],
                 th0   = x@th0[i,j,k,drop=FALSE],
                 sigma = if(x@method=="linear") x@sigma[i,j,k,drop=FALSE] else array(1,c(1,1,1)),
-                scorr = x@scorr, 
+                scorr = x@scorr,
                 bw = x@bw,
                 mask = x@mask[i,j,k,drop=FALSE],
                 hmax = x@hmax,
@@ -406,18 +406,18 @@ setMethod("[","dtiTensor",function(x, i, j, k, drop=FALSE){
 
 setMethod("[", "dkiTensor",
           function(x, i, j, k, drop = FALSE) {
-            
+
             args <- sys.call(-1)
             args <- c(x@call, args)
-            
+
             if (missing(i)) i <- TRUE
             if (missing(j)) j <- TRUE
             if (missing(k)) k <- TRUE
-            
+
             if (is.logical(i)) ddimi <- x@ddim[1] else ddimi <- length(i)
             if (is.logical(j)) ddimj <- x@ddim[2] else ddimj <- length(j)
             if (is.logical(k)) ddimk <- x@ddim[3] else ddimk <- length(k)
-            
+
             swap <- rep(FALSE, 3)
             if (!is.logical(i)) swap[1] <- (i[ 1] > i[length(i)])
             if (!is.logical(j)) swap[2] <- (j[ 1] > j[length(j)])
@@ -434,7 +434,7 @@ setMethod("[", "dkiTensor",
               D[2:3, , , ] <- - D[2:3, , , ]
               warning("[: kurtosis tensor not correctly transformed for reverse order!")
               ## TODO: determine elements to change!
-              ## W[ c(?), , , ] <- - W[ c(?), , , ] 
+              ## W[ c(?), , , ] <- - W[ c(?), , , ]
             }
             if(swap[2]) {
               orientation[2] <- (orientation[2] + 1) %% 2 + 2
@@ -443,7 +443,7 @@ setMethod("[", "dkiTensor",
               D[c(2, 5), , , ] <- - D[c(2, 5), , , ]
               warning("[: kurtosis tensor not correctly transformed for reverse order!")
               ## TODO: determine elements to change!
-              ## W[ c(?), , , ] <- - W[ c(?), , , ] 
+              ## W[ c(?), , , ] <- - W[ c(?), , , ]
             }
             if(swap[3]) {
               orientation[3] <- (orientation[3] + 1) %% 2 + 4
@@ -452,9 +452,9 @@ setMethod("[", "dkiTensor",
               D[c(3, 5), , , ] <- - D[c(3, 5), , , ]
               warning( "[: kurtosis tensor not correctly transformed for reverse order!")
               ## TODO: determine elements to change!
-              ## W[ c(?), , , ] <- - W[ c(?), , , ] 
+              ## W[ c(?), , , ] <- - W[ c(?), , , ]
             }
-            
+
             ind <- 1:prod(x@ddim)
             if (length(x@outlier) > 0) {
               ind <- rep(FALSE, prod(x@ddim))
@@ -465,15 +465,15 @@ setMethod("[", "dkiTensor",
             } else {
               outlier <- numeric(0)
             }
-            
+
             invisible(new("dkiTensor",
-                          call        = args, 
+                          call        = args,
                           D           = D,
                           W           = W,
                           th0         = x@th0[i, j, k, drop=FALSE],
                           ## TODO: determination of sigma!
                           sigma       = if(x@method == "linear") x@sigma[i, j, k, drop=FALSE] else array(1, c(1, 1, 1)),
-                          scorr       = x@scorr, 
+                          scorr       = x@scorr,
                           bw          = x@bw,
                           mask        = x@mask[ i, j, k, drop=FALSE],
                           hmax        = x@hmax,
@@ -502,28 +502,28 @@ setMethod("[", "dkiTensor",
 
 setMethod("[", "dkiIndices",
           function(x, i, j, k, drop=FALSE){
-            
+
             args <- sys.call(-1)
             args <- c(x@call,args)
-            
+
             if (missing(i)) i <- TRUE
             if (missing(j)) j <- TRUE
             if (missing(k)) k <- TRUE
-            
+
             if (is.logical(i)) ddimi <- x@ddim[1] else ddimi <- length(i)
             if (is.logical(j)) ddimj <- x@ddim[2] else ddimj <- length(j)
             if (is.logical(k)) ddimk <- x@ddim[3] else ddimk <- length(k)
-            
+
             swap <- rep(FALSE,3)
             if (!is.logical(i)) swap[1] <- i[1] > i[length(i)]
             if (!is.logical(j)) swap[2] <- j[1] > j[length(j)]
             if (!is.logical(k)) swap[3] <- k[1] > k[length(k)]
-            
+
             orientation <- x@orientation
             gradient <- x@gradient
             btb <- x@btb
             andir <- x@andir
-            
+
             if(swap[1]) {
               orientation[1] <- (orientation[1]+1)%%2
               gradient[1, ] <- -gradient[1, ]
@@ -542,7 +542,7 @@ setMethod("[", "dkiIndices",
               btb[c(3, 5), ] <- - btb[c(3, 5), ]
               andir[3, , , ] <- - andir[3, , , ]
             }
-            
+
             invisible(new("dkiIndices",
                           call = args,
                           fa = x@fa[i, j, k, drop=FALSE],
@@ -587,7 +587,7 @@ setMethod("[","dwiMixtensor",function(x, i, j, k, drop=FALSE){
   if (is.logical(i)) ddimi <- x@ddim[1] else ddimi <- length(i)
   if (is.logical(j)) ddimj <- x@ddim[2] else ddimj <- length(j)
   if (is.logical(k)) ddimk <- x@ddim[3] else ddimk <- length(k)
-  
+
   ind <- 1:prod(x@ddim)
   if(length(x@outlier)>0){
     ind <- rep(FALSE,prod(x@ddim))
@@ -633,7 +633,7 @@ setMethod("[","dwiMixtensor",function(x, i, j, k, drop=FALSE){
   #  cat("indix j",j,"\n")
   #  cat("indix k",k,"\n")
   invisible(new("dwiMixtensor",
-                call  = args, 
+                call  = args,
                 ev     = x@ev[,i,j,k,drop=FALSE],
                 mix    = x@mix[,i,j,k,drop=FALSE],
                 orient = orient[,,i,j,k,drop=FALSE],
@@ -641,7 +641,7 @@ setMethod("[","dwiMixtensor",function(x, i, j, k, drop=FALSE){
                 p      = x@p,
                 th0   = x@th0[i,j,k,drop=FALSE],
                 sigma = x@sigma[i,j,k,drop=FALSE],
-                scorr = x@scorr, 
+                scorr = x@scorr,
                 bw = x@bw,
                 mask = x@mask[i,j,k,drop=FALSE],
                 hmax = x@hmax,
@@ -704,7 +704,7 @@ setMethod("[","dtiIndices",function(x, i, j, k, drop=FALSE){
     btb[c(3,5),] <- - btb[c(3,5),]
     andir[3,,,] <- - andir[3,,,]
   }
-  
+
   invisible(new("dtiIndices",
                 call = args,
                 fa = x@fa[i,j,k,drop=FALSE],
@@ -760,9 +760,9 @@ setMethod("[","dwiQball",function(x, i, j, k, drop=FALSE){
   } else {
     outlier <- numeric(0)
   }
-  
+
   invisible(new("dwiQball",
-                call  = args, 
+                call  = args,
                 order = x@order,
                 forder = x@forder,
                 lambda = x@lambda,
@@ -770,7 +770,7 @@ setMethod("[","dwiQball",function(x, i, j, k, drop=FALSE){
                 varsphcoef = x@varsphcoef,
                 th0   = x@th0[i,j,k,drop=FALSE],
                 sigma = x@sigma[i,j,k,drop=FALSE],
-                scorr = x@scorr, 
+                scorr = x@scorr,
                 bw = x@bw,
                 mask = x@mask[i,j,k,drop=FALSE],
                 hmax = x@hmax,
@@ -805,9 +805,9 @@ setMethod("[","dwiQball",function(x, i, j, k, drop=FALSE){
 #setGeneric("extract", function(x, ...) cat("Data extraction not defined for this class:",class(x),"\n"), package="dti")
 
 setMethod("extract","dtiData",function(x,
-                                       what=c("data","gradient","btb","s0","sb","siq"), 
+                                       what=c("data","gradient","btb","s0","sb","siq"),
                                        xind=TRUE, yind=TRUE, zind=TRUE){
-  what <- tolower(what) 
+  what <- tolower(what)
   ## check what
   what <- match.arg(what, several.ok = TRUE)
   swap <- rep(FALSE,3)
@@ -836,10 +836,10 @@ setMethod("extract","dtiData",function(x,
 
 #############
 
-setMethod("extract","dwiMixtensor",function(x, 
-                                            what=c("andir","order","ev","mix","s0","mask","fa","eorder","bic","aic"), 
+setMethod("extract","dwiMixtensor",function(x,
+                                            what=c("andir","order","ev","mix","s0","mask","fa","eorder","bic","aic"),
                                             xind=TRUE, yind=TRUE, zind=TRUE){
-  what <- tolower(what) 
+  what <- tolower(what)
   ## check what
   what <- match.arg(what, several.ok = TRUE)
   swap <- rep(FALSE,3)
@@ -856,7 +856,7 @@ setMethod("extract","dwiMixtensor",function(x,
   n3 <- x@ddim[3]
   z <- list(NULL)
   if("order" %in% what) z$order <- x@order
-  if("ev" %in% what) { 
+  if("ev" %in% what) {
     ev <- array(0,c(3,dim(x@ev)[-1]))
     ev[1:2,,,] <- x@ev
     ev[3,,,] <- x@ev[2,,,]
@@ -885,14 +885,14 @@ setMethod("extract","dwiMixtensor",function(x,
   if("eorder" %in% what) {
     maxorder <- dim(x@mix)[1]
     mix <- x@mix
-    dim(mix) <- c(maxorder,n1*n2*n3)     
+    dim(mix) <- c(maxorder,n1*n2*n3)
     smix <- rep(1,maxorder)%*%mix
     mix <- sweep(mix,2,smix,"/")
     # the last two lines are needed for models with isotropic compartment
     z$eorder <- array((2*(1:maxorder)-1)%*%mix,x@ddim)
   }
   if("bic" %in% what) {
-    ngrad <- x@ngrad      
+    ngrad <- x@ngrad
     ns0 <- length(x@s0ind)
     iso <- apply(x@mix,-1,sum)
     iso <- iso>0&&iso<1e0-1e-8
@@ -900,7 +900,7 @@ setMethod("extract","dwiMixtensor",function(x,
     z$bic <- array(log(pmax(1e-10,x@sigma))+penBIC,dim(x@sigma))
   }
   if("aic" %in% what) {
-    ngrad <- x@ngrad      
+    ngrad <- x@ngrad
     ns0 <- length(x@s0ind)
     iso <- apply(x@mix,-1,sum)
     iso <- iso>0&&iso<1e0-1e-8
@@ -912,10 +912,10 @@ setMethod("extract","dwiMixtensor",function(x,
 
 
 
-setMethod("extract","dtiTensor",function(x, 
-                                         what=c("tensor","fa","ga","md","evalues","andir","s0","mask","bic","aic","outlier"), 
+setMethod("extract","dtiTensor",function(x,
+                                         what=c("tensor","fa","ga","md","evalues","andir","s0","mask","bic","aic","outlier"),
                                          xind=TRUE, yind=TRUE, zind=TRUE,mc.cores=setCores(,reprt=FALSE)){
-  what <- tolower(what) 
+  what <- tolower(what)
   ## check what
   what <- match.arg(what, several.ok = TRUE)
   swap <- rep(FALSE,3)
@@ -926,7 +926,7 @@ setMethod("extract","dtiTensor",function(x,
     warning("can't reverse order of indices ")
     return(NULL)
   }
-  
+
   x <- x[xind,yind,zind]
   n1 <- x@ddim[1]
   n2 <- x@ddim[2]
@@ -935,7 +935,7 @@ setMethod("extract","dtiTensor",function(x,
   nvox <- prod(ddim)
   needev <- ("fa" %in% what) || ("ga" %in% what) || ("md" %in% what) || ("evalues" %in% what)
   needall <- needev && ("andir" %in% what)
-  
+
   z <- list(NULL)
   if(needall){
     erg <- dti3Dall(x@D,x@mask,mc.cores=mc.cores)
@@ -947,7 +947,7 @@ setMethod("extract","dtiTensor",function(x,
   } else {
     if(needev){
       ev <- array(dti3Dev(x@D,x@mask,mc.cores=mc.cores),c(3,n1,n2,n3))
-      ev[ev<1e-12] <- 1e-12 
+      ev[ev<1e-12] <- 1e-12
       if("fa" %in% what) {
         dd <- apply(ev^2,2:4,sum)
         md <- (ev[1,,,]+ev[2,,,]+ev[3,,,])/3
@@ -973,13 +973,13 @@ setMethod("extract","dtiTensor",function(x,
   if("s0" %in% what) z$s0 <- array(x@th0,x@ddim)
   if("mask" %in% what) z$mask <- x@mask
   if("bic" %in% what) {
-    ngrad <- x@ngrad      
+    ngrad <- x@ngrad
     ns0 <- length(x@s0ind)
     penBIC <- log(ngrad-ns0)/(ngrad-ns0)*6
     z$bic <- array(log(pmax(1e-10,x@sigma))+penBIC,dim(x@sigma))
   }
   if("aic" %in% what) {
-    ngrad <- x@ngrad      
+    ngrad <- x@ngrad
     ns0 <- length(x@s0ind)
     penAIC <- 12/(ngrad-ns0)
     z$aic <- array(log(pmax(1e-10,x@sigma))+penAIC,dim(x@sigma))
@@ -995,7 +995,7 @@ setMethod("extract","dtiTensor",function(x,
 
 ##############
 
-setMethod("extract","dtiIndices",function(x, 
+setMethod("extract","dtiIndices",function(x,
                                           what=c("fa","andir","ga","md","bary"), xind=TRUE, yind=TRUE, zind=TRUE){
   what <- tolower(what)
   ## check what
@@ -1008,12 +1008,12 @@ setMethod("extract","dtiIndices",function(x,
     warning("can't reverse order of indices ")
     return(NULL)
   }
-  
+
   x <- x[xind,yind,zind]
   n1 <- x@ddim[1]
   n2 <- x@ddim[2]
   n3 <- x@ddim[3]
-  
+
   z <- list(NULL)
   if("fa" %in% what) z$fa <- x@fa
   if("ga" %in% what) z$ga <- x@ga
@@ -1025,10 +1025,10 @@ setMethod("extract","dtiIndices",function(x,
 
 ##############
 
-setMethod("extract","dwiQball",function(x,     
+setMethod("extract","dwiQball",function(x,
                                         what=c("sphcoef","s0","mask","bic","aic","outlier"),
                                         xind=TRUE, yind=TRUE, zind=TRUE){
-  what <- tolower(what) 
+  what <- tolower(what)
   ## check what
   what <- match.arg(what, several.ok = TRUE)
   swap <- rep(FALSE,3)
@@ -1039,25 +1039,25 @@ setMethod("extract","dwiQball",function(x,
     warning("can't reverse order of indices ")
     return(NULL)
   }
-  
+
   x <- x[xind,yind,zind]
   n1 <- x@ddim[1]
   n2 <- x@ddim[2]
   n3 <- x@ddim[3]
-  
+
   z <- list(NULL)
   if("sphcoef" %in% what) z$sphcoef <- x@sphcoef
   if("s0" %in% what) z$s0 <- x@th0
   if("mask" %in% what) z$mask <- x@mask
   if("bic" %in% what) {
-    ngrad <- x@ngrad      
+    ngrad <- x@ngrad
     ns0 <- length(x@s0ind)
     ord <- x@order
     penBIC <- log(ngrad-ns0)/(ngrad-ns0)*(ord+1)*(ord+2)/2
     z$bic <- array(log(pmax(1e-10,x@sigma))+penBIC,dim(x@sigma))
   }
   if("aic" %in% what) {
-    ngrad <- x@ngrad      
+    ngrad <- x@ngrad
     ns0 <- length(x@s0ind)
     ord <- x@order
     penAIC <- (ord+1)*(ord+2)/(ngrad-ns0)
@@ -1078,8 +1078,8 @@ setGeneric("getmask", function(object,  ...) standardGeneric("getmask"))
 
 setMethod("getmask","dtiData",function(object, level=NULL, prop=.4, size=3){
   if(is.null(level)) level <- object@level
-  if(!is.null(level)){ 
-    z <- .Fortran("getmask",
+  if(!is.null(level)){
+    z <- .Fortran(C_getmask,
                   as.double(object@si[,,,object@s0ind]),
                   as.integer(object@ddim[1]),
                   as.integer(object@ddim[2]),
@@ -1089,8 +1089,7 @@ setMethod("getmask","dtiData",function(object, level=NULL, prop=.4, size=3){
                   as.integer(size),
                   as.double(prop),
                   s0=double(prod(object@ddim)),
-                  mask=logical(prod(object@ddim)),
-                  PACKAGE="dti")[c("s0","mask")]
+                  mask=logical(prod(object@ddim)))[c("s0","mask")]
   } else {
     z <- list(s0=object@si[,,,object@s0ind],mask=array(TRUE,object@ddim))
   }
@@ -1105,8 +1104,8 @@ setMethod("getmask","array",function(object, level=NULL, prop=.4, size=3){
   } else {
     ddim <- dim(object)
   }
-  if(!is.null(level)){ 
-    z <- .Fortran("getmask",
+  if(!is.null(level)){
+    z <- .Fortran(C_getmask,
                   as.double(object),
                   as.integer(ddim[1]),
                   as.integer(ddim[2]),
@@ -1116,8 +1115,7 @@ setMethod("getmask","array",function(object, level=NULL, prop=.4, size=3){
                   as.integer(size),
                   as.double(prop),
                   s0=double(prod(ddim)),
-                  mask=logical(prod(ddim)),
-                  PACKAGE="dti")[c("s0","mask")]
+                  mask=logical(prod(ddim)))[c("s0","mask")]
   } else {
     z <- list(s0=object,mask=array(TRUE,dim(object)))
   }
@@ -1125,7 +1123,7 @@ setMethod("getmask","array",function(object, level=NULL, prop=.4, size=3){
   z
 }
 )
-selectCube <- function(xind,yind,zind,ddim,maxobj){ 
+selectCube <- function(xind,yind,zind,ddim,maxobj){
   if(is.null(xind)) xind <- 1:ddim[1]
   if(is.null(yind)) yind <- 1:ddim[2]
   if(is.null(zind)) zind <- 1:ddim[3]
@@ -1154,7 +1152,7 @@ selectCube <- function(xind,yind,zind,ddim,maxobj){
     xind <- if(mod2(nx)) (xm-xd+1):(xm+xd) else (xm-xd):(xm+xd)
     ym <- (yind[1]+yind[n2])%/%2
     yd <- ny%/%2
-    yind <- if(mod2(ny)) (ym-yd+1):(ym+yd) else (ym-yd):(ym+yd) 
+    yind <- if(mod2(ny)) (ym-yd+1):(ym+yd) else (ym-yd):(ym+yd)
     zm <- (zind[1]+zind[n3])%/%2
     zd <- nz%/%2
     zind <- if(mod2(nz)) (zm-zd+1):(zm+zd) else (zm-zd):(zm+zd)
@@ -1166,4 +1164,3 @@ selectCube <- function(xind,yind,zind,ddim,maxobj){
   if(n==0) stop("Empty cube specified")
   list(xind=xind,yind=yind,zind=zind, n=n, n1=n1, n2=n2, n3=n3)
 }
-

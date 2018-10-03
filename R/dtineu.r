@@ -98,7 +98,7 @@ setMethod( "dtiTensor", "dtiData",
                sdcoef[-2] <- sdcoef[-2]/ms0# effect of rescaling of signal
                cat("start nonlinear regression",format(Sys.time()),"\n")
                if(mc.cores==1){
-                 param <- matrix(.C("dtens",
+                 param <- matrix(.C(C_dtens,
                                     as.integer(nvox),
                                     param=as.double(param),
                                     as.double(z$si/ms0),
@@ -108,8 +108,7 @@ setMethod( "dtiTensor", "dtiData",
                                     as.double(rep(0,ngrad)),#si
                                     as.double(rep(1,ngrad)),#var
                                     as.integer(1000),#maxit
-                                    as.double(1e-7),#reltol
-                                    PACKAGE="dti")$param,7,nvox)
+                                    as.double(1e-7))$param,7,nvox)
                } else {
                  x <- matrix(0,ngrad+7,nvox)
                  x[1:7,] <- param
@@ -122,7 +121,7 @@ setMethod( "dtiTensor", "dtiData",
                cat("successfully completed nonlinear regression ",format(Sys.time()),"\n")
              }
              res <- matrix(0,ngrad,ntotal)
-             zz <- .Fortran("tensres",
+             zz <- .Fortran(C_tensres,
                             as.double(th0[mask]),
                             as.double(D[,mask]),
                             as.double(z$si),
@@ -130,8 +129,7 @@ setMethod( "dtiTensor", "dtiData",
                             as.integer(ngrad),
                             as.double(btb),
                             res = double(ngrad*nvox),
-                            rss = double(nvox),
-                            PACKAGE="dti")[c("res","rss")]
+                            rss = double(nvox))[c("res","rss")]
              res <- matrix(0,ngrad,ntotal)
              res[,mask] <- zz$res
              rss <- numeric(ntotal)
@@ -277,11 +275,10 @@ D2Rall <- function(D){
   # in case of negative eigenvalues this uses c(1,0,0,1,0,1) for initial rho
   #
   nvox <- dim(D)[2]
-  matrix(.Fortran("D2Rall",
+  matrix(.Fortran(C_d2rall,
                   as.double(D),
                   rho=double(6*nvox),
-                  as.integer(nvox),
-                  PACKAGE="dti")$rho,6,nvox)
+                  as.integer(nvox))$rho,6,nvox)
 }
 R2Dall <- function(R){
   #
@@ -289,11 +286,10 @@ R2Dall <- function(R){
   # in case of negative eigenvalues this uses c(1,0,0,1,0,1) for initial rho
   #
   nvox <- dim(R)[2]
-  matrix(.Fortran("R2Dall",
+  matrix(.Fortran(C_r2dall,
                   as.double(R),
                   D=double(6*nvox),
-                  as.integer(nvox),
-                  PACKAGE="dti")$D,6,nvox)
+                  as.integer(nvox))$D,6,nvox)
 }
 #############
 #############
@@ -363,10 +359,9 @@ tchi <- function(param,si,sigma,btb,L,CL){
   ##   sigma should be of length ng here
   ng <- dim(btb)[2]
 #  cat("param",signif(param,4),"value")
-  D <- .Fortran("rho2D0",
+  D <- .Fortran(C_rho2d0,
                 as.double(param[-1]),
-                D=double(6),
-                PACKAGE="dti")$D
+                D=double(6))$D
   logth <- param[1]
   if(logth>12) logth <- 12+log(logth/12)
   # logth should be < 12 for the solution

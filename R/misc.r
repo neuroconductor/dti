@@ -19,7 +19,7 @@ sioutlier1 <- function( si, s0ind, level, mask, mc.cores = 1, verbose = TRUE){
   }
   t1 <- Sys.time()
   if(mc.cores==1||ng>250){
-    z <- .Fortran("outlier",
+    z <- .Fortran(C_outlier,
                   as.double(si),
                   as.integer(n),
                   as.integer(ng),
@@ -27,13 +27,12 @@ sioutlier1 <- function( si, s0ind, level, mask, mc.cores = 1, verbose = TRUE){
                   as.integer(siind),
                   as.integer(ns0),
                   si=double(n*ng),
-                  index=logical(n),
-                  PACKAGE="dti")[c("si","index")]
+                  index=logical(n))[c("si","index")]
     zz <- matrix(z$si,ng,n)
     index <- (1:n)[z$index]
     rm(z)
   } else {
-    zz <- matrix(.Fortran("outlierp",
+    zz <- matrix(.Fortran(C_outlierp,
                           as.double(si),
                           as.integer(n),
                           as.integer(ng),
@@ -42,8 +41,7 @@ sioutlier1 <- function( si, s0ind, level, mask, mc.cores = 1, verbose = TRUE){
                           as.integer(siind),
                           as.integer(ng-ns0),
                           si=double(n*(ng+1)),
-                          as.integer(ng+1),
-                          PACKAGE="dti")$si,ng+1,n)
+                          as.integer(ng+1))$si,ng+1,n)
     t2 <- Sys.time()
     if(mc.cores>1) setCores(mc.cores.old,reprt=FALSE)
     index <- (1:n)[as.logical(zz[ng+1,])]
@@ -81,7 +79,7 @@ sioutlier <- function( si, s0ind, mc.cores = 1, verbose = TRUE){
   }
   t1 <- Sys.time()
   if(mc.cores==1||ng>250){
-    z <- .Fortran("outlier",
+    z <- .Fortran(C_outlier,
                   as.double(si),
                   as.integer(n),
                   as.integer(ng),
@@ -89,10 +87,9 @@ sioutlier <- function( si, s0ind, mc.cores = 1, verbose = TRUE){
                   as.integer(siind),
                   as.integer(ns0),
                   si=double(n*ng),
-                  index=logical(n),
-                  PACKAGE="dti")[c("si","index")]
+                  index=logical(n))[c("si","index")]
   } else {
-    zz <- matrix(.Fortran("outlierp",
+    zz <- matrix(.Fortran(C_outlierp,
                           as.double(si),
                           as.integer(n),
                           as.integer(ng),
@@ -101,8 +98,7 @@ sioutlier <- function( si, s0ind, mc.cores = 1, verbose = TRUE){
                           as.integer(siind),
                           as.integer(ng-ns0),
                           si=double(n*(ng+1)),
-                          as.integer(ng+1),
-                          PACKAGE="dti")$si,ng+1,n)
+                          as.integer(ng+1))$si,ng+1,n)
     t2 <- Sys.time()
     if (verbose) cat( difftime( t2, t1), attr(difftime( t2, t1), "units"), "for", n, "voxel\n")
     if(mc.cores>1) setCores(mc.cores.old,reprt=FALSE)
@@ -122,7 +118,7 @@ mcorr <- function(res,mask,ddim,ngrad0,lags=c(5,5,3),mc.cores=1){
     setCores(min(mc.cores,lags[1]))
   }
   t1 <- Sys.time()
-  scorr <- .Fortran("mcorr",as.double(res),
+  scorr <- .Fortran(C_mcorr,as.double(res),
                     as.logical(mask),
                     as.integer(ddim[1]),
                     as.integer(ddim[2]),
@@ -133,8 +129,7 @@ mcorr <- function(res,mask,ddim,ngrad0,lags=c(5,5,3),mc.cores=1){
                     scorr = double(prod(lags)),
                     as.integer(lags[1]),
                     as.integer(lags[2]),
-                    as.integer(lags[3]),
-                    PACKAGE="dti")$scorr
+                    as.integer(lags[3]))$scorr
   t2 <- Sys.time()
   cat(difftime(t2,t1),"\n")
   if(mc.cores>1) setCores(mc.cores.old,reprt=FALSE)
@@ -159,10 +154,9 @@ dti3Dreg <- function(D,mc.cores=1){
     setCores(mc.cores)
   }
   t1 <- Sys.time()
-  D <- .Fortran("dti3Dreg",
+  D <- .Fortran(C_dti3dreg,
                 D=as.double(D),
-                as.integer(nvox),
-                PACKAGE="dti")$D
+                as.integer(nvox))$D
   t2 <- Sys.time()
   cat(difftime(t2,t1)," for",nvox,"voxel\n")
   if(mc.cores>1) setCores(mc.cores.old,reprt=FALSE)
@@ -180,11 +174,10 @@ dti3Dev <- function(D,mask,mc.cores=1){
   }
   ev <- matrix(0,3,nvox)
   t1 <- Sys.time()
-  ev[,mask] <- .Fortran("dti3Dev",
+  ev[,mask] <- .Fortran(C_dti3dev,
                         as.double(D[,mask]),
                         as.integer(nvox0),
-                        ev=double(3*nvox0),
-                        PACKAGE="dti")$ev
+                        ev=double(3*nvox0))$ev
   t2 <- Sys.time()
   cat(difftime(t2,t1)," for",nvox0,"voxel\n")
   if(mc.cores>1) setCores(mc.cores.old,reprt=FALSE)
@@ -203,11 +196,10 @@ dti3Dand <- function(D,mask,mc.cores=1){
   }
   andir <- matrix(0,3,nvox)
   t1 <- Sys.time()
-  andir[,mask] <- .Fortran("dti3Dand",
+  andir[,mask] <- .Fortran(C_dti3dand,
                            as.double(D[,mask]),
                            as.integer(nvox0),
-                           andir=double(3*nvox0),
-                           PACKAGE="dti")$andir
+                           andir=double(3*nvox0))$andir
   t2 <- Sys.time()
   cat(difftime(t2,t1)," for",nvox0,"voxel\n")
   if(mc.cores>1) setCores(mc.cores.old,reprt=FALSE)
@@ -227,15 +219,14 @@ dti3Dall <- function(D,mask,mc.cores=1){
   ev <- andir <- matrix(0,3,nvox)
   fa <- ga <- md <- numeric(nvox)
   t1 <- Sys.time()
-  z <- .Fortran("dti3Dall",
+  z <- .Fortran(C_dti3dall,
                 as.double(D[,mask]),
                 as.integer(nvox0),
                 fa=double(nvox0),
                 ga=double(nvox0),
                 md=double(nvox0),
                 andir=double(3*nvox0),
-                ev=double(3*nvox0),
-                PACKAGE="dti")[c("fa","ga","md","andir","ev")]
+                ev=double(3*nvox0))[c("fa","ga","md","andir","ev")]
   t2 <- Sys.time()
   cat(difftime(t2,t1)," for",nvox0,"voxel\n")
   if(mc.cores>1) setCores(mc.cores.old,reprt=FALSE)
@@ -260,13 +251,12 @@ dtieigen <- function(D,mask,mc.cores=1){
   andir <- matrix(0,6,nvox)
   fa <-numeric(nvox)
   t1 <- Sys.time()
-  z <- .Fortran("dtieigen",
+  z <- .Fortran(C_dtieigen,
                 as.double(D[,mask]),
                 as.integer(nvox0),
                 fa=double(nvox0),
                 ev=double(3*nvox0),
-                andir=double(6*nvox0),
-                PACKAGE="dti")[c("fa","ev","andir")]
+                andir=double(6*nvox0))[c("fa","ev","andir")]
   t2 <- Sys.time()
   cat(difftime(t2,t1)," for",nvox0,"voxel\n")
   if(mc.cores>1) setCores(mc.cores.old,reprt=FALSE)
@@ -288,15 +278,14 @@ dtiind3D <- function( D, mask, mc.cores = 1, verbose = TRUE){
   bary <- andir <- matrix(0,3,nvox)
   fa <- ga <- md <- numeric(nvox)
   t1 <- Sys.time()
-  z <- .Fortran("dtiind3D",
+  z <- .Fortran(C_dtiind3d,
                 as.double(D[ , mask]),
                 as.integer(nvox0),
                 fa      = double(nvox0),
                 ga      = double(nvox0),
                 md      = double(nvox0),
                 andir   = double(3*nvox0),
-                bary    = double(3*nvox0),
-                PACKAGE = "dti")[c( "fa", "ga", "md", "andir", "bary")]
+                bary    = double(3*nvox0))[c( "fa", "ga", "md", "andir", "bary")]
   if(mc.cores>1) setCores(mc.cores.old,reprt=FALSE)
   t2 <- Sys.time()
   if ( verbose) cat( "dtiind3: calculation took ", difftime( t2, t1), attr(difftime( t2, t1), "units"), " for", nvox0, "voxel\n")
@@ -475,7 +464,7 @@ thcorr3D <- function(bw,lag=rep(5,3)){
   gwght <- outer(gw1,outer(gw2,gw3,"*"),"*")
   gwght <- gwght/sum(gwght)
   dgw <- dim(gwght)
-  scorr <- .Fortran("thcorr",
+  scorr <- .Fortran(C_thcorr,
                     as.double(gwght),
                     as.integer(dgw[1]),
                     as.integer(dgw[2]),
@@ -483,8 +472,7 @@ thcorr3D <- function(bw,lag=rep(5,3)){
                     scorr=double(prod(lag)),
                     as.integer(lag[1]),
                     as.integer(lag[2]),
-                    as.integer(lag[3]),
-                    PACKAGE="dti")$scorr
+                    as.integer(lag[3]))$scorr
   # bandwidth in FWHM in voxel units
   dim(scorr) <- lag
   scorr
@@ -550,7 +538,7 @@ connect.mask <- function(mask){
   n2 <- dm[2]
   n3 <- dm[3]
   n <- n1*n2*n3
-  mask1 <- .Fortran("lconnect",
+  mask1 <- .Fortran(C_lconnect,
                     as.logical(mask),
                     as.integer(n1),
                     as.integer(n2),
@@ -561,8 +549,7 @@ connect.mask <- function(mask){
                     integer(n),
                     integer(n),
                     integer(n),
-                    mask=logical(n),
-                    PACKAGE="dti")$mask
+                    mask=logical(n))$mask
   dim(mask1) <- dm
   mask1
 }
@@ -642,11 +629,10 @@ hg1f1 <- function(a,b,z){
 ##  rel accuracy 2e-4 for z < -1400 for a=-.5, .5
 ##
    n <- length(z)
-   .Fortran("hg1f1",
+   .Fortran(C_hg1f1,
             as.double(a),
             as.double(b),
             as.double(z),
             as.integer(n),
-            fz=double(n),
-            PACKAGE="dti")$fz
+            fz=double(n))$fz
 }

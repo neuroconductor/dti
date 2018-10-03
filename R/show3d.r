@@ -9,8 +9,8 @@ show3d <- function(obj,  ...) cat("3D Visualization not implemented for this cla
 setGeneric("show3d", function(obj,  ...) standardGeneric("show3d"))
 
 setMethod("show3d","dtiData", function( obj, xind=NULL, yind=NULL, zind=NULL,
-                                        quant=.8, scale=.4, bgcolor="black", add=FALSE, maxobjects=729, 
-                                        what=c("adc","data"), minalpha=1, nn=1, normalize=FALSE, 
+                                        quant=.8, scale=.4, bgcolor="black", add=FALSE, maxobjects=729,
+                                        what=c("adc","data"), minalpha=1, nn=1, normalize=FALSE,
                                         box=FALSE, title=FALSE,...){
   ## check what
   what <- tolower(what)
@@ -43,7 +43,7 @@ setMethod("show3d","dtiData", function( obj, xind=NULL, yind=NULL, zind=NULL,
      radii <- sweep(radii,1:3,s0,"/")
   }
   if(what=="adc") radii <- array(pmax(0,-log(radii)),dim(radii))
-  # avoid using negative ADC's caused by random effects 
+  # avoid using negative ADC's caused by random effects
   ngrad <- dim(radii)[length(dim(radii))]
   dim(radii) <- c(length(radii)/ngrad,ngrad)
   radii <- t(radii)
@@ -76,10 +76,10 @@ setMethod("show3d","dtiData", function( obj, xind=NULL, yind=NULL, zind=NULL,
 })
 ##############
 
-setMethod("show3d","dtiTensor", function(obj, 
-                                         xind=NULL, yind=NULL, zind=NULL, method=1, minfa=.3, mask=NULL, fibers=FALSE, 
-                                         maxangle=30, level=0, quant=.8, scale=.4, bgcolor="black", add=FALSE, 
-                                         subdivide=2, maxobjects=729, what=c("tensor","adc","odf"), odfscale=1, 
+setMethod("show3d","dtiTensor", function(obj,
+                                         xind=NULL, yind=NULL, zind=NULL, method=1, minfa=.3, mask=NULL, fibers=FALSE,
+                                         maxangle=30, level=0, quant=.8, scale=.4, bgcolor="black", add=FALSE,
+                                         subdivide=2, maxobjects=729, what=c("tensor","adc","odf"), odfscale=1,
                                          minalpha=.25, normalize=NULL, box=FALSE, title=FALSE, ...){
   #if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
   ## check what
@@ -87,7 +87,7 @@ setMethod("show3d","dtiTensor", function(obj,
   what <- match.arg(what)
   if(!exists("icosa0")) data("polyeders", envir = environment())
 
-  ## WORKAROUND to make "polyeders" not global variable (for R CMD check) 
+  ## WORKAROUND to make "polyeders" not global variable (for R CMD check)
   icosa0 <- icosa0
   icosa1 <- icosa1
   icosa2 <- icosa2
@@ -117,7 +117,7 @@ setMethod("show3d","dtiTensor", function(obj,
   mask <- as.vector(mask[xind,yind,zind])
   obj <- obj[xind,yind,zind]
   vext <- obj@voxelext
-  n <- prod(obj@ddim) 
+  n <- prod(obj@ddim)
   D <- obj@D
   D <- D/max(D)
   dim(D) <- c(6,n)
@@ -147,13 +147,12 @@ setMethod("show3d","dtiTensor", function(obj,
   n <- sum(mask)
   if(is.null(normalize)) normalize <- switch(what,"tensor"=FALSE,"adc"=TRUE,"odf"=FALSE)
   polyeder <- switch(subdivide+1,icosa0,icosa1,icosa2,icosa3,icosa4)
-  radii <- .Fortran(switch(what,tensor="ellradii",adc="adcradii",odf="odfradii"),
+  radii <- .Fortran(switch(what,tensor=C_ellradii,adc=C_adcradii,odf=C_odfradii),
                     as.double(polyeder$vertices),
                     as.integer(polyeder$nv),
                     as.double(D),
                     as.integer(n),
-                    radii=double(n*polyeder$nv),
-                    PACKAGE="dti")$radii
+                    radii=double(n*polyeder$nv))$radii
   dim(radii) <- c(polyeder$nv,n)
   if(what=="odf") normalize <- FALSE
   if(normalize){
@@ -198,7 +197,7 @@ setMethod("show3d","dtiTensor", function(obj,
     rgl.lines(dd[,1]+vext[1]/2,dd[,2]+vext[2]/2,dd[,3]+vext[3]/2,
               color=rgb(abs(dd[,4]),abs(dd[,5]),abs(dd[,6])),
               size=3)
-  }  
+  }
   if(box) bbox3d()
   if(is.character(title)) {
     title3d(title,color="white",cex=1.5)
@@ -209,10 +208,10 @@ setMethod("show3d","dtiTensor", function(obj,
       if(obj@hmax>1) paste("smoothed with hmax=",obj@hmax),if(normalize) "normalized","\n")
   invisible(rgl.cur())
 })
-setMethod("show3d","dwiMixtensor", function(obj, 
-                                            xind=NULL, yind=NULL, zind=NULL, minfa=.3, minorder=1, mineo=1, fibers=FALSE, 
-                                            maxangle=30, level=0, quant=.8, scale=.4, bgcolor="black", add=FALSE, 
-                                            subdivide=3, maxobjects=729, what=c("odf","axis","both"), odfscale=1, 
+setMethod("show3d","dwiMixtensor", function(obj,
+                                            xind=NULL, yind=NULL, zind=NULL, minfa=.3, minorder=1, mineo=1, fibers=FALSE,
+                                            maxangle=30, level=0, quant=.8, scale=.4, bgcolor="black", add=FALSE,
+                                            subdivide=3, maxobjects=729, what=c("odf","axis","both"), odfscale=1,
                                             minalpha=1, lwd=3, box=FALSE, title=FALSE, ...){
   #if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
   ## check what
@@ -220,7 +219,7 @@ setMethod("show3d","dwiMixtensor", function(obj,
   what <- match.arg(what)
   if(!exists("icosa0")) data("polyeders", envir = environment())
 
-  ## WORKAROUND to make "polyeders" not global variable (for R CMD check) 
+  ## WORKAROUND to make "polyeders" not global variable (for R CMD check)
   icosa0 <- icosa0
   icosa1 <- icosa1
   icosa2 <- icosa2
@@ -252,7 +251,7 @@ setMethod("show3d","dwiMixtensor", function(obj,
   mix <- obj@mix
   maxorder <- dim(mix)[1]
   orient <- obj@orient
-  n <- prod(obj@ddim) 
+  n <- prod(obj@ddim)
   tmean <- array(0,c(3,obj@ddim))
   tmean[1,,,] <- xind*vext[1]
   tmean[2,,,] <- outer(rep(1,n1),yind)*vext[2]
@@ -280,7 +279,7 @@ setMethod("show3d","dwiMixtensor", function(obj,
   gc()
   polyeder <- switch(subdivide+1,icosa0,icosa1,icosa2,icosa3,icosa4)
   if(what %in% c("odf","both")){
-    radii <- .Fortran("mixtradi",
+    radii <- .Fortran(C_mixtradi,
                       as.double(polyeder$vertices),
                       as.integer(polyeder$nv),
                       as.double(ev),
@@ -289,8 +288,7 @@ setMethod("show3d","dwiMixtensor", function(obj,
                       as.integer(order),
                       as.integer(maxorder),
                       as.integer(n),
-                      radii=double(n*polyeder$nv),
-                      PACKAGE="dti")$radii
+                      radii=double(n*polyeder$nv))$radii
     dim(radii) <- c(polyeder$nv,n)
     #
     #   use a sphere of radius level as baseline for the ODF
@@ -311,19 +309,18 @@ setMethod("show3d","dwiMixtensor", function(obj,
     ranger <- range(fa)
     ind <- 1024-(fa-ranger[1])/(ranger[2]-ranger[1])*1023
     colorvalues <- rep(colors[ind],rep(2*dim(mix)[1],length(ind)))
-    andir <- array(.Fortran("mixandir",
+    andir <- array(.Fortran(C_mixandir,
                             as.double(orient),
                             as.double(mix),
                             as.integer(order),
                             as.integer(maxorder),
                             as.integer(n),
-                            andir=double(3*n*dim(mix)[1]),
-                            PACKAGE="dti")$andir,c(3,dim(mix)[1],n1,n2,n3))
+                            andir=double(3*n*dim(mix)[1]))$andir,c(3,dim(mix)[1],n1,n2,n3))
     lcoord <- array(0,c(3,2*dim(mix)[1],n))
     for(i in 1:dim(mix)[1]){
       lcoord[,2*i-1,] <-  andir[,i,]*scale+tmean
       lcoord[,2*i,] <-  -andir[,i,]*scale+tmean
-    }          
+    }
     dim(lcoord) <- c(3,2*dim(mix)[1]*n)
   }
   dim(tmean) <- c(3,n)
@@ -355,14 +352,14 @@ setMethod("show3d","dwiMixtensor", function(obj,
 })
 ##############
 
-setMethod("show3d","dtiIndices", function(obj, 
+setMethod("show3d","dtiIndices", function(obj,
                                           index=c("fa","ga"), xind=NULL, yind=NULL, zind=NULL, method=1, minfa=0,
                                           bgcolor="black", add=FALSE, lwd=1, box=FALSE, title=FALSE, ...){
   index <- tolower(index)
   ## check index
   index <- match.arg(index)
   #if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
-  index <- tolower(index) 
+  index <- tolower(index)
   if(!(index%in%c("fa","ga"))) stop("index should be either 'FA' or 'GA'\n")
   cube <- selectCube(xind,yind,zind,obj@ddim,prod(obj@ddim))
   xind <- cube$xind
@@ -424,12 +421,12 @@ setMethod("show3d","dtiIndices", function(obj,
 
 setMethod("show3d","dwiQball", function(obj,
                                         xind=NULL, yind=NULL, zind=NULL, level=0, quant=.8, scale=.4, odfscale=1,
-                                        bgcolor="black", add=FALSE, subdivide=3, maxobjects=729, minalpha=1, 
+                                        bgcolor="black", add=FALSE, subdivide=3, maxobjects=729, minalpha=1,
                                         box=FALSE, title=FALSE,...){
   #if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
   if(!exists("icosa0")) data("polyeders", envir = environment())
 
-  ## WORKAROUND to make "polyeders" not global variable (for R CMD check) 
+  ## WORKAROUND to make "polyeders" not global variable (for R CMD check)
   icosa0 <- icosa0
   icosa1 <- icosa1
   icosa2 <- icosa2
@@ -511,8 +508,8 @@ setMethod("show3d","dwiQball", function(obj,
   invisible(rgl.cur())
 })
 
-setMethod("show3d","dwiFiber", function(obj, 
-                                        add=FALSE, bgcolor="black", box=FALSE, title=FALSE, lwd=1, ...){
+setMethod("show3d","dwiFiber", function(obj,
+          add=FALSE, bgcolor="black", box=FALSE, title=FALSE, lwd=1, delta=0,...){
   #if(!require(rgl)) stop("Package rgl needs to be installed for 3D visualization")
   if(!add) {
     open3d()
@@ -521,7 +518,7 @@ setMethod("show3d","dwiFiber", function(obj,
   }
   dd <- obj@fibers
   startind <- obj@startind
-  dd <- expandFibers(dd,startind)$fibers
+  dd <- expandFibers(dd,startind,delta)$fibers
   rgl.lines(dd[,1],dd[,2],dd[,3],
             color=rgb(abs(dd[,4]),abs(dd[,5]),abs(dd[,6])),
             size=lwd)
@@ -531,7 +528,7 @@ setMethod("show3d","dwiFiber", function(obj,
   } else {
     if(title) title3d("Fiber tracks",color="white",cex=1.5)
   }
-  
+
   invisible(rgl.cur())
 })
 
@@ -542,10 +539,10 @@ setMethod( "show3d", "dkiTensor", function( obj,
                                             minfa = .3, # ???
                                             mask = NULL,
                                             level = 0, # ???
-                                            quant = .8, # ??? 
+                                            quant = .8, # ???
                                             scale = .4,# ???
                                             bgcolor = "black",
-                                            add = FALSE, 
+                                            add = FALSE,
                                             subdivide = 2, # ???
                                             maxobjects = 729,
                                             what = c( "KT", "DT"),
@@ -554,30 +551,30 @@ setMethod( "show3d", "dkiTensor", function( obj,
                                             box = FALSE, # ???
                                             title = FALSE, # ???
                                             ...){
-  
-  ## first test the OpenGL visualization capabilities! 
+
+  ## first test the OpenGL visualization capabilities!
   #if( !require( rgl)) stop("Package rgl needs to be installed for 3D visualization")
-  
+
   what <- match.arg( what)
-  
+
   if (!exists("icosa1")) data("polyeders", envir = environment())
 
-  ## WORKAROUND to make "polyeders" not global variable (for R CMD check) 
+  ## WORKAROUND to make "polyeders" not global variable (for R CMD check)
   icosa0 <- icosa0
   icosa1 <- icosa1
   icosa2 <- icosa2
   icosa3 <- icosa3
   icosa4 <- icosa4
   ## END WORKAROUND
-  
+
   if ( ( subdivide < 0) || ( subdivide > 4)) subdivide <- 2
-  polyeder <- switch( subdivide + 1, 
-                      icosa0, 
-                      icosa1, 
-                      icosa2, 
-                      icosa3, 
+  polyeder <- switch( subdivide + 1,
+                      icosa0,
+                      icosa1,
+                      icosa2,
+                      icosa3,
                       icosa4)
-  
+
   cube <- selectCube(xind,yind,zind,obj@ddim,maxobjects)
   xind <- cube$xind
   yind <- cube$yind
@@ -586,27 +583,27 @@ setMethod( "show3d", "dkiTensor", function( obj,
   n1 <- cube$n1
   n2 <- cube$n2
   n3 <- cube$n3
-  
+
   if ( obj@orientation[ 1] == 1) xind <- min( xind) + max( xind) - xind
   if ( obj@orientation[ 2] == 3) yind <- min( yind) + max( yind) - yind
   if ( obj@orientation[ 3] == 4) zind <- min( zind) + max( zind) - zind
-  
+
   if ( n1*n2*n3 == 0) stop("Empty cube specified")
   cat(" selected cube specified by \n xind=", min( xind), ":", max( xind),
       "\n yind=", min( yind), ":", max( yind),
       "\n zind=", min( zind), ":", max( zind), "\n")
   obj <- obj[ xind, yind, zind]
-  
+
   mask <- if( is.null( mask)) obj@mask else (obj@mask & mask[ xind, yind, zind])
-  
+
   vext <- obj@voxelext
-  
+
   tmean <- array( 0, c( 3, n1, n2, n3))
   tmean[ 1, , , ] <- xind * vext[ 1]
   tmean[ 2, , , ] <- outer( rep( 1, n1), yind) * vext[ 2]
   tmean[ 3, , , ] <- outer( rep( 1, n1), outer( rep( 1, n2), zind)) * vext[ 3]
   dim( tmean) <- c( 3, n)
-  
+
   objind <- dkiIndices( obj)
   andir <- objind@andir
   dim( andir) <- c( 3, n)
@@ -620,42 +617,42 @@ setMethod( "show3d", "dkiTensor", function( obj,
     andir[ 3, ] <- ( 1 + andir[ 3, ]) / 2
   }
   colorvalues <- rgb( andir[ 1, ], andir[ 2, ], andir[ 3, ])
-  
+
   D <- obj@D
   dim(D) <- c( 6, n)
-  
+
   xxx <- dkiDesign( polyeder$vertices)
-  
+
   Dapp <- xxx[ , c( 1, 4, 5, 2, 6, 3)] %*% D
-  
+
   if ( what == "KT") {
-    
+
     W <- obj@W
     dim(W) <- c( 15, n)
-    
+
     MD <- apply( D[ c( 1, 4, 6),], 2, mean)^2
-    
+
     radii <- sweep( ( xxx[ , 7:21] %*% W) / Dapp, 2 , MD, "*")
     radii[ radii < 0] <- 0
-    
+
     radii <- radii / 2.5 / max( radii) * min( vext)
-    
+
   } else { ## "DT"
-    
+
     radii <- Dapp
     radii[ radii < 0] <- 0
-    
+
     radii <- radii / 2.5 / max( radii) * min( vext)
-    
+
   }
-  
+
   if ( !add) {
     open3d()
     par3d( ...)
     rgl.bg( color = bgcolor)
   }
   show3dTens( radii, polyeder, centers = tmean, colors = colorvalues, alpha = minalpha + ( 1 - minalpha) * fa, ...)
-  
+
   invisible(rgl.cur())
 })
 
@@ -674,13 +671,13 @@ show3dTens <- function(radii, polyeder, centers=NULL, colors=NULL, alpha=1, ...)
     n <- 1
   } else {
     dcenters <- dim(centers)
-    if(length(dcenters)!=2 || dcenters[1]!=3) stop("centers needs to be NULL or a matrix 
+    if(length(dcenters)!=2 || dcenters[1]!=3) stop("centers needs to be NULL or a matrix
       with dimension (3,n)")
     n <- dcenters[2]
   }
   if(is.null(colors)){
     colors <- heat.colors(1)
-  } 
+  }
   if(length(colors)!=n){
     nc <- length(colors)
     nnc <- n%/%nc+1
@@ -688,7 +685,7 @@ show3dTens <- function(radii, polyeder, centers=NULL, colors=NULL, alpha=1, ...)
   }
   if(is.null(alpha)){
     alpha <- 1
-  } 
+  }
   if(length(alpha)!=n){
     nc <- length(alpha)
     nnc <- n%/%nc+1
@@ -700,7 +697,7 @@ show3dTens <- function(radii, polyeder, centers=NULL, colors=NULL, alpha=1, ...)
   alpha <- t(matrix(alpha,n,ni))
   vertices <- array(polyeder$vertices,c(3,nv,n))
   indices <- matrix(polyeder$indices,c(ni,n))
-  if(length(radii)!=nv*n) stop("wrong length of radii, needs to be 
+  if(length(radii)!=nv*n) stop("wrong length of radii, needs to be
              dim(polyeder$vertices)[2]*dim(centers)[2]")
   vertices <- sweep(vertices,2:3,radii,"*")
   vertices <- sweep(vertices,c(1,3),centers,"+")
@@ -721,7 +718,7 @@ show3dData <- function( radii, vertices, centers=NULL, minalpha=1, ...){
     n <- 1
   } else {
     dcenters <- dim(centers)
-    if(length(dcenters)!=2 || dcenters[1]!=3) stop("centers needs to be NULL or a matrix 
+    if(length(dcenters)!=2 || dcenters[1]!=3) stop("centers needs to be NULL or a matrix
       with dimension (3,n)")
     n <- dcenters[2]
   }
@@ -738,7 +735,7 @@ show3dData <- function( radii, vertices, centers=NULL, minalpha=1, ...){
   vertices <- array(vertices,c(3,nv,n))
   colors <- matrix(colors,nv,n)
   ind1 <- rep(1:(n*nv),rep(2,n*nv))
-  if(length(radii)!=nv*n) stop("wrong length of radii, needs to be 
+  if(length(radii)!=nv*n) stop("wrong length of radii, needs to be
              dim(vertices)[2]*dim(centers)[2]")
   vertices0 <- sweep(vertices,2:3,radii,"*")
   vertices <- sweep(.9*vertices0,c(1,3),centers,"+")
@@ -766,7 +763,7 @@ show3dCdata <- function( radii, polyeder, centers=NULL, minalpha=1, scale=.5, ..
     n <- 1
   } else {
     dcenters <- dim(centers)
-    if(length(dcenters)!=2 || dcenters[1]!=3) stop("centers needs to be NULL or a matrix 
+    if(length(dcenters)!=2 || dcenters[1]!=3) stop("centers needs to be NULL or a matrix
       with dimension (3,n)")
     n <- dcenters[2]
   }
@@ -779,7 +776,7 @@ show3dCdata <- function( radii, polyeder, centers=NULL, minalpha=1, scale=.5, ..
   alpha <- matrix(alpha,nv,n)
   vertices <- array(polyeder$vertices,c(3,nv,n))
   indices <- matrix(polyeder$indices,c(ni,n))
-  if(length(radii)!=nv*n) stop("wrong length of radii, needs to be 
+  if(length(radii)!=nv*n) stop("wrong length of radii, needs to be
              dim(polyeder$vertices)[2]*dim(centers)[2]")
   vertices <- sweep(scale*vertices,c(1,3),centers,"+")
   dim(vertices) <- c(3,nv*n)
@@ -796,7 +793,7 @@ show3dODF <- function( radii, polyeder, centers=NULL, minalpha=1, ...){
     n <- 1
   } else {
     dcenters <- dim(centers)
-    if(length(dcenters)!=2 || dcenters[1]!=3) stop("centers needs to be NULL or a matrix 
+    if(length(dcenters)!=2 || dcenters[1]!=3) stop("centers needs to be NULL or a matrix
       with dimension (3,n)")
     n <- dcenters[2]
   }
@@ -811,7 +808,7 @@ show3dODF <- function( radii, polyeder, centers=NULL, minalpha=1, ...){
   alpha <- matrix(alpha,nv,n)
   vertices <- array(polyeder$vertices,c(3,nv,n))
   indices <- array(polyeder$indices,c(ni,n))
-  if(length(radii)!=nv*n) stop("wrong length of radii, needs to be 
+  if(length(radii)!=nv*n) stop("wrong length of radii, needs to be
              dim(polyeder$vertices)[2]*dim(centers)[2]")
   vertices <- sweep(vertices,2:3,radii,"*")
   vertices <- sweep(vertices,c(1,3),centers,"+")

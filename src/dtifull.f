@@ -241,14 +241,10 @@ C
                   thnew(4,i1,i2,i3)=eps
                   thnew(5,i1,i2,i3)=0.d0
                   thnew(6,i1,i2,i3)=eps
-C               ELSE IF(dmin1(ew(1),ew(2)).lt.dmax1(1.d-5,1d-5*ew(3)))
-C     1            THEN
                ELSE IF(min(ew(1),ew(2),ew(3)).lt.eps) THEN
 C
 C       negative eigenvalue of tensor, project to space of positive definite tensors
 C
-C                  ew(1)=dmax1(ew(1),dmax1(1.d-5,1d-5*ew(3)))
-C                  ew(2)=dmax1(ew(2),dmax1(1.d-5,1d-5*ew(3)))
                   ew(1)=max(eps,ew(1))
                   ew(2)=max(eps,ew(2))
                   ew(3)=max(eps,ew(3))

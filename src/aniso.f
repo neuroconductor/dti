@@ -613,6 +613,7 @@ C  Algorithmus zur Nullstellenbestimmung einer monotonen Funktion auf(0,\infty)
       subroutine getvofh(a,bw,vext,vol)
       implicit none
       double precision a(6),bw,vext(3),vol,sofw3D
+      external sofw3D
       vol=sofw3D(a,bw,vext)
       RETURN
       END
