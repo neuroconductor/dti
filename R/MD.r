@@ -4,7 +4,7 @@ setGeneric("dwiMD", function(object,  ...) standardGeneric("dwiMD"))
 
 setMethod( "dwiMD", "dtiData", function( object, eps=.05) {
    grad <- object@gradient[,-object@s0ind]
-   ngrad <- dim(grad[2])
+   ngrad <- dim(grad)[2]
 ##
 ##  first get optimal gradient triple 
 ##
@@ -13,7 +13,7 @@ setMethod( "dwiMD", "dtiData", function( object, eps=.05) {
    ntry <- ngrad*(ngrad-1)/2
    krit <- 3
    l <- 1
-   while(krit < eps & l < ntry ){
+   while(krit > eps & l < ntry ){
       ij <- (1:ngrad)[apply(zsorted[l]==z,1,any)]
       zz <- c(1,1)%*%z[ij,]
       k <- (1:ngrad)[zz==min(zz)][1]

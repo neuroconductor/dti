@@ -649,10 +649,15 @@ setMethod("summary", "dtiData",
             cat("  Number of S0 images   :", paste(ns0, collapse="x"), "\n")
             cat("  Number of Gradients   :", paste(object@ngrad-ns0, collapse="x"), "\n")
             cat("  Voxel extensions      :", paste(signif(object@voxelext,3), collapse="x"), "\n")
-            cat("  Index of S0-Images    :", paste(object@s0ind, collapse="x"), "\n")
+            if(ns0>14){
+              cat("  Index of S0-Images    :", paste(object@s0ind[1:14], collapse=" "), "\n", fill=TRUE)
+              cat(paste(object@s0ind[15:ns0], collapse=" "), "\n")
+            } else {
+              cat("  Index of S0-Images    :", paste(object@s0ind, collapse=" "), "\n", fill=TRUE)
+            }
             cat("  Quantiles of S0-values:","\n")
             print(signif(quantile(object@si[,,,object@s0ind],...),3))
-            cat("  Mean S0-value         :", paste(z <- signif(mean(object@si[,,,object@s0ind]),3),collapse="x"), "\n")
+            cat("  Mean S0-value         :", signif(mean(object@si[,,,object@s0ind]),3), "\n")
             cat("  Threshold for mask    :", paste(signif(object@level,3),collapse="x"), "\n")
             cat("\n")
             invisible(NULL)

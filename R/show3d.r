@@ -34,10 +34,14 @@ setMethod("show3d","dtiData", function( obj, xind=NULL, yind=NULL, zind=NULL,
   tmean[2,,,] <- outer(rep(1,n1),yind)*vext[2]
   tmean[3,,,] <- outer(rep(1,n1),outer(rep(1,n2),zind))*vext[3]
   dim(tmean) <- c(3,n)
-  radii <- extract(obj,"sb")$sb
-  s0 <- extract(obj,"s0")$s0
-  if(length(dim(s0))==4) s0 <- apply(s0,1:3,mean)
-  radii <- sweep(radii,1:3,s0,"/")
+  if(what=="adc"){
+     radii <- ADC(obj)
+  } else {
+     radii <- extract(obj,"sb")$sb
+     s0 <- extract(obj,"s0")$s0
+     if(length(dim(s0))==4) s0 <- apply(s0,1:3,mean)
+     radii <- sweep(radii,1:3,s0,"/")
+  }
   if(what=="adc") radii <- array(pmax(0,-log(radii)),dim(radii))
   # avoid using negative ADC's caused by random effects 
   ngrad <- dim(radii)[length(dim(radii))]

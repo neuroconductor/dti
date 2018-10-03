@@ -4,6 +4,18 @@
 #                                                              #
 ################################################################
 
+ADC <- function(obj){
+  sb <- log(extract(obj,"sb")$sb)
+  s0 <- extract(obj,"s0")$s0
+  s0 <- log(apply(s0,1:3,mean))
+  bvalue <- obj@bvalue[-obj@s0ind]/1000
+  # correct for b-values given in 10^-3 * unit
+  sb <- sweep(sb,4,bvalue,"/")
+  acd <- sweep(-sb,1:3,s0,"+")
+  acd[acd<0] <- 0 # avoid negative values
+  acd
+}
+
 dtiTensor <- function(object,  ...) cat("No DTI tensor calculation defined for this class:",class(object),"\n")
 
 setGeneric("dtiTensor", function(object,  ...) standardGeneric("dtiTensor"))
@@ -11,7 +23,7 @@ setGeneric("dtiTensor", function(object,  ...) standardGeneric("dtiTensor"))
 setMethod( "dtiTensor", "dtiData",
            function( object,
                      method = c( "nonlinear", "linear", "quasi-likelihood"),
-                     sigma = NULL, L = 1,
+                     sigma = NULL, L = 1, mask=NULL,
                      mc.cores = setCores( , reprt = FALSE)) {
 
              ## check method! available are:
@@ -42,7 +54,7 @@ setMethod( "dtiTensor", "dtiData",
              ns0 <- length(s0ind)
              sdcoef <- object@sdcoef
              ngrad0 <- ngrad-ns0
-             z <- sioutlier1(object@si,s0ind,object@level,mc.cores=mc.cores)
+             z <- sioutlier1(object@si,s0ind,object@level,mask,mc.cores=mc.cores)
              #
              #  this does not scale well with openMP
              #
@@ -158,7 +170,7 @@ setMethod( "dtiTensor", "dtiData",
              }
              scorr <- mcorr(res,mask,ddim,ngrad0,lags=c(5,5,3),mc.cores=mc.cores)
              if(method=="quasi-likelihood"){
-               if(is.null(sigma)||any(sigma<=0)){
+               if(is.null(sigma)||any(sigma[mask]<=0)){
                  cat("Please specify a valid estimate of sigma for quasi-likelihood\n
             returning result for method='nonlinear' \n")
                  method <- "nonlinear"
