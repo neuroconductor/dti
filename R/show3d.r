@@ -374,7 +374,7 @@ setMethod("show3d","dtiIndices", function(obj,
       "\n zind=",min(zind),":",max(zind),"\n")
   obj <- obj[xind,yind,zind,drop=FALSE]
   vext <- obj@voxelext
-  ind <- switch(index,"fa"=obj@fa[xind,yind,zind], "ga"=obj@ga[xind,yind,zind])
+  ind <- switch(index,"fa"=obj@fa, "ga"=obj@ga)
   ind[ind<minfa] <- 0
   ind <- ind*min(vext)
   tmean <- array(0,c(3,n1,n2,n3))

@@ -8,7 +8,9 @@ setMethod("plot", "dwi", function(x, y, ...) cat("No implementation for class dw
 
 ##############
 
-setMethod("plot", "dtiData", function(x, y,slice=1, gradient=NULL, view= "axial", show=TRUE, density=FALSE, xind=NULL, yind=NULL, zind=NULL, mar=c(3,3,3,.3), mgp=c(2,1,0), ...) {
+setMethod("plot", "dtiData", function(x, y,slice=1, gradient=NULL, view= "axial", 
+                                      show=TRUE, density=FALSE, xind=NULL, yind=NULL, 
+                                      zind=NULL, mar=c(3,3,3,.3), mgp=c(2,1,0), ...) {
   if(is.null(x@si)) cat("No dwi data yet")
   maxsi <- max(x@si)
   if(is.null(xind)) xind<-(1:x@ddim[1])
@@ -60,7 +62,9 @@ setMethod("plot", "dtiData", function(x, y,slice=1, gradient=NULL, view= "axial"
 
 ##############
 
-setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, minfa=NULL, contrast.enh=1,what="fa", qrange=c(.01,.99),xind=NULL,yind=NULL,zind=NULL, mar=c(2,2,2,.2),mgp=c(2,1,0),...) {
+setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, minfa=NULL, 
+                                        contrast.enh=1,what="fa", qrange=c(.01,.99), 
+                                        xind=NULL,yind=NULL,zind=NULL, mar=c(2,2,2,.2), mgp=c(2,1,0),...) {
   if(is.null(x@D)) cat("No diffusion tensor yet")
   #adimpro <- require(adimpro)
   if(is.null(xind)) xind<-(1:x@ddim[1])
@@ -164,7 +168,9 @@ setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, mi
 
 ##############
 
-setMethod("plot", "dwiMixtensor", function(x, y, slice=1, view="axial", what="fa", minfa=NULL, identify=FALSE,  xind=NULL,yind=NULL,zind=NULL, mar=c(2,2,2,.2),mgp=c(2,1,0),...) {
+setMethod("plot", "dwiMixtensor", function(x, y, slice=1, view="axial", what="fa", minfa=NULL, 
+                                           identify=FALSE,  xind=NULL,yind=NULL,zind=NULL, 
+                                           mar=par("mar"),mgp=par("mgp"),...) {
   #adimpro <- require(adimpro)
   if(is.null(xind)) xind<-(1:x@ddim[1])
   if(is.null(yind)) yind<-(1:x@ddim[2])
@@ -216,7 +222,10 @@ setMethod("plot", "dwiMixtensor", function(x, y, slice=1, view="axial", what="fa
 
 ##############
 
-setMethod("plot", "dtiIndices", function(x, y, slice=1, view= "axial", method=1, quant=0, minfa=NULL, show=TRUE, identify=FALSE, density=FALSE, contrast.enh=1,what="fa",xind=NULL,yind=NULL,zind=NULL, mar=c(3,3,3,.3),mgp=c(2,1,0), ...) {
+setMethod("plot", "dtiIndices", function(x, y, slice=1, view= "axial", method=1, quant=0, minfa=NULL, 
+                                         show=TRUE, identify=FALSE, density=FALSE, contrast.enh=1,
+                                         what="fa", xind=NULL, yind=NULL, zind=NULL, 
+                                         mar=par("mar"), mgp=par("mgp"), ...) {
   what <- tolower(what)
   if(is.null(x@fa)) cat("No anisotropy index yet")
   if(!(method %in% 1:6)) {
@@ -388,7 +397,7 @@ setMethod("plot", "dkiIndices", function(x,
                                          y,
                                          slice = 1,
                                          #view = "axial",
-                                         what = c("md", "fa", "mk", "mk2"),
+                                         what = c("md", "fa", "mk", "mk2", "kaxial", "kradial", "fak"),
                                          #method = 1,
                                          #quant = 0,
                                          #minfa = NULL,
@@ -407,8 +416,8 @@ setMethod("plot", "dkiIndices", function(x,
          md = image(x@md[, , slice], col=grey(0:255/255), ...),
          fa = image(x@fa[, , slice], col=grey(0:255/255), ...),
          mk = image(x@mk[, , slice], col=grey(0:255/255), ...),
-         mk2 = image(x@mk2[, , slice], col=grey(0:255/255), ...))
-
-
-
+         mk2 = image(x@mk2[, , slice], col=grey(0:255/255), ...),
+         kaxial = image(x@kaxial[, , slice], col=grey(0:255/255), ...),
+         kradial = image(x@kradial[, , slice], col=grey(0:255/255), ...),
+         fak = image(x@fak[, , slice], col=grey(0:255/255), ...))
 })
