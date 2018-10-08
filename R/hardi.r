@@ -27,8 +27,8 @@ setMethod("dwiQball","dtiData",function(object,what="wODF",order=4,lambda=0,mask
   
   # prepare data including mask
   ngrad0 <- ngrad - length(s0ind)
-  s0 <- si[,,,s0ind]
-  si <- si[,,,-s0ind]
+  s0 <- si[,,,s0ind,drop=FALSE]
+  si <- si[,,,-s0ind,drop=FALSE]
   if (ns0>1) {
     dim(s0) <- c(prod(ddim),ns0)
     s0 <- s0 %*% rep(1/ns0,ns0)

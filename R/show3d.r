@@ -381,7 +381,7 @@ setMethod("show3d","dtiIndices", function(obj,
   tmean[1,,,] <- xind*vext[1]
   tmean[2,,,] <- outer(rep(1,n1),yind)*vext[2]
   tmean[3,,,] <- outer(rep(1,n1),outer(rep(1,n2),zind))*vext[3]
-  andir <- obj@andir[,xind,yind,zind]
+  andir <- obj@andir
   if(method==1) {
     andir <- abs(andir)
     dim(andir) <- c(3,n1*n2*n3)
