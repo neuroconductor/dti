@@ -14,9 +14,12 @@ dkiTensor <- function(object,  ...) cat("No DKI tensor calculation defined for t
 setGeneric("dkiTensor", function(object, ...) standardGeneric("dkiTensor"))
 
 setMethod("dkiTensor", "dtiData",
-          function(object, method=c("CLLS-QP", "CLLS-H", "ULLS") ,
-                   mc.cores=setCores(, reprt = FALSE),
-                   verbose=FALSE) {
+          function(object, method=c("CLLS-QP", "CLLS-H", "ULLS", "QL") ,
+                   sigma = NULL,
+                   L = 1, 
+                   mask = NULL,
+                   mc.cores = setCores(, reprt = FALSE),
+                   verbose = FALSE) {
 
             if (verbose) cat("dkiTensor: entering function", format(Sys.time()), "\n")
 
@@ -50,7 +53,9 @@ setMethod("dkiTensor", "dtiData",
             ## z$si and z$s0 only contain voxel in the mask
             ## first dimension of matrix z$si corresponds to gradients
             cat("sioutlier completed\n")
-            mask <- z$mask
+            if (is.null(mask)) {
+              mask <- z$mask
+            }
             nvox <- sum(mask)
             ttt <- -log1p(sweep(z$si[-s0ind,],2,as.vector(z$s0),"/")-1)
             #  suggestion by B. Ripley
@@ -102,79 +107,124 @@ setMethod("dkiTensor", "dtiData",
                   ## QP solution
                   dvec <- as.vector(t(Tabesh_A) %*% Tabesh_B)
                   resQPsolution <- solve.QP(Dmat, dvec, Amat)$solution
-                  D[, mi] <- meanbv * resQPsolution[Dind] # re-order DT estimate to comply with dtiTensor
+                  D[, mi] <- resQPsolution[Dind] / meanbv # re-order DT estimate to comply with dtiTensor
 
                   ## Tabesh Eq. [9]
-                  W[, mi] <- resQPsolution[7:21] / mean(resQPsolution[1:3])^2 # kurtosis tensor
+                  W[, mi] <- resQPsolution[7:21] / meanbv^2 / mean(resQPsolution[1:3])^2 # kurtosis tensor
                 }
               } else {
                 ## many cores, just split
                 param <- plmatrix(ttt,pdkiQP,TA=Tabesh_A,Dmat=Dmat,Amat=Amat)
-                D[,mask] <-  meanbv * param[Dind,]
-                W[,mask] <- param[7:21,]
+                D[,mask] <- param[Dind,] / meanbv
+                W[,mask] <- param[7:21,] / meanbv^2
               }
             }
-#            if (method == "NLR" || method == "QL"){
-#              if (!require(Rsolnp)) return("dkiTensor: did not find package Rsolnp, please install for the NLR method")
-#              ttt <- sweep(z$si[-s0ind,],2,as.vector(z$s0),"/")
-#              funopt <- function(param,siq,Tabesh_A,Tabesh_C,rho){
-#                z <- Tabesh_C%*%param
-#                sum((siq-exp(Tabesh_A%*%param))^2) + rho*sum(((z-1e-5)[z<1e-5])^2)
-#              }
-#              fun <- function(param,siq,Tabesh_A,Tabesh_C){
-#                sum((siq-exp(Tabesh_A%*%param))^2)
-#              }
-#              ineqfun <- function(param,siq,Tabesh_A,Tabesh_C){
-#                Tabesh_C%*%param
-#              }
-#              lb <- rep(0,3*ngrad)
-#              ub <- rep(25,3*ngrad)
-#              for(i in 1:nvox){
-#                mi <- maskind[i]
-#                param <- c(D[Dinvind, mi]/meanbv,W[, mi]*mean(D[c(1,4,6),mi]/meanbv)^2)
-#                siq <- ttt[,i]
-#                cat("i",i,"mi",mi,"\n","param",signif(param,3),"\n","fw",fun(param,siq,Tabesh_A,Tabesh_C))
-#                lconstr <- TRUE
-#                for(k in 1:length(rho)){
-#                  if(lconstr){
-#                    param <- optim(param, funopt, method="BFGS", siq=siq,Tabesh_A=Tabesh_A,Tabesh_C=Tabesh_C,rho=rho[k])$par
-#                    lconstr <- min(ineqfun(param,siq,Tabesh_A,Tabesh_C)-lb) < 0
-#                  }
-#                }
-#                cat("fw optim",fun(param,siq,Tabesh_A,Tabesh_C), "constr", constr <-min(ineqfun(param,siq,Tabesh_A,Tabesh_C)-lb),"\n","param",signif(param,3),"\n")
-#                if(constr< 0){
-#                  cat(format(Sys.time()),"\n")
-#                  solnpres <- solnp(param, fun = fun, ineqfun = ineqfun, ineqLB = lb, ineqUB = ub,
-#                                    control = control, #list(tol=1e-6,delta=1e-5,rho=.01),
-#                                    siq=siq,Tabesh_A=Tabesh_A,Tabesh_C=Tabesh_C)
-#                  param <- solnpres$pars
-#                  cat("fw solnp",fun(param,siq,Tabesh_A,Tabesh_C), "constr",                   min(ineqfun(param,siq,Tabesh_A,Tabesh_C)-lb),"\n","param",signif(param,3),"\n")
-#                  cat("diagnostics: vals",solnpres$values,"nfunc",solnpres$nfuneval,
-#                      "time",solnpres$elapsed,"\n")
-#                  cat(format(Sys.time()),"\n")
-#
-#                }
-#                D[, mi] <- meanbv * param[Dind] # re-order DT estimate to comply with dtiTensor
-#                W[, mi] <- param[7:21] / mean(param[1:3])^2 #
-#              }
-#            }
-#            if(method=="QL"){
-#              CL <- sqrt(pi/2)*gamma(L+1/2)/gamma(L)/gamma(3/2)
-#              funoptQL <- function(param, siq, sigma, L, CL, Tabesh_A, Tabesh_C, rho){
-#                z <- Tabesh_C%*%param
-#                fv <- exp(Tabesh_A%*%param)
-#                sum((siq-exp(Tabesh_A%*%param))^2) + rho*sum(((z-1e-5)[z<1e-5])^2)
-#              }
-#              funQL <- function(param, siq, sigma, L, CL, Tabesh_A, Tabesh_C){
-#                sum((siq-exp(Tabesh_A%*%param))^2)
-#              }
-#              ineqfunQL <- function(param, siq, sigma, L, CL, Tabesh_A, Tabesh_C){
-#                Tabesh_C%*%param
-#              }
-#              lb <- rep(0,3*ngrad)
-#              ub <- rep(25,3*ngrad)
-#
-#            }
+
+            
+            if (method == "QL") {
+              
+              CL <- sqrt(pi/2)*gamma(L+1/2)/gamma(L)/gamma(3/2)
+              xxx <- dkiDesign(object@gradient)
+              bvalues <- object@bvalue
+              AD <- xxx[, 1:6]
+              AK <- xxx[, 7:21]
+              
+              ## Tabesh Eq. [10]
+              A <- cbind(sweep(AD, 1, - bvalues, "*"),
+                         sweep(AK, 1, bvalues^2/6, "*"))
+              
+              dkiModel <- function(param, si, sigma, A, L, CL){
+                ##
+                ##  Risk function for Diffusion Kurtosis model with
+                ##  Gauss-approximation for noncentral chi
+                ##
+                ##   si are the original observations
+                ##   si/sigma is assumed to follow a noncentral chi_{2L} distribution
+                ##   sigma should be of length ng here
+                #browser()
+                ng <- dim(A)[1]
+                #  cat("param",signif(param,4),"value")
+                gvalue <- param[22] * exp(-A%*%param[1:21])/sigma
+                muL <- CL * hg1f1(rep(-.5, ng), rep(L, ng), -gvalue*gvalue/2)
+                vL <- pmax(1e-8, 2*L + gvalue^2 - muL^2)
+                ## avoid negative variances that may result due to approximations
+                ## within the iteration process
+                
+                ## factor sigma in muL and sigma^2 in vL cancels in the quotient
+                sum((si/sigma - muL)^2/vL)
+              }
+              
+              dim(D) <- c(6, ddim)
+              dim(W) <- c(15, ddim)
+              
+              if (verbose) pb <- txtProgressBar(min = 0, max = ddim[3], style = 3)
+              for (z in 1:ddim[3]){
+                for (y in 1:ddim[2]) {
+                  for (x in 1:ddim[1]) {
+                    if (mask[x, y, z]) {
+                      param <- optim(c(D[, x, y, z], W[, x, y, z], s0[x, y, z]),
+                                     dkiModel, si = object$si[, i], sigma = sigma, A = A, L = L, CL = CL, 
+                                     method="BFGS",
+                                     control = list(reltol = 1e-8,
+                                                    maxit = 100))$par
+                      D[, x, y, z] <- param[1:6]
+                      W[, x, y, z] <- param[7:21]
+                    }
+                  }
+                }
+                if (verbose) setTxtProgressBar(pb, z)
+              }
+              if (verbose) close(pb)
+              
+              
+            }
+            
+            # if (method == "NLR" || method == "QL"){
+            #   if (!require(Rsolnp)) return("dkiTensor: did not find package Rsolnp, please install for the NLR method")
+            #   ttt <- sweep(z$si[-s0ind,],2,as.vector(z$s0),"/")
+            #   funopt <- function(param,siq,Tabesh_A,Tabesh_C,rho){
+            #     z <- Tabesh_C%*%param
+            #     sum((siq-exp(Tabesh_A%*%param))^2) + rho*sum(((z-1e-5)[z<1e-5])^2)
+            #   }
+            #   fun <- function(param,siq,Tabesh_A,Tabesh_C){
+            #     sum((siq-exp(Tabesh_A%*%param))^2)
+            #   }
+            #   ineqfun <- function(param,siq,Tabesh_A,Tabesh_C){
+            #     Tabesh_C%*%param
+            #   }
+            #   lb <- rep(0,3*ngrad)
+            #   ub <- rep(25,3*ngrad)
+            #   for(i in 1:nvox){
+            #     mi <- maskind[i]
+            #     param <- c(D[Dinvind, mi]/meanbv,W[, mi]*mean(D[c(1,4,6),mi]/meanbv)^2)
+            #     siq <- ttt[,i]
+            #     cat("i",i,"mi",mi,"\n","param",signif(param,3),"\n","fw",fun(param,siq,Tabesh_A,Tabesh_C))
+            #     lconstr <- TRUE
+            #     for(k in 1:length(rho)){
+            #       if(lconstr){
+            #         param <- optim(param, funopt, method="BFGS", siq=siq,Tabesh_A=Tabesh_A,Tabesh_C=Tabesh_C,rho=rho[k])$par
+            #         lconstr <- min(ineqfun(param,siq,Tabesh_A,Tabesh_C)-lb) < 0
+            #       }
+            #     }
+            #     cat("fw optim",fun(param,siq,Tabesh_A,Tabesh_C), "constr", constr <-min(ineqfun(param,siq,Tabesh_A,Tabesh_C)-lb),"\n","param",signif(param,3),"\n")
+            #     if(constr< 0){
+            #       cat(format(Sys.time()),"\n")
+            #       solnpres <- solnp(param, fun = fun, ineqfun = ineqfun, ineqLB = lb, ineqUB = ub,
+            #                         control = control, #list(tol=1e-6,delta=1e-5,rho=.01),
+            #                         siq=siq,Tabesh_A=Tabesh_A,Tabesh_C=Tabesh_C)
+            #       param <- solnpres$pars
+            #       cat("fw solnp",fun(param,siq,Tabesh_A,Tabesh_C), "constr",                   min(ineqfun(param,siq,Tabesh_A,Tabesh_C)-lb),"\n","param",signif(param,3),"\n")
+            #       cat("diagnostics: vals",solnpres$values,"nfunc",solnpres$nfuneval,
+            #           "time",solnpres$elapsed,"\n")
+            #       cat(format(Sys.time()),"\n")
+            #       
+            #     }
+            #     D[, mi] <- meanbv * param[Dind] # re-order DT estimate to comply with dtiTensor
+            #     W[, mi] <- param[7:21] / mean(param[1:3])^2 #
+            #   }
+            # }
+            
+              
             if (method == "CLLS-H") {
 
               ## these are the distinct bvalues
