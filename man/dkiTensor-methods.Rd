@@ -13,7 +13,7 @@
  These methods estimate, in each voxel, the diffusion kurtosis tensor (and the diffusion tensor) and some scalar indices.
 }
 \usage{
-  \S4method{dkiTensor}{dtiData}(object, method=c("CLLS-QP", "CLLS-H", "ULLS") , 
+  \S4method{dkiTensor}{dtiData}(object, method=c("CLLS-QP", "CLLS-H", "ULLS") , mask=NULL,
                    mc.cores=setCores(, reprt=FALSE), verbose=FALSE)
   \S4method{dkiIndices}{dkiTensor}(object, mc.cores=setCores(, reprt=FALSE),
                    verbose=FALSE)
@@ -24,6 +24,7 @@
 programm solution for the constrained optimization (requires package quadprog), 
 \code{"CLLS-H"} for a heuristic approximation described in Tabesh et al. (2011), 
 or \code{"ULLS"} for an unconstrained linear least squares estimation.}
+   \item{mask}{argument to specify a precomputed brain mask}
    \item{mc.cores}{Number of cores to use. Defaults to number of threads specified for openMP, see documentation of package \pkg{awsMethods}. Not yet fully implemented for
   these methods.}
    \item{verbose}{Verbose mode.}

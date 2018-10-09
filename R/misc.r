@@ -1,4 +1,4 @@
-sioutlier1 <- function( si, s0ind, level, mc.cores = 1, verbose = TRUE){
+sioutlier1 <- function( si, s0ind, level, mask, mc.cores = 1, verbose = TRUE){
   ##
   ##   replace si values that are larger than s0
   ##   create mask and reduce data to region covered by mask
@@ -53,7 +53,7 @@ sioutlier1 <- function( si, s0ind, level, mc.cores = 1, verbose = TRUE){
   if(ns0>1) {
     s0 <- rep(1/ns0,ns0)%*%s0
   }
-  mask <- array(s0 > level,dsi[-length(dsi)])
+  if(is.null(mask)) mask <- array(s0 > level,dsi[-length(dsi)])
   mask <- connect.mask(mask)
   nvox <- sum(mask)
 

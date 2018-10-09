@@ -8,7 +8,7 @@ dwiQball <- function(object,  ...) cat("No DWI Q-ball calculation defined for th
 
 setGeneric("dwiQball", function(object,  ...) standardGeneric("dwiQball"))
 
-setMethod("dwiQball","dtiData",function(object,what="wODF",order=4,lambda=0){
+setMethod("dwiQball","dtiData",function(object,what="wODF",order=4,lambda=0,mask=NULL){
   args <- sys.call(-1)
   args <- c(object@call,args)
   if (!(what %in% c("ODF","wODF","aODF","ADC"))) {
@@ -27,16 +27,17 @@ setMethod("dwiQball","dtiData",function(object,what="wODF",order=4,lambda=0){
   
   # prepare data including mask
   ngrad0 <- ngrad - length(s0ind)
-  s0 <- si[,,,s0ind]
-  si <- si[,,,-s0ind]
+  s0 <- si[,,,s0ind,drop=FALSE]
+  si <- si[,,,-s0ind,drop=FALSE]
   if (ns0>1) {
     dim(s0) <- c(prod(ddim),ns0)
     s0 <- s0 %*% rep(1/ns0,ns0)
     dim(s0) <- ddim
   }
-  mask <- s0 > object@level
-  mask <- connect.mask(mask)
-  
+  if(is.null(mask)){
+     mask <- s0 > object@level
+     mask <- connect.mask(mask)
+  }
   lord <- rep(seq(0,order,2),2*seq(0,order,2)+1)
   while(length(lord)>=ngrad0){
     order <- order-2
