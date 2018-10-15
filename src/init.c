@@ -29,7 +29,7 @@ SEXP interface_tracking(SEXP data_dir_coords, SEXP data_FA_values,
 
 static const R_CallMethodDef callMethods[]  = {
   {"interface_tracking", (DL_FUNC) &interface_tracking, 17},
-  {"interface_tracking_mixtensor", (DL_FUNC) &interface_tracking, 20},
+  {"interface_tracking_mixtensor", (DL_FUNC) &interface_tracking_mixtensor, 20},
   {NULL, NULL, 0}
 };
 
