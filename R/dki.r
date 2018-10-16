@@ -46,6 +46,10 @@ setMethod("dkiTensor", "dtiData",
             meanbv <- mean(bvalues)
             bvalues <- bvalues/meanbv
             maxbv <- max(bvalues)
+            
+            Dind <- c(1, 4, 5, 2, 6, 3)
+            Dinvind <- c(1, 4, 6, 2, 3, 5)
+
 
             ## check for outliers and
             ## we need the mean s0 image and a mask
@@ -94,8 +98,6 @@ setMethod("dkiTensor", "dtiData",
               Amat <- t(Tabesh_C)
 
               ## go through the dataset
-              Dind <- c(1, 4, 5, 2, 6, 3)
-              Dinvind <- c(1, 4, 6, 2, 3, 5)
               if(mc.cores==1){
                 ## single core, just do the loop
                 for (i in 1:nvox){
@@ -104,7 +106,10 @@ setMethod("dkiTensor", "dtiData",
                   Tabesh_B <- -ttt[,i]
                   z <- svd(Dmat)
                   maxsv <- sqrt(max(z$d))
-                  Rmat <- diag(1/pmax(maxsv*1e-8,sqrt(z$d)))%*%t(z$u)
+                  invzd <- 1/z$d
+                  invzd[z$d<1e-8] <- 0
+#                  Rmat <- diag(1/pmax(maxsv*1e-8,sqrt(z$d)))%*%t(z$u)
+                  Rmat <- diag(sqrt(invzd))%*%t(z$u)
                   ## TODO: PERFORM SOME TEST BEFORE IT!!
 
                   ## QP solution
@@ -294,7 +299,7 @@ setMethod("dkiTensor", "dtiData",
 
                 ## estimate D tensor! Tabesh Eq. [21]
                 Dihat <- PI_Tabesh_AD %*% Di
-                D[c(1, 4, 6, 2, 3, 5), mi] <- Dihat / meanbv
+                D[Dinvind , mi] <- Dihat / meanbv
 
                 ## re-estimate Di: Tabesh Eq. [22]
                 DiR <- Tabesh_AD %*% Dihat
@@ -310,7 +315,7 @@ setMethod("dkiTensor", "dtiData",
                 dim(Kmax) <- dim(DiR)# DiR is a vector
                 Kmax[DiR > 0] <- C / bv[2] / DiR[DiR > 0]
                 ind <- (KiR > Kmax)
-                KiR[ind] <- Kmax[ind]
+                KiR[ind] <- Kmax[ind] 
                 ind <- (KiR < Kmin)
                 KiR[ind] <- Kmin
 
@@ -343,7 +348,7 @@ setMethod("dkiTensor", "dtiData",
 
                 ## TODO: correct assignment! Check matrix dimensions!
                 Tabesh_X <- PI_Tabesh_A %*% Tabesh_B
-                D[c(1, 4, 6, 2, 3, 5), mi] <- Tabesh_X[1:6]/meanbv
+                D[Dinvind, mi] <- Tabesh_X[1:6]/meanbv
                 W[, mi] <- Tabesh_X[7:21] / (mean(Tabesh_X[1:3]))^2
               }
               #              if (verbose) close(pb)
