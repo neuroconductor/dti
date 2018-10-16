@@ -102,21 +102,24 @@ setMethod("dkiTensor", "dtiData",
                   mi <- maskind[i]
                   ## Tabesh Eq. [12]
                   Tabesh_B <- -ttt[,i]
+                  z <- svd(Dmat)
+                  maxsv <- sqrt(max(z$d))
+                  Rmat <- diag(1/pmax(maxsv*1e-8,sqrt(z$d)))%*%t(z$u)
                   ## TODO: PERFORM SOME TEST BEFORE IT!!
 
                   ## QP solution
                   dvec <- as.vector(t(Tabesh_A) %*% Tabesh_B)
-                  resQPsolution <- solve.QP(Dmat, dvec, Amat)$solution
+                  resQPsolution <- solve.QP(Rmat, dvec, Amat,factorized=TRUE)$solution
                   D[, mi] <- resQPsolution[Dind] / meanbv # re-order DT estimate to comply with dtiTensor
 
                   ## Tabesh Eq. [9]
-                  W[, mi] <- resQPsolution[7:21] / meanbv^2 / mean(resQPsolution[1:3])^2 # kurtosis tensor
+                  W[, mi] <- resQPsolution[7:21] / mean(resQPsolution[1:3])^2 # kurtosis tensor
                 }
               } else {
                 ## many cores, just split
                 param <- plmatrix(ttt,pdkiQP,TA=Tabesh_A,Dmat=Dmat,Amat=Amat)
                 D[,mask] <- param[Dind,] / meanbv
-                W[,mask] <- param[7:21,] / meanbv^2
+                W[,mask] <- param[7:21,]
               }
             }
 
@@ -290,8 +293,8 @@ setMethod("dkiTensor", "dtiData",
                 Di[ind4] <- D1[ind4] / (1 - C * bv[1] / 6 / bv[2])
 
                 ## estimate D tensor! Tabesh Eq. [21]
-                Dihat <- meanbv * PI_Tabesh_AD %*% Di
-                D[c(1, 4, 6, 2, 3, 5), mi] <- meanbv * Dihat
+                Dihat <- PI_Tabesh_AD %*% Di
+                D[c(1, 4, 6, 2, 3, 5), mi] <- Dihat / meanbv
 
                 ## re-estimate Di: Tabesh Eq. [22]
                 DiR <- Tabesh_AD %*% Dihat
@@ -325,7 +328,7 @@ setMethod("dkiTensor", "dtiData",
               Tabesh_AK <- xxx[, 7:21]
 
               ## Tabesh Eq. [10]
-              Tabesh_A <- cbind(sweep(Tabesh_AD, 1, bvalues, "*"),
+              Tabesh_A <- cbind(sweep(Tabesh_AD, 1, -bvalues, "*"),
                                 sweep(Tabesh_AK, 1, bvalues^2/6, "*"))
               PI_Tabesh_A <- pseudoinverseSVD(Tabesh_A)
               #
@@ -340,7 +343,7 @@ setMethod("dkiTensor", "dtiData",
 
                 ## TODO: correct assignment! Check matrix dimensions!
                 Tabesh_X <- PI_Tabesh_A %*% Tabesh_B
-                D[c(1, 4, 6, 2, 3, 5), mi] <- meanbv * Tabesh_X[1:6]
+                D[c(1, 4, 6, 2, 3, 5), mi] <- Tabesh_X[1:6]/meanbv
                 W[, mi] <- Tabesh_X[7:21] / (mean(Tabesh_X[1:3]))^2
               }
               #              if (verbose) close(pb)
