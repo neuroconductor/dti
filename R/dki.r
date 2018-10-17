@@ -14,7 +14,7 @@ dkiTensor <- function(object,  ...) cat("No DKI tensor calculation defined for t
 setGeneric("dkiTensor", function(object, ...) standardGeneric("dkiTensor"))
 
 setMethod("dkiTensor", "dtiData",
-          function(object, method=c("CLLS-QP", "CLLS-H", "ULLS", "QL") ,
+          function(object, method=c("CLLS-QP", "CLLS-H", "ULLS", "QL", "NLR") ,
                    sigma = NULL,
                    L = 1, 
                    mask = NULL,
@@ -43,13 +43,11 @@ setMethod("dkiTensor", "dtiData",
             D <- array(0, dim=c(6, ntotal))
             W <- array(0, dim=c(15, ntotal))
             bvalues <- object@bvalue[- s0ind]
-            meanbv <- mean(bvalues)
-            bvalues <- bvalues/meanbv
-            maxbv <- max(bvalues)
+            mbv <- max(bvalues)
+            bvalues <- bvalues/mbv
+#            maxbv <- max(bvalues)
             
             Dind <- c(1, 4, 5, 2, 6, 3)
-            Dinvind <- c(1, 4, 6, 2, 3, 5)
-
 
             ## check for outliers and
             ## we need the mean s0 image and a mask
@@ -90,12 +88,13 @@ setMethod("dkiTensor", "dtiData",
               ngrad <- object@ngrad - length(s0ind)
 
               ## Tabesh Eq. [13]
-              Tabesh_C <- rbind( cbind(Tabesh_AD, matrix(0, ngrad, 15)),
-                                 cbind(matrix(0, ngrad, 6), Tabesh_AK),
-                                 cbind(3/maxbv*Tabesh_AD, - Tabesh_AK))
+              Tabesh_C <- rbind( cbind(-Tabesh_AD, matrix(0, ngrad, 15)),
+                                 cbind(matrix(0, ngrad, 6), -Tabesh_AK),
+#                                 cbind(-3/maxbv*Tabesh_AD, Tabesh_AK))
+                                 cbind(-3*Tabesh_AD, Tabesh_AK))
 
               Dmat <- t(Tabesh_A) %*% Tabesh_A
-              Amat <- t(Tabesh_C)
+              Amat <- -t(Tabesh_C)
 
               ## go through the dataset
               if(mc.cores==1){
@@ -104,18 +103,18 @@ setMethod("dkiTensor", "dtiData",
                   mi <- maskind[i]
                   ## Tabesh Eq. [12]
                   Tabesh_B <- -ttt[,i]
-                  z <- svd(Dmat)
-                  maxsv <- sqrt(max(z$d))
-                  invzd <- 1/z$d
-                  invzd[z$d<1e-8] <- 0
+                  svdDmat <- svd(Dmat)
+                  maxsv <- sqrt(max(svdDmat$d))
+                  invzd <- 1/svdDmat$d
+                  invzd[svdDmat$d<1e-8] <- 0
 #                  Rmat <- diag(1/pmax(maxsv*1e-8,sqrt(z$d)))%*%t(z$u)
-                  Rmat <- diag(sqrt(invzd))%*%t(z$u)
+                  Rmat <- diag(sqrt(invzd))%*%t(svdDmat$u)
                   ## TODO: PERFORM SOME TEST BEFORE IT!!
 
                   ## QP solution
                   dvec <- as.vector(t(Tabesh_A) %*% Tabesh_B)
                   resQPsolution <- solve.QP(Rmat, dvec, Amat,factorized=TRUE)$solution
-                  D[, mi] <- resQPsolution[Dind] / meanbv # re-order DT estimate to comply with dtiTensor
+                  D[, mi] <- resQPsolution[Dind] / mbv # re-order DT estimate to comply with dtiTensor
 
                   ## Tabesh Eq. [9]
                   W[, mi] <- resQPsolution[7:21] / mean(resQPsolution[1:3])^2 # kurtosis tensor
@@ -123,7 +122,7 @@ setMethod("dkiTensor", "dtiData",
               } else {
                 ## many cores, just split
                 param <- plmatrix(ttt,pdkiQP,TA=Tabesh_A,Dmat=Dmat,Amat=Amat)
-                D[,mask] <- param[Dind,] / meanbv
+                D[,mask] <- param[Dind ,] / mbv
                 W[,mask] <- param[7:21,]
               }
             }
@@ -131,16 +130,17 @@ setMethod("dkiTensor", "dtiData",
             
             if (method == "QL") {
               
+              if(is.null(sigma)) stop("please provide sigma")
+              if(length(sigma)==1) sigma <- array(sigma,ddim[1:3])
+              if(any(sigma[mask]<1e-4)) stop("all sigma values in mask need to be positive")
               CL <- sqrt(pi/2)*gamma(L+1/2)/gamma(L)/gamma(3/2)
               xxx <- dkiDesign(object@gradient)
-              bvalues <- object@bvalue
+              bvalues <- object@bvalue/mbv
               AD <- xxx[, 1:6]
               AK <- xxx[, 7:21]
-              
               ## Tabesh Eq. [10]
               A <- cbind(sweep(AD, 1, - bvalues, "*"),
                          sweep(AK, 1, bvalues^2/6, "*"))
-              
               dkiModel <- function(param, si, sigma, A, L, CL){
                 ##
                 ##  Risk function for Diffusion Kurtosis model with
@@ -152,7 +152,7 @@ setMethod("dkiTensor", "dtiData",
                 #browser()
                 ng <- dim(A)[1]
                 #  cat("param",signif(param,4),"value")
-                gvalue <- param[22] * exp(-A%*%param[1:21])/sigma
+                gvalue <- param[22] * exp(A%*%param[1:21])/sigma
                 muL <- CL * hg1f1(rep(-.5, ng), rep(L, ng), -gvalue*gvalue/2)
                 vL <- pmax(1e-8, 2*L + gvalue^2 - muL^2)
                 ## avoid negative variances that may result due to approximations
@@ -166,27 +166,86 @@ setMethod("dkiTensor", "dtiData",
               dim(W) <- c(15, ddim)
               
               if (verbose) pb <- txtProgressBar(min = 0, max = ddim[3], style = 3)
-              for (z in 1:ddim[3]){
-                for (y in 1:ddim[2]) {
-                  for (x in 1:ddim[1]) {
-                    if (mask[x, y, z]) {
-                      param <- optim(c(D[, x, y, z], W[, x, y, z], s0[x, y, z]),
-                                     dkiModel, si = object$si[, i], sigma = sigma, A = A, L = L, CL = CL, 
+              i <- 0
+              for (iz in 1:ddim[3]){
+                for (iy in 1:ddim[2]) {
+                  for (ix in 1:ddim[1]) {
+                    if (mask[ix, iy, iz]) {
+                      i <- i+1
+                      param <- c(D[, ix, iy, iz], W[, ix, iy, iz], s0[ix, iy, iz])
+                      param[1:6] <- param[c(1,4,6,2,3,5)] * mbv
+                      param[7:21] <- param[7:21]*mean(param[1:3])^2
+                      param <- optim(param,
+                                     dkiModel, si = z$si[,i], sigma = sigma[ix, iy, iz], A = A, L = L, CL = CL, 
                                      method="BFGS",
-                                     control = list(reltol = 1e-8,
+                                     control = list(reltol = 1e-6,
                                                     maxit = 100))$par
-                      D[, x, y, z] <- param[1:6]
-                      W[, x, y, z] <- param[7:21]
+                      D[, ix, iy, iz] <- param[Dind] / mbv
+                      W[, ix, iy, iz] <- param[7:21]/mean(param[1:3])^2
                     }
                   }
                 }
-                if (verbose) setTxtProgressBar(pb, z)
+                if (verbose) setTxtProgressBar(pb, iz)
               }
               if (verbose) close(pb)
               
               
             }
-            
+             if (method == "NLR") {
+              
+              xxx <- dkiDesign(object@gradient)
+              bvalues <- object@bvalue/mbv
+              AD <- xxx[, 1:6]
+              AK <- xxx[, 7:21]
+              
+              ## Tabesh Eq. [10]
+              A <- cbind(sweep(AD, 1, - bvalues, "*"),
+                         sweep(AK, 1, bvalues^2/6, "*"))
+              
+              dkiModel <- function(param, si, A){
+                ##
+                ##  Risk function for Diffusion Kurtosis model with nonlinear regression
+                ##
+                ##   si are the original observations
+                gvalue <- param[22] * exp(A%*%param[1:21])
+                ## avoid negative variances that may result due to approximations
+                ## within the iteration process
+                
+                ## factor sigma in muL and sigma^2 in vL cancels in the quotient
+                sum((si - gvalue)^2)
+              }
+              
+              dim(D) <- c(6, ddim)
+              dim(W) <- c(15, ddim)
+              
+              if (verbose) pb <- txtProgressBar(min = 0, max = ddim[3], style = 3)
+              i <- 0
+              for (iz in 1:ddim[3]){
+                for (iy in 1:ddim[2]) {
+                  for (ix in 1:ddim[1]) {
+                    if (mask[ix, iy, iz]) {
+                      i <- i+1
+                      param <- c(D[, ix, iy, iz], W[, ix, iy, iz], s0[ix, iy, iz])
+                      param[1:6] <- param[c(1,4,6,2,3,5)] * mbv
+                      param[7:21] <- param[7:21]*mean(param[1:3])^2
+
+                      param <- optim(param,
+                                     dkiModel, si = object@si[ix,iy,iz,], A = A, 
+                                     method="BFGS",
+                                     control = list(reltol = 1e-6,
+                                                    maxit = 100))$par
+                      D[, ix, iy, iz] <- param[Dind] / mbv
+                      W[, ix, iy, iz] <- param[7:21]/mean(param[1:3])^2
+                    }
+                  }
+                }
+                if (verbose) setTxtProgressBar(pb, iz)
+              }
+              if (verbose) close(pb)
+              
+              
+            }
+           
             # if (method == "NLR" || method == "QL"){
             #   if (!require(Rsolnp)) return("dkiTensor: did not find package Rsolnp, please install for the NLR method")
             #   ttt <- sweep(z$si[-s0ind,],2,as.vector(z$s0),"/")
@@ -204,7 +263,7 @@ setMethod("dkiTensor", "dtiData",
             #   ub <- rep(25,3*ngrad)
             #   for(i in 1:nvox){
             #     mi <- maskind[i]
-            #     param <- c(D[Dinvind, mi]/meanbv,W[, mi]*mean(D[c(1,4,6),mi]/meanbv)^2)
+            #     param <- c(D[Dinvind, mi]/mbv,W[, mi]*mean(D[c(1,4,6),mi]/mbv)^2)
             #     siq <- ttt[,i]
             #     cat("i",i,"mi",mi,"\n","param",signif(param,3),"\n","fw",fun(param,siq,Tabesh_A,Tabesh_C))
             #     lconstr <- TRUE
@@ -227,7 +286,7 @@ setMethod("dkiTensor", "dtiData",
             #       cat(format(Sys.time()),"\n")
             #       
             #     }
-            #     D[, mi] <- meanbv * param[Dind] # re-order DT estimate to comply with dtiTensor
+            #     D[, mi] <- param[Dind]/mbv # re-order DT estimate to comply with dtiTensor
             #     W[, mi] <- param[7:21] / mean(param[1:3])^2 #
             #   }
             # }
@@ -299,7 +358,7 @@ setMethod("dkiTensor", "dtiData",
 
                 ## estimate D tensor! Tabesh Eq. [21]
                 Dihat <- PI_Tabesh_AD %*% Di
-                D[Dinvind , mi] <- Dihat / meanbv
+                D[ , mi] <- Dihat[Dind] / mbv
 
                 ## re-estimate Di: Tabesh Eq. [22]
                 DiR <- Tabesh_AD %*% Dihat
@@ -348,7 +407,7 @@ setMethod("dkiTensor", "dtiData",
 
                 ## TODO: correct assignment! Check matrix dimensions!
                 Tabesh_X <- PI_Tabesh_A %*% Tabesh_B
-                D[Dinvind, mi] <- Tabesh_X[1:6]/meanbv
+                D[, mi] <- Tabesh_X[Dind]/mbv
                 W[, mi] <- Tabesh_X[7:21] / (mean(Tabesh_X[1:3]))^2
               }
               #              if (verbose) close(pb)
