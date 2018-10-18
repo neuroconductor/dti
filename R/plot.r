@@ -10,7 +10,7 @@ setMethod("plot", "dwi", function(x, y, ...) cat("No implementation for class dw
 
 setMethod("plot", "dtiData", function(x, y,slice=1, gradient=NULL, view= "axial", 
                                       show=TRUE, density=FALSE, xind=NULL, yind=NULL, 
-                                      zind=NULL, mar=c(3,3,3,.3), mgp=c(2,1,0), ...) {
+                                      zind=NULL, mar=par("mar"),mgp=par("mgp"), ...) {
   if(is.null(x@si)) cat("No dwi data yet")
   maxsi <- max(x@si)
   if(is.null(xind)) xind<-(1:x@ddim[1])
@@ -64,7 +64,7 @@ setMethod("plot", "dtiData", function(x, y,slice=1, gradient=NULL, view= "axial"
 
 setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, minfa=NULL, 
                                         contrast.enh=1,what="fa", qrange=c(.01,.99), 
-                                        xind=NULL,yind=NULL,zind=NULL, mar=c(2,2,2,.2), mgp=c(2,1,0),...) {
+                                        xind=NULL,yind=NULL,zind=NULL, mar=par("mar"),mgp=par("mgp"),...) {
   if(is.null(x@D)) cat("No diffusion tensor yet")
   #adimpro <- require(adimpro)
   if(is.null(xind)) xind<-(1:x@ddim[1])
@@ -190,7 +190,7 @@ setMethod("plot", "dwiMixtensor", function(x, y, slice=1, view="axial", what="fa
     fa <- drop(stats$fa)
     if(!is.null(minfa)) fa[fa<minfa] <- 0
     show.image(img <- make.image(65535*fa))
-    title(paste("Slice",slice,"FA"))
+    title(paste("Slice",slice,"effective FA"))
   }
   if("order" %in% what){
     order <- drop(stats$order)
@@ -212,7 +212,7 @@ setMethod("plot", "dwiMixtensor", function(x, y, slice=1, view="axial", what="fa
     yind<-(1:x@ddim[2])
     zind<-(1:x@ddim[3])
     img <- extract.image(img)
-    image(1:dim(img)[1],1:dim(img)[2],img,col=grey((0:255)/255))
+    image(1:dim(img)[1],1:dim(img)[2],img,col=grey((0:255)/255), asp=TRUE)
     identifyFA(view,slice,xind,yind,zind)
   } else {
     par(oldpar)
@@ -405,19 +405,20 @@ setMethod("plot", "dkiIndices", function(x,
                                          #identify = FALSE,
                                          #density = FALSE,
                                          #contrast.enh = 1,
-                                         #xind = NULL,
-                                         #yind = NULL,
+                                         xind = NULL,
+                                         yind = NULL,
                                          #zind = NULL,
-                                         #mar = c(3, 3, 3, .3),
-                                         #mgp = c(2, 1, 0),
+                                         mar=par("mar"),
+                                         mgp=par("mgp"),
                                          ...) {
-
+  if(is.null(xind)) xind <- 1:x@ddim[1]
+  if(is.null(yind)) yind <- 1:x@ddim[2]
   switch(what,
-         md = image(x@md[, , slice], col=grey(0:255/255), ...),
-         fa = image(x@fa[, , slice], col=grey(0:255/255), ...),
-         mk = image(x@mk[, , slice], col=grey(0:255/255), ...),
-         mk2 = image(x@mk2[, , slice], col=grey(0:255/255), ...),
-         kaxial = image(x@kaxial[, , slice], col=grey(0:255/255), ...),
-         kradial = image(x@kradial[, , slice], col=grey(0:255/255), ...),
-         fak = image(x@fak[, , slice], col=grey(0:255/255), ...))
+         md = image(x@md[xind, yind, slice], col=grey(0:255/255), asp=TRUE, ...),
+         fa = image(x@fa[xind, yind, slice], col=grey(0:255/255), asp=TRUE, ...),
+         mk = image(x@mk[xind, yind, slice], col=grey(0:255/255), asp=TRUE, ...),
+         mk2 = image(x@mk2[xind, yind, slice], col=grey(0:255/255), asp=TRUE, ...),
+         kaxial = image(x@kaxial[xind, yind, slice], col=grey(0:255/255), asp=TRUE, ...),
+         kradial = image(x@kradial[xind, yind, slice], col=grey(0:255/255), asp=TRUE, ...),
+         fak = image(x@fak[xind, yind, slice], col=grey(0:255/255), ...))
 })
