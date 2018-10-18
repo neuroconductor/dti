@@ -31,7 +31,7 @@ setMethod( "dwiMD", "dtiData", function( object, eps=.05) {
    s0 <- object@si[,,,object@s0ind]
    bv <- object@bvalue[(1:object@ngrad)[-object@s0ind][ijk]]
    if(length(object@s0ind)>1) s0 <- apply(s0,1:3,mean)
-   ADC <- sweep(-log1p(sweep(si,1:3,s0,"/")),4,bv,"/")
+   ADC <- sweep(-log1p(sweep(si,1:3,s0,"/")-1),4,bv,"/")
    ADC[ADC<0] <- 0
    MD <- apply(ADC,1:3,mean)
    MD
