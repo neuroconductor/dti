@@ -63,7 +63,10 @@ pdkiQP <- function(x,TA,Dmat,Amat){
   param <- matrix(0,21,nvox)
   for(i in 1:nvox){
     dvec <- -as.vector(t(TA) %*% x[,i])
-    resQPsolution <- solve.QP(Dmat, dvec, Amat)$solution
+    z <- svd(Dmat)
+    maxsv <- sqrt(max(z$d))
+    Rmat <- diag(1/pmax(maxsv*1e-8,sqrt(z$d)))%*%t(z$u)
+    resQPsolution <- solve.QP(Rmat, dvec, Amat,factorized=TRUE)$solution
     param[1:6, i] <- resQPsolution[1:6]
     param[7:21, i] <- resQPsolution[7:21] / mean(resQPsolution[1:3])^2
   }

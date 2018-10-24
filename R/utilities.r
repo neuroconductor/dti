@@ -890,6 +890,7 @@ setMethod("extract","dwiMixtensor",function(x,
     mix <- sweep(mix,2,smix,"/")
     # the last two lines are needed for models with isotropic compartment
     z$eorder <- array((2*(1:maxorder)-1)%*%mix,x@ddim)
+    z$eorder[x@order==0] <- 0
   }
   if("bic" %in% what) {
     ngrad <- x@ngrad

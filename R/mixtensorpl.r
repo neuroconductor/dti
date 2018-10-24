@@ -3,7 +3,7 @@ dwiMixtensor <- function(object, ...) cat("No dwiMixtensor calculation defined f
 setGeneric("dwiMixtensor", function(object,  ...) standardGeneric("dwiMixtensor"))
 
 setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,
-                                            model=c("MT","MTiso","MTisoFA","MTisoEV"), fa=NULL, lambda=NULL,
+                                            model=c("MT","MTiso","MTisoFA","MTisoEV"), fa=NULL, lambda=NULL, mask=NULL,
                                             reltol=1e-10, maxit=5000,ngc=1000, nguess=100*maxcomp^2,
                                             msc=c("BIC","AIC","AICC","none"), mc.cores = setCores(,reprt=FALSE)){
   #
@@ -68,7 +68,7 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,
   #
   prta <- Sys.time()
   cat("Start tensor estimation at",format(prta),"\n")
-  tensorobj <- dtiTensor(object, mc.cores = mc.cores)
+  tensorobj <- dtiTensor(object, mask=mask, mc.cores = mc.cores)
   cat("Start evaluation of eigenstructure at",format(Sys.time()),"\n")
   z <- dtieigen(tensorobj@D, tensorobj@mask, mc.cores = mc.cores)
   rm(tensorobj)
@@ -150,7 +150,7 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,
     #  siq is permutated c(4,1:3)
     #
     sigma2 <- array(z$vsi,ddim[1:3])
-    mask <- array(z$mask,ddim[1:3])
+    mask <- array(z$mask&mask,ddim[1:3])
   } else {
     mc.cores.old <- setCores(,reprt=FALSE)
     setCores(mc.cores)
@@ -172,7 +172,7 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,
     #  siq is permutated c(4,1:3)
     #
     sigma2 <- array(z[ngrad0+2,],ddim[1:3])
-    mask <- array(as.logical(z[ngrad0+3,]),ddim[1:3])
+    mask <- array(as.logical(z[ngrad0+3,])&mask,ddim[1:3])
   }
   rm(si)
   rm(z)
