@@ -1,4 +1,4 @@
-      subroutine initdata(si,n1,n2,n3,nb,maxvalue)
+      subroutine initdata(si,n1,n2,n3,nb,maxvalue)      
 C
 C   project all values to (1,maxvalue) to avoid infinite estimates
 C

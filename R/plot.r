@@ -8,8 +8,8 @@ setMethod("plot", "dwi", function(x, y, ...) cat("No implementation for class dw
 
 ##############
 
-setMethod("plot", "dtiData", function(x, y,slice=1, gradient=NULL, view= "axial", 
-                                      show=TRUE, density=FALSE, xind=NULL, yind=NULL, 
+setMethod("plot", "dtiData", function(x, y,slice=1, gradient=NULL, view= "axial",
+                                      show=TRUE, density=FALSE, xind=NULL, yind=NULL,
                                       zind=NULL, mar=par("mar"),mgp=par("mgp"), ...) {
   if(is.null(x@si)) cat("No dwi data yet")
   maxsi <- max(x@si)
@@ -62,8 +62,8 @@ setMethod("plot", "dtiData", function(x, y,slice=1, gradient=NULL, view= "axial"
 
 ##############
 
-setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, minfa=NULL, 
-                                        contrast.enh=1,what="fa", qrange=c(.01,.99), 
+setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, minfa=NULL,
+                                        contrast.enh=1,what="fa", qrange=c(.01,.99),
                                         xind=NULL,yind=NULL,zind=NULL, mar=par("mar"),mgp=par("mgp"),...) {
   if(is.null(x@D)) cat("No diffusion tensor yet")
   #adimpro <- require(adimpro)
@@ -168,8 +168,8 @@ setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, mi
 
 ##############
 
-setMethod("plot", "dwiMixtensor", function(x, y, slice=1, view="axial", what="fa", minfa=NULL, 
-                                           identify=FALSE,  xind=NULL,yind=NULL,zind=NULL, 
+setMethod("plot", "dwiMixtensor", function(x, y, slice=1, view="axial", what="fa", minfa=NULL,
+                                           identify=FALSE,  xind=NULL,yind=NULL,zind=NULL,
                                            mar=par("mar"),mgp=par("mgp"),...) {
   #adimpro <- require(adimpro)
   if(is.null(xind)) xind<-(1:x@ddim[1])
@@ -222,9 +222,9 @@ setMethod("plot", "dwiMixtensor", function(x, y, slice=1, view="axial", what="fa
 
 ##############
 
-setMethod("plot", "dtiIndices", function(x, y, slice=1, view= "axial", method=1, quant=0, minfa=NULL, 
+setMethod("plot", "dtiIndices", function(x, y, slice=1, view= "axial", method=1, quant=0, minfa=NULL,
                                          show=TRUE, identify=FALSE, density=FALSE, contrast.enh=1,
-                                         what="fa", xind=NULL, yind=NULL, zind=NULL, 
+                                         what="fa", xind=NULL, yind=NULL, zind=NULL,
                                          mar=par("mar"), mgp=par("mgp"), ...) {
   what <- tolower(what)
   if(is.null(x@fa)) cat("No anisotropy index yet")
@@ -414,11 +414,11 @@ setMethod("plot", "dkiIndices", function(x,
   if(is.null(xind)) xind <- 1:x@ddim[1]
   if(is.null(yind)) yind <- 1:x@ddim[2]
   switch(what,
-         md = image(x@md[xind, yind, slice], col=grey(0:255/255), asp=TRUE, ...),
-         fa = image(x@fa[xind, yind, slice], col=grey(0:255/255), asp=TRUE, ...),
-         mk = image(x@mk[xind, yind, slice], col=grey(0:255/255), asp=TRUE, ...),
-         mk2 = image(x@mk2[xind, yind, slice], col=grey(0:255/255), asp=TRUE, ...),
-         kaxial = image(x@kaxial[xind, yind, slice], col=grey(0:255/255), asp=TRUE, ...),
-         kradial = image(x@kradial[xind, yind, slice], col=grey(0:255/255), asp=TRUE, ...),
-         fak = image(x@fak[xind, yind, slice], col=grey(0:255/255), ...))
+         md = image(xind, yind, x@md[xind, yind, slice], col=grey(0:255/255), asp=TRUE, ...),
+         fa = image(xind, yind, x@fa[xind, yind, slice], col=grey(0:255/255), asp=TRUE, ...),
+         mk = image(xind, yind, x@mk[xind, yind, slice], col=grey(0:255/255), asp=TRUE, ...),
+         mk2 = image(xind, yind, x@mk2[xind, yind, slice], col=grey(0:255/255), asp=TRUE, ...),
+         kaxial = image(xind, yind, x@kaxial[xind, yind, slice], col=grey(0:255/255), asp=TRUE, ...),
+         kradial = image(xind, yind, x@kradial[xind, yind, slice], col=grey(0:255/255), asp=TRUE, ...),
+         fak = image(xind, yind, x@fak[xind, yind, slice], col=grey(0:255/255), ...))
 })
