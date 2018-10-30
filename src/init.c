@@ -203,6 +203,10 @@ void F77_NAME(getsii)( double* si, double* vsi, int* ngrad, int* nvox,
   int* m, double* dgrad, double* bv, int* nv, double* alpha, double* lambda,
   double* egrad, int* isample, int* ntry, double* sms, double* z0, double* z,
   int* siind, double* mval, int* ns);
+void F77_NAME(getsiibv)( double* si, int* ngrad, int* nvox,
+  int* m, double* dgrad, double* bv, int* nv, double* alpha, double* lambda,
+  double* egrad, int* isample, int* ntry, double* sms, double* z0, double* z,
+  int* siind, double* wi, double* mval, int* ns);
 void F77_NAME(getvofh)( double* a, double* bw, double* vext, double* vol);
 void F77_NAME(ghfse3i)( int* i4, int* kstar, double* k456, int* ng,
   double* kappa, double* vext, double* h, double* varred, int* n, int* dist);
@@ -227,6 +231,8 @@ void F77_NAME(lkfulse3)( double* h, double* kappa, double* k456, int* ng,
 void F77_NAME(mcorr)( double* res, int* mask, int* n1, int* n2, int* n3,
   int* nv, double* sigma, double* mean, double* scorr, int* l1, int* l2,
   int* l3);
+void F77_NAME(means0)( double* s0, int* n, int* ng0, int* level, double* ms0,
+  int* mask);
 void F77_NAME(mediansm)( double* y, int* mask, int* n1, int* n2, int* n3,
   int* ind, int* nind, double* work, int* ncores, double* yout);
 void F77_NAME(mixandir)( double* ori, double* mix, int* ord, int* mo,
@@ -362,6 +368,9 @@ static R_NativePrimitiveArgType getsii31_t[]={REALSXP, REALSXP, INTSXP,
 static R_NativePrimitiveArgType getsii_t[]={REALSXP, REALSXP, INTSXP,
   INTSXP, INTSXP, REALSXP, REALSXP, INTSXP, REALSXP, REALSXP, REALSXP,
   INTSXP, INTSXP, REALSXP, REALSXP, REALSXP, INTSXP, REALSXP, INTSXP};
+static R_NativePrimitiveArgType getsiibv_t[]={REALSXP, INTSXP, INTSXP,
+  INTSXP, REALSXP, REALSXP, INTSXP, REALSXP, REALSXP, REALSXP, INTSXP,
+  INTSXP, REALSXP, REALSXP, REALSXP, INTSXP, REALSXP, REALSXP, INTSXP};
 static R_NativePrimitiveArgType getvofh_t[]={REALSXP, REALSXP, REALSXP,
   REALSXP};
 static R_NativePrimitiveArgType ghfse3i_t[]={INTSXP, INTSXP, REALSXP,
@@ -387,6 +396,8 @@ static R_NativePrimitiveArgType lkfulse3_t[]={REALSXP, REALSXP, REALSXP,
   INTSXP, REALSXP, INTSXP, REALSXP, INTSXP, INTSXP};
 static R_NativePrimitiveArgType mcorr_t[]={REALSXP, LGLSXP, INTSXP, INTSXP,
   INTSXP, INTSXP, REALSXP, REALSXP, REALSXP, INTSXP, INTSXP, INTSXP};
+static R_NativePrimitiveArgType means0_t[]={REALSXP, INTSXP, INTSXP, INTSXP,
+  REALSXP, LGLSXP};
 static R_NativePrimitiveArgType mediansm_t[]={REALSXP, LGLSXP, INTSXP,
   INTSXP, INTSXP, INTSXP, INTSXP, REALSXP, INTSXP, REALSXP};
 static R_NativePrimitiveArgType mixandir_t[]={REALSXP, REALSXP, INTSXP,
@@ -470,6 +481,7 @@ static const R_FortranMethodDef FMethods[] = {
             {"getsii30", (DL_FUNC) &getsii30_ , 19, getsii30_t},
             {"getsii31", (DL_FUNC) &getsii31_ , 22, getsii31_t},
             {"getsii", (DL_FUNC) &getsii_ , 19, getsii_t},
+            {"getsiibv", (DL_FUNC) &getsiibv_ , 19, getsiibv_t},
             {"getvofh", (DL_FUNC) &getvofh_ , 4, getvofh_t},
             {"ghfse3i", (DL_FUNC) &ghfse3i_ , 10, ghfse3i_t},
             {"hg1f1", (DL_FUNC) &hg1f1_ , 5, hg1f1_t},
@@ -482,6 +494,7 @@ static const R_FortranMethodDef FMethods[] = {
             {"lkfuls0", (DL_FUNC) &lkfuls0_ , 5, lkfuls0_t},
             {"lkfulse3", (DL_FUNC) &lkfulse3_ , 9, lkfulse3_t},
             {"mcorr", (DL_FUNC) &mcorr_ , 12, mcorr_t},
+            {"means0", (DL_FUNC) &means0_ , 6, means0_t},
             {"mediansm", (DL_FUNC) &mediansm_ , 10, mediansm_t},
             {"mixandir", (DL_FUNC) &mixandir_ , 6, mixandir_t},
             {"mixtradi", (DL_FUNC) &mixtradi_ , 9, mixtradi_t},

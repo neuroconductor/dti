@@ -458,3 +458,148 @@ C   nonactive directions
       RETURN
       END
 C
+C
+C __________________________________________________________________
+C
+      subroutine getsiibv(si,ngrad,nvox,m,dgrad,bv,nv,alpha,
+     1        lambda,egrad,isample,ntry,sms,z0,z,siind,wi,mval,ns)
+C
+C  compute diagnostics for initial estimates in siind
+C  siind(1,i1,i2,i3) will contain the model order
+C
+C  si     - array of si-values
+C  m      - model order
+C  maxc   - maximum of cos(angle between directions)
+C  th     - theta1
+C  egrad - exp(-theta1*dgrad^2)
+C  isample - guesses for gradient directions
+C  ntry   - number of guesses
+C  sms    - copies of si
+C  z      - array for design matrix corresponding to guesses
+C  siind  - array of indices (output)
+C  ns     - m+1
+C  mask   - mask
+C  mval   - aktual best risk
+C
+C  restricted to ngrad<=1000 and m <=10
+C
+      implicit logical (a-z)
+      integer nvox,ngrad,ns,siind(ns,nvox),m,ntry,nv,
+     1       isample(m,ntry)
+      real*8 si(ngrad,nvox),sms(ngrad),dgrad(ngrad,nv),
+     1       egrad(ngrad,nv),z(ngrad,ns),mval(nvox),
+     2       wi(ns,nvox),bv(ngrad),alpha,lambda,z0(ngrad)
+      integer i,k,ibest,mode,ind(10),l,ii,iw,wind(6),nwi(6)
+      real*8 w(1000),krit,work1(1000),work2(12),erg,msi,m2si,
+     1       z1,dng,albv,lbv
+      dng=ngrad
+      iw=m
+      DO i=1,m
+         wind(i)=i
+         nwi(i)=i
+      END DO
+      ibest=1
+      DO i=1,nvox
+         msi=0.d0
+         m2si=0.d0
+      END DO
+      call rchkusr()
+      DO k=1,ngrad
+         lbv = lambda*bv(k)
+         z0(k) = dexp(-lbv*(1.d0+alpha))
+         DO l=1,nv
+            albv = alpha*lbv
+            z1 = dgrad(k,l)
+            egrad(k,l)=dexp(-lbv-albv*z1*z1)
+         END DO
+      END DO
+      DO i=1,nvox
+C  now search for minima of sms (or weighted sms
+         ibest=0
+         krit=1d20
+         DO k=1,ntry
+            call dcopy(ngrad,si(1,i),1,sms,1)
+            call dcopy(ngrad,z0,1,z(1,1),1)
+            DO l=1,m
+               call dcopy(ngrad,egrad(1,isample(l,k)),1,z(1,l+1),1)
+            END DO
+         if(i.eq.16) THEN
+         END IF
+         call nnls(z,ngrad,ngrad,m+1,sms,w,erg,work2,work1,ind,mode)
+C
+C  thats the Hansson-Larsson code for linear regression with positivity
+C          constraints
+C
+            IF(mode.gt.1) THEN
+               call intpr("mode",4,mode,1)
+               call intpr("isample",7,isample(1,k),m)
+            ELSE
+               IF(erg.lt.krit) THEN
+                 krit=erg
+                 ibest=k
+                 iw=0
+                 DO ii=2,m+1
+                    if(w(ii).gt.1.d-12) THEN
+                       iw=iw+1
+                       wind(iw)=ii-1
+                    ELSE
+                       nwi(ii-iw-1)=ii-1
+C   nonactive directions
+                    END IF
+                 END DO
+              END IF
+           END IF
+        END DO
+        if(ibest.gt.0) THEN
+           siind(1,i)=iw
+           IF (iw.ge.1) THEN
+              wi(1,i)=w(1)
+              DO l=1,iw
+                 siind(l+1,i)=isample(wind(l),ibest)
+                 wi(l+1,i)=w(wind(l))
+              END DO
+           END IF
+           IF (iw.lt.m) THEN
+              DO l=1,m-iw
+                 siind(m-l+2,i)=isample(nwi(l),ibest)
+                 wi(m-l+2,i)=0.d0
+              END DO
+           END IF
+           mval(i)=krit
+        END IF
+      END DO
+      RETURN
+      END
+C
+C __________________________________________________________________
+C
+      subroutine means0(s0,n,ng0,level,ms0,mask)
+C
+C   calculate mean s0 value
+C   generate mask
+C   sweep s0 from si to generate  siq
+C   calculate variance of siq
+C
+      integer n,ng0,ng1,level
+      real*8 s0(ng0,n),ms0(n)
+      logical mask(n),maskk
+      integer i,k
+      real*8 s,z,z2,thresh,s0mean
+      thresh = max(1,level*ng0)
+C$OMP PARALLEL DEFAULT(NONE)
+C$OMP& SHARED(s0,n,ng0,ms0,mask,thresh)
+C$OMP& PRIVATE(i,k,z)
+C$OMP DO SCHEDULE(STATIC)
+      DO i=1,n
+         z=0.d0
+         DO k=1,ng0
+            z=z+s0(k,i)
+         END DO
+         ms0(i) = z/ng0
+         mask(i) = z.ge.thresh
+      END DO
+C$OMP END DO NOWAIT
+C$OMP END PARALLEL
+C$OMP FLUSH(mask,ms0)
+      RETURN
+      END

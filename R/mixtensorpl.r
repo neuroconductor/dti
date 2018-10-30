@@ -185,7 +185,7 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,
   #   compute penalty for model selection, default BIC
   #
   penIC <- switch(msc,AIC=2*npar/ngrad0,BIC=log(ngrad0)*npar/ngrad0,
-                  AICC=(1+npar/ngrad0)/(1-(npar+2)/ngrad0),
+                  AICC=(1+npar/ngrad0)/(1-(npar+2)/ngrad0)-1,
                   None=log(ngrad0)-log(ngrad0-npar))
   cat("End generating auxiliary objects",format(Sys.time()),"\n")
   #
