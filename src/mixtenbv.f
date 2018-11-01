@@ -491,7 +491,7 @@ C
      2       wi(ns,nvox),bv(ngrad),alpha,lambda,z0(ngrad)
       integer i,k,ibest,mode,ind(10),l,ii,iw,wind(6),nwi(6)
       real*8 w(1000),krit,work1(1000),work2(12),erg,msi,m2si,
-     1       z1,dng,albv,lbv
+     1       z1,dng,albv,lbv,w0
       dng=ngrad
       iw=m
       DO i=1,m
@@ -523,8 +523,6 @@ C  now search for minima of sms (or weighted sms
             DO l=1,m
                call dcopy(ngrad,egrad(1,isample(l,k)),1,z(1,l+1),1)
             END DO
-         if(i.eq.16) THEN
-         END IF
          call nnls(z,ngrad,ngrad,m+1,sms,w,erg,work2,work1,ind,mode)
 C
 C  thats the Hansson-Larsson code for linear regression with positivity
@@ -538,6 +536,7 @@ C
                  krit=erg
                  ibest=k
                  iw=0
+                 w0 = w(1)
                  DO ii=2,m+1
                     if(w(ii).gt.1.d-12) THEN
                        iw=iw+1
@@ -553,7 +552,7 @@ C   nonactive directions
         if(ibest.gt.0) THEN
            siind(1,i)=iw
            IF (iw.ge.1) THEN
-              wi(1,i)=w(1)
+              wi(1,i)=w0
               DO l=1,iw
                  siind(l+1,i)=isample(wind(l),ibest)
                  wi(l+1,i)=w(wind(l))
@@ -562,7 +561,8 @@ C   nonactive directions
            IF (iw.lt.m) THEN
               DO l=1,m-iw
                  siind(m-l+2,i)=isample(nwi(l),ibest)
-                 wi(m-l+2,i)=0.d0
+                 wi(m-l+2,i)=1e-2
+C use something small as initial value to be in the interior
               END DO
            END IF
            mval(i)=krit

@@ -5,7 +5,7 @@ dwiMixtensnew <- ## function(object, ...) cat("No dwiMixtensor calculation defin
 ## setMethod("dwiMixtensnew","dtiData",
 function(object, maxcomp=3,
           model=c("MTiso","MTisoFA","MTisoEV"),
-          fa=NULL, lambda=NULL, reltol=1e-10, maxit=5000, ngc=1000,
+          fa=NULL, lambda=NULL, mask=NULL, reltol=1e-10, maxit=5000, ngc=1000,
           nguess=100*maxcomp^2, msc=c("BIC","AIC","AICC","none"),
           mc.cores = setCores(,reprt=FALSE)){
   #
@@ -61,7 +61,7 @@ function(object, maxcomp=3,
   #
   prta <- Sys.time()
   cat("Start tensor estimation at",format(prta),"\n")
-  tensorobj <- dtiTensor(object, mc.cores = mc.cores)
+  tensorobj <- dtiTensor(object, mask=mask, mc.cores = mc.cores)
   cat("Start evaluation of eigenstructure at",format(Sys.time()),"\n")
   z <- dtieigen(tensorobj@D, tensorobj@mask, mc.cores = mc.cores)
   rm(tensorobj)
@@ -77,11 +77,11 @@ function(object, maxcomp=3,
   #
   #  prepare parameters for searching initial estimates
   #
-    lambdahat <- ev[3,,,]
+    lambdahat <- ev[3,,,] #
     # use third ev instead of (ev[2,,,]+ev[3,,,])/2 to avoid effects from mixtures
     alphahat <- if(imodel==2) (ev[1,,,]-lambdahat)/lambdahat else alpha
-    lambdahat <- .5*median(lambdahat[!is.na(alphahat)&fa>.3])
-    if(imodel==2) alphahat <- median(alphahat[!is.na(alphahat)&fa>.3])
+    lambdahat <- median(lambdahat[!is.na(alphahat)&fa>.5])
+    if(imodel==2) alphahat <- median(alphahat[!is.na(alphahat)&fa>.5])
     fahat <- alphahat/sqrt(3+2*alphahat+alphahat^2)
     cat("Using lambda_2=",lambdahat,"fa=",fahat," and alpha=",alphahat,"in initial estimates\n")
 
@@ -114,8 +114,8 @@ function(object, maxcomp=3,
                   mask=logical(nvox),
                   PACKAGE="dti")[c("s0","mask")]
   s0 <- array(z$s0,ddim[1:3])
-  mask <- array(z$mask,ddim[1:3])
-  means0 <- mean(s0[mask])
+  # mask <- array(z$mask,ddim[1:3])
+  means0 <- max(s0[mask])
   #
   #  rescale s0 for numerical reasons
   #
@@ -151,7 +151,6 @@ function(object, maxcomp=3,
   #
   #  compute initial estimates (EV from grid and orientations from icosa3$vertices)
   #
-  si <- aperm(si,c(4,1:3))
   dim(si) <- c(ngrad,nvox)
     siind <- wi <- matrix(0,maxcomp+1,nvox)
     siind[1,!mask] <- -1
@@ -258,8 +257,7 @@ function(object, maxcomp=3,
                      order   = integer(nvoxm),#order_ret selected order of mixture
                      alpha   = double(nvoxm),#alpha_ret alpha=(lambda_1-lambda_2)/lambda_2
                      lambda  = double(nvoxm),#lambda_ret lambda_2
-                     mix     = double((maxcomp+1)*nvoxm),#mixture weights
-                     PACKAGE="dti")[c("sigma2","orient","order","alpha","lambda","mix")])
+                     mix     = double((maxcomp+1)*nvoxm))[c("sigma2","orient","order","alpha","lambda","mix")])
       cat("End parameter estimation and model selection (C-code)",format(Sys.time()),"\n")
       sigma2 <-  array(0,ddim)
       sigma2[mask] <- z$sigma2
@@ -283,7 +281,7 @@ function(object, maxcomp=3,
       x[ngrad+1,] <- krit[mask]
       dim(siind) <- c(maxcomp,nvox)
       x[ngrad+2:(1+maxcomp),] <- siind[,mask]
-      x[-(1:(1+maxcomp)),] <- wi[,mask]
+      x[-(1:(ngrad+1+maxcomp)),] <- wi[,mask]
       res <- matrix(0,5+3*maxcomp,nvox)
       res[,mask] <- switch(imodel+1,
                            plmatrix(x,pmixtn0b,ngrad=ngrad,maxcomp=maxcomp,maxit=maxit,
@@ -299,27 +297,31 @@ function(object, maxcomp=3,
       rm(x)
       gc()
       sigma2 <-  array(res[2,],ddim)
-      orient <- array(res[maxcomp+4+1:(2*maxcomp),], c(2, maxcomp, ddim))
+      orient <- array(res[maxcomp+5+1:(2*maxcomp),], c(2, maxcomp, ddim))
       order <- array(as.integer(res[1,]), ddim)
       lev <- array(res[3:4,], c(2,ddim))
-      mix <- array(res[4+(1:maxcomp),], c(maxcomp, ddim))
+      mix <- array(res[5+0:maxcomp,], c(maxcomp+1, ddim))
     }
     th0 <- apply(mix,2:4,sum)
+    order[th0==0] <- 0
     mix <- sweep(mix[-1,,,],2:4,th0,"/")
+    mix[is.na(mix)] <- 0
+    if(any(mix<0)){
+       cat("neg. weights:", sum(mix<0), "minimum", min(mix)," replaced by 0\n")
+       mix[mix<0] <- 0
+    }
     th0 <- th0*means0
     save(krit,wi,mask,z,mix,th0,file="tmp.rsc")
     method <- switch(imodel+1,"MTisoEV","MTisoFA","MTiso")
     model <- switch(imodel+1,"iso-prolate-fixedev","iso-prolate-fixedfa","iso-prolate")
-##  invisible(new("dwiMixtensor",
-  list(              model = model,
+  invisible(new("dwiMixtensor",
+                model = model,
                 call   = args,
                 ev     = lev/maxbv,
                 mix    = mix,
                 orient = orient,
                 order  = order,
                 p      = 0,
-                s0=s0,
-                z=z,
                 th0    = th0,
                 sigma  = sigma2*means0^2,
                 scorr  = array(1,c(1,1,1)),
@@ -345,7 +347,7 @@ function(object, maxcomp=3,
                 outlier = index,
                 scale = 1,
                 method = method)
-##  )
+  )
 }
 ##)
 

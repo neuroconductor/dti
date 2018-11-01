@@ -69,6 +69,7 @@ typedef struct{
   int order;
   double lambda;
   double alpha;
+  double w0;
   double* mix;
   double* orient;
   double* param;
@@ -78,6 +79,7 @@ typedef struct{
 typedef struct{
   int order;
   double lambda;
+  double w0;
   double* mix;
   double* orient;
   double* param;
@@ -86,6 +88,7 @@ typedef struct{
 
 typedef struct{
   int order;
+  double w0;
   double* mix;
   double* orient;
   double* param;
@@ -208,7 +211,7 @@ mfunrskmb2_ret getparam2b(int param_length, double* param, double fmin){
 
   int c_ord = (param_length-3)/3;
 
-  double  lambda, alpha;
+  double  w0, lambda, alpha;
   double* w_tmp = Calloc(param_length, double);
   double* param_work = Calloc(param_length, double);
   int* o = Calloc(c_ord, int);
@@ -217,13 +220,12 @@ mfunrskmb2_ret getparam2b(int param_length, double* param, double fmin){
       param_work[i] = param[i];
    }
  //  calculate weights
-   double* mix = (double*) R_alloc(c_ord+1, sizeof(double));
+  double* mix = (double*) R_alloc(c_ord, sizeof(double));
   for( i = 0; i < c_ord; i++){
-      mix[i+1] = param[3*i];
+      mix[i] = param[3*i];
       o[i] = i;
    }
-   mix[0] = param[3*c_ord];
-//   revsort(mix, o, c_ord);
+   revsort(mix, o, c_ord);
 //  this sorts in decreasing order, now rearrange parameters
 //  sorted index in o
    double* orient = (double*) R_alloc(2*c_ord, sizeof(double));
@@ -253,9 +255,11 @@ mfunrskmb2_ret getparam2b(int param_length, double* param, double fmin){
    }
   lambda = param[3*c_ord+1];
   alpha = param[3*c_ord+2];
+  w0 = param[3*c_ord];
   ret_val.order = c_ord;
   ret_val.lambda = lambda;
   ret_val.alpha = alpha;
+  ret_val.w0 = w0;
   ret_val.mix = mix;
   ret_val.orient = orient;
   ret_val.param = param;
@@ -285,13 +289,12 @@ mfunrskmb1_ret getparam1b(int param_length, double* param, double fmin){
       param_work[i] = param[i];
    }
 //  calculate weights
-   double* mix = (double*) R_alloc(c_ord+1, sizeof(double));
+   double* mix = (double*) R_alloc(c_ord, sizeof(double));
    for( i = 0; i < c_ord; i++){
-      mix[i+1] = param[3*i];
+      mix[i] = param[3*i];
       o[i] = i;
    }
-   mix[0] = param[3*c_ord];
-//   revsort(mix, o, c_ord);
+   revsort(mix, o, c_ord);
 //  this sorts in decreasing order, now rearrange parameters
 //  sorted index in o
    double* orient = (double*) R_alloc(2*c_ord, sizeof(double));
@@ -319,6 +322,7 @@ mfunrskmb1_ret getparam1b(int param_length, double* param, double fmin){
       param[3*i+1] = orient[2*i];
       param[3*i+2] = orient[2*i+1];
    }
+  ret_val.w0 = param[3*c_ord];
   ret_val.lambda = param[3*c_ord+1];
   ret_val.order = c_ord;
   ret_val.param = param;
@@ -348,13 +352,12 @@ mfunrskmb0_ret getparam0b(int param_length, double* param, double fmin){
       param_work[i] = param[i];
    }
 //  calculate weights
-   double* mix = (double*) R_alloc(c_ord+1, sizeof(double));
+   double* mix = (double*) R_alloc(c_ord, sizeof(double));
    for( i = 0; i < c_ord; i++){
-      mix[i+1] = param[3*i];
+      mix[i] = param[3*i];
       o[i] = i;
    }
-   mix[0] = param[3*c_ord];
-//   revsort(mix, o, c_ord);
+   revsort(mix, o, c_ord);
 //  this sorts in decreasing order, now rearrange parameters
    double* orient = (double*) R_alloc(2*c_ord, sizeof(double));
    for( i = 0; i < c_ord; i++){
@@ -381,6 +384,7 @@ mfunrskmb0_ret getparam0b(int param_length, double* param, double fmin){
       param[3*i+1] = orient[2*i];
       param[3*i+2] = orient[2*i+1];
    }
+  ret_val.w0 = param[3*c_ord];
   ret_val.order = c_ord;
   ret_val.mix = mix;
   ret_val.orient = orient;
@@ -461,7 +465,7 @@ void mixtrl2b( int* n1, int* siind, double* wi, int* ngrad, int* maxcomp, int* m
        for(i=0; i<param_length_init; i++){
           lower[i] = R_NegInf;
           upper[i] = R_PosInf;
-	  nbd[i] = 0;
+	        nbd[i] = 0;
        }
       param_length = param_length_init;
       sigma2_ret[iibv] = sigma2[iibv];
@@ -488,7 +492,7 @@ void mixtrl2b( int* n1, int* siind, double* wi, int* ngrad, int* maxcomp, int* m
 // set values for lower corresponding to weights to 0
             lower[3*j] = 0;
             upper[3*j] = 1;
-	    nbd[3*j] = 2;
+	          nbd[3*j] = 2;
          }
 // lower values for lambda and alpha to get lambda_1>=lambda_2>=0
          lower[3*maxcompc] = 0;//w0
@@ -497,11 +501,11 @@ void mixtrl2b( int* n1, int* siind, double* wi, int* ngrad, int* maxcomp, int* m
          upper[3*maxcompc+1] = 10;
          lower[3*maxcompc+2] = 0.5;//alpha
          upper[3*maxcompc+2] = 10;
-	 nbd[3*maxcompc+1] = 2;
-	 nbd[3*maxcompc+2] = 2;
-	 nbd[3*maxcompc] = 2;
+	       nbd[3*maxcompc+1] = 2;
+	       nbd[3*maxcompc+2] = 2;
+	       nbd[3*maxcompc] = 2;
          // initialize EV-parameter and w0
-	 param[3*maxcompc] = wi[(maxcompc+1)*iibv];
+	       param[3*maxcompc] = wi[(maxcompc+1)*iibv];
          param[3*maxcompc+1] = lambda;//lambda_2
          param[3*maxcompc+2] = alpha;
 //alpha; lambda_1=(1+alpha)*lambda; FA=alpha/sqrt((1+alpha)^2+2)
@@ -522,20 +526,20 @@ void mixtrl2b( int* n1, int* siind, double* wi, int* ngrad, int* maxcomp, int* m
             if(k < ord){
                if(k != maxcompc){
 // reorder such that parameters for smallest compartment are last
-		  smallw = param_work[3*k+3];
-		  for (l = 0; l < k; l++){
-		     if(param_work[3*l] < smallw){
-		        smallw = param_work[3*l];
-			param_work[3*l] = param_work[3*k];
-			param_work[3*k] = smallw;
-		        ttt = param_work[3*l+1];
-			param_work[3*l+1] = param_work[3*k+1];
-			param_work[3*k+1] = ttt;
-		        ttt = param_work[3*l+2];
-			param_work[3*l+2] = param_work[3*k+2];
-			param_work[3*k+2] = ttt;
-		     }
-		  }
+	            	  smallw = param_work[3*k+3];
+		              for (l = 0; l < k; l++){
+		                 if(param_work[3*l] < smallw){
+		                    smallw = param_work[3*l];
+		                  	param_work[3*l] = param_work[3*k];
+		                  	param_work[3*k] = smallw;
+		                    ttt = param_work[3*l+1];
+		                  	param_work[3*l+1] = param_work[3*k+1];
+		                  	param_work[3*k+1] = ttt;
+		                    ttt = param_work[3*l+2];
+		                  	param_work[3*l+2] = param_work[3*k+2];
+		                  	param_work[3*k+2] = ttt;
+		                 }
+	            	  }
                   for (l = 0; l < param_length-3; l++){
                      param_tmp[l] = param_work[l];
                   }
@@ -549,9 +553,9 @@ void mixtrl2b( int* n1, int* siind, double* wi, int* ngrad, int* maxcomp, int* m
                   upper[3*k+1] = 10;//lambda
                   lower[3*k+2] = 0.5;//alpha
                   upper[3*k+2] = 20;//alpha
- 	          nbd[3*k] = 2;
-	          nbd[3*k+1] = 2;
- 	          nbd[3*k+2] = 2;
+ 	                nbd[3*k] = 2;
+	                nbd[3*k+1] = 2;
+ 	                nbd[3*k+2] = 2;
                   for(l= 0; l < param_length; l++){
                      param_work[l] = param_tmp[l];
                      param_last[l] = param_tmp[l];
@@ -565,6 +569,7 @@ void mixtrl2b( int* n1, int* siind, double* wi, int* ngrad, int* maxcomp, int* m
                // initialize ret_val to avoid warnings
                mfunrskmb2_ret ret_val;
                ret_val.order = 0;
+               ret_val.w0 = 0;
                ret_val.lambda = 0;
                ret_val.alpha = 0;
                ret_val.mix = NULL;
@@ -599,7 +604,7 @@ void mixtrl2b( int* n1, int* siind, double* wi, int* ngrad, int* maxcomp, int* m
 
                   ttt = log(si2new) + penIC[ord];
 
-                  for(l =0; l < param_length; l++){
+                  for(l = 0; l < param_length; l++){
                      param_work[l] = ret_val.param[l];
                   }
                }
@@ -613,13 +618,12 @@ void mixtrl2b( int* n1, int* siind, double* wi, int* ngrad, int* maxcomp, int* m
 
                   lambda_ret[iibv] = ret_val.lambda;
                   alpha_ret[iibv] = ret_val.alpha;
-
+                  mix_ret[(maxcompc+1)*iibv] = ret_val.w0;
                   for(l = 0; l < ord; l++){
-                     mix_ret[l+1+(maxcompc+1)*iibv] = ret_val.mix[l+1];
-                     orient_ret[0+2*l+2*maxcompc*iibv] = ret_val.orient[l*2];
+                     mix_ret[l+1+(maxcompc+1)*iibv] = ret_val.mix[l];
+                     orient_ret[2*l+2*maxcompc*iibv] = ret_val.orient[l*2];
                      orient_ret[1+2*l+2*maxcompc*iibv] = ret_val.orient[1+l*2];
                   }
-                  mix_ret[(maxcompc+1)*iibv] = ret_val.mix[1];
                   for(l = ord; l < maxcompc; l++){
                      mix_ret[l+1+(maxcompc+1)*iibv] = 0;
                   }
@@ -700,7 +704,7 @@ void mixtrl1b( int* n1, int* siind, double* wi, int* ngrad, int* maxcomp, int* m
       for(i=0; i<param_length_init; i++){
          lower[i] = R_NegInf;
          upper[i] = R_PosInf;
-	 nbd[i] = 0;
+	       nbd[i] = 0;
       }
       param_length = param_length_init;
       sigma2_ret[iibv] = sigma2[iibv];
@@ -720,20 +724,25 @@ void mixtrl1b( int* n1, int* siind, double* wi, int* ngrad, int* maxcomp, int* m
             orient_ret[0+2*j+2*maxcompc*iibv] = angles[0];
             orient_ret[1+2*j+2*maxcompc*iibv] = angles[1];
 
-            param[3*j] = 4;
+            param[3*j] = wi[j+1+(maxcompc+1)*iibv];
 //initial value for w(j) corresponds to volume w(j)/(1+sum_k w(j)), i.e. a 17% isotropic compartment
             param[3*j+1] = angles[0];
             param[3*j+2] = angles[1];
 // set values for lower corresponding to weights to 0
-            lower[3*j] = -6;
-            upper[3*j] = 20;
-	    nbd[3*j] = 2;
+            lower[3*j] = 0;
+            upper[3*j] = 1;
+	          nbd[3*j] = 2;
          }
-/*         lower[3*maxcompc] = 0.01;
-	 nbd[3*maxcompc] = 1;*/
+         lower[3*maxcompc] = 0;//w0
+         upper[3*maxcompc] = 1;//w0
+         lower[3*maxcompc+1] = 0.;//lambda
+         upper[3*maxcompc+1] = 10;
+         nbd[3*maxcompc] = 2;
+	       nbd[3*maxcompc+1] = 2;
 // lower value for alpha to get lambda_1>=lambda_2
          // initialize EV-parameter
-         param[3*maxcompc] = lambda;//lambda_2
+         param[3*maxcompc] = wi[(maxcompc+1)*iibv];
+         param[3*maxcompc+1] = lambda;//lambda_2
 //alpha; lambda_1=(1+alpha)*lambda; FA=alpha/sqrt((1+alpha)^2+2)
 //alpha=1.7 corresponds to a FA of 0.7
 
@@ -755,9 +764,14 @@ void mixtrl1b( int* n1, int* siind, double* wi, int* ngrad, int* maxcomp, int* m
                      param_tmp[l] = param_work[l];
                   }
                   param_tmp[3*k] = param_work[3*k+3];
-                  param_length=3*k+1;
-                  lower[3*k] = 0.25;/* require 20% at least informative Volume */
- 	          nbd[3*k] = 1;
+                  param_tmp[3*k+1] = param_work[3*k+4];
+                  param_length=3*k+2;
+                  lower[3*k] = 0.;
+                  upper[3*k] = 1.; // si are standardized by maxs0
+                  lower[3*k+1] = 0.01;//lambda
+                  upper[3*k+1] = 10;//lambda
+                  nbd[3*k] = 2;
+                  nbd[3*k+1] = 2;
 
                   for(l= 0; l < param_length; l++){
                      param_work[l] = param_tmp[l];
@@ -771,6 +785,7 @@ void mixtrl1b( int* n1, int* siind, double* wi, int* ngrad, int* maxcomp, int* m
 
                // initialize ret_val to avoid warnings
                mfunrskmb1_ret ret_val;
+               ret_val.w0 = 0;
                ret_val.order = 0;
                ret_val.lambda = 0;
                ret_val.mix = NULL;
@@ -818,9 +833,10 @@ void mixtrl1b( int* n1, int* siind, double* wi, int* ngrad, int* maxcomp, int* m
                   order_ret[iibv] = ret_val.order;
 
                   lambda_ret[iibv] = ret_val.lambda;
+                  mix_ret[(maxcompc+1)*iibv] = ret_val.w0;
 
                   for(l = 0; l < ord; l++){
-                     mix_ret[l+(maxcompc+1)*iibv] = ret_val.mix[l];
+                     mix_ret[l+1+(maxcompc+1)*iibv] = ret_val.mix[l];
                      orient_ret[0+2*l+2*maxcompc*iibv] = ret_val.orient[l*2];
                      orient_ret[1+2*l+2*maxcompc*iibv] = ret_val.orient[1+l*2];
                   }
@@ -903,7 +919,7 @@ void mixtrl0b( int* n1, int* siind, double* wi, int* ngrad, int* maxcomp, int* m
        for(i=0; i<param_length_init; i++){
           lower[i] = R_NegInf;
           upper[i] = R_PosInf;
-	  nbd[i] = 0;
+	        nbd[i] = 0;
        }
       param_length = param_length_init;
       sigma2_ret[iibv] = sigma2[iibv];
@@ -923,17 +939,21 @@ void mixtrl0b( int* n1, int* siind, double* wi, int* ngrad, int* maxcomp, int* m
             orient_ret[0+2*j+2*maxcompc*iibv] = angles[0];
             orient_ret[1+2*j+2*maxcompc*iibv] = angles[1];
 
-            param[3*j] = 4;
+            param[3*j] = wi[j+1+(maxcompc+1)*iibv];
 //initial value for w(j) corresponds to volume w(j)/(1+sum_k w(j)), i.e. a 17% isotropic compartment
             param[3*j+1] = angles[0];
             param[3*j+2] = angles[1];
 // set values for lower corresponding to weights to 0
-            lower[3*j] = -6;
-            upper[3*j] = 20;
-	    nbd[3*j] = 2;
+            lower[3*j] = 0;
+            upper[3*j] = 1;
+	          nbd[3*j] = 2;
          }
 // lower value for alpha to get lambda_1>=lambda_2
-         // initialize EV-parameter
+         lower[3*maxcompc] = 0;//w0
+         upper[3*maxcompc] = 1;//w0
+         nbd[3*maxcompc] = 2;
+         // initialize w0
+         param[3*maxcompc] = wi[(maxcompc+1)*iibv];
 
          sigma_init = sigma2[iibv];
          krit = log(sigma_init) + penIC[0];
@@ -952,10 +972,14 @@ void mixtrl0b( int* n1, int* siind, double* wi, int* ngrad, int* maxcomp, int* m
          for(k = maxcompc; k > 0; k--){
             if(k < ord){
                if(k != maxcompc){
-                  for (l = 0; l < param_length-2; l++){
+                  for (l = 0; l < param_length-1; l++){
                      param_tmp[l] = param_work[l];
                   }
-                  param_length=3*k;
+                  param_tmp[3*k] = param_work[3*k+3];
+                  param_length=3*k+1;
+                  lower[3*k] = 0.;
+                  upper[3*k] = 1.; // si are standardized by maxs0
+                  nbd[3*k] = 2;
 
                   for(l= 0; l < param_length; l++){
                      param_work[l] = param_tmp[l];
@@ -973,6 +997,7 @@ void mixtrl0b( int* n1, int* siind, double* wi, int* ngrad, int* maxcomp, int* m
                // initialize ret_val to avoid warnings
                mfunrskmb0_ret ret_val;
                ret_val.order = 0;
+               ret_val.w0 = 0;
                ret_val.mix = NULL;
                ret_val.orient = NULL;
                ret_val.param = NULL;
@@ -1017,9 +1042,10 @@ void mixtrl0b( int* n1, int* siind, double* wi, int* ngrad, int* maxcomp, int* m
 
                   order_ret[iibv] = ret_val.order;
 
+                  mix_ret[(maxcompc+1)*iibv] = ret_val.w0;
                   for(l = 0; l < ord; l++){
-                     mix_ret[l+(maxcompc+1)*iibv] = ret_val.mix[l];
-                     orient_ret[0+2*l+2*maxcompc*iibv] = ret_val.orient[l*2];
+                     mix_ret[l+1+(maxcompc+1)*iibv] = ret_val.mix[l];
+                     orient_ret[2*l+2*maxcompc*iibv] = ret_val.orient[l*2];
                      orient_ret[1+2*l+2*maxcompc*iibv] = ret_val.orient[1+l*2];
                   }
                   for(l = ord; l < maxcompc; l++){
