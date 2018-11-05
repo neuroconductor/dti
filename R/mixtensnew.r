@@ -80,8 +80,8 @@ function(object, maxcomp=3,
     lambdahat <- ev[3,,,] #
     # use third ev instead of (ev[2,,,]+ev[3,,,])/2 to avoid effects from mixtures
     alphahat <- if(imodel==2) (ev[1,,,]-lambdahat)/lambdahat else alpha
-    lambdahat <- median(lambdahat[!is.na(alphahat)&fa>.5])
-    if(imodel==2) alphahat <- median(alphahat[!is.na(alphahat)&fa>.5])
+    lambdahat <- median(lambdahat[!is.na(alphahat)&fa>.6])
+    if(imodel==2) alphahat <- max(5,median(alphahat[!is.na(alphahat)&fa>.6]))
     fahat <- alphahat/sqrt(3+2*alphahat+alphahat^2)
     cat("Using lambda_2=",lambdahat,"fa=",fahat," and alpha=",alphahat,"in initial estimates\n")
 
@@ -304,7 +304,7 @@ function(object, maxcomp=3,
     }
     th0 <- apply(mix,2:4,sum)
     order[th0==0] <- 0
-    mix <- sweep(mix[-1,,,],2:4,th0,"/")
+    mix <- sweep(mix[-1,,,,drop=FALSE],2:4,th0,"/")
     mix[is.na(mix)] <- 0
     if(any(mix<0)){
        cat("neg. weights:", sum(mix<0), "minimum", min(mix)," replaced by 0\n")
