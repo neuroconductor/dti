@@ -186,6 +186,11 @@ setMethod("plot", "dwiMixtensor", function(x, y, slice=1, view="axial", what="fa
   stats <- extract(x,what)
   oldpar <- par(mfrow=c(1,length(what)),mar=mar,mgp=mgp,...)
   on.exit(par(oldpar))
+  if("w0" %in% what){
+    w0 <- drop(stats$w0)
+    show.image(img <- make.image(65535*w0))
+    title(paste("Slice",slice,"Isotropic compartment size"))
+  }
   if("fa" %in% what){
     fa <- drop(stats$fa)
     if(!is.null(minfa)) fa[fa<minfa] <- 0
