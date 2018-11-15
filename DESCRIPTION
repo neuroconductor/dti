@@ -33,6 +33,7 @@ Suggests: covr, testthat
 RoxygenNote: 6.1.0
 Encoding: UTF-8
 biocViews:
+Repository: Neuroconductor
 Remotes: 
-    neuroconductor/oro.nifti@abbfadf8976d2c29f518c76580d9095d3994439e,
-    neuroconductor/oro.dicom@0b19578a855e7d48adb85654679481334cee6c23
+    neuroconductor/oro.nifti@f2b69621fdb62e21c79a13e8a16ab30f49b77efc,
+    neuroconductor/oro.dicom@3ac5f406d10cf29bc8ca35cf33be5986e045591a
