@@ -425,5 +425,5 @@ setMethod("plot", "dkiIndices", function(x,
          mk2 = image(xind, yind, x@mk2[xind, yind, slice], col=grey(0:255/255), asp=TRUE, ...),
          kaxial = image(xind, yind, x@kaxial[xind, yind, slice], col=grey(0:255/255), asp=TRUE, ...),
          kradial = image(xind, yind, x@kradial[xind, yind, slice], col=grey(0:255/255), asp=TRUE, ...),
-         fak = image(xind, yind, x@fak[xind, yind, slice], col=grey(0:255/255), ...))
+         fak = image(xind, yind, x@fak[xind, yind, slice], col=grey(0:255/255), asp=TRUE, ...))
 })

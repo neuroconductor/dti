@@ -837,7 +837,7 @@ setMethod("extract","dtiData",function(x,
 #############
 
 setMethod("extract","dwiMixtensor",function(x,
-                                            what=c("andir","order","ev","mix","s0","mask","fa","eorder","bic","aic"),
+                              what=c("w0","andir","order","ev","mix","s0","mask","fa","eorder","bic","aic"),
                                             xind=TRUE, yind=TRUE, zind=TRUE){
   what <- tolower(what)
   ## check what
@@ -863,6 +863,10 @@ setMethod("extract","dwiMixtensor",function(x,
     z$ev <- ev
   }
   if("mix" %in% what) z$mix <- x@mix
+  if("w0" %in% what){
+     mix <- x@mix
+     z$w0 <- 1-apply(mix,2:4,sum)
+  }
   if("andir" %in% what) {
     orient <- x@orient
     andir <- array(0,c(3,prod(dim(orient))/2))

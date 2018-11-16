@@ -16,7 +16,7 @@ setGeneric("dkiTensor", function(object, ...) standardGeneric("dkiTensor"))
 setMethod("dkiTensor", "dtiData",
           function(object, method=c("CLLS-QP", "CLLS-H", "ULLS", "QL", "NLR") ,
                    sigma = NULL,
-                   L = 1, 
+                   L = 1,
                    mask = NULL,
                    mc.cores = setCores(, reprt = FALSE),
                    verbose = FALSE) {
@@ -46,7 +46,7 @@ setMethod("dkiTensor", "dtiData",
             mbv <- max(bvalues)
             bvalues <- bvalues/mbv
 #            maxbv <- max(bvalues)
-            
+
             Dind <- c(1, 4, 5, 2, 6, 3)
 
             ## check for outliers and
@@ -103,17 +103,9 @@ setMethod("dkiTensor", "dtiData",
                   mi <- maskind[i]
                   ## Tabesh Eq. [12]
                   Tabesh_B <- -ttt[,i]
-                  svdDmat <- svd(Dmat)
-                  maxsv <- sqrt(max(svdDmat$d))
-                  invzd <- 1/svdDmat$d
-                  invzd[svdDmat$d<1e-8] <- 0
-#                  Rmat <- diag(1/pmax(maxsv*1e-8,sqrt(z$d)))%*%t(z$u)
-                  Rmat <- diag(sqrt(invzd))%*%t(svdDmat$u)
-                  ## TODO: PERFORM SOME TEST BEFORE IT!!
-
                   ## QP solution
                   dvec <- as.vector(t(Tabesh_A) %*% Tabesh_B)
-                  resQPsolution <- solve.QP(Rmat, dvec, Amat,factorized=TRUE)$solution
+                  resQPsolution <- solve.QP(Dmat, dvec, Amat,factorized=FALSE)$solution
                   D[, mi] <- resQPsolution[Dind] / mbv # re-order DT estimate to comply with dtiTensor
 
                   ## Tabesh Eq. [9]
@@ -127,9 +119,9 @@ setMethod("dkiTensor", "dtiData",
               }
             }
 
-            
+
             if (method == "QL") {
-              
+
               if(is.null(sigma)) stop("please provide sigma")
               if(length(sigma)==1) sigma <- array(sigma,ddim[1:3])
               if(any(sigma[mask]<1e-4)) stop("all sigma values in mask need to be positive")
@@ -157,14 +149,14 @@ setMethod("dkiTensor", "dtiData",
                 vL <- pmax(1e-8, 2*L + gvalue^2 - muL^2)
                 ## avoid negative variances that may result due to approximations
                 ## within the iteration process
-                
+
                 ## factor sigma in muL and sigma^2 in vL cancels in the quotient
                 sum((si/sigma - muL)^2/vL)
               }
-              
+
               dim(D) <- c(6, ddim)
               dim(W) <- c(15, ddim)
-              
+
               if (verbose) pb <- txtProgressBar(min = 0, max = ddim[3], style = 3)
               i <- 0
               for (iz in 1:ddim[3]){
@@ -176,7 +168,7 @@ setMethod("dkiTensor", "dtiData",
                       param[1:6] <- param[c(1,4,6,2,3,5)] * mbv
                       param[7:21] <- param[7:21]*mean(param[1:3])^2
                       param <- optim(param,
-                                     dkiModel, si = z$si[,i], sigma = sigma[ix, iy, iz], A = A, L = L, CL = CL, 
+                                     dkiModel, si = z$si[,i], sigma = sigma[ix, iy, iz], A = A, L = L, CL = CL,
                                      method="BFGS",
                                      control = list(reltol = 1e-6,
                                                     maxit = 100))$par
@@ -188,20 +180,20 @@ setMethod("dkiTensor", "dtiData",
                 if (verbose) setTxtProgressBar(pb, iz)
               }
               if (verbose) close(pb)
-              
-              
+
+
             }
              if (method == "NLR") {
-              
+
               xxx <- dkiDesign(object@gradient)
               bvalues <- object@bvalue/mbv
               AD <- xxx[, 1:6]
               AK <- xxx[, 7:21]
-              
+
               ## Tabesh Eq. [10]
               A <- cbind(sweep(AD, 1, - bvalues, "*"),
                          sweep(AK, 1, bvalues^2/6, "*"))
-              
+
               dkiModel <- function(param, si, A){
                 ##
                 ##  Risk function for Diffusion Kurtosis model with nonlinear regression
@@ -210,14 +202,14 @@ setMethod("dkiTensor", "dtiData",
                 gvalue <- param[22] * exp(A%*%param[1:21])
                 ## avoid negative variances that may result due to approximations
                 ## within the iteration process
-                
+
                 ## factor sigma in muL and sigma^2 in vL cancels in the quotient
                 sum((si - gvalue)^2)
               }
-              
+
               dim(D) <- c(6, ddim)
               dim(W) <- c(15, ddim)
-              
+
               if (verbose) pb <- txtProgressBar(min = 0, max = ddim[3], style = 3)
               i <- 0
               for (iz in 1:ddim[3]){
@@ -230,7 +222,7 @@ setMethod("dkiTensor", "dtiData",
                       param[7:21] <- param[7:21]*mean(param[1:3])^2
 
                       param <- optim(param,
-                                     dkiModel, si = object@si[ix,iy,iz,], A = A, 
+                                     dkiModel, si = object@si[ix,iy,iz,], A = A,
                                      method="BFGS",
                                      control = list(reltol = 1e-6,
                                                     maxit = 100))$par
@@ -242,10 +234,10 @@ setMethod("dkiTensor", "dtiData",
                 if (verbose) setTxtProgressBar(pb, iz)
               }
               if (verbose) close(pb)
-              
-              
+
+
             }
-           
+
             # if (method == "NLR" || method == "QL"){
             #   if (!require(Rsolnp)) return("dkiTensor: did not find package Rsolnp, please install for the NLR method")
             #   ttt <- sweep(z$si[-s0ind,],2,as.vector(z$s0),"/")
@@ -284,14 +276,14 @@ setMethod("dkiTensor", "dtiData",
             #       cat("diagnostics: vals",solnpres$values,"nfunc",solnpres$nfuneval,
             #           "time",solnpres$elapsed,"\n")
             #       cat(format(Sys.time()),"\n")
-            #       
+            #
             #     }
             #     D[, mi] <- param[Dind]/mbv # re-order DT estimate to comply with dtiTensor
             #     W[, mi] <- param[7:21] / mean(param[1:3])^2 #
             #   }
             # }
-            
-              
+
+
             if (method == "CLLS-H") {
 
               ## these are the distinct bvalues
@@ -374,7 +366,7 @@ setMethod("dkiTensor", "dtiData",
                 dim(Kmax) <- dim(DiR)# DiR is a vector
                 Kmax[DiR > 0] <- C / bv[2] / DiR[DiR > 0]
                 ind <- (KiR > Kmax)
-                KiR[ind] <- Kmax[ind] 
+                KiR[ind] <- Kmax[ind]
                 ind <- (KiR < Kmin)
                 KiR[ind] <- Kmin
 
