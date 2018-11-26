@@ -35,5 +35,5 @@ Encoding: UTF-8
 biocViews:
 Repository: Neuroconductor
 Remotes: 
-    neuroconductor/oro.nifti@a2f1fdf61ccdabee21bbd55717170ae478e2ff9d,
-    neuroconductor/oro.dicom@43725aac4f657f4384804ddaa8b8a8bb3af6ab12
+    neuroconductor/oro.nifti@8362fa023b073cd5d0beec0f0be33a50944fe1d7,
+    neuroconductor/oro.dicom@aa5a0f232f1920e3d82bc7091067f545a924f14e
