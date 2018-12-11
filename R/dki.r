@@ -133,7 +133,7 @@ setMethod("dkiTensor", "dtiData",
               ## Tabesh Eq. [10]
               A <- cbind(sweep(AD, 1, - bvalues, "*"),
                          sweep(AK, 1, bvalues^2/6, "*"))
-              dkiModel <- function(param, si, sigma, A, L, CL){
+              dkiModelQL <- function(param, si, sigma, A, L, CL){
                 ##
                 ##  Risk function for Diffusion Kurtosis model with
                 ##  Gauss-approximation for noncentral chi
@@ -168,7 +168,7 @@ setMethod("dkiTensor", "dtiData",
                       param[1:6] <- param[c(1,4,6,2,3,5)] * mbv
                       param[7:21] <- param[7:21]*mean(param[1:3])^2
                       param <- optim(param,
-                                     dkiModel, si = z$si[,i], sigma = sigma[ix, iy, iz], A = A, L = L, CL = CL,
+                                     dkiModelQL, si = z$si[,i], sigma = sigma[ix, iy, iz], A = A, L = L, CL = CL,
                                      method="BFGS",
                                      control = list(reltol = 1e-6,
                                                     maxit = 100))$par

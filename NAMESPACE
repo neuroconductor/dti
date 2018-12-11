@@ -26,4 +26,3 @@ exportMethods("extract", "show3d", "tracking", "selectFibers", "reduceFibers",
 export(dtiData, readDWIdata, subsetg, combineDWIdata, awssigmc, awslsigmc, afsigmc,
        aflsigmc, dkiIndices, showFAColorScale, tensor2medinria, medinria2tensor)
 #export(hg1f1)
-export(dwiMixtensnew)

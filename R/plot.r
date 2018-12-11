@@ -64,7 +64,8 @@ setMethod("plot", "dtiData", function(x, y,slice=1, gradient=NULL, view= "axial"
 
 setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, minfa=NULL,
                                         contrast.enh=1,what="fa", qrange=c(.01,.99),
-                                        xind=NULL,yind=NULL,zind=NULL, mar=par("mar"),mgp=par("mgp"),...) {
+                                        xind=NULL,yind=NULL,zind=NULL, mar=par("mar"),
+                                        mgp=par("mgp"),...) {
   if(is.null(x@D)) cat("No diffusion tensor yet")
   #adimpro <- require(adimpro)
   if(is.null(xind)) xind<-(1:x@ddim[1])
@@ -189,28 +190,28 @@ setMethod("plot", "dwiMixtensor", function(x, y, slice=1, view="axial", what="fa
   if("w0" %in% what){
     w0 <- drop(stats$w0)
     show.image(img <- make.image(65535*w0))
-    title(paste("Slice",slice,"Isotropic compartment size"))
+    title(paste("Isotropic compartment size"))
   }
   if("fa" %in% what){
     fa <- drop(stats$fa)
     if(!is.null(minfa)) fa[fa<minfa] <- 0
     show.image(img <- make.image(65535*fa))
-    title(paste("Slice",slice,"effective FA"))
+    title(paste("effective FA"))
   }
   if("order" %in% what){
     order <- drop(stats$order)
     show.image(img <- make.image(65535*order/max(order)))
-    title(paste("Slice",slice,"Order of mixture (Maximum=",max(order),")"))
+    title(paste("Order of mixture (Maximum=",max(order),")"))
   }
   if("eorder" %in% what){
     eorder <- drop(stats$eorder)
     show.image(img <- make.image(65535*eorder/max(eorder)))
-    title(paste("Slice",slice,"Effective order of mixture (Maximum=",signif(max(eorder),2),")"))
+    title(paste("Eff. order of mixture (Maximum=",signif(max(eorder),2),")"))
   }
   if("ev" %in% what){
     ev <- drop(stats$ev[1,,,])
     show.image(img <- make.image(65535*ev/max(ev)))
-    title(paste("Slice",slice,"Maximal Eigenvalue (Maximum=",signif(max(ev),3),")"))
+    title(paste("Maximal Eigenvalue (Maximum=",signif(max(ev),3),")"))
   }
   if(identify){
     xind<-(1:x@ddim[1])

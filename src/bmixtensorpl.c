@@ -497,7 +497,7 @@ void mixtrl2b( int* n1, int* siind, double* wi, int* ngrad, int* maxcomp, int* m
 // lower values for lambda and alpha to get lambda_1>=lambda_2>=0
          lower[3*maxcompc] = 0;//w0
          upper[3*maxcompc] = 1;//w0
-         lower[3*maxcompc+1] = 0.;//lambda
+         lower[3*maxcompc+1] = 1e-4;//lambda
          upper[3*maxcompc+1] = 10;
          lower[3*maxcompc+2] = 0.5;//alpha
          upper[3*maxcompc+2] = 10;
@@ -735,7 +735,7 @@ void mixtrl1b( int* n1, int* siind, double* wi, int* ngrad, int* maxcomp, int* m
          }
          lower[3*maxcompc] = 0;//w0
          upper[3*maxcompc] = 1;//w0
-         lower[3*maxcompc+1] = 0.;//lambda
+         lower[3*maxcompc+1] = 1e-4;//lambda
          upper[3*maxcompc+1] = 10;
          nbd[3*maxcompc] = 2;
 	       nbd[3*maxcompc+1] = 2;

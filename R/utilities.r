@@ -71,7 +71,7 @@ setMethod("sdpar", "dtiData", function(object,
       lines(c(A0,A0),c(0,max(z$y)/2),col=2,lwd=2)
       legend(min(A0,0.25*max(z$x)),ylim[2],c("Full cube",paste("Central",(n1*100)%/%n,"%"),
                                              paste("Central",(n2*100)%/%n,"%"),paste("Central",(n3*100)%/%n,"%")),col=1:4,lwd=rep(1,4))
-      cat("A good cut off point should be left of support of the density of grayvalues within the head\n")
+      cat("A good cut off point should be left of support \n of the density of grayvalues within the head\n")
       show.image(make.image(img/maximg))
       title("Central slice: Intensity values")
       show.image(make.image((img<A0)))
@@ -837,8 +837,8 @@ setMethod("extract","dtiData",function(x,
 #############
 
 setMethod("extract","dwiMixtensor",function(x,
-                              what=c("w0","andir","order","ev","mix","s0","mask","fa","eorder","bic","aic"),
-                                            xind=TRUE, yind=TRUE, zind=TRUE){
+            what=c("w0","andir","order","ev","mix","s0","mask",
+                  "fa","eorder","bic","aic"), xind=TRUE, yind=TRUE, zind=TRUE){
   what <- tolower(what)
   ## check what
   what <- match.arg(what, several.ok = TRUE)

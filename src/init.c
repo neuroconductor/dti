@@ -41,21 +41,6 @@ extern void mixture( int* n1, int* siind, int* ngrad0, int* maxcomp,
   double* penIC, double* sigma2, double* vert, double* siq_in,
   double* sigma2_ret, double* orient_ret, int* order_ret, double* lev_ret,
   double* mix_ret );
-extern void mixtrl0( int* n1, int* siind, int* ngrad0, int* maxcomp,
-  int* maxit, double* grad_in, double* bv_in, double* lambda_in,
-  double* alpha_in, double* factr, double* penIC, double* sigma2,
-  double* vert, double* siq_in, double* sigma2_ret, double* orient_ret,
-  int* order_ret, double* mix_ret);
-extern void mixtrl1( int* n1, int* siind, int* ngrad0, int* maxcomp,
-  int* maxit, double* grad_in, double* bv_in, double* lambda_in,
-  double* alpha_in, double* factr, double* penIC, double* sigma2,
-  double* vert, double* siq_in, double* sigma2_ret, double* orient_ret,
-  int* order_ret, double* lambda_ret, double* mix_ret);
-extern void mixtrl2( int* n1, int* siind, int* ngrad0, int* maxcomp,
-  int* maxit, double* grad_in, double* bv_in, double* lambda_in,
-  double* alpha_in, double* factr, double* penIC, double* sigma2,
-  double* vert, double* siq_in, double* sigma2_ret, double* orient_ret,
-  int* order_ret, double* alpha_ret, double* lambda_ret, double* mix_ret);
 extern void mixtrl0b( int* n1, int* siind, double* wi, int* ngrad, int* maxcomp,
   int* maxit, double* grad_in, double* bv_in, double* lambda_in,
   double* alpha_in, double* factr, double* penIC, double* sigma2,
@@ -77,16 +62,6 @@ static R_NativePrimitiveArgType dtens_t[]={INTSXP, REALSXP, REALSXP,
 static R_NativePrimitiveArgType mixture_t[]={INTSXP, INTSXP, INTSXP,
   INTSXP, INTSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP,
   REALSXP, REALSXP, REALSXP, REALSXP, INTSXP, REALSXP, REALSXP};
-static R_NativePrimitiveArgType mixtrl0_t[]={INTSXP, INTSXP, INTSXP,
-  INTSXP, INTSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP,
-  REALSXP, REALSXP, REALSXP, REALSXP, REALSXP, INTSXP, REALSXP};
-static R_NativePrimitiveArgType mixtrl1_t[]={INTSXP, INTSXP, INTSXP,
-  INTSXP, INTSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP,
-  REALSXP, REALSXP, REALSXP, REALSXP, REALSXP, INTSXP, REALSXP, REALSXP};
-static R_NativePrimitiveArgType mixtrl2_t[]={INTSXP, INTSXP, INTSXP,
-  INTSXP, INTSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP,
-  REALSXP, REALSXP, REALSXP, REALSXP, REALSXP, INTSXP, REALSXP, REALSXP,
-  REALSXP};
 static R_NativePrimitiveArgType mixtrl0b_t[]={INTSXP, INTSXP, REALSXP, INTSXP,
   INTSXP, INTSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP,
   REALSXP, REALSXP, REALSXP, REALSXP, REALSXP, INTSXP, REALSXP};
@@ -100,9 +75,6 @@ static R_NativePrimitiveArgType mixtrl2b_t[]={INTSXP, INTSXP, REALSXP, INTSXP,
 static const R_CMethodDef CMethods[] = {
             {"dtens", (DL_FUNC) &dtens, 10, dtens_t},
             {"mixture", (DL_FUNC) &mixture, 18, mixture_t},
-            {"mixtrl0", (DL_FUNC) &mixtrl0, 18, mixtrl0_t},
-            {"mixtrl1", (DL_FUNC) &mixtrl1, 19, mixtrl1_t},
-            {"mixtrl2", (DL_FUNC) &mixtrl2, 20, mixtrl2_t},
             {"mixtrl0b", (DL_FUNC) &mixtrl0b, 19, mixtrl0b_t},
             {"mixtrl1b", (DL_FUNC) &mixtrl1b, 20, mixtrl1b_t},
             {"mixtrl2b", (DL_FUNC) &mixtrl2b, 21, mixtrl2b_t},
@@ -199,10 +171,6 @@ void F77_NAME(getsii31)( double* si, double* vsi, int* ngrad, int* nvox,
   int* m, double* dgrad, int* nv, int* iandir, double* th, int* nth,
   int* indth, double* egrad, int* isample, int* ntry, double* sms, double* z,
   int* siind, double* mval, int* ns, int* mask, double* dgradv, double* maxc);
-void F77_NAME(getsii)( double* si, double* vsi, int* ngrad, int* nvox,
-  int* m, double* dgrad, double* bv, int* nv, double* alpha, double* lambda,
-  double* egrad, int* isample, int* ntry, double* sms, double* z0, double* z,
-  int* siind, double* mval, int* ns);
 void F77_NAME(getsiibv)( double* si, int* ngrad, int* nvox,
   int* m, double* dgrad, double* bv, int* nv, double* alpha, double* lambda,
   double* egrad, int* isample, int* ntry, double* sms, double* z0, double* z,
@@ -365,9 +333,6 @@ static R_NativePrimitiveArgType getsii31_t[]={REALSXP, REALSXP, INTSXP,
   INTSXP, INTSXP, REALSXP, INTSXP, INTSXP, REALSXP, INTSXP, INTSXP, REALSXP,
   INTSXP, INTSXP, REALSXP, REALSXP, INTSXP, REALSXP, INTSXP, LGLSXP, REALSXP,
   REALSXP};
-static R_NativePrimitiveArgType getsii_t[]={REALSXP, REALSXP, INTSXP,
-  INTSXP, INTSXP, REALSXP, REALSXP, INTSXP, REALSXP, REALSXP, REALSXP,
-  INTSXP, INTSXP, REALSXP, REALSXP, REALSXP, INTSXP, REALSXP, INTSXP};
 static R_NativePrimitiveArgType getsiibv_t[]={REALSXP, INTSXP, INTSXP,
   INTSXP, REALSXP, REALSXP, INTSXP, REALSXP, REALSXP, REALSXP, INTSXP,
   INTSXP, REALSXP, REALSXP, REALSXP, INTSXP, REALSXP, REALSXP, INTSXP};
@@ -480,7 +445,6 @@ static const R_FortranMethodDef FMethods[] = {
             {"getmsth0", (DL_FUNC) &getmsth0_ , 4, getmsth0_t},
             {"getsii30", (DL_FUNC) &getsii30_ , 19, getsii30_t},
             {"getsii31", (DL_FUNC) &getsii31_ , 22, getsii31_t},
-            {"getsii", (DL_FUNC) &getsii_ , 19, getsii_t},
             {"getsiibv", (DL_FUNC) &getsiibv_ , 19, getsiibv_t},
             {"getvofh", (DL_FUNC) &getvofh_ , 4, getvofh_t},
             {"ghfse3i", (DL_FUNC) &ghfse3i_ , 10, ghfse3i_t},
