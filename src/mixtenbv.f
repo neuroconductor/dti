@@ -486,11 +486,11 @@ C
       implicit logical (a-z)
       integer nvox,ngrad,ns,siind(ns,nvox),m,ntry,nv,
      1       isample(m,ntry)
-      real*8 si(ngrad,nvox),sms(ngrad),dgrad(ngrad,nv),
+      double precision si(ngrad,nvox),sms(ngrad),dgrad(ngrad,nv),
      1       egrad(ngrad,nv),z(ngrad,ns),mval(nvox),
      2       wi(ns,nvox),bv(ngrad),alpha,lambda,z0(ngrad)
       integer i,k,ibest,mode,ind(10),l,ii,iw,wind(6),nwi(6)
-      real*8 w(1000),krit,work1(1000),work2(12),erg,msi,m2si,
+      double precision w(1000),krit,work1(1000),work2(12),erg,msi,m2si,
      1       z1,dng,albv,lbv,w0
       dng=ngrad
       iw=m
@@ -581,10 +581,10 @@ C   sweep s0 from si to generate  siq
 C   calculate variance of siq
 C
       integer n,ng0,ng1,level
-      real*8 s0(ng0,n),ms0(n)
+      double precision s0(ng0,n),ms0(n)
       logical mask(n),maskk
       integer i,k
-      real*8 s,z,z2,thresh,s0mean
+      double precision s,z,z2,thresh,s0mean
       thresh = max(1,level*ng0)
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(s0,n,ng0,ms0,mask,thresh)
