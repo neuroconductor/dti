@@ -330,7 +330,7 @@ setMethod("show3d","dwiMixtensor", function(obj,
     rgl.bg(color=bgcolor)
   }
   if(what %in% c("odf","both")) show3dODF(radii,polyeder,centers=tmean,minalpha=minalpha,...)
-  if(what %in% c("axis","both"))  rgl.lines(lcoord[1,],lcoord[2,],lcoord[3,],color=colorvalues,size=lwd)
+  if(what %in% c("axis","both"))  rgl.lines(lcoord[1,],lcoord[2,],lcoord[3,],color=colorvalues,lwd=lwd)
   if(fibers){
     tracks <- tracking(obj,mask=mask,minfa=minfa,maxangle=maxangle)
     dd <- tracks@fibers
@@ -338,7 +338,7 @@ setMethod("show3d","dwiMixtensor", function(obj,
     dd <- expandFibers(dd,startind)$fibers
     rgl.lines(dd[,1]+vext[1]/2,dd[,2]+vext[2]/2,dd[,3]+vext[3]/2,
               color=rgb(abs(dd[,4]),abs(dd[,5]),abs(dd[,6])),
-              size=lwd)
+              lwd=lwd)
   }
   if(box) bbox3d()
   if(is.character(title)) {
@@ -405,7 +405,7 @@ setMethod("show3d","dtiIndices", function(obj,
     par3d(...)
     rgl.bg(color=bgcolor)
   }
-  rgl.lines(lcoord[1,],lcoord[2,],lcoord[3,],color=colorvalues,size=lwd)
+  rgl.lines(lcoord[1,],lcoord[2,],lcoord[3,],color=colorvalues,lwd=lwd)
   if(box) bbox3d()
   if(is.character(title)) {
     title3d(title,color="white",cex=1.5)
@@ -521,7 +521,7 @@ setMethod("show3d","dwiFiber", function(obj,
   dd <- expandFibers(dd,startind,delta)$fibers
   rgl.lines(dd[,1],dd[,2],dd[,3],
             color=rgb(abs(dd[,4]),abs(dd[,5]),abs(dd[,6])),
-            size=lwd)
+            lwd=lwd)
   if(box) bbox3d()
   if(is.character(title)) {
     title3d(title,color="white",cex=1.5)
