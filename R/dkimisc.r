@@ -148,8 +148,10 @@ kurtosisFunctionF1<- function(l1, l2, l3) {
   #require(gsl)
   ## Tabesh et al. Eq. [28], [A9, A12]
 
-  l2[l2<1e-10] <- 1e-10
-  l3[l3<1e-10] <- 1e-10
+  l1[l1 < 2e-10] <- 2e-10
+  l2[l2 < 1.5e-10] <- 1.5e-10
+  l3[l3 < 1e-10] <- 1e-10
+
   ## to avois NA's sqrt(l2i*l3i) require tensor eigenvalues to be positive
 
   ## consider removable singularities!!
@@ -193,8 +195,9 @@ kurtosisFunctionF2 <- function(l1, l2, l3) {
     z[x < 0] <- 1/sqrt(-x[x < 0]) * atan(sqrt(-x[x < 0]))
     z
   }
-  l2[l2<1e-10] <- 1e-10
-  l3[l3<1e-10] <- 1e-10
+  l1[l1 < 2e-10] <- 2e-10
+  l2[l2 < 1.5e-10] <- 1.5e-10
+  l3[l3 < 1e-10] <- 1e-10
   ## to avois NA's sqrt(l2i*l3i) require tensor eigenvalues to be positive
 
   ## consider removable singularities!!
