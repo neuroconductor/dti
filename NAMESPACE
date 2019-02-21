@@ -14,7 +14,7 @@ importFrom("stats", "IQR", "as.dist", "bw.nrd", "coef", "coefficients",
            "runif", "sd")
 importFrom("utils", "data", "setTxtProgressBar", "txtProgressBar")
 
-
+export("AdjacencyMatrix")
 exportClasses("dwi", "dtiData", "dtiTensor", "dtiIndices", "dwiQball",
               "dwiMixtensor", "dwiFiber", "dkiTensor", "dkiIndices")
 exportMethods("show", "plot", "print", "summary", "dti.smooth", "dtiTensor",
