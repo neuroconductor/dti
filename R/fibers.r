@@ -274,7 +274,8 @@ setMethod("touchingFibers",c("dwiFiber","dwiFiber"), function(obj,obj2,maxdist=1
 )
 
 AdjacencyMatrix <- function(fiberobj, atlas, labels=NULL,
-   method=c("standardize","counts"), diagelements=FALSE, verbose=FALSE){
+   method=c("standardize","counts"), diagelements=FALSE,
+   symmetric=TRUE, verbose=FALSE){
    levels <- sort(unique(as.vector(atlas)))
    levels <- levels[levels>0]
    if(length(levels)>500) stop("to many levels, probably not an atlas")
@@ -308,15 +309,23 @@ AdjacencyMatrix <- function(fiberobj, atlas, labels=NULL,
       amat[nlevel,nlevel] <- nfibers1
       if(verbose) cat("region",nlevel,"count",nfibers1,"\n")
     }
-   if(method=="standardize") amat <- standardizeAdjmatrix(amat,diagelements)
+   if(method=="standardize") amat <-
+         standardizeAdjmatrix(amat, diagelements, symmetric)
    amat
  }
 
- standardizeAdjmatrix <- function(amat, diagelements=FALSE){
+ standardizeAdjmatrix <- function(amat, diagelements=FALSE, symmetric=TRUE){
    dmat <- diag(amat)
    ind <- dmat>0
-   dmat <- diag(1/sqrt(dmat[ind]))
-   amat[ind,ind] <- dmat%*%amat[ind,ind]%*%dmat
+   if(symmetric){
+     dmat <- diag(1/sqrt(dmat[ind]))
+     amat[ind,ind] <- dmat%*%amat[ind,ind]%*%dmat
+   } else {
+     amat1 <- amat2 <- amat
+     d <- dim(amat)
+     dmat <- diag(1/dmat[ind])
+     amat[ind,ind] <- dmat%*%amat[ind,ind]
+   }
    if(!diagelements) diag(amat) <- 0
    amat
  }
