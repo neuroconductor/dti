@@ -16,6 +16,21 @@ setMethod("plot", "dtiData", function(x, y,slice=1, gradient=NULL, view= "axial"
   if(is.null(xind)) xind<-(1:x@ddim[1])
   if(is.null(yind)) yind<-(1:x@ddim[2])
   if(is.null(zind)) zind<-(1:x@ddim[3])
+
+# reorient plots depending on .dtiopts
+  impars <- get(".dtiopts",envir=.dtiOpts)
+  if(impars$swapx){
+     x@si <- x@si[x@ddim[1]:1,,,]
+     xind <- sort((x@ddim[1]+1)-xind)
+  }
+  if(impars$swapy){
+     x@si <- x@si[,x@ddim[2]:1,,]
+     yind <- sort((x@ddim[2]+1)-yind)
+  }
+  if(impars$swapz){
+     x@si <- x@si[,,x@ddim[3]:1,]
+     zind <- sort((x@ddim[3]+1)-zind)
+  }
   if(is.null(gradient)) gradient <- x@s0ind[1]
   if(gradient<1||gradient>x@ngrad) {
     warning("gradient number out of range, show s0 image")
@@ -67,10 +82,28 @@ setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, mi
                                         xind=NULL,yind=NULL,zind=NULL, mar=par("mar"),
                                         mgp=par("mgp"),...) {
   if(is.null(x@D)) cat("No diffusion tensor yet")
-  #adimpro <- require(adimpro)
   if(is.null(xind)) xind<-(1:x@ddim[1])
   if(is.null(yind)) yind<-(1:x@ddim[2])
   if(is.null(zind)) zind<-(1:x@ddim[3])
+
+  # reorient plots depending on .dtiopts
+    impars <- get(".dtiopts",envir=.dtiOpts)
+  if(impars$swapx){
+     x <- x[x@ddim[1]:1,,]
+     xind <- sort((x@ddim[1]+1)-xind)
+     if(view == "sagittal") slice <- x@ddim[1]+1-slice
+  }
+  if(impars$swapy){
+     x <- x[,x@ddim[2]:1,]
+     yind <- sort((x@ddim[2]+1)-yind)
+     if(view == "coronal") slice <- x@ddim[2]+1-slice
+  }
+  if(impars$swapz){
+     x <- x[,,x@ddim[3]:1]
+     zind <- sort((x@ddim[3]+1)-zind)
+     if(view == "axial") slice <- x@ddim[3]+1-slice
+  }
+
   if (view == "sagittal") {
     D <- x@D[,slice,yind,zind]
     mask <- x@mask[slice,yind,zind]
@@ -176,6 +209,25 @@ setMethod("plot", "dwiMixtensor", function(x, y, slice=1, view="axial", what="fa
   if(is.null(xind)) xind<-(1:x@ddim[1])
   if(is.null(yind)) yind<-(1:x@ddim[2])
   if(is.null(zind)) zind<-(1:x@ddim[3])
+
+# reorient plots depending on .dtiopts
+  impars <- get(".dtiopts",envir=.dtiOpts)
+  if(impars$swapx){
+     x <- x[x@ddim[1]:1,,]
+     xind <- sort((x@ddim[1]+1)-xind)
+     if(view == "sagittal") slice <- x@ddim[1]+1-slice
+  }
+  if(impars$swapy){
+     x <- x[,x@ddim[2]:1,]
+     yind <- sort((x@ddim[2]+1)-yind)
+     if(view == "coronal") slice <- x@ddim[2]+1-slice
+  }
+  if(impars$swapz){
+     x <- x[,,x@ddim[3]:1]
+     zind <- sort((x@ddim[3]+1)-zind)
+     if(view == "axial") slice <- x@ddim[3]+1-slice
+  }
+
   if (view == "sagittal") {
     x <- x[slice,yind,zind]
   } else if (view == "coronal") {
@@ -241,6 +293,25 @@ setMethod("plot", "dtiIndices", function(x, y, slice=1, view= "axial", method=1,
   if(is.null(xind)) xind<-(1:x@ddim[1])
   if(is.null(yind)) yind<-(1:x@ddim[2])
   if(is.null(zind)) zind<-(1:x@ddim[3])
+
+# reorient plots depending on .dtiopts
+    impars <- get(".dtiopts",envir=.dtiOpts)
+  if(impars$swapx){
+     x <- x[x@ddim[1]:1,,]
+     xind <- sort((x@ddim[1]+1)-xind)
+     if(view == "sagittal") slice <- x@ddim[1]+1-slice
+  }
+  if(impars$swapy){
+     x <- x[,x@ddim[2]:1,]
+     yind <- sort((x@ddim[2]+1)-yind)
+     if(view == "coronal") slice <- x@ddim[2]+1-slice
+  }
+  if(impars$swapz){
+     x <- x[,,x@ddim[3]:1]
+     zind <- sort((x@ddim[3]+1)-zind)
+     if(view == "axial") slice <- x@ddim[3]+1-slice
+  }
+
   if(density) {
     x <- x[xind,yind,zind]
     z <- density(if(what=="fa") x@fa[x@fa>0] else x@ga[x@ga>0])
@@ -419,6 +490,25 @@ setMethod("plot", "dkiIndices", function(x,
                                          ...) {
   if(is.null(xind)) xind <- 1:x@ddim[1]
   if(is.null(yind)) yind <- 1:x@ddim[2]
+
+  # reorient plots depending on .dtiopts
+  impars <- get(".dtiopts",envir=.dtiOpts)
+  if(impars$swapx){
+     x <- x[x@ddim[1]:1,,]
+     xind <- sort((x@ddim[1]+1)-xind)
+#     if(view == "sagittal") slice <- x@ddim[1]+1-slice
+  }
+  if(impars$swapy){
+     x <- x[,x@ddim[2]:1,]
+     yind <- sort((x@ddim[2]+1)-yind)
+#     if(view == "coronal") slice <- x@ddim[2]+1-slice
+  }
+#  if(impars$swapz){
+#     x <- x[,,x@ddim[3]:1]
+#     zind <- sort((x@ddim[3]+1)-zind)
+#     if(view == "axial") slice <- x@ddim[3]+1-slice
+#  }
+
   switch(what,
          md = image(xind, yind, x@md[xind, yind, slice], col=grey(0:255/255), asp=TRUE, ...),
          fa = image(xind, yind, x@fa[xind, yind, slice], col=grey(0:255/255), asp=TRUE, ...),

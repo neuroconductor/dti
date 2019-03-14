@@ -1,3 +1,27 @@
+.dtiOpts <- new.env(TRUE,emptyenv())
+
+.onLoad <- function(lib, pkg){
+  assign(".dtiopts", list(
+               "swapx" = FALSE, "swapy" = FALSE,
+               "swapz" = FALSE),
+               envir = .dtiOpts)
+   dti.options()
+   invisible(NULL)
+}
+
+dti.options <- function(...){
+  args <- list(...)
+  imagepars <- get(".dtiopts", envir=.dtiOpts)
+  if(length(args)>0){
+  if("swapx" %in% names(args)) imagepars[["swapx"]] <- args[["swapx"]]
+  if("swapy" %in% names(args)) imagepars[["swapy"]] <- args[["swapy"]]
+  if("swapz" %in% names(args)) imagepars[["swapz"]] <- args[["swapz"]]
+  assign(".dtiopts", imagepars, envir = .dtiOpts)
+}
+  invisible(imagepars)
+}
+
+
 sioutlier1 <- function( si, s0ind, level, mask, mc.cores = 1, verbose = TRUE){
   ##
   ##   replace si values that are larger than s0

@@ -40,6 +40,11 @@ setMethod("sdpar", "dtiData", function(object,
   if(interactive) {
     oldpar <- par( mfrow = c( 1, 3), mar = c( 3, 3, 3, 1), mgp = c( 2, 1, 0))
     img <- if(ls0ind>1) s0mean[,,(object@ddim[3]-1)%/%2+1] else s0[,,(object@ddim[3]-1)%/%2+1]
+    impars <- get(".dtiopts",envir=.dtiOpts)
+    dimg <- dim(img)
+    if(impars$swapx) img <- img[dimg[1]:1,]
+    if(impars$swapy) img <- img[,dimg[2]:1]
+
     maximg <- max(img)
     accept <- FALSE
     ddim <- object@ddim
@@ -63,6 +68,7 @@ setMethod("sdpar", "dtiData", function(object,
     n2 <- length(indx2)*length(indy2)*length(indz2)
     n3 <- length(indx3)*length(indy3)*length(indz3)
     ylim <- range(z$y,z1$y*n1/n,z2$y*n2/n,z3$y*n3/n)
+
     while(!accept){
       plot(z,type="l",main="Density of S0 values and cut off point",ylim=ylim)
       lines(z1$x,z1$y*n1/n,col=2)

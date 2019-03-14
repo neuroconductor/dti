@@ -2,7 +2,8 @@ selectFibers <- function(obj,  ...) cat("Selection of fibers is not implemented 
 
 setGeneric("selectFibers", function(obj,  ...) standardGeneric("selectFibers"))
 
-setMethod("selectFibers","dwiFiber", function(obj, roix=NULL, roiy=NULL, roiz=NULL, mask=NULL, minlength=1)
+setMethod("selectFibers","dwiFiber", function(obj, roix=NULL, roiy=NULL, roiz=NULL,
+   mask=NULL, minlength=1)
 {
   #)
   #     extract fiber information and descriptions
