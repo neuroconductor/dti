@@ -14,31 +14,33 @@ platform: x64
 
 environment:
   global:
+    NOT_CRAN: true    
     USE_RTOOLS: true
     # R_CHECK_INSTALL_ARGS: "--install-args=--build --no-multiarch "
     R_CHECK_ARGS: "--no-multiarch --no-manual "
+    R_REMOTES_NO_ERRORS_FROM_WARNINGS: true    
     WARNINGS_ARE_ERRORS: 1
     PYTHON_VERSION: 3.6
     MINICONDA: C:\Miniconda3-x64
     R_ARCH: x64    
   matrix:
     - R_VERSION: devel
-      R_VER: 3.6
+      R_VER: 3.7
 
     - R_VERSION: release
-      R_VER: 3.5
+      R_VER: 3.6
 
     - R_VERSION: oldrel
+      CRAN: http://cran.rstudio.com
+      R_VER: 3.5
+
+    - R_VERSION: 3.4
       CRAN: http://cran.rstudio.com
       R_VER: 3.4
 
     - R_VERSION: 3.3.3
       CRAN: http://cran.rstudio.com
       R_VER: 3.3
-
-    - R_VERSION: 3.2.5
-      CRAN: http://cran.rstudio.com
-      R_VER: 3.2
 
 install:
   - ps: Bootstrap
@@ -132,3 +134,5 @@ deploy:
   prerelease: false
   on:
     appveyor_repo_tag: true
+
+# neuroc.deps commit id:320810a
