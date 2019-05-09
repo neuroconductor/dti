@@ -2,7 +2,8 @@ selectFibers <- function(obj,  ...) cat("Selection of fibers is not implemented 
 
 setGeneric("selectFibers", function(obj,  ...) standardGeneric("selectFibers"))
 
-setMethod("selectFibers","dwiFiber", function(obj, roix=NULL, roiy=NULL, roiz=NULL, mask=NULL, minlength=1)
+setMethod("selectFibers","dwiFiber", function(obj, roix=NULL, roiy=NULL, roiz=NULL,
+   mask=NULL, minlength=1)
 {
   #)
   #     extract fiber information and descriptions
@@ -272,3 +273,60 @@ setMethod("touchingFibers",c("dwiFiber","dwiFiber"), function(obj,obj2,maxdist=1
   obj
 }
 )
+
+AdjacencyMatrix <- function(fiberobj, atlas, labels=NULL,
+   method=c("standardize","counts"), diagelements=FALSE,
+   symmetric=TRUE, verbose=FALSE){
+   levels <- sort(unique(as.vector(atlas)))
+   levels <- levels[levels>0]
+   if(length(levels)>500) stop("to many levels, probably not an atlas")
+   if(is.null(labels)) labels <- as.character(levels)
+   nlevel <- length(levels)
+   amat <- matrix(0,nlevel,nlevel)
+   dimnames(amat) <- list(labels,labels)
+   nfibers <- length(fiberobj@startind)
+   for(i in 1:(nlevel-1)){
+      fibers1 <- selectFibers(fiberobj, mask= atlas==levels[i])
+      nfibers1 <- length(fibers1@startind)
+      if(nfibers1<nfibers){
+# otherwise no fibers found, original object was returned
+         amat[i,i] <- nfibers1
+         if(verbose) cat("region",i,"count",nfibers1,"\n")
+         for(j in (i+1):nlevel){
+            fibers2 <- selectFibers(fibers1, mask= atlas==levels[j])
+            nfibers2 <- length(fibers2@startind)
+            if(nfibers2<nfibers1){
+              # otherwise no fibers found, original object was returned
+              amat[i,j] <- amat[j,i] <- nfibers2
+              if(verbose) cat("regions",i,j,"count",nfibers2,"\n")
+            }
+         }
+      }
+   }
+   fibers1 <- selectFibers(fiberobj, mask= atlas==levels[nlevel])
+   nfibers1 <- length(fibers1@startind)
+   if(nfibers1<nfibers){
+# otherwise no fibers found, original object was returned
+      amat[nlevel,nlevel] <- nfibers1
+      if(verbose) cat("region",nlevel,"count",nfibers1,"\n")
+    }
+   if(method=="standardize") amat <-
+         standardizeAdjmatrix(amat, diagelements, symmetric)
+   amat
+ }
+
+ standardizeAdjmatrix <- function(amat, diagelements=FALSE, symmetric=TRUE){
+   dmat <- diag(amat)
+   ind <- dmat>0
+   if(symmetric){
+     dmat <- diag(1/sqrt(dmat[ind]))
+     amat[ind,ind] <- dmat%*%amat[ind,ind]%*%dmat
+   } else {
+     amat1 <- amat2 <- amat
+     d <- dim(amat)
+     dmat <- diag(1/dmat[ind])
+     amat[ind,ind] <- dmat%*%amat[ind,ind]
+   }
+   if(!diagelements) diag(amat) <- 0
+   amat
+ }

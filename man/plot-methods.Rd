@@ -9,24 +9,25 @@
 \alias{plot,dtiTensor-method}
 \alias{plot,dwiMixtensor-method}
 \alias{plot,dwiFiber-method}
-\title{ Methods for Function `plot' in Package `dti' } 
+\title{ Methods for Function `plot' in Package `dti' }
 \description{
   Visualization of objects of class \code{"dtiData"}, \code{"dtiIndices"}, \code{"dtiTensor"}and class \code{"dwiMixtensor"}
 }
 \usage{
 \S4method{plot}{dtiData}(x, y, slice=1, gradient=NULL, view= "axial", show=TRUE,
-   density=FALSE, xind=NULL, yind=NULL, zind=NULL, mar=c(3,3,3,.3), 
-   mgp=c(2,1,0), \dots)
+   density=FALSE, xind=NULL, yind=NULL, zind=NULL, mar=par("mar"), mgp=par("mgp"), \dots)
 \S4method{plot}{dtiTensor}(x, y, slice=1, view="axial", quant=0, minfa=NULL, contrast.enh=1,
-    what="fa", qrange=c(.01,.99), xind=NULL, yind=NULL, zind=NULL, 
-    mar=c(2,2,2,.2), mgp=c(2,1,0), \dots)
-\S4method{plot}{dwiMixtensor}(x, y, slice=1, view="axial", what="fa", minfa=NULL,  
-     identify=FALSE, xind=NULL, yind=NULL, zind=NULL, mar=c(2,2,2,.2),mgp=c(2,1,0), \dots)
+    what="fa", qrange=c(.01,.99), xind=NULL, yind=NULL, zind=NULL,
+    mar=par("mar"), mgp=par("mgp"), \dots)
+\S4method{plot}{dwiMixtensor}(x, y, slice=1, view="axial", what="fa", minfa=NULL,
+     identify=FALSE, xind=NULL, yind=NULL, zind=NULL, mar=par("mar"), mgp=par("mgp"), \dots)
 \S4method{plot}{dtiIndices}(x, y, slice=1, view= "axial", method=1, quant=0, minfa=NULL,
-   show=TRUE, identify=FALSE, density=FALSE, contrast.enh=1, what="fa", 
-   xind=NULL, yind=NULL, zind=NULL, mar=c(3,3,3,.3), mgp=c(2,1,0), \dots)
+   show=TRUE, identify=FALSE, density=FALSE, contrast.enh=1, what="fa",
+   xind=NULL, yind=NULL, zind=NULL, mar=par("mar"), mgp=par("mgp"), \dots)
 \S4method{plot}{dwiFiber}(x, y, \dots)
-\S4method{plot}{dkiIndices}(x, y, slice=1, what=c("md", "fa", "mk", "mk2"), \dots)
+\S4method{plot}{dkiIndices}(x, y, slice=1, what=c("md", "fa", "mk", "mk2",
+     "kaxial", "kradial", "fak"), xind=NULL, yind=NULL,
+     mar=par("mar"), mgp=par("mgp"),\dots)
 }
 \arguments{
   \item{x}{ Object of class \code{"dtiIndices"}, \code{"dtiData"} or \code{"dtiTensor"}}
@@ -48,7 +49,7 @@
   \item{qrange}{ Cut image intensity to these quantiles to avoid that outliers determine the dynamic range of the image. }
   \item{xind}{If provided restrict display to indices specified in \code{xind} for x-direction.}
   \item{yind}{If provided restrict display to indices specified in \code{yind} for y-direction.}
-  \item{zind}{If provided restrict display to indices specified in \code{zind} for z-direction.} 
+  \item{zind}{If provided restrict display to indices specified in \code{zind} for z-direction.}
   \item{\dots}{ currently not used }
 }
 \section{Methods}{
@@ -65,19 +66,19 @@
 
   \item{x = "dwiMixtensor"}{ Depending of \code{what} images of FA (\code{what="fa"}), number of mixture components (\code{what="order"}), effective order (\code{what="eorder"}) or maximum eigenvalues (\code{what="ev"}).  is returned. }
 
-  \item{x = "dwiFiber"}{ Creates a density plot of fiber lengths. \code{NULL} is returned.}     
+  \item{x = "dwiFiber"}{ Creates a density plot of fiber lengths. \code{NULL} is returned.}
 
   \item{x = "dkiIndices"}{Prelimanary function to plot a slice of diffusion kurtosis indices: Mean Kurtosis \code{what="mk"} or \code{what="mk2"}, mean diffusivity \code{what="md"}, fractional anisotropy \code{what="fa"}.}
 }
-  
+
 }
-\author{ 
-  Karsten Tabelow \email{tabelow@wias-berlin.de}\cr 
+\author{
+  Karsten Tabelow \email{tabelow@wias-berlin.de}\cr
   J\"org Polzehl \email{polzehl@wias-berlin.de}
 }
-\seealso{ 
-  \code{\linkS4class{dtiIndices}}, 
-  \code{\linkS4class{dtiData}}, 
+\seealso{
+  \code{\linkS4class{dtiIndices}},
+  \code{\linkS4class{dtiData}},
   \code{\linkS4class{dtiTensor}}
   \code{\linkS4class{dwiMixtensor}}
 }

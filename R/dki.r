@@ -14,9 +14,12 @@ dkiTensor <- function(object,  ...) cat("No DKI tensor calculation defined for t
 setGeneric("dkiTensor", function(object, ...) standardGeneric("dkiTensor"))
 
 setMethod("dkiTensor", "dtiData",
-          function(object, method=c("CLLS-QP", "CLLS-H", "ULLS") ,
-                   mc.cores=setCores(, reprt = FALSE),
-                   verbose=FALSE) {
+          function(object, method=c("CLLS-QP", "CLLS-H", "ULLS", "QL", "NLR") ,
+                   sigma = NULL,
+                   L = 1,
+                   mask = NULL,
+                   mc.cores = setCores(, reprt = FALSE),
+                   verbose = FALSE) {
 
             if (verbose) cat("dkiTensor: entering function", format(Sys.time()), "\n")
 
@@ -40,17 +43,21 @@ setMethod("dkiTensor", "dtiData",
             D <- array(0, dim=c(6, ntotal))
             W <- array(0, dim=c(15, ntotal))
             bvalues <- object@bvalue[- s0ind]
-            meanbv <- mean(bvalues)
-            bvalues <- bvalues/meanbv
-            maxbv <- max(bvalues)
+            mbv <- max(bvalues)
+            bvalues <- bvalues/mbv
+#            maxbv <- max(bvalues)
+
+            Dind <- c(1, 4, 5, 2, 6, 3)
 
             ## check for outliers and
             ## we need the mean s0 image and a mask
-            z <- sioutlier1(object@si,s0ind,object@level,mc.cores=mc.cores)
+            z <- sioutlier1(object@si,s0ind,object@level,mask,mc.cores=mc.cores)
             ## z$si and z$s0 only contain voxel in the mask
             ## first dimension of matrix z$si corresponds to gradients
             cat("sioutlier completed\n")
-            mask <- z$mask
+            if (is.null(mask)) {
+              mask <- z$mask
+            }
             nvox <- sum(mask)
             ttt <- -log1p(sweep(z$si[-s0ind,],2,as.vector(z$s0),"/")-1)
             #  suggestion by B. Ripley
@@ -81,28 +88,25 @@ setMethod("dkiTensor", "dtiData",
               ngrad <- object@ngrad - length(s0ind)
 
               ## Tabesh Eq. [13]
-              Tabesh_C <- rbind( cbind(Tabesh_AD, matrix(0, ngrad, 15)),
-                                 cbind(matrix(0, ngrad, 6), Tabesh_AK),
-                                 cbind(3/maxbv*Tabesh_AD, - Tabesh_AK))
+              Tabesh_C <- rbind( cbind(-Tabesh_AD, matrix(0, ngrad, 15)),
+                                 cbind(matrix(0, ngrad, 6), -Tabesh_AK),
+#                                 cbind(-3/maxbv*Tabesh_AD, Tabesh_AK))
+                                 cbind(-3*Tabesh_AD, Tabesh_AK))
 
               Dmat <- t(Tabesh_A) %*% Tabesh_A
-              Amat <- t(Tabesh_C)
+              Amat <- -t(Tabesh_C)
 
               ## go through the dataset
-              Dind <- c(1, 4, 5, 2, 6, 3)
-              Dinvind <- c(1, 4, 6, 2, 3, 5)
               if(mc.cores==1){
                 ## single core, just do the loop
                 for (i in 1:nvox){
                   mi <- maskind[i]
                   ## Tabesh Eq. [12]
                   Tabesh_B <- -ttt[,i]
-                  ## TODO: PERFORM SOME TEST BEFORE IT!!
-
                   ## QP solution
                   dvec <- as.vector(t(Tabesh_A) %*% Tabesh_B)
-                  resQPsolution <- solve.QP(Dmat, dvec, Amat)$solution
-                  D[, mi] <- meanbv * resQPsolution[Dind] # re-order DT estimate to comply with dtiTensor
+                  resQPsolution <- solve.QP(Dmat, dvec, Amat,factorized=FALSE)$solution
+                  D[, mi] <- resQPsolution[Dind] / mbv # re-order DT estimate to comply with dtiTensor
 
                   ## Tabesh Eq. [9]
                   W[, mi] <- resQPsolution[7:21] / mean(resQPsolution[1:3])^2 # kurtosis tensor
@@ -110,71 +114,176 @@ setMethod("dkiTensor", "dtiData",
               } else {
                 ## many cores, just split
                 param <- plmatrix(ttt,pdkiQP,TA=Tabesh_A,Dmat=Dmat,Amat=Amat)
-                D[,mask] <-  meanbv * param[Dind,]
+                D[,mask] <- param[Dind ,] / mbv
                 W[,mask] <- param[7:21,]
               }
             }
-#            if (method == "NLR" || method == "QL"){
-#              if (!require(Rsolnp)) return("dkiTensor: did not find package Rsolnp, please install for the NLR method")
-#              ttt <- sweep(z$si[-s0ind,],2,as.vector(z$s0),"/")
-#              funopt <- function(param,siq,Tabesh_A,Tabesh_C,rho){
-#                z <- Tabesh_C%*%param
-#                sum((siq-exp(Tabesh_A%*%param))^2) + rho*sum(((z-1e-5)[z<1e-5])^2)
-#              }
-#              fun <- function(param,siq,Tabesh_A,Tabesh_C){
-#                sum((siq-exp(Tabesh_A%*%param))^2)
-#              }
-#              ineqfun <- function(param,siq,Tabesh_A,Tabesh_C){
-#                Tabesh_C%*%param
-#              }
-#              lb <- rep(0,3*ngrad)
-#              ub <- rep(25,3*ngrad)
-#              for(i in 1:nvox){
-#                mi <- maskind[i]
-#                param <- c(D[Dinvind, mi]/meanbv,W[, mi]*mean(D[c(1,4,6),mi]/meanbv)^2)
-#                siq <- ttt[,i]
-#                cat("i",i,"mi",mi,"\n","param",signif(param,3),"\n","fw",fun(param,siq,Tabesh_A,Tabesh_C))
-#                lconstr <- TRUE
-#                for(k in 1:length(rho)){
-#                  if(lconstr){
-#                    param <- optim(param, funopt, method="BFGS", siq=siq,Tabesh_A=Tabesh_A,Tabesh_C=Tabesh_C,rho=rho[k])$par
-#                    lconstr <- min(ineqfun(param,siq,Tabesh_A,Tabesh_C)-lb) < 0
-#                  }
-#                }
-#                cat("fw optim",fun(param,siq,Tabesh_A,Tabesh_C), "constr", constr <-min(ineqfun(param,siq,Tabesh_A,Tabesh_C)-lb),"\n","param",signif(param,3),"\n")
-#                if(constr< 0){
-#                  cat(format(Sys.time()),"\n")
-#                  solnpres <- solnp(param, fun = fun, ineqfun = ineqfun, ineqLB = lb, ineqUB = ub,
-#                                    control = control, #list(tol=1e-6,delta=1e-5,rho=.01),
-#                                    siq=siq,Tabesh_A=Tabesh_A,Tabesh_C=Tabesh_C)
-#                  param <- solnpres$pars
-#                  cat("fw solnp",fun(param,siq,Tabesh_A,Tabesh_C), "constr",                   min(ineqfun(param,siq,Tabesh_A,Tabesh_C)-lb),"\n","param",signif(param,3),"\n")
-#                  cat("diagnostics: vals",solnpres$values,"nfunc",solnpres$nfuneval,
-#                      "time",solnpres$elapsed,"\n")
-#                  cat(format(Sys.time()),"\n")
-#
-#                }
-#                D[, mi] <- meanbv * param[Dind] # re-order DT estimate to comply with dtiTensor
-#                W[, mi] <- param[7:21] / mean(param[1:3])^2 #
-#              }
-#            }
-#            if(method=="QL"){
-#              CL <- sqrt(pi/2)*gamma(L+1/2)/gamma(L)/gamma(3/2)
-#              funoptQL <- function(param, siq, sigma, L, CL, Tabesh_A, Tabesh_C, rho){
-#                z <- Tabesh_C%*%param
-#                fv <- exp(Tabesh_A%*%param)
-#                sum((siq-exp(Tabesh_A%*%param))^2) + rho*sum(((z-1e-5)[z<1e-5])^2)
-#              }
-#              funQL <- function(param, siq, sigma, L, CL, Tabesh_A, Tabesh_C){
-#                sum((siq-exp(Tabesh_A%*%param))^2)
-#              }
-#              ineqfunQL <- function(param, siq, sigma, L, CL, Tabesh_A, Tabesh_C){
-#                Tabesh_C%*%param
-#              }
-#              lb <- rep(0,3*ngrad)
-#              ub <- rep(25,3*ngrad)
-#
-#            }
+
+
+            if (method == "QL") {
+
+              if(is.null(sigma)) stop("please provide sigma")
+              if(length(sigma)==1) sigma <- array(sigma,ddim[1:3])
+              if(any(sigma[mask]<1e-4)) stop("all sigma values in mask need to be positive")
+              CL <- sqrt(pi/2)*gamma(L+1/2)/gamma(L)/gamma(3/2)
+              xxx <- dkiDesign(object@gradient)
+              bvalues <- object@bvalue/mbv
+              AD <- xxx[, 1:6]
+              AK <- xxx[, 7:21]
+              ## Tabesh Eq. [10]
+              A <- cbind(sweep(AD, 1, - bvalues, "*"),
+                         sweep(AK, 1, bvalues^2/6, "*"))
+              dkiModelQL <- function(param, si, sigma, A, L, CL){
+                ##
+                ##  Risk function for Diffusion Kurtosis model with
+                ##  Gauss-approximation for noncentral chi
+                ##
+                ##   si are the original observations
+                ##   si/sigma is assumed to follow a noncentral chi_{2L} distribution
+                ##   sigma should be of length ng here
+                #browser()
+                ng <- dim(A)[1]
+                #  cat("param",signif(param,4),"value")
+                gvalue <- param[22] * exp(A%*%param[1:21])/sigma
+                muL <- CL * hg1f1(rep(-.5, ng), rep(L, ng), -gvalue*gvalue/2)
+                vL <- pmax(1e-8, 2*L + gvalue^2 - muL^2)
+                ## avoid negative variances that may result due to approximations
+                ## within the iteration process
+
+                ## factor sigma in muL and sigma^2 in vL cancels in the quotient
+                sum((si/sigma - muL)^2/vL)
+              }
+
+              dim(D) <- c(6, ddim)
+              dim(W) <- c(15, ddim)
+
+              if (verbose) pb <- txtProgressBar(min = 0, max = ddim[3], style = 3)
+              i <- 0
+              for (iz in 1:ddim[3]){
+                for (iy in 1:ddim[2]) {
+                  for (ix in 1:ddim[1]) {
+                    if (mask[ix, iy, iz]) {
+                      i <- i+1
+                      param <- c(D[, ix, iy, iz], W[, ix, iy, iz], s0[ix, iy, iz])
+                      param[1:6] <- param[c(1,4,6,2,3,5)] * mbv
+                      param[7:21] <- param[7:21]*mean(param[1:3])^2
+                      param <- optim(param,
+                                     dkiModelQL, si = z$si[,i], sigma = sigma[ix, iy, iz], A = A, L = L, CL = CL,
+                                     method="BFGS",
+                                     control = list(reltol = 1e-6,
+                                                    maxit = 100))$par
+                      D[, ix, iy, iz] <- param[Dind] / mbv
+                      W[, ix, iy, iz] <- param[7:21]/mean(param[1:3])^2
+                    }
+                  }
+                }
+                if (verbose) setTxtProgressBar(pb, iz)
+              }
+              if (verbose) close(pb)
+
+
+            }
+             if (method == "NLR") {
+
+              xxx <- dkiDesign(object@gradient)
+              bvalues <- object@bvalue/mbv
+              AD <- xxx[, 1:6]
+              AK <- xxx[, 7:21]
+
+              ## Tabesh Eq. [10]
+              A <- cbind(sweep(AD, 1, - bvalues, "*"),
+                         sweep(AK, 1, bvalues^2/6, "*"))
+
+              dkiModel <- function(param, si, A){
+                ##
+                ##  Risk function for Diffusion Kurtosis model with nonlinear regression
+                ##
+                ##   si are the original observations
+                gvalue <- param[22] * exp(A%*%param[1:21])
+                ## avoid negative variances that may result due to approximations
+                ## within the iteration process
+
+                ## factor sigma in muL and sigma^2 in vL cancels in the quotient
+                sum((si - gvalue)^2)
+              }
+
+              dim(D) <- c(6, ddim)
+              dim(W) <- c(15, ddim)
+
+              if (verbose) pb <- txtProgressBar(min = 0, max = ddim[3], style = 3)
+              i <- 0
+              for (iz in 1:ddim[3]){
+                for (iy in 1:ddim[2]) {
+                  for (ix in 1:ddim[1]) {
+                    if (mask[ix, iy, iz]) {
+                      i <- i+1
+                      param <- c(D[, ix, iy, iz], W[, ix, iy, iz], s0[ix, iy, iz])
+                      param[1:6] <- param[c(1,4,6,2,3,5)] * mbv
+                      param[7:21] <- param[7:21]*mean(param[1:3])^2
+
+                      param <- optim(param,
+                                     dkiModel, si = object@si[ix,iy,iz,], A = A,
+                                     method="BFGS",
+                                     control = list(reltol = 1e-6,
+                                                    maxit = 100))$par
+                      D[, ix, iy, iz] <- param[Dind] / mbv
+                      W[, ix, iy, iz] <- param[7:21]/mean(param[1:3])^2
+                    }
+                  }
+                }
+                if (verbose) setTxtProgressBar(pb, iz)
+              }
+              if (verbose) close(pb)
+
+
+            }
+
+            # if (method == "NLR" || method == "QL"){
+            #   if (!require(Rsolnp)) return("dkiTensor: did not find package Rsolnp, please install for the NLR method")
+            #   ttt <- sweep(z$si[-s0ind,],2,as.vector(z$s0),"/")
+            #   funopt <- function(param,siq,Tabesh_A,Tabesh_C,rho){
+            #     z <- Tabesh_C%*%param
+            #     sum((siq-exp(Tabesh_A%*%param))^2) + rho*sum(((z-1e-5)[z<1e-5])^2)
+            #   }
+            #   fun <- function(param,siq,Tabesh_A,Tabesh_C){
+            #     sum((siq-exp(Tabesh_A%*%param))^2)
+            #   }
+            #   ineqfun <- function(param,siq,Tabesh_A,Tabesh_C){
+            #     Tabesh_C%*%param
+            #   }
+            #   lb <- rep(0,3*ngrad)
+            #   ub <- rep(25,3*ngrad)
+            #   for(i in 1:nvox){
+            #     mi <- maskind[i]
+            #     param <- c(D[Dinvind, mi]/mbv,W[, mi]*mean(D[c(1,4,6),mi]/mbv)^2)
+            #     siq <- ttt[,i]
+            #     cat("i",i,"mi",mi,"\n","param",signif(param,3),"\n","fw",fun(param,siq,Tabesh_A,Tabesh_C))
+            #     lconstr <- TRUE
+            #     for(k in 1:length(rho)){
+            #       if(lconstr){
+            #         param <- optim(param, funopt, method="BFGS", siq=siq,Tabesh_A=Tabesh_A,Tabesh_C=Tabesh_C,rho=rho[k])$par
+            #         lconstr <- min(ineqfun(param,siq,Tabesh_A,Tabesh_C)-lb) < 0
+            #       }
+            #     }
+            #     cat("fw optim",fun(param,siq,Tabesh_A,Tabesh_C), "constr", constr <-min(ineqfun(param,siq,Tabesh_A,Tabesh_C)-lb),"\n","param",signif(param,3),"\n")
+            #     if(constr< 0){
+            #       cat(format(Sys.time()),"\n")
+            #       solnpres <- solnp(param, fun = fun, ineqfun = ineqfun, ineqLB = lb, ineqUB = ub,
+            #                         control = control, #list(tol=1e-6,delta=1e-5,rho=.01),
+            #                         siq=siq,Tabesh_A=Tabesh_A,Tabesh_C=Tabesh_C)
+            #       param <- solnpres$pars
+            #       cat("fw solnp",fun(param,siq,Tabesh_A,Tabesh_C), "constr",                   min(ineqfun(param,siq,Tabesh_A,Tabesh_C)-lb),"\n","param",signif(param,3),"\n")
+            #       cat("diagnostics: vals",solnpres$values,"nfunc",solnpres$nfuneval,
+            #           "time",solnpres$elapsed,"\n")
+            #       cat(format(Sys.time()),"\n")
+            #
+            #     }
+            #     D[, mi] <- param[Dind]/mbv # re-order DT estimate to comply with dtiTensor
+            #     W[, mi] <- param[7:21] / mean(param[1:3])^2 #
+            #   }
+            # }
+
+
             if (method == "CLLS-H") {
 
               ## these are the distinct bvalues
@@ -240,8 +349,8 @@ setMethod("dkiTensor", "dtiData",
                 Di[ind4] <- D1[ind4] / (1 - C * bv[1] / 6 / bv[2])
 
                 ## estimate D tensor! Tabesh Eq. [21]
-                Dihat <- meanbv * PI_Tabesh_AD %*% Di
-                D[c(1, 4, 6, 2, 3, 5), mi] <- meanbv * Dihat
+                Dihat <- PI_Tabesh_AD %*% Di
+                D[ , mi] <- Dihat[Dind] / mbv
 
                 ## re-estimate Di: Tabesh Eq. [22]
                 DiR <- Tabesh_AD %*% Dihat
@@ -275,7 +384,7 @@ setMethod("dkiTensor", "dtiData",
               Tabesh_AK <- xxx[, 7:21]
 
               ## Tabesh Eq. [10]
-              Tabesh_A <- cbind(sweep(Tabesh_AD, 1, bvalues, "*"),
+              Tabesh_A <- cbind(sweep(Tabesh_AD, 1, -bvalues, "*"),
                                 sweep(Tabesh_AK, 1, bvalues^2/6, "*"))
               PI_Tabesh_A <- pseudoinverseSVD(Tabesh_A)
               #
@@ -290,7 +399,7 @@ setMethod("dkiTensor", "dtiData",
 
                 ## TODO: correct assignment! Check matrix dimensions!
                 Tabesh_X <- PI_Tabesh_A %*% Tabesh_B
-                D[c(1, 4, 6, 2, 3, 5), mi] <- meanbv * Tabesh_X[1:6]
+                D[, mi] <- Tabesh_X[Dind]/mbv
                 W[, mi] <- Tabesh_X[7:21] / (mean(Tabesh_X[1:3]))^2
               }
               #              if (verbose) close(pb)

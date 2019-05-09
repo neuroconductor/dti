@@ -6,13 +6,13 @@
   The functions create a \code{"dtiData"} object from Diffusion Weighted Data from medicial imaging files in a list of directories or from an imagefile, where the diffusion weighted data is given as 2-byte integer.
 }
 \usage{
-dtiData(gradient, imagefile, ddim, bvalue = NULL, xind = NULL, yind = NULL, zind = NULL, 
-        level = 0, mins0value = 1, maxvalue = 32000, voxelext = c(1, 1, 1), 
+dtiData(gradient, imagefile, ddim, bvalue = NULL, xind = NULL, yind = NULL, zind = NULL,
+        level = 0, mins0value = 1, maxvalue = 32000, voxelext = c(1, 1, 1),
         orientation = c(0L, 2L, 5L), rotation = diag(3))
-readDWIdata(gradient, dirlist, format = c("DICOM", "NIFTI", "ANALYZE", "AFNI"), 
+readDWIdata(gradient, dirlist, format = c("DICOM", "NIFTI", "ANALYZE", "AFNI"),
         nslice = NULL, order = NULL, bvalue = NULL,
-        xind = NULL, yind = NULL, zind = NULL, level = 0, mins0value = 1, 
-        maxvalue = 32000, voxelext = NULL, orientation = c(0L, 2L, 5L), 
+        xind = NULL, yind = NULL, zind = NULL, level = 0, mins0value = 1,
+        maxvalue = 32000, voxelext = NULL, orientation = c(0L, 2L, 5L),
         rotation = NULL, pattern = NULL, SPM2=TRUE, verbose = FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
@@ -40,7 +40,7 @@ readDWIdata(gradient, dirlist, format = c("DICOM", "NIFTI", "ANALYZE", "AFNI"),
 }
 \details{
   The function \code{dtiData} creates an object of class \code{"dtiData"} from an image file, where the diffusion weighted data is given as 2-byte integer.  This image file has to be prepared by the user.  Use \code{\link{writeBin}} to write out first all S0 images and than all Si images. The \code{gradient} should be created according to this order. Run the demo in order to have an example, how to do this!
-  
+
   The function \code{readDWIdata} reads the data files given in the directories in \code{dirlist} in alphabetic order. The order can be changed using the \code{order} argument: If \code{filelist} is the vector of files in alphabetic order, they are read in the order \code{filelist[order]}.  If order is not given \code{order <- 1:n} is used (no change!).  The medical imaging format is given by \code{format} and can be one of ''DICOM'', ''NIFTI'', ''ANALYZE'', or ''AFNI''.  The number of slices of the three dimensional data cube is given by \code{nslice}.  The diffusion gradients are provided as matrix \code{gradient}.
 
   \code{xind}, \code{yind}, and \code{zind} define a region of interest as indices.  If not given \code{1:dim[i]} is used. \code{level} determine \code{mins0value} as quantile of positive S0-values.  \code{mins0value} sets voxel in S0-images with values less than \code{level} \dQuote{inactive}.  \code{maxvalue} sets voxel with values larger than \code{maxvalue} inactive.
@@ -50,17 +50,17 @@ readDWIdata(gradient, dirlist, format = c("DICOM", "NIFTI", "ANALYZE", "AFNI"),
 \value{
   An object of class \code{"dtiData"}.
 }
-\references{  
+\references{
   \url{https://afni.nimh.nih.gov/pub/dist/src/README.attributes}
 }
-\author{ 
-  Karsten Tabelow \email{tabelow@wias-berlin.de}\cr 
+\author{
+  Karsten Tabelow \email{tabelow@wias-berlin.de}\cr
   J\"org Polzehl \email{polzehl@wias-berlin.de}
 }
 \seealso{
-  \code{\link{dti.smooth}}, 
-  \code{\link{dtiTensor-methods}}, 
-  \code{\linkS4class{dtiData}} 
+  \code{\link{dti.smooth}},
+  \code{\link{dtiTensor-methods}},
+  \code{\linkS4class{dtiData}}
 }
 \examples{
   \dontrun{demo(dti_art)}

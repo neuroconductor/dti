@@ -40,6 +40,11 @@ setMethod("sdpar", "dtiData", function(object,
   if(interactive) {
     oldpar <- par( mfrow = c( 1, 3), mar = c( 3, 3, 3, 1), mgp = c( 2, 1, 0))
     img <- if(ls0ind>1) s0mean[,,(object@ddim[3]-1)%/%2+1] else s0[,,(object@ddim[3]-1)%/%2+1]
+    impars <- get(".dtiopts",envir=.dtiOpts)
+    dimg <- dim(img)
+    if(impars$swapx) img <- img[dimg[1]:1,]
+    if(impars$swapy) img <- img[,dimg[2]:1]
+
     maximg <- max(img)
     accept <- FALSE
     ddim <- object@ddim
@@ -63,6 +68,7 @@ setMethod("sdpar", "dtiData", function(object,
     n2 <- length(indx2)*length(indy2)*length(indz2)
     n3 <- length(indx3)*length(indy3)*length(indz3)
     ylim <- range(z$y,z1$y*n1/n,z2$y*n2/n,z3$y*n3/n)
+
     while(!accept){
       plot(z,type="l",main="Density of S0 values and cut off point",ylim=ylim)
       lines(z1$x,z1$y*n1/n,col=2)
@@ -71,7 +77,7 @@ setMethod("sdpar", "dtiData", function(object,
       lines(c(A0,A0),c(0,max(z$y)/2),col=2,lwd=2)
       legend(min(A0,0.25*max(z$x)),ylim[2],c("Full cube",paste("Central",(n1*100)%/%n,"%"),
                                              paste("Central",(n2*100)%/%n,"%"),paste("Central",(n3*100)%/%n,"%")),col=1:4,lwd=rep(1,4))
-      cat("A good cut off point should be left of support of the density of grayvalues within the head\n")
+      cat("A good cut off point should be left of support \n of the density of grayvalues within the head\n")
       show.image(make.image(img/maximg))
       title("Central slice: Intensity values")
       show.image(make.image((img<A0)))
@@ -837,8 +843,8 @@ setMethod("extract","dtiData",function(x,
 #############
 
 setMethod("extract","dwiMixtensor",function(x,
-                                            what=c("andir","order","ev","mix","s0","mask","fa","eorder","bic","aic"),
-                                            xind=TRUE, yind=TRUE, zind=TRUE){
+            what=c("w0","andir","order","ev","mix","s0","mask",
+                  "fa","eorder","bic","aic"), xind=TRUE, yind=TRUE, zind=TRUE){
   what <- tolower(what)
   ## check what
   what <- match.arg(what, several.ok = TRUE)
@@ -863,6 +869,10 @@ setMethod("extract","dwiMixtensor",function(x,
     z$ev <- ev
   }
   if("mix" %in% what) z$mix <- x@mix
+  if("w0" %in% what){
+     mix <- x@mix
+     z$w0 <- 1-apply(mix,2:4,sum)
+  }
   if("andir" %in% what) {
     orient <- x@orient
     andir <- array(0,c(3,prod(dim(orient))/2))
@@ -890,6 +900,8 @@ setMethod("extract","dwiMixtensor",function(x,
     mix <- sweep(mix,2,smix,"/")
     # the last two lines are needed for models with isotropic compartment
     z$eorder <- array((2*(1:maxorder)-1)%*%mix,x@ddim)
+    z$eorder[is.na(z$eorder)] <- 0
+    z$eorder[x@order==0] <- 0
   }
   if("bic" %in% what) {
     ngrad <- x@ngrad

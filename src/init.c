@@ -29,7 +29,7 @@ SEXP interface_tracking(SEXP data_dir_coords, SEXP data_FA_values,
 
 static const R_CallMethodDef callMethods[]  = {
   {"interface_tracking", (DL_FUNC) &interface_tracking, 17},
-  {"interface_tracking_mixtensor", (DL_FUNC) &interface_tracking, 20},
+  {"interface_tracking_mixtensor", (DL_FUNC) &interface_tracking_mixtensor, 20},
   {NULL, NULL, 0}
 };
 
@@ -41,20 +41,20 @@ extern void mixture( int* n1, int* siind, int* ngrad0, int* maxcomp,
   double* penIC, double* sigma2, double* vert, double* siq_in,
   double* sigma2_ret, double* orient_ret, int* order_ret, double* lev_ret,
   double* mix_ret );
-extern void mixtrl0( int* n1, int* siind, int* ngrad0, int* maxcomp,
+extern void mixtrl0b( int* n1, int* siind, double* wi, int* ngrad, int* maxcomp,
   int* maxit, double* grad_in, double* bv_in, double* lambda_in,
   double* alpha_in, double* factr, double* penIC, double* sigma2,
-  double* vert, double* siq_in, double* sigma2_ret, double* orient_ret,
+  double* vert, double* si_in, double* sigma2_ret, double* orient_ret,
   int* order_ret, double* mix_ret);
-extern void mixtrl1( int* n1, int* siind, int* ngrad0, int* maxcomp,
+extern void mixtrl1b( int* n1, int* siind, double* wi, int* ngrad, int* maxcomp,
   int* maxit, double* grad_in, double* bv_in, double* lambda_in,
   double* alpha_in, double* factr, double* penIC, double* sigma2,
-  double* vert, double* siq_in, double* sigma2_ret, double* orient_ret,
+  double* vert, double* si_in, double* sigma2_ret, double* orient_ret,
   int* order_ret, double* lambda_ret, double* mix_ret);
-extern void mixtrl2( int* n1, int* siind, int* ngrad0, int* maxcomp,
+extern void mixtrl2b( int* n1, int* siind, double* wi, int* ngrad, int* maxcomp,
   int* maxit, double* grad_in, double* bv_in, double* lambda_in,
   double* alpha_in, double* factr, double* penIC, double* sigma2,
-  double* vert, double* siq_in, double* sigma2_ret, double* orient_ret,
+  double* vert, double* si_in, double* sigma2_ret, double* orient_ret,
   int* order_ret, double* alpha_ret, double* lambda_ret, double* mix_ret);
 
 static R_NativePrimitiveArgType dtens_t[]={INTSXP, REALSXP, REALSXP,
@@ -62,22 +62,22 @@ static R_NativePrimitiveArgType dtens_t[]={INTSXP, REALSXP, REALSXP,
 static R_NativePrimitiveArgType mixture_t[]={INTSXP, INTSXP, INTSXP,
   INTSXP, INTSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP,
   REALSXP, REALSXP, REALSXP, REALSXP, INTSXP, REALSXP, REALSXP};
-static R_NativePrimitiveArgType mixtrl0_t[]={INTSXP, INTSXP, INTSXP,
+static R_NativePrimitiveArgType mixtrl0b_t[]={INTSXP, INTSXP, REALSXP, INTSXP,
   INTSXP, INTSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP,
   REALSXP, REALSXP, REALSXP, REALSXP, REALSXP, INTSXP, REALSXP};
-static R_NativePrimitiveArgType mixtrl1_t[]={INTSXP, INTSXP, INTSXP,
+static R_NativePrimitiveArgType mixtrl1b_t[]={INTSXP, INTSXP, REALSXP, INTSXP,
   INTSXP, INTSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP,
   REALSXP, REALSXP, REALSXP, REALSXP, REALSXP, INTSXP, REALSXP, REALSXP};
-static R_NativePrimitiveArgType mixtrl2_t[]={INTSXP, INTSXP, INTSXP,
+static R_NativePrimitiveArgType mixtrl2b_t[]={INTSXP, INTSXP, REALSXP, INTSXP,
   INTSXP, INTSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP,
   REALSXP, REALSXP, REALSXP, REALSXP, REALSXP, INTSXP, REALSXP, REALSXP,
   REALSXP};
 static const R_CMethodDef CMethods[] = {
             {"dtens", (DL_FUNC) &dtens, 10, dtens_t},
             {"mixture", (DL_FUNC) &mixture, 18, mixture_t},
-            {"mixtrl0", (DL_FUNC) &mixtrl0, 18, mixtrl0_t},
-            {"mixtrl1", (DL_FUNC) &mixtrl1, 19, mixtrl1_t},
-            {"mixtrl2", (DL_FUNC) &mixtrl2, 20, mixtrl2_t},
+            {"mixtrl0b", (DL_FUNC) &mixtrl0b, 19, mixtrl0b_t},
+            {"mixtrl1b", (DL_FUNC) &mixtrl1b, 20, mixtrl1b_t},
+            {"mixtrl2b", (DL_FUNC) &mixtrl2b, 21, mixtrl2b_t},
             {NULL, NULL, 0,NULL}
 };
 
@@ -171,10 +171,10 @@ void F77_NAME(getsii31)( double* si, double* vsi, int* ngrad, int* nvox,
   int* m, double* dgrad, int* nv, int* iandir, double* th, int* nth,
   int* indth, double* egrad, int* isample, int* ntry, double* sms, double* z,
   int* siind, double* mval, int* ns, int* mask, double* dgradv, double* maxc);
-void F77_NAME(getsii)( double* si, double* vsi, int* ngrad, int* nvox,
+void F77_NAME(getsiibv)( double* si, int* ngrad, int* nvox,
   int* m, double* dgrad, double* bv, int* nv, double* alpha, double* lambda,
   double* egrad, int* isample, int* ntry, double* sms, double* z0, double* z,
-  int* siind, double* mval, int* ns);
+  int* siind, double* wi, double* mval, int* ns);
 void F77_NAME(getvofh)( double* a, double* bw, double* vext, double* vol);
 void F77_NAME(ghfse3i)( int* i4, int* kstar, double* k456, int* ng,
   double* kappa, double* vext, double* h, double* varred, int* n, int* dist);
@@ -199,6 +199,8 @@ void F77_NAME(lkfulse3)( double* h, double* kappa, double* k456, int* ng,
 void F77_NAME(mcorr)( double* res, int* mask, int* n1, int* n2, int* n3,
   int* nv, double* sigma, double* mean, double* scorr, int* l1, int* l2,
   int* l3);
+void F77_NAME(means0)( double* s0, int* n, int* ng0, int* level, double* ms0,
+  int* mask);
 void F77_NAME(mediansm)( double* y, int* mask, int* n1, int* n2, int* n3,
   int* ind, int* nind, double* work, int* ncores, double* yout);
 void F77_NAME(mixandir)( double* ori, double* mix, int* ord, int* mo,
@@ -331,9 +333,9 @@ static R_NativePrimitiveArgType getsii31_t[]={REALSXP, REALSXP, INTSXP,
   INTSXP, INTSXP, REALSXP, INTSXP, INTSXP, REALSXP, INTSXP, INTSXP, REALSXP,
   INTSXP, INTSXP, REALSXP, REALSXP, INTSXP, REALSXP, INTSXP, LGLSXP, REALSXP,
   REALSXP};
-static R_NativePrimitiveArgType getsii_t[]={REALSXP, REALSXP, INTSXP,
-  INTSXP, INTSXP, REALSXP, REALSXP, INTSXP, REALSXP, REALSXP, REALSXP,
-  INTSXP, INTSXP, REALSXP, REALSXP, REALSXP, INTSXP, REALSXP, INTSXP};
+static R_NativePrimitiveArgType getsiibv_t[]={REALSXP, INTSXP, INTSXP,
+  INTSXP, REALSXP, REALSXP, INTSXP, REALSXP, REALSXP, REALSXP, INTSXP,
+  INTSXP, REALSXP, REALSXP, REALSXP, INTSXP, REALSXP, REALSXP, INTSXP};
 static R_NativePrimitiveArgType getvofh_t[]={REALSXP, REALSXP, REALSXP,
   REALSXP};
 static R_NativePrimitiveArgType ghfse3i_t[]={INTSXP, INTSXP, REALSXP,
@@ -359,6 +361,8 @@ static R_NativePrimitiveArgType lkfulse3_t[]={REALSXP, REALSXP, REALSXP,
   INTSXP, REALSXP, INTSXP, REALSXP, INTSXP, INTSXP};
 static R_NativePrimitiveArgType mcorr_t[]={REALSXP, LGLSXP, INTSXP, INTSXP,
   INTSXP, INTSXP, REALSXP, REALSXP, REALSXP, INTSXP, INTSXP, INTSXP};
+static R_NativePrimitiveArgType means0_t[]={REALSXP, INTSXP, INTSXP, INTSXP,
+  REALSXP, LGLSXP};
 static R_NativePrimitiveArgType mediansm_t[]={REALSXP, LGLSXP, INTSXP,
   INTSXP, INTSXP, INTSXP, INTSXP, REALSXP, INTSXP, REALSXP};
 static R_NativePrimitiveArgType mixandir_t[]={REALSXP, REALSXP, INTSXP,
@@ -441,7 +445,7 @@ static const R_FortranMethodDef FMethods[] = {
             {"getmsth0", (DL_FUNC) &getmsth0_ , 4, getmsth0_t},
             {"getsii30", (DL_FUNC) &getsii30_ , 19, getsii30_t},
             {"getsii31", (DL_FUNC) &getsii31_ , 22, getsii31_t},
-            {"getsii", (DL_FUNC) &getsii_ , 19, getsii_t},
+            {"getsiibv", (DL_FUNC) &getsiibv_ , 19, getsiibv_t},
             {"getvofh", (DL_FUNC) &getvofh_ , 4, getvofh_t},
             {"ghfse3i", (DL_FUNC) &ghfse3i_ , 10, ghfse3i_t},
             {"hg1f1", (DL_FUNC) &hg1f1_ , 5, hg1f1_t},
@@ -454,6 +458,7 @@ static const R_FortranMethodDef FMethods[] = {
             {"lkfuls0", (DL_FUNC) &lkfuls0_ , 5, lkfuls0_t},
             {"lkfulse3", (DL_FUNC) &lkfulse3_ , 9, lkfulse3_t},
             {"mcorr", (DL_FUNC) &mcorr_ , 12, mcorr_t},
+            {"means0", (DL_FUNC) &means0_ , 6, means0_t},
             {"mediansm", (DL_FUNC) &mediansm_ , 10, mediansm_t},
             {"mixandir", (DL_FUNC) &mixandir_ , 6, mixandir_t},
             {"mixtradi", (DL_FUNC) &mixtradi_ , 9, mixtradi_t},

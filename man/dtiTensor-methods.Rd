@@ -10,7 +10,7 @@
 }
 \usage{
   \S4method{dtiTensor}{dtiData}(object, method=c( "nonlinear", "linear", "quasi-likelihood"), 
-          sigma = NULL, L = 1, mc.cores = setCores( , reprt = FALSE))
+          sigma = NULL, L = 1, mask=NULL, mc.cores = setCores( , reprt = FALSE))
 }
 \arguments{
   \item{object}{ Object of class \code{"dtiData"}}
@@ -18,6 +18,7 @@
   expected value of the signal as regression function and weighting according to the signal variance.}
    \item{sigma}{(local) scale parameter of the signal's distribution.}
    \item{L}{(local) effective degrees of freedom.}
+   \item{mask}{argument to specify a precomputed brain mask}
    \item{mc.cores}{Number of cores to use. Defaults to number of threads specified for openMP, see documentation of package \pkg{awsMethods}. 
    Our experience suggests to use 4-6 cores if available.}
 }
