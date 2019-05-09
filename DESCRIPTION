@@ -26,9 +26,8 @@ Description: Diffusion Weighted Imaging (DWI) is a Magnetic Resonance
         tensor and tensor mixture models. The package provides
         functionality to manipulate and visualize results in 2D and 3D.
 License: GPL (>= 2)
-Copyright: This package is
-           Copyright (C) 2005-2019 Weierstrass Institute for
-                                   Applied Analysis and Stochastics.
+Copyright: This package is Copyright (C) 2005-2019 Weierstrass
+        Institute for Applied Analysis and Stochastics.
 URL: http://www.wias-berlin.de/research/ats/imaging/
 Suggests: covr, testthat
 RoxygenNote: 6.1.0
