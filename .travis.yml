@@ -74,11 +74,12 @@ deploy:
   provider: releases
   skip_cleanup: true
   file_glob: true
+  overwrite: true
   file: "${PACKAGE_NAME}*.t*gz"
   on:
     tags: true
   api-key:
-    secure: Z9CBeZzsGgom9vGAfd33ek+obPrhWz10NbZCLR/rZ42zCX9+/y3vF7nZX1cX/0CBWty05g9tIiuJqoINdrSdGV7or6CK7goG1O4/UX+FfhZEW8fdRSg/6laVNZqGsiVfBRRfwgxWZGOj4qBxZYbqh1ZxL9gmAT2a1SLBfL8s0xGMKc6pFKsLIp3/K8YTL80Za6TNAe53tS5eQuVhcm7maiFK/vGdJLfPjwAIwO9SXnDTAUD7dnmxdtsJ7ZEvjCejKeZaGjuNA4/6J6X0dU4CmYnJMh4HI5bpctmBpR1jPkfMQp3OyQqR8g8o3p2xauSE8B3/QXAOlxAnWkUdYvBq5hWLkI2kigl4ccHFD3hzn4uwVumNcSmGSyfG8qT+Muy1h/DAKE/l/kyRyWvZ7UUEayVmMjQEF5tbOu2OdqFsB1zJcoCyuwYDCFY+tP5Oue0h9V1/yiBs7odpCrAI5dk7dDAvFYBU1n3WeexemjEHGTyrpc41P2T/b5Gpg1eYdBOOcvMS9um0uVvrng/vPxIRF5pdREKJNjQibrrf4A2tSbkqw8FzwCt6bm5QUcGS1IvZk67Czj36MRe3XVNxDZfnjFNjDISrxCTTTpuzuyWWYAiNaois0ZoeMo2ZMGXj9bjgO7TTzaap8wvpGohwxR1CmpSkpfOGa9v1l9dwbFL3oJw=
+    secure: SBKcI+fbyAQ4BZLQCWtfuRZjotBOndIVDyHVr4fS7cu4GiWE8Au2Lr5Wvz2mHEKNoz9Zk974/IDjnorWAOhGOC67nFW9aHGvoO5hpazeecDIO9GxL994iQGrkYJGTXoVpTYCulSTpaM5KatZzCqSaXRK44Xjohn1QEamxXGJ4fA+TXrAJ/YqSlsoXbmNpGLDkb+iZwOCwdXZ75rWnmrh2Cuw/hoFBV8YQK+OXELUSSV5OAeJK/+tasXUlwiArW3Vq5k+lNRCuxmPQcXnEpKh5yBLc18uEhzVs6xbyHU9UL3w99oCHca61ZwRUfc9swV8YOWHWrUBLoK3qLZbsKoBKooJl8HIL8klL88dzKpuoUuiuJov34f8apziNmfSTvsTfM+dQh6TcgjVOzRlPdl4uD1vGjG0ee90h/wKI3noJo2WD7UHYJpybFdgOGBc6hE1icSUkVfph/q6MZymOVFWcxL2uS/MwkbKYlos3cIV+ry93pPToDRFOf0EeuDNu7dnH6eIWa/xYem77+YP3v1/0Aoql4YTOzwtIDnDJLlIDbMGzlFk/fJL3Ge0N6lOQDciCco4wOO1/JxhyPiBxdy3+//bmNW5oGlMHCJfDck6N8mggWnUtiWrZGdEK5FGMX45WbiFgEZ4fs6ZkwOAEdKaWnkrYxN8KOZhC64lDvfSrP4=
 after_deploy:
 - if [[ "${TRAVIS_OS_NAME}" == "linux" && ${TRAVIS_R_VERSION_STRING} = "release" ]];
   then echo 'covr::coveralls(type = "all", quiet = FALSE)' > neuroc_covr.R ; travis_wait
