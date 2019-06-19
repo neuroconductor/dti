@@ -26,7 +26,7 @@ C   thnew    -  new smoothed diffusion tensor data
      2       det(n1,n2,n3),bcov(6,6),sigma2(n1,n2,n3),vext(3),
      3       solvebtb(6,ngrad),swsi(ngrad),
      4       sigma2h(n1,n2,n3),sigma2n(n1,n2,n3)
-      logical mask(n1,n2,n3)
+      integer mask(n1,n2,n3)
       integer i1,j1,j1a,j1e,jj1,i2,j2,j2a,j2e,jj2,i3,j3,j3a,j3e,jj3,
      1        ierr,k,l
       double precision wij,adist,sw,sws0,h2,thi(6),bii,sqrbii,ew(3),
@@ -40,7 +40,7 @@ C  now anisotropic smoothing
       DO i1=1,n1
          DO i2=1,n2
             DO i3=1,n3
-               if(.not.mask(i1,i2,i3)) CYCLE
+               if(mask(i1,i2,i3).eq.0) CYCLE
                sw=0.d0
                sw0=0.d0
                sws0=0.d0
@@ -98,7 +98,7 @@ C  this is scale invariant sice sqrbii scales with sqrt(sigma2) (standard deviat
                       DO j3=j3a,j3e
                         jj3=i3+j3
                         if(jj3.le.0.or.jj3.gt.n3) CYCLE
-                        if(.not.mask(jj1,jj2,jj3)) CYCLE
+                        if(mask(jj1,jj2,jj3).eq.0) CYCLE
                         wij=adist(thi,j1,j2,j3,vext)
 C     triangular location kernel
                         if(wij.gt.h2) CYCLE

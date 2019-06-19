@@ -16,7 +16,7 @@ C   wght     scaling factor for second and third dimension (larger values shrink
 C
       implicit none
       integer n1,n2,n3
-      logical mask(n1,n2,n3)
+      integer mask(n1,n2,n3)
       double precision y(n1,n2,n3),theta(n1,n2,n3),bi(n1,n2,n3),
      1       wght(2),hakt,lwght(*)
       integer ih1,ih2,ih3,i1,i2,i3,j1,j2,j3,jind3,jind2,jind,
@@ -72,7 +72,7 @@ C  first stochastic term
       DO i3=1,n3
          DO i2=1,n2
              DO i1=1,n1
-               IF (mask(i1,i2,i3)) CYCLE
+               IF (mask(i1,i2,i3).eq.0) CYCLE
 C    nothing to do, final estimate is already fixed by control
 C   scaling of sij outside the loop
                swj=0.d0
@@ -95,7 +95,7 @@ C   scaling of sij outside the loop
 C  first stochastic term
                         j1=jw1-clw1+i1
                         if(j1.lt.1.or.j1.gt.n1) CYCLE
-                        IF (mask(j1,j2,j3)) CYCLE
+                        IF (mask(j1,j2,j3).eq.0) CYCLE
                         wj=lwght(jw1+jwind2)
                         z1=(clw1-jw1)
                         z1=z2+z1*z1
@@ -133,7 +133,7 @@ C   wght     scaling factor for second and third dimension (larger values shrink
 C
       implicit none
       integer n1,n2,n3
-      logical mask(n1,n2,n3)
+      integer mask(n1,n2,n3)
       double precision y(n1,n2,n3),theta(n1,n2,n3),bi(n1,n2,n3),
      1       thetan(n1,n2,n3),lambda,wght(2),hakt,lwght(*),
      2       si2(n1,n2,n3),spmin,hhom(n1,n2,n3),
@@ -196,7 +196,7 @@ C  first stochastic term
                hhomi=hhom(i1,i2,i3)
                hhomi=hhomi*hhomi
                hhommax=hmax2
-               IF (.not.mask(i1,i2,i3)) CYCLE
+               IF (mask(i1,i2,i3).eq.0) CYCLE
 C    nothing to do, final estimate is already fixed by control
                thetai=theta(i1,i2,i3)
                bii=bi(i1,i2,i3)/lambda
@@ -224,7 +224,7 @@ C   scaling of sij outside the loop
 C  first stochastic term
                         j1=jw1-clw1+i1
                         if(j1.lt.1.or.j1.gt.n1) CYCLE
-                        if(.not.mask(j1,j2,j3)) CYCLE
+                        if(mask(j1,j2,j3).eq.0) CYCLE
                         wj=lwght(jw1+jwind2)
                         z1=(clw1-jw1)
                         z1=z2+z1*z1

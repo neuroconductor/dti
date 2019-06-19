@@ -92,7 +92,7 @@ C   eps      -  something small and positive
      3       ani(n1,n2,n3),andir(3,n1,n2,n3),s2(nb),det(n1,n2,n3),h,
      4       rho0,vext(3),lambda,swsi(nb),F(nb),varinv(nb),eps,rss,
      5       wselect(nw),vol
-      logical mask(n1,n2,n3),rician,sbind(nb)
+      integer mask(n1,n2,n3),rician,sbind(nb)
       integer i1,j1,j1a,j1e,jj1,i2,j2,j2a,j2e,jj2,i3,j3,j3a,j3e,jj3,
      1        ierr,k,center,l,ns0
       double precision wij,adist,sw,h2,thi(7),bii,sqrbii,ew(3),ev(3,3),
@@ -103,7 +103,7 @@ C   eps      -  something small and positive
       external adist,dtidisrg
       logical aws
       aws=lambda.lt.1e20
-      if(rician) THEN
+      if(rician.ne.0) THEN
          call besselq(x,10000,fw)
       END IF
       h1=exp(log(vol*vext(1)*vext(2)*vext(3))/3.d0)
@@ -120,7 +120,7 @@ C  first fill predicted
 C  now anisotropic smoothing
       ns0=0
       DO k=1,nb
-         if(sbind(k)) THEN
+         if(sbind(k).ne.0) THEN
             ns0=ns0+1
          END IF
       END DO
@@ -129,7 +129,7 @@ C  now anisotropic smoothing
       DO i1=1,n1
          DO i2=1,n2
             DO i3=1,n3
-               if(.not.mask(i1,i2,i3)) CYCLE
+               if(mask(i1,i2,i3).eq.0) CYCLE
                DO k=1,nb
                   z=si(k,i1,i2,i3)
                   zsd=sdcoef(1)+z*sdcoef(2)
@@ -212,7 +212,7 @@ C   create needed estimates of s_i
                      DO j3=j3a,j3e
                         jj3=i3+j3
                         if(jj3.le.0.or.jj3.gt.n3) CYCLE
-                        if(.not.mask(jj1,jj2,jj3)) CYCLE
+                        if(mask(jj1,jj2,jj3).eq.0) CYCLE
                         wij=adist(thi,j1,j2,j3,vext)
 C     triangular location kernel
                         if(wij.ge.h2) CYCLE
@@ -231,7 +231,7 @@ C  use Plateau kernel
                         END IF
                         sw=sw+wij
                         sw2=sw2+wij*wij
-                        if(rician) THEN
+                        if(rician.ne.0) THEN
                            DO k=1,nb
                               z=si(k,jj1,jj2,jj3)
                               swsi(k)=swsi(k)+wij*z
@@ -259,11 +259,11 @@ C                              call intpr("nselect>nw",10,nselect,1)
                Do k=1,nb
                   swsi(k)=swsi(k)/sw
                END DO
-               if(rician.and.sw.gt.1.d0) THEN
+               if(rician.ne.0.and.sw.gt.1.d0) THEN
                   ssigma2=0.d0
 C                  ns0=0
                   DO k=1,nb
-                     if(sbind(k)) THEN
+                     if(sbind(k).ne.0) THEN
                         s2hat = swsi2(k)/sw-swsi(k)*swsi(k)
                         s2(k) = s2hat
                         ssigma2=ssigma2+s2hat

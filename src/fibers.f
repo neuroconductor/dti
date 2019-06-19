@@ -9,7 +9,7 @@ C   lengthf(nfibers) -  length(fibers)
       integer sizef,nfibers,mlf,ifiber(3,mlf),startf(nfibers),
      1        lengthf(nfibers),nx,ny,nz,sizenf,nnfiber
       double precision fiber(sizef,6),newfiber(sizef,6),vext(3)
-      logical roi(nx,ny,nz)
+      integer roi(nx,ny,nz)
       integer i,j,k,j1,istart,ilen,nstart
       logical finroi,inroi
       nstart=0
@@ -42,12 +42,12 @@ C  we now have the voxelcoords for this fiber
       logical function finroi(ifiber,sf,roi,nx,ny,nz)
       implicit none
       integer sf,ifiber(3,sf),nx,ny,nz
-      logical roi(nx,ny,nz)
+      integer roi(nx,ny,nz)
       integer i
       logical in
       in=.FALSE.
       DO i=1,sf
-         IF(roi(ifiber(1,i),ifiber(2,i),ifiber(3,i))) THEN
+         IF(roi(ifiber(1,i),ifiber(2,i),ifiber(3,i)).ne.0) THEN
             in=.TRUE.
             CYCLE
          ENDIF
@@ -92,25 +92,25 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine reducefi(fibers,nsegm,startf,endf,nfibers,keep,maxd)
       implicit none
       integer nsegm,nfibers,startf(nfibers),endf(nfibers)
-      logical keep(nfibers)
+      integer keep(nfibers)
       double precision fibers(3,nsegm),maxd
       integer i,il,is,ilong,ishort,ncounts,sfil,efil,nlong
       double precision z1,z2,z3,mindist,f1,f2,f3
       DO i=1,nfibers
-         keep(i)=.TRUE.
+         keep(i)=1
       END DO
       mindist=1d10
 C  just to prevent a compiler warning
       ncounts=0
       nlong=0
       DO ilong=1,nfibers-1
-         if(.not.keep(ilong)) CYCLE
+         if(keep(ilong).eq.0) CYCLE
          nlong=nlong+1
          sfil=startf(ilong)
          efil=endf(ilong)
          DO ishort=ilong+1,nfibers
-            if(.not.keep(ishort)) CYCLE
-            keep(ishort)=.FALSE.
+            if(keep(ishort).eq.0) CYCLE
+            keep(ishort)=0
             DO is=startf(ishort),endf(ishort)
                f1=fibers(1,is)
                f2=fibers(2,is)
@@ -123,11 +123,11 @@ C  just to prevent a compiler warning
                   if(mindist.lt.maxd) EXIT
                END DO
                if(mindist.ge.maxd) THEN
-                  keep(ishort)=.TRUE.
+                  keep(ishort)=1
                   EXIT
                END IF
             END DO
-            if(.not.keep(ishort)) THEN
+            if(keep(ishort).eq.0) THEN
                ncounts=ncounts+1
             END IF
          END DO
@@ -148,23 +148,23 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine reducefe(fibers,nsegm,startf,endf,nfibers,keep,maxd)
       implicit none
       integer nsegm,nfibers,startf(nfibers),endf(nfibers)
-      logical keep(nfibers)
+      integer keep(nfibers)
       double precision fibers(3,nsegm),maxd
       integer i,il,is,ilong,ishort,ncounts,sfil,efil,nlong
       double precision z1,z2,z3,mindist,f1,f2,f3
       DO i=1,nfibers
-         keep(i)=.TRUE.
+         keep(i)=1
       END DO
       ncounts=0
       nlong=0
       DO ilong=1,nfibers-1
-         if(.not.keep(ilong)) CYCLE
+         if(keep(ilong).eq.0) CYCLE
          nlong=nlong+1
          sfil=startf(ilong)
          efil=endf(ilong)
          DO ishort=ilong+1,nfibers
-            if(.not.keep(ishort)) CYCLE
-            keep(ishort)=.FALSE.
+            if(keep(ishort).eq.0) CYCLE
+            keep(ishort)=0
             is=startf(ishort)
             mindist=maxd
             f1=fibers(1,is)
@@ -177,7 +177,7 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
                mindist=min(mindist,z1*z1+z2*z2+z3*z3)
             END DO
             if(mindist.ge.maxd) THEN
-               keep(ishort)=.TRUE.
+               keep(ishort)=1
                CYCLE
             END IF
             is=endf(ishort)
@@ -192,7 +192,7 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
                mindist=min(mindist,z1*z1+z2*z2+z3*z3)
             END DO
             if(mindist.ge.maxd) THEN
-               keep(ishort)=.TRUE.
+               keep(ishort)=1
                CYCLE
             END IF
             ncounts=ncounts+1
@@ -215,13 +215,13 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
      1                   keep,fibers2,nsegm2,maxdist)
       implicit none
       integer nsegm1,nfibers1,startf1(nfibers1),endf1(nfibers1),nsegm2
-      logical keep(nfibers1)
+      integer keep(nfibers1)
       double precision fibers1(6,nsegm1),fibers2(3,nsegm2),maxdist
       integer i,j,k,l,alength
       double precision x1,z1,y1,d
 C Initialize keep to none
       DO i=1,nfibers1
-         keep(i)=.FALSE.
+         keep(i)=0
       END DO
       alength=0
 C check which fibers in fibers1 are to be kept
@@ -243,7 +243,7 @@ C$OMP DO SCHEDULE(GUIDED)
                k=k+1
             END DO
             if(d.le.maxdist) THEN
-               keep(i)=.TRUE.
+               keep(i)=1
                EXIT
             END IF
          END DO
@@ -254,7 +254,7 @@ C$OMP FLUSH(keep)
 C now reorganize fibers1, keeping only the fibers touching fibers2
       j=0
       DO i=1,nfibers1
-         if(keep(i)) THEN
+         if(keep(i).ne.0) THEN
             j=j+1
             alength=endf1(i)-startf1(i)
             DO k=0,alength

@@ -4,28 +4,23 @@
 #include <Rinternals.h> // for SEXP
 #include <R_ext/RS.h>
 
-SEXP interface_tracking(SEXP data_dir_coords, SEXP data_FA_values,
-                                SEXP data_mask,
-			        SEXP dim_x, SEXP dim_y, SEXP dim_z,
-			        SEXP roi_x_s, SEXP roi_x_e,
-			        SEXP roi_y_s, SEXP roi_y_e,
-			        SEXP roi_z_s, SEXP roi_z_e,
+SEXP interface_tracking(SEXP data_dir_coords, SEXP data_FA_values, SEXP data_mask,
+			        SEXP dim_x, SEXP dim_y, SEXP dim_z, SEXP roi_x_s, SEXP roi_x_e,
+			        SEXP roi_y_s, SEXP roi_y_e, SEXP roi_z_s, SEXP roi_z_e,
 			        SEXP voxelext_x, SEXP voxelext_y, SEXP voxelext_z,
-			        SEXP min_anisotropy,
-			        SEXP max_angle);
+			        SEXP min_anisotropy, SEXP max_angle);
 
-             	SEXP interface_tracking_mixtensor(
-             					SEXP data_dir_coords, SEXP data_order,
-             					SEXP data_FA_values, SEXP data_mask,
-             					SEXP data_mix,
-             					SEXP maxorder,
-             			        SEXP dim_x, SEXP dim_y, SEXP dim_z,
-             			        SEXP roi_x_s, SEXP roi_x_e,
-             			        SEXP roi_y_s, SEXP roi_y_e,
-             			        SEXP roi_z_s, SEXP roi_z_e,
-             			        SEXP voxelext_x, SEXP voxelext_y, SEXP voxelext_z,
-             			        SEXP min_anisotropy,
-             			        SEXP max_angle);
+SEXP interface_tracking_mixtensor(
+             	SEXP data_dir_coords, SEXP data_order,
+             	SEXP data_FA_values, SEXP data_mask,
+             	SEXP data_mix, SEXP maxorder,
+             	SEXP dim_x, SEXP dim_y, SEXP dim_z,
+             	SEXP roi_x_s, SEXP roi_x_e,
+             	SEXP roi_y_s, SEXP roi_y_e,
+             	SEXP roi_z_s, SEXP roi_z_e,
+             	SEXP voxelext_x, SEXP voxelext_y, SEXP voxelext_z,
+             	SEXP min_anisotropy,
+             	SEXP max_angle);
 
 static const R_CallMethodDef callMethods[]  = {
   {"interface_tracking", (DL_FUNC) &interface_tracking, 17},
@@ -251,57 +246,57 @@ void F77_NAME(touchfi)( double* fibers1, int* nsegm1, int* startf1, int* endf1,
 static R_NativePrimitiveArgType adcradii_t[]={REALSXP, INTSXP, REALSXP,
   INTSXP, REALSXP};
 static R_NativePrimitiveArgType adsmse3m_t[]={REALSXP, REALSXP, REALSXP,
-  REALSXP, LGLSXP, INTSXP, INTSXP, INTSXP, INTSXP, INTSXP, REALSXP, INTSXP,
+  REALSXP, INTSXP, INTSXP, INTSXP, INTSXP, INTSXP, INTSXP, REALSXP, INTSXP,
   INTSXP, REALSXP, INTSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP};
 static R_NativePrimitiveArgType adsmse3p_t[]={REALSXP, REALSXP,
-  REALSXP, LGLSXP, INTSXP, INTSXP, INTSXP, INTSXP, REALSXP, INTSXP,
+  REALSXP, INTSXP, INTSXP, INTSXP, INTSXP, INTSXP, REALSXP, INTSXP,
   INTSXP, INTSXP, REALSXP, INTSXP, REALSXP, REALSXP, REALSXP, REALSXP, INTSXP};
 static R_NativePrimitiveArgType adsmse3s_t[]={REALSXP, REALSXP, REALSXP,
-  REALSXP, REALSXP, REALSXP, REALSXP, REALSXP, LGLSXP, INTSXP, INTSXP, INTSXP,
+  REALSXP, REALSXP, REALSXP, REALSXP, REALSXP, INTSXP, INTSXP, INTSXP, INTSXP,
   INTSXP, INTSXP, REALSXP, REALSXP, INTSXP, REALSXP, INTSXP, INTSXP, REALSXP,
   INTSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP,
   REALSXP, REALSXP};
 static R_NativePrimitiveArgType afmodem1_t[]={REALSXP, INTSXP, INTSXP,
-  INTSXP, LGLSXP, REALSXP, REALSXP, REALSXP};
+  INTSXP, INTSXP, REALSXP, REALSXP, REALSXP};
 static R_NativePrimitiveArgType afmodem2_t[]={REALSXP, INTSXP, INTSXP,
-  INTSXP, LGLSXP, REALSXP, REALSXP, REALSXP};
+  INTSXP, INTSXP, REALSXP, REALSXP, REALSXP};
 static R_NativePrimitiveArgType afmodevn_t[]={REALSXP, INTSXP, INTSXP,
-  INTSXP, LGLSXP, REALSXP, REALSXP, REALSXP};
+  INTSXP, INTSXP, REALSXP, REALSXP, REALSXP};
 static R_NativePrimitiveArgType asmse30p_t[]={REALSXP, REALSXP,
-  REALSXP, LGLSXP, INTSXP, INTSXP, INTSXP, REALSXP, INTSXP, INTSXP,
+  REALSXP, INTSXP, INTSXP, INTSXP, INTSXP, REALSXP, INTSXP, INTSXP,
   REALSXP, INTSXP, INTSXP, INTSXP, REALSXP, REALSXP, REALSXP, INTSXP};
 static R_NativePrimitiveArgType awsadchi_t[]={REALSXP, REALSXP,
-  REALSXP, REALSXP, LGLSXP, INTSXP, INTSXP, INTSXP, INTSXP, REALSXP,
+  REALSXP, REALSXP, INTSXP, INTSXP, INTSXP, INTSXP, INTSXP, REALSXP,
   INTSXP, REALSXP, REALSXP, REALSXP, INTSXP, REALSXP, REALSXP};
 static R_NativePrimitiveArgType awslchi2_t[]={REALSXP, REALSXP,
-  REALSXP, REALSXP, REALSXP, REALSXP, LGLSXP, INTSXP, INTSXP, INTSXP,
+  REALSXP, REALSXP, REALSXP, REALSXP, INTSXP, INTSXP, INTSXP, INTSXP,
   INTSXP, REALSXP, INTSXP, REALSXP, REALSXP, REALSXP, REALSXP, INTSXP,
   INTSXP, REALSXP, REALSXP, REALSXP, REALSXP};
 static R_NativePrimitiveArgType awsrgdti_t[]={REALSXP, REALSXP, REALSXP,
-  INTSXP, INTSXP, INTSXP, INTSXP, LGLSXP, LGLSXP, REALSXP, REALSXP, REALSXP,
+  INTSXP, INTSXP, INTSXP, INTSXP, INTSXP, INTSXP, REALSXP, REALSXP, REALSXP,
   REALSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP,
   REALSXP, INTSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP,
-  REALSXP, REALSXP, LGLSXP, INTSXP, INTSXP, REALSXP, INTSXP, REALSXP, REALSXP};
-static R_NativePrimitiveArgType awssidti_t[]={REALSXP, REALSXP, LGLSXP,
+  REALSXP, REALSXP, INTSXP, INTSXP, INTSXP, REALSXP, INTSXP, REALSXP, REALSXP};
+static R_NativePrimitiveArgType awssidti_t[]={REALSXP, REALSXP, INTSXP,
   REALSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP,
   REALSXP, INTSXP, INTSXP, INTSXP, INTSXP, REALSXP, REALSXP, REALSXP, REALSXP,
   REALSXP, REALSXP, REALSXP, REALSXP};
 static R_NativePrimitiveArgType awsvchi_t[]={REALSXP, REALSXP, REALSXP,
-  REALSXP, LGLSXP, INTSXP, INTSXP, INTSXP, INTSXP, REALSXP,
+  REALSXP, INTSXP, INTSXP, INTSXP, INTSXP, INTSXP, REALSXP,
   INTSXP, REALSXP, REALSXP, REALSXP, REALSXP};
 static R_NativePrimitiveArgType bgstats_t[]={REALSXP, INTSXP, REALSXP,
   REALSXP};
-static R_NativePrimitiveArgType caws03d_t[]={REALSXP, LGLSXP, INTSXP,
+static R_NativePrimitiveArgType caws03d_t[]={REALSXP, INTSXP, INTSXP,
   INTSXP, INTSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP};
-static R_NativePrimitiveArgType cgaws_t[]={REALSXP, LGLSXP, REALSXP,
+static R_NativePrimitiveArgType cgaws_t[]={REALSXP, INTSXP, REALSXP,
   INTSXP, INTSXP, INTSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP,
   REALSXP, REALSXP, REALSXP, REALSXP, REALSXP};
 static R_NativePrimitiveArgType cfibers_t[]={REALSXP, INTSXP, INTSXP,
   INTSXP, REALSXP, INTSXP};
 static R_NativePrimitiveArgType d2rall_t[]={REALSXP, REALSXP, INTSXP};
-static R_NativePrimitiveArgType dti2dga_t[]={REALSXP, INTSXP, LGLSXP,
+static R_NativePrimitiveArgType dti2dga_t[]={REALSXP, INTSXP, INTSXP,
   REALSXP, REALSXP, REALSXP};
-static R_NativePrimitiveArgType dti2dfa_t[]={REALSXP, INTSXP, LGLSXP,
+static R_NativePrimitiveArgType dti2dfa_t[]={REALSXP, INTSXP, INTSXP,
   REALSXP, REALSXP, REALSXP};
 static R_NativePrimitiveArgType dti3dall_t[]={REALSXP, INTSXP, REALSXP,
   REALSXP, REALSXP, REALSXP, REALSXP};
@@ -321,17 +316,17 @@ static R_NativePrimitiveArgType fibersta_t[]={REALSXP, INTSXP, INTSXP,
 static R_NativePrimitiveArgType gethani_t[]={REALSXP, REALSXP, REALSXP,
   REALSXP, REALSXP, REALSXP, REALSXP};
 static R_NativePrimitiveArgType getmask_t[]={REALSXP, INTSXP, INTSXP,
-  INTSXP, INTSXP, REALSXP, INTSXP, REALSXP, REALSXP, LGLSXP};
+  INTSXP, INTSXP, REALSXP, INTSXP, REALSXP, REALSXP, INTSXP};
 static R_NativePrimitiveArgType getmsni0_t[]={REALSXP, INTSXP, INTSXP,
   REALSXP};
 static R_NativePrimitiveArgType getmsth0_t[]={REALSXP, INTSXP, INTSXP,
   REALSXP};
 static R_NativePrimitiveArgType getsii30_t[]={REALSXP, REALSXP, INTSXP,
   INTSXP, INTSXP, REALSXP, INTSXP, REALSXP, INTSXP, INTSXP, REALSXP, INTSXP,
-  INTSXP, REALSXP, REALSXP, INTSXP, REALSXP, INTSXP, LGLSXP};
+  INTSXP, REALSXP, REALSXP, INTSXP, REALSXP, INTSXP, INTSXP};
 static R_NativePrimitiveArgType getsii31_t[]={REALSXP, REALSXP, INTSXP,
   INTSXP, INTSXP, REALSXP, INTSXP, INTSXP, REALSXP, INTSXP, INTSXP, REALSXP,
-  INTSXP, INTSXP, REALSXP, REALSXP, INTSXP, REALSXP, INTSXP, LGLSXP, REALSXP,
+  INTSXP, INTSXP, REALSXP, REALSXP, INTSXP, REALSXP, INTSXP, INTSXP, REALSXP,
   REALSXP};
 static R_NativePrimitiveArgType getsiibv_t[]={REALSXP, INTSXP, INTSXP,
   INTSXP, REALSXP, REALSXP, INTSXP, REALSXP, REALSXP, REALSXP, INTSXP,
@@ -343,27 +338,27 @@ static R_NativePrimitiveArgType ghfse3i_t[]={INTSXP, INTSXP, REALSXP,
 static R_NativePrimitiveArgType hg1f1_t[]={REALSXP, REALSXP, REALSXP,
   INTSXP, REALSXP};
 static R_NativePrimitiveArgType iandir_t[]={REALSXP, INTSXP, REALSXP,
-  INTSXP, LGLSXP, INTSXP};
+  INTSXP, INTSXP, INTSXP};
 static R_NativePrimitiveArgType initdata_t[]={REALSXP, INTSXP, INTSXP,
   INTSXP, INTSXP, REALSXP};
 static R_NativePrimitiveArgType ipolsp_t[]={REALSXP, REALSXP, REALSXP,
   REALSXP, INTSXP, INTSXP, INTSXP, REALSXP, INTSXP, INTSXP, REALSXP, REALSXP};
 static R_NativePrimitiveArgType ipolsp1_t[]={REALSXP, REALSXP, REALSXP,
-  REALSXP, LGLSXP, INTSXP, INTSXP, INTSXP, REALSXP, INTSXP, INTSXP, REALSXP,
+  REALSXP, INTSXP, INTSXP, INTSXP, INTSXP, REALSXP, INTSXP, INTSXP, REALSXP,
   REALSXP};
 static R_NativePrimitiveArgType k456krb_t[]={REALSXP, REALSXP,
   REALSXP, REALSXP};
-static R_NativePrimitiveArgType lconnect_t[]={LGLSXP, INTSXP, INTSXP,
-  INTSXP, INTSXP, INTSXP, INTSXP, INTSXP, INTSXP, INTSXP, LGLSXP};
+static R_NativePrimitiveArgType lconnect_t[]={INTSXP, INTSXP, INTSXP,
+  INTSXP, INTSXP, INTSXP, INTSXP, INTSXP, INTSXP, INTSXP, INTSXP};
 static R_NativePrimitiveArgType lkfuls0_t[]={REALSXP, REALSXP,
   INTSXP, REALSXP, INTSXP};
 static R_NativePrimitiveArgType lkfulse3_t[]={REALSXP, REALSXP, REALSXP,
   INTSXP, REALSXP, INTSXP, REALSXP, INTSXP, INTSXP};
-static R_NativePrimitiveArgType mcorr_t[]={REALSXP, LGLSXP, INTSXP, INTSXP,
+static R_NativePrimitiveArgType mcorr_t[]={REALSXP, INTSXP, INTSXP, INTSXP,
   INTSXP, INTSXP, REALSXP, REALSXP, REALSXP, INTSXP, INTSXP, INTSXP};
 static R_NativePrimitiveArgType means0_t[]={REALSXP, INTSXP, INTSXP, INTSXP,
-  REALSXP, LGLSXP};
-static R_NativePrimitiveArgType mediansm_t[]={REALSXP, LGLSXP, INTSXP,
+  REALSXP, INTSXP};
+static R_NativePrimitiveArgType mediansm_t[]={REALSXP, INTSXP, INTSXP,
   INTSXP, INTSXP, INTSXP, INTSXP, REALSXP, INTSXP, REALSXP};
 static R_NativePrimitiveArgType mixandir_t[]={REALSXP, REALSXP, INTSXP,
   INTSXP, INTSXP, REALSXP};
@@ -372,9 +367,9 @@ static R_NativePrimitiveArgType mixtradi_t[]={REALSXP, INTSXP, REALSXP,
 static R_NativePrimitiveArgType odfradii_t[]={REALSXP, INTSXP, REALSXP,
   INTSXP, REALSXP};
 static R_NativePrimitiveArgType outlier_t[]={REALSXP, INTSXP, INTSXP,
-  INTSXP, INTSXP, INTSXP, REALSXP, LGLSXP};
+  INTSXP, INTSXP, INTSXP, REALSXP, INTSXP};
 static R_NativePrimitiveArgType outlierp_t[]={REALSXP, INTSXP, INTSXP,
-  INTSXP, INTSXP, INTSXP, INTSXP, REALSXP, LGLSXP};
+  INTSXP, INTSXP, INTSXP, INTSXP, REALSXP, INTSXP};
 static R_NativePrimitiveArgType paramw3_t[]={REALSXP, REALSXP, INTSXP,
   REALSXP, INTSXP};
 static R_NativePrimitiveArgType pgtsii30_t[]={REALSXP, REALSXP, INTSXP,
@@ -388,18 +383,18 @@ static R_NativePrimitiveArgType projdt2_t[]={REALSXP, INTSXP, INTSXP,
 static R_NativePrimitiveArgType r2dall_t[]={REALSXP, REALSXP, INTSXP};
 static R_NativePrimitiveArgType rho2d0_t[]={REALSXP, REALSXP};
 static R_NativePrimitiveArgType reducefe_t[]={REALSXP, INTSXP, INTSXP,
-  INTSXP, INTSXP, LGLSXP, REALSXP};
+  INTSXP, INTSXP, INTSXP, REALSXP};
 static R_NativePrimitiveArgType reducefi_t[]={REALSXP, INTSXP, INTSXP,
-  INTSXP, INTSXP, LGLSXP, REALSXP};
+  INTSXP, INTSXP, INTSXP, REALSXP};
 static R_NativePrimitiveArgType roifiber_t[]={REALSXP, REALSXP, INTSXP,
-  INTSXP, INTSXP, INTSXP, INTSXP, INTSXP, LGLSXP, INTSXP, INTSXP, INTSXP,
+  INTSXP, INTSXP, INTSXP, INTSXP, INTSXP, INTSXP, INTSXP, INTSXP, INTSXP,
   REALSXP, INTSXP, INTSXP};
 static R_NativePrimitiveArgType selisamp_t[]={INTSXP, INTSXP,
-  INTSXP, REALSXP, INTSXP, LGLSXP, REALSXP};
+  INTSXP, REALSXP, INTSXP, INTSXP, REALSXP};
 static R_NativePrimitiveArgType smsigma_t[]={REALSXP, INTSXP, INTSXP,
   INTSXP, REALSXP, REALSXP, REALSXP};
 static R_NativePrimitiveArgType sweeps0_t[]={REALSXP, REALSXP, INTSXP,
-  INTSXP, INTSXP, INTSXP, REALSXP, REALSXP, REALSXP, LGLSXP};
+  INTSXP, INTSXP, INTSXP, REALSXP, REALSXP, REALSXP, INTSXP};
 static R_NativePrimitiveArgType sweeps0p_t[]={REALSXP, REALSXP, INTSXP,
   INTSXP, INTSXP, INTSXP, REALSXP, INTSXP};
 static R_NativePrimitiveArgType tensres_t[]={REALSXP, REALSXP, REALSXP,
@@ -407,7 +402,7 @@ static R_NativePrimitiveArgType tensres_t[]={REALSXP, REALSXP, REALSXP,
 static R_NativePrimitiveArgType thcorr_t[]={REALSXP, INTSXP, INTSXP,
   INTSXP, REALSXP, INTSXP, INTSXP, INTSXP};
 static R_NativePrimitiveArgType touchfi_t[]={REALSXP, INTSXP, INTSXP,
-  INTSXP, INTSXP, LGLSXP, REALSXP, INTSXP, REALSXP};
+  INTSXP, INTSXP, INTSXP, REALSXP, INTSXP, REALSXP};
 
 static const R_FortranMethodDef FMethods[] = {
             {"adcradii", (DL_FUNC) &adcradii_ , 5,adcradii_t},

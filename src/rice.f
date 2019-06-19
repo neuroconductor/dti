@@ -4,7 +4,7 @@
       integer n,nb,niter(nb)
       double precision si(nb,n)
       double precision w(n),th(nb),s2(nb),sigma2,sw,fw(10000)
-      logical sbind(nb)
+      integer sbind(nb)
       integer i,j,k,l,iter,ns0
       double precision z,sth,th2,ss2,thk,sii,minsi
       iter=1
@@ -40,10 +40,9 @@ C  just avoid extreme corrections caused by overestimated variances
          END DO
          ss2=0.d0
          DO k=1,nb
-            if(sbind(k)) ss2=ss2+s2(k)
+            if(sbind(k).ne.0) ss2=ss2+s2(k)
          END DO
          sigma2=ss2/ns0
       END DO
       RETURN
       END
-      

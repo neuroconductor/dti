@@ -226,12 +226,12 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine dti2Dfa(D,n,mask,fa,md,adir)
       implicit none
       integer n
-      logical mask(n)
+      integer mask(n)
       double precision D(6,n),fa(n),md(n),adir(3,n)
       integer i,ierr
       double precision lambda(3),evec(3,3),trc,d1,d2,d3,a1,a2,a3,dd
       DO i=1,n
-         if(mask(i)) THEN
+         if(mask(i).ne.0) THEN
             call eigen3(D(1,i),lambda,evec,ierr)
             a1=dmax1(1d-12,lambda(1))
             a2=dmax1(1d-12,lambda(2))
@@ -268,12 +268,12 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       subroutine dti2Dga(D,n,mask,ga,md,adir)
       implicit none
       integer n
-      logical mask(n)
+      integer mask(n)
       double precision D(6,n),ga(n),md(n),adir(3,n)
       integer i,ierr
       double precision lambda(3),evec(3,3),trc,d1,d2,d3,a1,a2,a3,dd
       DO i=1,n
-         if(mask(i)) THEN
+         if(mask(i).ne.0) THEN
             call eigen3(D(1,i),lambda,evec,ierr)
             a1=log(dmax1(1d-12,lambda(1)))
             a2=log(dmax1(1d-12,lambda(2)))
