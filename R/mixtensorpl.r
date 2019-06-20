@@ -590,8 +590,6 @@ dwiMixtensorMT <- function(object, maxcomp=3, mask=NULL,
   #     BFGS for tensor mixture models without isotropic compartment
   #     L-BFGS-B for tensor mixture models with isotropic compartment
   #
-  ## check model
-  model <- match.arg(model)
   ## check msc
   msc <- match.arg(msc)
   factr <- reltol/1e-14 ## this is 1e6
@@ -621,6 +619,7 @@ dwiMixtensorMT <- function(object, maxcomp=3, mask=NULL,
   prta <- Sys.time()
   cat("Start tensor estimation at",format(prta),"\n")
   tensorobj <- dtiTensor(object, mask=mask, mc.cores = mc.cores)
+  mask <- tensorobj@mask
   cat("Start evaluation of eigenstructure at",format(Sys.time()),"\n")
   z <- dtieigen(tensorobj@D, tensorobj@mask, mc.cores = mc.cores)
   rm(tensorobj)
