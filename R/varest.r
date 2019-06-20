@@ -118,7 +118,7 @@ awslsigmc <- function(y,                 # data
                     as.double(sigma),
                     as.double(vpar),# parameters for var. reduction
                     as.double(ncoils),
-                    as.logical(mask),
+                    as.integer(mask),
                     as.integer(ddim[1]),
                     as.integer(ddim[2]),
                     as.integer(ddim[3]),
@@ -154,7 +154,7 @@ awslsigmc <- function(y,                 # data
     ##
        sigma <- .Fortran(C_mediansm,
                       as.double(z$sigman),
-                      as.logical(mask),
+                      as.integer(mask),
                       as.integer(ddim[1]),
                       as.integer(ddim[2]),
                       as.integer(ddim[3]),
@@ -327,7 +327,7 @@ awssigmc <- function(y,                 # data
                     as.double(th),       # previous estimates
                     ni = as.double(ni),
                     as.double(fncchi/2),
-                    as.logical(mask),
+                    as.integer(mask),
                     as.integer(ddim[1]),
                     as.integer(ddim[2]),
                     as.integer(ddim[3]),
@@ -345,7 +345,7 @@ awssigmc <- function(y,                 # data
                     as.double(th),       # th(n1,n2,n3)
                     ni = as.double(ni),  # ni(n1,n2,n3)
                     as.double(fncchi/2), # fns(n1,n2,n3)
-                    as.logical(mask),    # mask(n1,n2,n3)
+                    as.integer(mask),    # mask(n1,n2,n3)
                     as.integer(ddim[1]), # n1
                     as.integer(ddim[2]), # n2
                     as.integer(ddim[3]), # n3
@@ -424,7 +424,7 @@ aflsigmc <- function(y,ncoils,level=NULL,mask=NULL,h=2,hadj=1,vext = c( 1, 1)){
                  as.integer(ddim[1]),
                  as.integer(ddim[2]),
                  as.integer(ddim[3]),
-                 as.logical(mask1),
+                 as.integer(mask1),
                  as.double(h),
                  as.double(vext),
                  sigma = double(n))$sigma
@@ -440,7 +440,7 @@ aflsigmc <- function(y,ncoils,level=NULL,mask=NULL,h=2,hadj=1,vext = c( 1, 1)){
                  as.integer(ddim[1]),
                  as.integer(ddim[2]),
                  as.integer(ddim[3]),
-                 as.logical(mask1),
+                 as.integer(mask1),
                  as.double(h),
                  as.double(vext),
                  sm = double(n))$sm
@@ -516,7 +516,7 @@ afsigmc <- function(y,                 # data
                         as.integer(ddim[1]),
                         as.integer(ddim[2]),
                         as.integer(ddim[3]),
-                        as.logical(mask),
+                        as.integer(mask),
                         as.double(h),
                         as.double(vext),
                         sigma = double(n))$sigma
@@ -529,7 +529,7 @@ afsigmc <- function(y,                 # data
                         as.integer(ddim[1]),
                         as.integer(ddim[2]),
                         as.integer(ddim[3]),
-                        as.logical(mask),
+                        as.integer(mask),
                         as.double(h),
                         as.double(vext),
                         sigma = double(n))$sigma
@@ -637,7 +637,7 @@ awslinsd <- function(y,hmax=NULL,hpre=NULL,h0=NULL,mask=NULL,
   if(is.null(hpre)) hpre<-20^(1/3)
   dlw<-(2*trunc(hpre/c(1,wghts))+1)[1:3]
   hobj <- .Fortran(C_caws03d,as.double(y),
-                   as.logical(mask),
+                   as.integer(mask),
                    as.integer(n1),
                    as.integer(n2),
                    as.integer(n3),
@@ -662,7 +662,7 @@ awslinsd <- function(y,hmax=NULL,hpre=NULL,h0=NULL,mask=NULL,
     hakt0<-hakt
     # heteroskedastic Gaussian case
     zobj <- .Fortran(C_cgaws,as.double(y),
-                     as.logical(mask),
+                     as.integer(mask),
                      as.double(sigma2),
                      as.integer(n1),
                      as.integer(n2),

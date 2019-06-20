@@ -173,7 +173,7 @@ setMethod("dwi.smooth.ms",
                             as.double(thnimsh$msni0),#ni0/si^2
                             as.double(vs2),#var/2
                             as.double(vs02),#var/2 for s0
-                            as.logical(mask),#mask
+                            as.integer(mask),#mask
                             as.integer(nshell+1),#ns number of shells
                             as.integer(ddim0[1]),#n1
                             as.integer(ddim0[2]),#n2
@@ -360,7 +360,7 @@ interpolatesphere1 <- function(theta,th0,ni,ni0,n3g,mask){
                 as.double(th0),
                 as.double(ni),
                 as.double(ni0),
-                as.logical(mask),
+                as.integer(mask),
                 as.integer(n),
                 as.integer(ng),
                 as.integer(n3g$ind),

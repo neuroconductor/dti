@@ -1101,7 +1101,8 @@ setMethod("getmask","dtiData",function(object, level=NULL, prop=.4, size=3){
                   as.integer(size),
                   as.double(prop),
                   s0=double(prod(object@ddim)),
-                  mask=logical(prod(object@ddim)))[c("s0","mask")]
+                  mask=integer(prod(object@ddim)))[c("s0","mask")]
+    z$mask <- as.logical(z$mask)
   } else {
     z <- list(s0=object@si[,,,object@s0ind],mask=array(TRUE,object@ddim))
   }
@@ -1127,7 +1128,8 @@ setMethod("getmask","array",function(object, level=NULL, prop=.4, size=3){
                   as.integer(size),
                   as.double(prop),
                   s0=double(prod(ddim)),
-                  mask=logical(prod(ddim)))[c("s0","mask")]
+                  mask=integer(prod(ddim)))[c("s0","mask")]
+    z$mask <- as.logical(z$mask)
   } else {
     z <- list(s0=object,mask=array(TRUE,dim(object)))
   }

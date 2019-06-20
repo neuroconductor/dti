@@ -61,7 +61,7 @@ setMethod("selectFibers","dwiFiber", function(obj, roix=NULL, roiy=NULL, roiz=NU
                   start=as.integer(fiberstart),
                   as.integer(fiberlength),
                   as.integer(length(fiberstart)),#number of fibers
-                  as.logical(mask>0),#roi
+                  as.integer(mask>0),#roi
                   as.integer(obj@ddim[1]),
                   as.integer(obj@ddim[2]),
                   as.integer(obj@ddim[3]),
@@ -123,7 +123,7 @@ setMethod("reduceFibers","dwiFiber", function(obj, maxdist=1, ends=TRUE)
                      as.integer(startf),
                      as.integer(endf),
                      as.integer(nfibers),
-                     keep=logical(nfibers),
+                     keep=integer(nfibers),
                      as.double(maxdist))$keep
   } else {
     keep <- .Fortran(C_reducefi,
@@ -132,9 +132,10 @@ setMethod("reduceFibers","dwiFiber", function(obj, maxdist=1, ends=TRUE)
                      as.integer(startf),
                      as.integer(endf),
                      as.integer(nfibers),
-                     keep=logical(nfibers),
+                     keep=integer(nfibers),
                      as.double(maxdist))$keep
   }
+  keep <- as.logical(keep)
   startf <- startf[keep]
   endf <- endf[keep]
   ind <- rep(startf,endf-startf+1)+sequence(endf-startf+1)-1
@@ -260,7 +261,7 @@ setMethod("touchingFibers",c("dwiFiber","dwiFiber"), function(obj,obj2,maxdist=1
                 startf=as.integer(startf1),
                 as.integer(endf1),
                 nfibers=as.integer(nfibers1),
-                logical(nfibers1),
+                integer(nfibers1),
                 as.double(t(fibers2)),
                 as.integer(nsegm2),
                 as.double(maxdist))[c("fibers","startf","nfibers","nsegm1")]

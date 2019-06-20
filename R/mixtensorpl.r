@@ -125,8 +125,9 @@ setMethod("dwiMixtensor","dtiData",function(object, maxcomp=3,
                   as.integer(ns0),
                   as.integer(object@level),
                   s0=double(nvox),
-                  mask=logical(nvox),
+                  mask=integer(nvox),
                   PACKAGE="dti")[c("s0","mask")]
+  z$mask <- as.logical(z$mask)
   s0 <- array(z$s0,ddim[1:3])
   # mask <- array(z$mask,ddim[1:3])
   means0 <- max(s0[mask])
@@ -379,7 +380,7 @@ selisample <- function(ngrad,maxcomp,nguess,dgrad,maxc){
                     as.integer(maxcomp),
                     as.double(dgrad),
                     as.integer(dim(dgrad)[1]),
-                    ind = logical(nguess),
+                    ind = integer(nguess),
                     as.double(maxc))$ind
     .Random.seed <- saved.seed
   }
@@ -419,7 +420,7 @@ getsiind3 <- function(si,mask,sigma2,grad,bv,vico,th,indth,ev,fa,andir,maxcomp=3
                      as.integer(nvico),
                      as.double(andir),
                      as.integer(nvoxel),
-                     as.logical(landir),
+                     as.integer(landir),
                      iandir=integer(prod(ddim)))$iandir
   isample0 <- selisample(nvico,maxcomp,nguess,dgradi,maxc)
   if(maxcomp>1) isample1 <- selisample(nvico,maxcomp-1,nguess,dgradi,maxc)
@@ -457,7 +458,7 @@ getsiind3 <- function(si,mask,sigma2,grad,bv,vico,th,indth,ev,fa,andir,maxcomp=3
                     siind=integer((maxcomp+2)*nvoxel),
                     krit=double(nvoxel),
                     as.integer(maxcomp+2),
-                    as.logical(mask&!landir))[c("siind","krit")]
+                    as.integer(mask&!landir))[c("siind","krit")]
       dim(z$siind) <- c(maxcomp+2,nvoxel)
       siind[,!landir] <- z$siind[,!landir]
       krit[!landir] <- z$krit[!landir]
@@ -500,7 +501,7 @@ getsiind3 <- function(si,mask,sigma2,grad,bv,vico,th,indth,ev,fa,andir,maxcomp=3
                       siind=integer((maxcomp+2)*nvoxel),
                       krit=double(nvoxel),
                       as.integer(maxcomp+2),
-                      as.logical(mask&landir),
+                      as.integer(mask&landir),
                       as.double(dgradi),
                       as.double(maxc))[c("siind","krit")]
         dim(z$siind) <- c(maxcomp+2,nvoxel)
@@ -682,7 +683,8 @@ dwiMixtensorMT <- function(object, maxcomp=3, mask=NULL,
                   siq=double(nvox*ngrad0),
                   s0=double(nvox),
                   vsi=double(nvox),
-                  mask=logical(nvox))[c("siq","s0","vsi","mask")]
+                  mask=integer(nvox))[c("siq","s0","vsi","mask")]
+    z$mask <- as.logical(z$mask)
     t2 <- Sys.time()
     cat(difftime(t2,t1),"for",nvox,"voxel\n")
     s0 <- array(z$s0,ddim[1:3])
