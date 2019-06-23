@@ -163,8 +163,8 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
                     as.integer(n1),
                     as.integer(n2),
                     as.integer(n3),
-                    as.logical(mask),
-                    as.logical(!((1:ngrad)%in%s0ind)),
+                    as.integer(mask),
+                    as.integer(!((1:ngrad)%in%s0ind)),
                     as.double(btb),
                     as.double(sdcoef),
                     as.double(z$th0),
@@ -186,7 +186,7 @@ dtireg.smooth <- function(object,hmax=5,hinit=1,lambda=30,rho=1,graph=FALSE,slic
                     double(ngrad),#F
                     double(ngrad),#var
                     as.double(eps),
-                    as.logical(rician),
+                    as.integer(rician),
                     as.integer(maxnw),# maximum number of positive weights
                     integer(ngrad),# auxiliary for number of iterations
                     double(maxnw*ngrad),# auxiliary for aktive data

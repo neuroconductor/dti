@@ -51,7 +51,7 @@ sioutlier1 <- function( si, s0ind, level, mask, mc.cores = 1, verbose = TRUE){
                   as.integer(siind),
                   as.integer(ns0),
                   si=double(n*ng),
-                  index=logical(n))[c("si","index")]
+                  index=integer(n))[c("si","index")]
     zz <- matrix(z$si,ng,n)
     index <- (1:n)[z$index]
     rm(z)
@@ -111,7 +111,7 @@ sioutlier <- function( si, s0ind, mc.cores = 1, verbose = TRUE){
                   as.integer(siind),
                   as.integer(ns0),
                   si=double(n*ng),
-                  index=logical(n))[c("si","index")]
+                  index=integer(n))[c("si","index")]
   } else {
     zz <- matrix(.Fortran(C_outlierp,
                           as.double(si),
@@ -143,7 +143,7 @@ mcorr <- function(res,mask,ddim,ngrad0,lags=c(5,5,3),mc.cores=1){
   }
   t1 <- Sys.time()
   scorr <- .Fortran(C_mcorr,as.double(res),
-                    as.logical(mask),
+                    as.integer(mask),
                     as.integer(ddim[1]),
                     as.integer(ddim[2]),
                     as.integer(ddim[3]),
@@ -563,7 +563,7 @@ connect.mask <- function(mask){
   n3 <- dm[3]
   n <- n1*n2*n3
   mask1 <- .Fortran(C_lconnect,
-                    as.logical(mask),
+                    as.integer(mask),
                     as.integer(n1),
                     as.integer(n2),
                     as.integer(n3),
@@ -573,7 +573,8 @@ connect.mask <- function(mask){
                     integer(n),
                     integer(n),
                     integer(n),
-                    mask=logical(n))$mask
+                    mask=integer(n))$mask
+  mask1 <- as.logical(mask1)
   dim(mask1) <- dm
   mask1
 }

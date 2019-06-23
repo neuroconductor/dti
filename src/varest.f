@@ -69,7 +69,7 @@ C   size of work needs to be 2*nind
 C
       implicit none
       integer n1,n2,n3,nind,ind(3,nind),ncores
-      logical mask(n1,n2,n3)
+      integer mask(n1,n2,n3)
       double precision y(n1,n2,n3),yout(n1,n2,n3),work(nind,ncores)
       integer i1,i2,i3,j1,j2,j3,j,k,thrednr
       double precision fmedian
@@ -84,7 +84,7 @@ C$OMP DO SCHEDULE(GUIDED)
 !$         thrednr = omp_get_thread_num()+1
          DO i2=1,n2
             DO i3=1,n3
-               if(.not.mask(i1,i2,i3)) THEN
+               if(mask(i1,i2,i3).eq.0) THEN
                   yout(i1,i2,i3) = y(i1,i2,i3)
                   CYCLE
                ENDIF
@@ -96,7 +96,7 @@ C$OMP DO SCHEDULE(GUIDED)
                   if(j2.le.0.or.j2.gt.n2) CYCLE
                   j3=i3+ind(3,j)
                   if(j3.le.0.or.j3.gt.n3) CYCLE
-                  if(.not.mask(j1,j2,j3)) CYCLE
+                  if(mask(j1,j2,j3).eq.0) CYCLE
                   if(y(j1,j2,j3).le.0.d0) CYCLE
                   k=k+1
                   work(k,thrednr)=y(j1,j2,j3)
@@ -146,7 +146,7 @@ C   wad, sad - array for weights>0 and corresponding observed s
 C
       implicit none
       integer n1,n2,n3,nw,ind(3,nw),nthreds,iL
-      logical mask(n1,n2,n3)
+      integer mask(n1,n2,n3)
       double precision s(n1,n2,n3),ni(n1*n2*n3),thn(n1*n2*n3),
      1  ksi(n1,n2,n3),sigman(n1*n2*n3),lambda,w(nw),sigma(n1,n2,n3),
      2  wad(nw,nthreds),sad(nw,nthreds),L,minni,work(iL,nthreds),
@@ -172,7 +172,7 @@ C$OMP DO SCHEDULE(GUIDED)
          i2=mod((i-i1)/n1+1,n2)
          if(i2.eq.0) i2=n2
          i3=(i-i1-(i2-1)*n1)/n1/n2+1
-         if(.not.mask(i1,i2,i3)) CYCLE
+         if(mask(i1,i2,i3).eq.0) CYCLE
 !$         thrednr = omp_get_thread_num()+1
          sw=0.d0
          sws=0.d0
@@ -199,7 +199,7 @@ C   thats the estimated standard deviation of s(i1,i2,i3)
             if(j2.le.0.or.j2.gt.n2) CYCLE
             j3=i3+ind(3,j)
             if(j3.le.0.or.j3.gt.n3) CYCLE
-            if(.not.mask(j1,j2,j3)) CYCLE
+            if(mask(j1,j2,j3).eq.0) CYCLE
             wj=w(j)
             thj = sqrt(max(0.d0,ksi(j1,j2,j3)/sgi2-2.d0*L))
             if(thj.gt.vpar(1)) THEN
@@ -267,7 +267,7 @@ C   ind(.,i)[1:5] are j1-i1,j2-i2,j3-i3, i4 and j4 respectively
 C
       implicit none
       integer n1,n2,n3,nw,ind(3,nw)
-      logical mask(n1,n2,n3)
+      integer mask(n1,n2,n3)
       double precision y(n1,n2,n3),th(n1,n2,n3),ni(n1*n2*n3),
      1  thn(n1*n2*n3),sy(n1*n2*n3),lambda,w(nw),sigma,fns(n1,n2,n3)
       integer i1,i2,i3,j1,j2,j3,i,j,n
@@ -284,7 +284,7 @@ C$OMP DO SCHEDULE(GUIDED)
          i2=mod((i-i1)/n1+1,n2)
          if(i2.eq.0) i2=n2
          i3=(i-i1-(i2-1)*n1)/n1/n2+1
-         if(.not.mask(i1,i2,i3)) CYCLE
+         if(mask(i1,i2,i3).eq.0) CYCLE
          sw=0.d0
          swy=0.d0
          sw2=0.d0
@@ -352,7 +352,7 @@ C   ind(.,i)[1:5] are j1-i1,j2-i2,j3-i3, i4 and j4 respectively
 C
       implicit none
       integer n1,n2,n3,nw,ind(3,nw),nthreds
-      logical mask(n1,n2,n3)
+      integer mask(n1,n2,n3)
       double precision y(n1,n2,n3),th(n1,n2,n3),ni(n1*n2*n3),
      1       thn(n1*n2*n3),fns(n1,n2,n3),sy(n1*n2*n3),lambda,w(nw),
      2       sigma,wad(nw,nthreds)
@@ -373,7 +373,7 @@ C$OMP DO SCHEDULE(GUIDED)
          i2=mod((i-i1)/n1+1,n2)
          if(i2.eq.0) i2=n2
          i3=(i-i1-(i2-1)*n1)/n1/n2+1
-         if(.not.mask(i1,i2,i3)) CYCLE
+         if(mask(i1,i2,i3).eq.0) CYCLE
 !$         thrednr = omp_get_thread_num()+1
          sw=0.d0
          swy=0.d0
@@ -438,7 +438,7 @@ C
       implicit none
       integer n1,n2,n3
       double precision y(n1,n2,n3),sigma(n1,n2,n3),h,vext(2)
-      logical mask(n1,n2,n3)
+      integer mask(n1,n2,n3)
       integer i1,i2,i3,j1,j2,j3,ih1,ih2,ih3,ni
       double precision m1,m2,z
       ih1=int(h)
@@ -447,7 +447,7 @@ C
       Do i1=1,n1
          Do i2=1,n2
             Do i3=1,n3
-               if(mask(i1,i2,i3)) THEN
+               if(mask(i1,i2,i3).ne.0) THEN
                   ni=0
                   m1=0.d0
                   m2=0.d0
@@ -457,7 +457,7 @@ C
                         if(j2.le.0.or.j2.gt.n2) CYCLE
                         DO j3=i3-ih3,i3+ih3
                            if(j3.le.0.or.j3.gt.n3) CYCLE
-                           if(mask(j1,j2,j3)) THEN
+                           if(mask(j1,j2,j3).ne.0) THEN
                               z=y(j1,j2,j3)
                               m1=m1+z
                               m2=m2+z*z
@@ -489,7 +489,7 @@ C
       implicit none
       integer n1,n2,n3
       double precision y(n1,n2,n3),sigma(n1,n2,n3),h,vext(2)
-      logical mask(n1,n2,n3)
+      integer mask(n1,n2,n3)
       integer i1,i2,i3,j1,j2,j3,ih1,ih2,ih3,ni
       double precision m1
       ih1=int(h)
@@ -498,7 +498,7 @@ C
       Do i1=1,n1
          Do i2=1,n2
             Do i3=1,n3
-               if(mask(i1,i2,i3)) THEN
+               if(mask(i1,i2,i3).ne.0) THEN
                   ni=0
                   m1=0.d0
                   DO j1=i1-ih1,i1+ih1
@@ -507,7 +507,7 @@ C
                         if(j2.le.0.or.j2.gt.n2) CYCLE
                         DO j3=i3-ih3,i3+ih3
                            if(j3.le.0.or.j3.gt.n3) CYCLE
-                           if(mask(j1,j2,j3)) THEN
+                           if(mask(j1,j2,j3).ne.0) THEN
                               m1=m1+y(j1,j2,j3)
                               ni=ni+1
                            ENDIF
@@ -530,7 +530,7 @@ C
       implicit none
       integer n1,n2,n3
       double precision y(n1,n2,n3),sm(n1,n2,n3),h,vext(2)
-      logical mask(n1,n2,n3)
+      integer mask(n1,n2,n3)
       integer i1,i2,i3,j1,j2,j3,ih1,ih2,ih3,ni
       double precision m2
       ih1=int(h)
@@ -539,7 +539,7 @@ C
       Do i1=1,n1
          Do i2=1,n2
             Do i3=1,n3
-               if(mask(i1,i2,i3)) THEN
+               if(mask(i1,i2,i3).ne.0) THEN
                   ni=0
                   m2=0.d0
                   DO j1=i1-ih1,i1+ih1
@@ -548,7 +548,7 @@ C
                         if(j2.le.0.or.j2.gt.n2) CYCLE
                         DO j3=i3-ih3,i3+ih3
                            if(j3.le.0.or.j3.gt.n3) CYCLE
-                           if(mask(j1,j2,j3)) THEN
+                           if(mask(j1,j2,j3).ne.0) THEN
                               m2=m2+y(j1,j2,j3)*y(j1,j2,j3)
                               ni=ni+1
                            ENDIF

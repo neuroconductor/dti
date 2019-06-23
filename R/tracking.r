@@ -76,7 +76,7 @@ setMethod("tracking","dtiTensor", function(obj, roix=NULL, roiy=NULL, roiz=NULL,
   dd <- .Call(C_interface_tracking,
               as.double(andir),
               as.double(fa),
-              as.logical(mask),
+              as.integer(mask),
               as.integer(dimx),
               as.integer(dimy),
               as.integer(dimz),
@@ -189,7 +189,7 @@ setMethod("tracking","dtiIndices", function( obj,
   dd <- .Call(C_interface_tracking,
               as.double(andir),
               as.double(fa),
-              as.logical(mask),
+              as.integer(mask),
               as.integer(dimx),
               as.integer(dimy),
               as.integer(dimz),
@@ -306,7 +306,7 @@ setMethod("tracking", "dwiMixtensor", function(obj, roix=NULL, roiy=NULL,
               as.double(ex$andir), # dim = c(3, maxorder, dimx, dimy, dimz)
               as.integer(ex$order), # NEW! dim = c(dimx, dimy, dimz)
               as.double(ex$fa),    # dim = c(dimx, dimy, dimz)
-              as.logical(mask),
+              as.integer(mask),
               as.double(ex$mix),    # NEW! dim = c(maxorder, dimx, dimy, dimz)
               as.integer(maxorder), # NEW!
               as.integer(dimx),

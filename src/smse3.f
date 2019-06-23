@@ -464,7 +464,7 @@ c   model=1  Chi^2-based KL-distance, y ~ Chi^2, th on same scale, smooth y
 c   model=2  Gauss-based KL-distance, y ~ Chi, th on same scale, smooth y^2
       implicit none
       integer n1,n2,n3,ngrad,n,ind(5,n),ncoils,model,ncores
-      logical mask(n1,n2,n3)
+      integer mask(n1,n2,n3)
       double precision y(n1,n2,n3,ngrad),thn(n1,n2,n3,ngrad),
      1     ni(n1,n2,n3,ngrad),ldf(n1,n2,n3,ngrad),th(n1,n2,n3,ngrad)
       double precision lambda,w(n),sw(ngrad,ncores),swy(ngrad,ncores),
@@ -494,7 +494,7 @@ C$OMP DO SCHEDULE(GUIDED)
             i2=mod((iind-i1)/n1+1,n2)
             if(i2.eq.0) i2=n2
             i3=(iind-i1-(i2-1)*n1)/n1/n2+1
-            if(.not.mask(i1,i2,i3)) CYCLE
+            if(mask(i1,i2,i3).eq.0) CYCLE
 C  not needed for Gauss approximation
             DO i4=1,ngrad
                thi=th(i1,i2,i3,i4)
@@ -514,7 +514,7 @@ C returns value in 0:(ncores-1)
          i2=mod((iind-i1)/n1+1,n2)
          if(i2.eq.0) i2=n2
          i3=(iind-i1-(i2-1)*n1)/n1/n2+1
-         if(.not.mask(i1,i2,i3)) CYCLE
+         if(mask(i1,i2,i3).eq.0) CYCLE
          DO i4=1,ngrad
             sw(i4,thrednr)=0.d0
             swy(i4,thrednr)=0.d0
@@ -537,7 +537,7 @@ C   by construction ind(4,.) should have same values consequtively
             if(j2.le.0.or.j2.gt.n2) CYCLE
             j3=i3+ind(3,i)
             if(j3.le.0.or.j3.gt.n3) CYCLE
-            if(.not.mask(j1,j2,j3)) CYCLE
+            if(mask(j1,j2,j3).eq.0) CYCLE
             j4=ind(5,i)
 C adaptation
             if(lambda.lt.1d10) THEN
@@ -583,7 +583,7 @@ C
             if(j2.le.0.or.j2.gt.n2) CYCLE
             j3=i3-ind(3,i)
             if(j3.le.0.or.j3.gt.n3) CYCLE
-            if(.not.mask(j1,j2,j3)) CYCLE
+            if(mask(j1,j2,j3).eq.0) CYCLE
             j4=ind(5,i)
             if(lambda.lt.1d10) THEN
                thj=th(j1,j2,j3,j4)
@@ -632,7 +632,7 @@ C
 c   model=2  Gauss-based KL-distance, y ~ Chi, th on same scale, smooth y^2
       implicit none
       integer ns,n1,n2,n3,ngrad,n,ind(5,n),ncores
-      logical mask(n1,n2,n3)
+      integer mask(n1,n2,n3)
       double precision y(n1,n2,n3,ngrad),thn(n1,n2,n3,ngrad),
      1 ni(n1,n2,n3,ngrad),th(ns,n1,n2,n3,ngrad),sthi(ns,n1,n2,n3,ngrad)
       double precision lambda,w(n),sw(ngrad,ncores),swy(ngrad,ncores)
@@ -659,7 +659,7 @@ C returns value in 0:(ncores-1)
          i2=mod((iind-i1)/n1+1,n2)
          if(i2.eq.0) i2=n2
          i3=(iind-i1-(i2-1)*n1)/n1/n2+1
-         if(.not.mask(i1,i2,i3)) CYCLE
+         if(mask(i1,i2,i3).eq.0) CYCLE
          DO i4=1,ngrad
             sw(i4,thrednr)=0.d0
             swy(i4,thrednr)=0.d0
@@ -682,7 +682,7 @@ C   thast the approximated standard deviation
             if(j2.le.0.or.j2.gt.n2) CYCLE
             j3=i3+ind(3,i)
             if(j3.le.0.or.j3.gt.n3) CYCLE
-            if(.not.mask(j1,j2,j3)) CYCLE
+            if(mask(j1,j2,j3).eq.0) CYCLE
             j4=ind(5,i)
 C adaptation
             if(lambda.lt.1d10) THEN
@@ -723,7 +723,7 @@ C
             if(j2.le.0.or.j2.gt.n2) CYCLE
             j3=i3-ind(3,i)
             if(j3.le.0.or.j3.gt.n3) CYCLE
-            if(.not.mask(j1,j2,j3)) CYCLE
+            if(mask(j1,j2,j3).eq.0) CYCLE
             j4=ind(5,i)
             if(lambda.lt.1d10) THEN
                sz=0.d0
@@ -791,7 +791,7 @@ C   ind(.,i)[1:5] are j1-i1,j2-i2,j3-i3, i4 and j4 respectively
 C
       implicit none
       integer ns,n1,n2,n3,ngrad,n,n0,ind(5,n),ind0(3,n0)
-      logical mask(*)
+      integer mask(*)
       double precision y(*),y0(*),th(ns,*),ni(ns,*),th0(ns,*),
      1  ni0(ns,*),fsi2(ns,*),fsi02(ns,*),thn(*),th0n(*),nin(*),ni0n(*)
 C  * refers to n1*n2*n3*ngrad for y,th,ni,thn,fsi2,nin and to
@@ -827,7 +827,7 @@ C returns value in 0:(ncores-1)
          i2=mod((iind-i1)/n1+1,n2)
          if(i2.eq.0) i2=n2
          i3=(iind-i1-(i2-1)*n1)/n1/n2+1
-         if(.not.mask(iind)) CYCLE
+         if(mask(iind).eq.0) CYCLE
          DO i4=1,ngrad
             sw(i4+gthrednr)=0.d0
             swy(i4+gthrednr)=0.d0
@@ -854,7 +854,7 @@ C   by construction ind(4,.) should have same values consequtively
             j3=i3+ind(3,i)
             if(j3.le.0.or.j3.gt.n3) CYCLE
             jind=j1+(j2-1)*n1+(j3-1)*n12
-            if(.not.mask(jind)) CYCLE
+            if(mask(jind).eq.0) CYCLE
             j4=ind(5,i)
             jind4=jind+(j4-1)*n123
 C adaptation
@@ -903,7 +903,7 @@ C
             j3=i3-ind(3,i)
             if(j3.le.0.or.j3.gt.n3) CYCLE
             jind=j1+(j2-1)*n1+(j3-1)*n12
-            if(.not.mask(jind)) CYCLE
+            if(mask(jind).eq.0) CYCLE
             j4=ind(5,i)
             jind4=jind+(j4-1)*n123
             if(lambda.lt.1d10) THEN
@@ -944,7 +944,7 @@ C    now the s0 image in iind
             j3=i3+ind0(3,i)
             if(j3.le.0.or.j3.gt.n3) CYCLE
             jind=j1+(j2-1)*n1+(j3-1)*n12
-            if(.not.mask(jind)) CYCLE
+            if(mask(jind).eq.0) CYCLE
 C adaptation
             if(lambda.lt.1d10) THEN
                sz=0.d0
@@ -977,7 +977,7 @@ C
             j3=i3-ind0(3,i)
             if(j3.le.0.or.j3.gt.n3) CYCLE
             jind=j1+(j2-1)*n1+(j3-1)*n12
-            if(.not.mask(jind)) CYCLE
+            if(mask(jind).eq.0) CYCLE
             if(lambda.lt.1d10) THEN
                sz=0.d0
                DO k=1,ns
@@ -1018,7 +1018,7 @@ c   model=2  Gauss-based KL-distance, y ~ Chi, th on same scale, smooth y^2
 
       implicit none
       integer n1,n2,n3,n,ind(5,n),starts(*),nstarts,ncoils,model
-      logical mask(n1,n2,n3)
+      integer mask(n1,n2,n3)
       double precision y(n1,n2,n3),th(n1,n2,n3),ni(*),thn(*),
      1       lambda,w(n),sw0,swy0,swi(nstarts),ldf(n1,n2,n3)
       integer i,i0,i1,i2,i3,j1,j2,j3,l1,l2,l3,nn
@@ -1054,7 +1054,7 @@ C$OMP DO SCHEDULE(GUIDED)
          if(i2.eq.0) i2=n2
          i3=(i-i1-(i2-1)*n1)/n1/n2+1
          thn(i) = th(i1,i2,i3)
-         if(.not.mask(i1,i2,i3)) CYCLE
+         if(mask(i1,i2,i3).eq.0) CYCLE
          if(model.lt.2) THEN
             call lgstats(th(i1,i2,i3),df,model,ldfi)
             ldf(i1,i2,i3) = ldfi
@@ -1069,7 +1069,7 @@ C$OMP DO SCHEDULE(GUIDED)
          i2=mod((i-i1)/n1+1,n2)
          if(i2.eq.0) i2=n2
          i3=(i-i1-(i2-1)*n1)/n1/n2+1
-         if(.not.mask(i1,i2,i3)) CYCLE
+         if(mask(i1,i2,i3).eq.0) CYCLE
          sw0=0.d0
          swy0=0.d0
          sc = lambda/ni(i)
@@ -1087,7 +1087,7 @@ C$OMP DO SCHEDULE(GUIDED)
             l3=ind(3,1+starts(i0))
             j3=i3+l3
             if(j3.le.0.or.j3.gt.n3) CYCLE
-            if(.not.mask(j1,j2,j3)) CYCLE
+            if(mask(j1,j2,j3).eq.0) CYCLE
             if(model.ge.2) THEN
                z=th(i1,i2,i3)-th(j1,j2,j3)
                z=z*z
@@ -1116,7 +1116,7 @@ C  this part for negative l1 only (opposite directions)
             l3=ind(3,1+starts(i0))
             j3=i3-l3
             if(j3.le.0.or.j3.gt.n3) CYCLE
-            if(.not.mask(j1,j2,j3)) CYCLE
+            if(mask(j1,j2,j3).eq.0) CYCLE
             if(model.ge.2) THEN
                z=th(i1,i2,i3)-th(j1,j2,j3)
                z=z*z
@@ -1336,7 +1336,7 @@ C$OMP FLUSH(msth,msni)
 C   interpolate values of theta on spheres where it was not observed
       implicit none
       integer n,ng,nbv,nbvp1,gind(3,nbv,ng)
-      logical mask(n)
+      integer mask(n)
       double precision theta(n,ng),th0(n),ni(n,ng),ni0(n),gw(3,nbv,ng),
      1       msth(nbvp1,n,ng),msni(nbvp1,n,ng)
       integer i,j,k,i1,i2,i3,ip1
@@ -1346,7 +1346,7 @@ C$OMP& PRIVATE(i,j,k,w1,w2,w3,i1,i2,i3,ip1)
 C$OMP DO SCHEDULE(GUIDED)
       DO j=1,ng
          DO k=1,n
-            if(.not.mask(k)) CYCLE
+            if(mask(k).eq.0) CYCLE
             msth(1,k,j) = th0(k)
             msni(1,k,j) = ni0(k)
             DO i=1,nbv

@@ -124,7 +124,7 @@ setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, mi
     z <- .Fortran(C_dti2dga,
                   as.double(D),
                   as.integer(n1*n2),
-                  as.logical(mask),
+                  as.integer(mask),
                   fa=double(n1*n2),
                   md=double(n1*n2),
                   andir=double(3*n1*n2))[c("fa","md","andir")]
@@ -132,7 +132,7 @@ setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, mi
     z <- .Fortran(C_dti2dfa,
                   as.double(D),
                   as.integer(n1*n2),
-                  as.logical(mask),
+                  as.integer(mask),
                   fa=double(n1*n2),
                   md=double(n1*n2),
                   andir=double(3*n1*n2))[c("fa","md","andir")]

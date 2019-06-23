@@ -1,4 +1,4 @@
-      subroutine initdata(si,n1,n2,n3,nb,maxvalue)      
+      subroutine initdata(si,n1,n2,n3,nb,maxvalue)
 C
 C   project all values to (1,maxvalue) to avoid infinite estimates
 C
@@ -25,10 +25,10 @@ C
       implicit none
       integer n,nb,ls0,s0ind(ls0),siind(*)
       double precision si(nb,n),sinew(nb,n)
-      logical ind(n)
+      integer ind(n)
       integer i,j1,j,ls0m1
       double precision s0,sji
-      logical changed
+      integer changed
       ls0m1=ls0-1
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(s0ind,siind,si,sinew,n,nb,ls0,ind)
@@ -44,13 +44,13 @@ C$OMP DO SCHEDULE(STATIC)
             sinew(j,i)=sji
          END DO
          s0=(s0+ls0m1)/ls0
-         changed=.FALSE.
+         changed=0
          DO j1=1,nb-ls0
             j=siind(j1)
             sji=si(j,i)
             if(sji.ge.s0) THEN
                sji=s0
-               changed=.TRUE.
+               changed=1
             END IF
             sinew(j,i)=sji
          END DO
@@ -110,7 +110,7 @@ C$OMP END PARALLEL
       integer n1,n2,n3,nv,lag(3)
       double precision scorr,res(nv,n1,n2,n3),sigma(n1,n2,n3),
      1       mean(n1,n2,n3)
-      logical mask(n1,n2,n3)
+      integer mask(n1,n2,n3)
       double precision vrm,zcorr,z,mi,mj
       integer i1,i2,i3,i4,l1,l2,l3,k,j1,j2,j3
       l1=lag(1)
@@ -125,7 +125,7 @@ C  correlation in x
             j2=i2+l2
             do i3=1,n3-l3
                j3=i3+l3
-               if (.not.(mask(i1,i2,i3).and.mask(j1,j2,j3))) CYCLE
+               if (mask(i1,i2,i3)*mask(j1,j2,j3).eq.0) CYCLE
                vrm=sigma(i1,i2,i3)*sigma(j1,j2,j3)
                if(vrm.le.1e-10) CYCLE
                mi=mean(i1,i2,i3)
@@ -152,7 +152,7 @@ C  correlation in x
       implicit none
       integer n,nv
       double precision sigma(n),res(nv,n),mean(n)
-      logical mask(n)
+      integer mask(n)
       integer i,iv
       double precision z,resi,zm,sigi
 C$OMP PARALLEL DEFAULT(NONE)
@@ -162,7 +162,7 @@ C$OMP DO SCHEDULE(GUIDED)
       DO i=1,n
          sigi=0.d0
          zm=0.d0
-         if(mask(i)) THEN
+         if(mask(i).ne.0) THEN
             z=0.d0
             zm=0.d0
             DO iv=1,nv
@@ -188,7 +188,7 @@ C$OMP FLUSH(mean,sigma)
       integer n1,n2,n3,nv,l1,l2,l3,lag(3),n
       double precision scorr(l1,l2,l3),res(nv,n1,n2,n3),
      1       sigma(n1,n2,n3),mean(n1,n2,n3)
-      logical mask(n1,n2,n3)
+      integer mask(n1,n2,n3)
       integer i1,i2,i3
       double precision sci
       n=n1*n2*n3
@@ -281,17 +281,18 @@ C   that contains seed voxel (i1,i2,i3)
 C   result: mask == .TRUE. if voxel is connected to seed
       implicit none
       integer n1,n2,n3,i1,i2,i3,ind1(*),ind2(*),ind3(*)
-      logical final,mask(n1,n2,n3),segm(n1,n2,n3)
+      integer mask(n1,n2,n3),segm(n1,n2,n3)
+      logical final
       integer j1,j2,j3,k,l1,l2,l3,lind,lind0,ichecked
 C     first find pixel close to (i1,i2) with segm(j1,j2)=0
       DO j1=1,n1
          DO j2=1,n2
             DO j3=1,n3
-               mask(j1,j2,j3)=.FALSE.
+               mask(j1,j2,j3)=0
             END DO
          END DO
       END DO
-      if(.not.segm(i1,i2,i3)) THEN
+      if(segm(i1,i2,i3).eq.0) THEN
          final=.FALSE.
          DO k=1,max(n1,n2,n3)
             DO l1=-k,k
@@ -304,7 +305,7 @@ C     first find pixel close to (i1,i2) with segm(j1,j2)=0
                      if(j2.lt.1.or.j2.gt.n2) CYCLE
                      j3=i3+l3
                      if(j3.lt.1.or.j3.gt.n3) CYCLE
-                     if(segm(j1,j2,j3)) THEN
+                     if(segm(j1,j2,j3).ne.0) THEN
                         final=.TRUE.
                         i1=j1
                         i2=j2
@@ -319,7 +320,7 @@ C     first find pixel close to (i1,i2) with segm(j1,j2)=0
             if(final) EXIT
          END DO
       END IF
-      mask(i1,i2,i3)=.TRUE.
+      mask(i1,i2,i3)=1
       ind1(1)=i1
       ind2(1)=i2
       ind3(1)=i3
@@ -339,8 +340,8 @@ C     first find pixel close to (i1,i2) with segm(j1,j2)=0
                      if(j2.lt.1.or.j2.gt.n2) CYCLE
                      j3=ind3(k)+l3
                      if(j3.lt.1.or.j3.gt.n3) CYCLE
-                     if(segm(j1,j2,j3).and..not.mask(j1,j2,j3)) THEN
-                        mask(j1,j2,j3)=.TRUE.
+              if(segm(j1,j2,j3).ne.0.and.mask(j1,j2,j3).eq.0) THEN
+                        mask(j1,j2,j3)=1
                         lind=lind+1
                         ind1(lind)=j1
                         ind2(lind)=j2
@@ -364,7 +365,7 @@ C     first find pixel close to (i1,i2) with segm(j1,j2)=0
       integer n1,n2,n3,ns,msize
       double precision  s0(n1,n2,n3,ns)
       double precision s0m(n1,n2,n3),prop,level
-      logical mask(n1,n2,n3)
+      integer mask(n1,n2,n3)
       integer i1,i2,i3,j,j1,j2,j3
       double precision z,anz,anz1
       DO i1=1,n1
@@ -394,8 +395,8 @@ C
                      END DO
                   END DO
                END DO
-               mask(i1,i2,i3)=.FALSE.
-               if(anz1/anz.gt.prop) mask(i1,i2,i3)=.TRUE.
+               mask(i1,i2,i3)=0
+               if(anz1/anz.gt.prop) mask(i1,i2,i3)=1
             END DO
          END DO
       END DO

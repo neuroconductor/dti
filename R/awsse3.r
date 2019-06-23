@@ -138,7 +138,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,n
                       as.double(thmsh),#th
                       ni=as.double(z$ni),#ni
                       as.double(fncchiv(thmsh,varstats)),#sthi
-                      as.logical(mask),#mask
+                      as.integer(mask),#mask
                       as.integer(nshell),# number of shells
                       as.integer(ddim[1]),#n1
                       as.integer(ddim[2]),#n2
@@ -168,7 +168,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,n
                       as.double(sb),
                       as.double(z$th),
                       ni=as.double(z$ni/if(model>=2) fncchiv(z$th,varstats) else 1),
-                      as.logical(mask),
+                      as.integer(mask),
                       as.integer(ddim[1]),
                       as.integer(ddim[2]),
                       as.integer(ddim[3]),
@@ -205,7 +205,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,n
                    as.double(s0),
                    as.double(th0),
                    ni=as.double(ni0/if(model==2) fncchiv(th0,varstats) else 1),
-                   as.logical(mask),
+                   as.integer(mask),
                    as.integer(ddim[1]),
                    as.integer(ddim[2]),
                    as.integer(ddim[3]),

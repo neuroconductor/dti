@@ -585,7 +585,7 @@ C
       double precision si(ngrad,nvox),sms(ngrad),dgrad(ngrad,nv),
      1       th(nth),egrad(ngrad,nv),z(ngrad,ns),mval(nvox),
      2       vsi(nvox)
-      logical mask(nvox)
+      integer mask(nvox)
       integer i,k,ibest,mode,ind(10),l,j,ii,iw,wind(5),nwi(5)
       double precision w(1000),krit,work1(1000),work2(10),erg,thj,
      1       msi,m2si,z1,dng
@@ -601,7 +601,7 @@ C
          m2si=0.d0
          z1=vsi(i)
          mval(i)=sqrt(dng*z1)
-         if(.not.mask(i)) THEN
+         if(mask(i).eq.0) THEN
             siind(1,i)=-1
             mval(i)=0
          END IF
@@ -616,7 +616,7 @@ C
             END DO
          END DO
          DO i=1,nvox
-            if(mask(i)) THEN
+            if(mask(i).ne.0) THEN
                IF(j.ne.indth(i)) CYCLE
 C  now search for minima of sms (or weighted sms
                ibest=0
@@ -803,11 +803,11 @@ C  restricted to ngrad<=1000 and m <=10
 C
       implicit none
       integer nvox,ngrad,ns,siind(ns,nvox),m,ntry,nth,nv,
-     1       isample(*),indth(nvox),iandir(nvox)
+     1       isample(*),indth(nvox),iandir(nvox),mask(nvox)
       double precision si(ngrad,nvox),sms(ngrad),dgrad(ngrad,nv),
      1       th(nth),egrad(ngrad,nv),z(ngrad,ns),mval(nvox),
      2       vsi(nvox),dgradv(nv,nv),maxc
-      logical mask(nvox),skip
+      logical skip
       integer i,k,mode,ind(10),l,j,ii,iw,wind(5),nwi(5),mis,
      1        is(5),isbest(5),ntry0,km1mis
       double precision w(1000),krit,work1(1000),work2(10),erg,thj,
@@ -827,7 +827,7 @@ C
          m2si=0.d0
          z1=vsi(i)
          mval(i)=sqrt(dng*z1)
-         if(.not.mask(i)) THEN
+         if(mask(i).eq.0) THEN
             siind(1,i)=-1
             mval(i)=0
          END IF
@@ -842,7 +842,7 @@ C
             END DO
          END DO
          DO i=1,nvox
-            if(mask(i)) THEN
+            if(mask(i).ne.0) THEN
                IF(j.ne.indth(i)) CYCLE
 C  now search for minima of sms (or weighted sms)
                krit=mval(i)
@@ -1038,10 +1038,10 @@ C   generate mask
 C   sweep s0 from si to generate  siq
 C   calculate variance of siq
 C
-      integer n,ng0,ng1,level
+      integer n,ng0,ng1,mask(n),level
       double precisionsi(ng1,n),s0(ng0,n)
       double precision siq(ng1,n),ms0(n),vsi(n)
-      logical mask(n),maskk
+      logical maskk
       integer i,k
       double precision s,z,z2,thresh,cv,s0mean,tvsi
       thresh = max(1,level*ng0)
@@ -1080,7 +1080,8 @@ C$OMP DO SCHEDULE(STATIC)
             END DO
          END IF
          ms0(i) = s0mean
-         mask(i) = maskk
+         mask(i) = 0
+         if(maskk) mask(i) = 1
          vsi(i) = tvsi
       END DO
 C$OMP END DO NOWAIT
@@ -1161,12 +1162,12 @@ C
       implicit none
       integer nvico,nvox,iandi(nvox)
       double precision vico(3,nvico),andir(3,2,nvox)
-      logical landir(nvox)
+      integer landir(nvox)
       integer i,j,jmax
       double precision z,zmax,scprod3
       external scprod3
       DO i=1,nvox
-         if(landir(i)) THEN
+         if(landir(i).ne.0) THEN
             zmax = scprod3(vico(1,1),andir(1,1,i))
             jmax = 1
             DO j=2,nvico
@@ -1197,14 +1198,14 @@ C
       implicit none
       integer nguess,maxcomp,ndg,isample(maxcomp,nguess)
       double precision  dgrad(ndg,ndg),maxc
-      logical ind(nguess)
+      integer ind(nguess)
       integer i,j,k
       DO i=1,nguess
-         ind(i)=.TRUE.
+         ind(i)=1
          DO j=1,maxcomp-1
             DO k=j+1,maxcomp
                IF(dgrad(isample(j,i),isample(k,i)).gt.maxc) THEN
-                  ind(i)=.FALSE.
+                  ind(i)=0
                   goto 1
                END IF
             END DO
