@@ -1,4 +1,3 @@
-^\./appveyor\.yml\.bak$
 \.gitignore
 \.project
 \.cproject
@@ -11,3 +10,4 @@
 ^codecov\.yml$
 ^DESCRIPTION\.bak$
 ^\./\.travis\.yml\.bak$
+^\./appveyor\.yml\.bak$
