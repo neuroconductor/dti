@@ -580,11 +580,10 @@ C   generate mask
 C   sweep s0 from si to generate  siq
 C   calculate variance of siq
 C
-      integer n,ng0,ng1,mask(n),level
+      integer n,ng0,mask(n),level
       double precision s0(ng0,n),ms0(n)
-      logical maskk
       integer i,k
-      double precision s,z,z2,thresh,s0mean
+      double precision z,thresh
       thresh = max(1,level*ng0)
 C$OMP PARALLEL DEFAULT(NONE)
 C$OMP& SHARED(s0,n,ng0,ms0,mask,thresh)

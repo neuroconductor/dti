@@ -1039,7 +1039,7 @@ C   sweep s0 from si to generate  siq
 C   calculate variance of siq
 C
       integer n,ng0,ng1,mask(n),level
-      double precisionsi(ng1,n),s0(ng0,n)
+      double precision si(ng1,n),s0(ng0,n)
       double precision siq(ng1,n),ms0(n),vsi(n)
       logical maskk
       integer i,k
