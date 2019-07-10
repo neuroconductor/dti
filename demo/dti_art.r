@@ -4,7 +4,7 @@ a <- readline("Use non-linear (Y, default) or linear (N) tensor estimates ?")
 if (toupper(a) == "N") {
   method <- "linear"
   cat("Note: Contrary to the paper above, due to numeric issues in this demo,\n there will be some additional non-positive definite tensors in the phantoms!\n")
-lambda <- 47 
+lambda <- 47
 # this value was used in the Neuroimage paper
 } else {
   method <- "nonlinear"
@@ -41,7 +41,7 @@ ngrad <- readline("Provide number of gradients (default: 21 minimum: 6  maximum:
 ngrad <- if(ngrad!="") as.numeric(ngrad) else 21
 if(is.na(ngrad)) ngrad <- 21
 ngrad <- max(6,min(162,ngrad))
-ns0 <- max(1,(ngrad+10)%/%20) 
+ns0 <- max(1,(ngrad+10)%/%20)
 
 cat("Using ",ns0," S0  and ",ngrad,"diffusion weighted images\n")
 # read the gradient data, these are 25 gradient directions + one non-zero weighted
@@ -61,7 +61,7 @@ scalefs0 <- 8
 switch(a,source(system.file("rcode/generatedata.r",package="dti")),
          source(system.file("rcode/generatedata2.r",package="dti")),
          source(system.file("rcode/generatedata3.r",package="dti")))
-# Read Phantom data 
+# Read Phantom data
 
 dt0obj <- dtiData(bvec,tmpfile1,mins0value=mins0value,ddim,voxelext=c(1,1,2.5))
 dt0obj <- sdpar(dt0obj,interactive=FALSE,level=mins0value*scalefs0)
@@ -70,11 +70,11 @@ dt0obj <- sdpar(dt0obj,interactive=FALSE,level=mins0value*scalefs0)
 
 dt0 <- dtiTensor(dt0obj, method=method)
 
-# Compute indices of phantom 
+# Compute indices of phantom
 
 dt0aniso <- dtiIndices(dt0)
 
-# Read noisy data 
+# Read noisy data
 
 dtobj <- dtiData(bvec,tmpfile2,mins0value=mins0value,ddim,bvalue=bvalue,voxelext=c(1,1,2.5))
 dtobj <- sdpar(dtobj,interactive=FALSE,level=mins0value*scalefs0)
@@ -83,7 +83,7 @@ dtobj <- sdpar(dtobj,interactive=FALSE,level=mins0value*scalefs0)
 
 dthat1 <- dtiTensor(dtobj, method=method)
 
-# Compute indices of estimated tensors 
+# Compute indices of estimated tensors
 
 dthat1aniso <- dtiIndices(dthat1)
 
@@ -96,7 +96,7 @@ if( is.na(hmax) || hmax<1) hmax <- 4
 dthat4 <- dti.smooth(dtobj,hmax=hmax,graph=TRUE,lambda=lambda,minfa=0,slice=15,rho=rho,
                     lseq=NULL,method=method)
 
-# Compute indices of estimated smoothed tensors 
+# Compute indices of estimated smoothed tensors
 
 dthat4aniso <- dtiIndices(dthat4)
 
@@ -129,10 +129,11 @@ plot(dthat4b,slice=15)
 source(system.file("rcode/mousecallbacks.r",package="dti"))
 z <- readline("Visualize and compare estimated tensors (Y/N) :")
 
+.adimpro <- get(".adimpro", envir=adimpro:::.adimproOpts)
 size <- as.integer(min(.adimpro$xsize/3.2,.adimpro$ysize/2.4))
 if(toupper(z)!="N"){
 dthat1@scale <- dt0@scale
-dthat4@scale <- dt0@scale 
+dthat4@scale <- dt0@scale
 #  use same scale in all plots
 w1<-show3d(dt0,level=.3,xind=11:30,yind=11:30,zind=11:15,maxobjects=2000,FOV=1,windowRect = c(1, 1, size, size),what="tensor")
 w2<-show3d(dthat1,level=.3,xind=11:30,yind=11:30,zind=11:15,maxobjects=2000,FOV=1,windowRect = c(size+11, 1, 2*size+10, size),what="tensor")
@@ -189,5 +190,3 @@ dthat4,dthat4aniso,dthat4b,dtiso,dtobj,eta,etai,etas,factor,i,ind,j,lambda,metho
 mins0value,ngrad,phi,project.cylinder,rad,rad1,rad2,rho,s0,s0offa,sigma,sphi,x,y,z,tmpfile1,tmpfile2,tmpfile3,w1,w2,w3)
 
 }
-
-
