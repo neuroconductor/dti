@@ -111,6 +111,7 @@ awslsigmc <- function(y,                 # data
     dim(param$ind) <- c(3,nw)
     param$w   <- param$w[1:nw]
       ## perform one step PS with bandwidth h
+    if(family=="NCchi"){
       z <- .Fortran(C_awslchi2,
                     as.double(y),        # data
                     as.double(ksi),# \sum w_ij S_j^2
@@ -138,6 +139,27 @@ awslsigmc <- function(y,                 # data
       thchi <- z$th
       ksi <- z$ksi
       thchi[!mask] <- 0
+    } else{
+      ## assume Gaussian data
+      z <- .Fortran(C_awslgaus,
+                    as.double(y),        # data
+                    as.double(th),# \sum w_ij S_j
+                    ni = as.double(ni),
+                    as.double(sigma),
+                    as.integer(mask),
+                    as.integer(ddim[1]),
+                    as.integer(ddim[2]),
+                    as.integer(ddim[3]),
+                    as.integer(param$ind),
+                    as.double(param$w),
+                    as.integer(nw),
+                    as.double(minni),
+                    as.double(lambda),
+                    as.integer(mc.cores),
+                    th = double(n),
+                    sigman = double(n))[c("ni","th","sigman")]
+
+    }
       ## extract sum of weigths (see PS) and consider only voxels with ni larger then mean
     th <- array(z$th,ddim)
     ni <- array(z$ni,ddim)
@@ -204,8 +226,12 @@ awslsigmc <- function(y,                 # data
   }
   ## END PS iteration
   if(!verbose) cat("\n")
-  thchi <- fncchir(th/sigma,varstats)*sigma
-  thchi[!mask] <- 0
+  if(family=="NCchi"){
+     thchi <- fncchir(th/sigma,varstats)*sigma
+     thchi[!mask] <- 0
+  } else {
+    thchi <- NULL
+  }
   ## this is the result (th is expectation, not the non-centrality parameter !!!)
   invisible(list(sigma = sigma,
                  sigmal = array(z$sigman,ddim),

@@ -246,6 +246,100 @@ C$OMP END PARALLEL
 C$OMP FLUSH(thn,ni,sigman)
       RETURN
       END
+C
+C   same for Gaussian distribution
+C
+      subroutine awslgaus(s,th,ni,sigma,mask,n1,n2,n3,ind,
+     1      w,nw,minni,lambda,nthreds,thn,sigman)
+C
+C  local variance estimation for Gaussian data
+C  using (adaptive) weighted likelihood
+C
+C   Takes observed intensities in s and
+C     initial estimates of \sigma in sigma
+C   perform adaptive smoothing on R^3
+C   th containes previous estimates of E S
+C   ni containes previous sum of weights
+C   mask - logical mask (use if mask==TRUE)
+C   n1,n2,n3 - dimensions
+C   ind  - integer array dim (3,n) containing relative indices in xyz
+C   w    - vector of corresponding location weights
+C   nw   - number of positive weights (initial value
+C
+C   lambda   - kritical value for pairwise tests
+C   thn      - new estimate sum_j w_a(j) S_j
+C   ind(.,i) contains coordinate indormation corresponding to positive
+C   location weights in w(i)
+C   ind(.,i)[1:3] are j1-i1,j2-i2 and j3-i3 respectively
+C   wad, sad - array for weights>0 and corresponding observed s
+C
+      implicit none
+      integer n1,n2,n3,nw,ind(3,nw),nthreds
+      integer mask(n1,n2,n3)
+      double precision s(n1,n2,n3),ni(n1*n2*n3),thn(n1*n2*n3),
+     1  th(n1,n2,n3),sigman(n1*n2*n3),lambda,w(nw),sigma(n1,n2,n3),minni
+      integer i1,i2,i3,j1,j2,j3,i,j,jj,n,maxit,thrednr
+      double precision z,sw,sws,sws2,sj,thi,thj,wj,kval,sgi
+!$      integer omp_get_thread_num
+!$      external omp_get_thread_num
+      n = n1*n2*n3
+      thrednr = 1
+      maxit=100
+C  precompute values of lgamma(corrected df/2) in each voxel
+C$OMP PARALLEL DEFAULT(SHARED)
+C$OMP& FIRSTPRIVATE(minni,n1,n2,n3,maxit)
+C$OMP& PRIVATE(i,j,i1,i2,i3,j1,j2,j3,z,sw,sws,sws2,thi,kval,
+C$OMP& wj,sj,thrednr,sgi,jj,thj)
+C$OMP DO SCHEDULE(GUIDED)
+      DO i=1,n
+         i1=mod(i,n1)
+         if(i1.eq.0) i1=n1
+         i2=mod((i-i1)/n1+1,n2)
+         if(i2.eq.0) i2=n2
+         i3=(i-i1-(i2-1)*n1)/n1/n2+1
+         if(mask(i1,i2,i3).eq.0) CYCLE
+!$         thrednr = omp_get_thread_num()+1
+         sw=0.d0
+         sws=0.d0
+         sws2=0.d0
+         sgi=sigma(i1,i2,i3)
+         thi = th(i1,i2,i3)
+C   thats the estimated standard deviation of s(i1,i2,i3)
+         kval = lambda/ni(i)
+         jj = 0
+         DO j=1,nw
+            j1=i1+ind(1,j)
+            if(j1.le.0.or.j1.gt.n1) CYCLE
+            j2=i2+ind(2,j)
+            if(j2.le.0.or.j2.gt.n2) CYCLE
+            j3=i3+ind(3,j)
+            if(j3.le.0.or.j3.gt.n3) CYCLE
+            if(mask(j1,j2,j3).eq.0) CYCLE
+            wj=w(j)
+            z=(thi-th(j1,j2,j3))/sgi
+            z=z*z
+            if(z.ge.kval) CYCLE
+            wj=wj*min(1.d0,2.d0-2.d0*z/kval)
+            sw=sw+wj
+            sj=s(j1,j2,j3)
+            sws=sws+wj*sj
+            sws2=sws2+wj*sj*sj
+            jj=jj+1
+         END DO
+         ni(i) = sw
+         if(sw.gt.minni) THEN
+            sigman(i)= (sws2-(2*sw-1)*sws/sw*sws/sw)/(sw-1)
+         ELSE
+            sigman(i)=sgi
+         END IF
+         thn(i) = sws/sw
+      END DO
+C$OMP END DO NOWAIT
+C$OMP END PARALLEL
+C$OMP FLUSH(thn,ni,sigman)
+      RETURN
+      END
+
       subroutine awsvchi(y,th,ni,fns,mask,n1,n2,n3,ind,w,nw,lambda,
      1                    sigma,thn,sy)
 C   Takes noncentral Chi values in y
