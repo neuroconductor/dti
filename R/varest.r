@@ -24,7 +24,7 @@ awslsigmc <- function(y,                 # data
   #     diff(quantile(as.numeric(x), c(q, 1-q), na.rm = na.rm, names = FALSE, type = type))
 
   if(trace) tergs <- array(0,c(steps,4,sum(mask))) else tergs <- NULL
-  family <- match.arg(family)
+  family <- match.arg(family,c("NCchi","Gauss","Gaussian"))
 
   varstats <- sofmchi(ncoils)
   if("NCchi" == family){
