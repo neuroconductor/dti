@@ -26,8 +26,8 @@ awslsigmc <- function(y,                 # data
   if(trace) tergs <- array(0,c(steps,4,sum(mask))) else tergs <- NULL
   family <- match.arg(family,c("NCchi","Gauss","Gaussian"))
 
-  varstats <- sofmchi(ncoils)
-  if("NCchi" == family){
+  if(family == "NCchi"){
+    varstats <- sofmchi(ncoils)
     th <- seq(0,30,.01)
     z <- fncchiv(th,varstats)
     minz <- min(z)
@@ -163,7 +163,7 @@ awslsigmc <- function(y,                 # data
       ## extract sum of weigths (see PS) and consider only voxels with ni larger then mean
     th <- array(z$th,ddim)
     ni <- array(z$ni,ddim)
-    mask[z$sigman==0] <- FALSE
+    z$sigman[z$sigman==0] <- median(z$sigman[z$sigman>0])
     nmask <- sum(mask)
     if(verbose) cat("local estimation in step ",i," completed",format(Sys.time()),"\n")
     ##

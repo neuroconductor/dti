@@ -277,19 +277,17 @@ C
       integer n1,n2,n3,nw,ind(3,nw),nthreds
       integer mask(n1,n2,n3)
       double precision s(n1,n2,n3),ni(n1*n2*n3),thn(n1*n2*n3),
-     1  th(n1,n2,n3),sigman(n1*n2*n3),lambda,w(nw),sigma(n1,n2,n3),minni
-      integer i1,i2,i3,j1,j2,j3,i,j,jj,n,maxit,thrednr
-      double precision z,sw,sws,sws2,sj,thi,thj,wj,kval,sgi
+     1 th(n1,n2,n3),sigman(n1*n2*n3),lambda,w(nw),sigma(n1,n2,n3),minni
+      integer i1,i2,i3,j1,j2,j3,i,j,n,thrednr
+      double precision z,sw,sws,sws2,sj,thi,wj,kval,sgi
 !$      integer omp_get_thread_num
 !$      external omp_get_thread_num
       n = n1*n2*n3
       thrednr = 1
-      maxit=100
 C  precompute values of lgamma(corrected df/2) in each voxel
 C$OMP PARALLEL DEFAULT(SHARED)
-C$OMP& FIRSTPRIVATE(minni,n1,n2,n3,maxit)
 C$OMP& PRIVATE(i,j,i1,i2,i3,j1,j2,j3,z,sw,sws,sws2,thi,kval,
-C$OMP& wj,sj,thrednr,sgi,jj,thj)
+C$OMP& wj,sj,thrednr,sgi)
 C$OMP DO SCHEDULE(GUIDED)
       DO i=1,n
          i1=mod(i,n1)
@@ -305,8 +303,7 @@ C$OMP DO SCHEDULE(GUIDED)
          sgi=sigma(i1,i2,i3)
          thi = th(i1,i2,i3)
 C   thats the estimated standard deviation of s(i1,i2,i3)
-         kval = lambda/ni(i)
-         jj = 0
+         kval = 2.d0*lambda/ni(i)
          DO j=1,nw
             j1=i1+ind(1,j)
             if(j1.le.0.or.j1.gt.n1) CYCLE
@@ -324,11 +321,11 @@ C   thats the estimated standard deviation of s(i1,i2,i3)
             sj=s(j1,j2,j3)
             sws=sws+wj*sj
             sws2=sws2+wj*sj*sj
-            jj=jj+1
          END DO
          ni(i) = sw
          if(sw.gt.minni) THEN
-            sigman(i)= (sws2-(2*sw-1)*sws/sw*sws/sw)/(sw-1)
+          sigman(i)= sqrt(max(0.d0,(sws2-sws/sw*sws)/(sw-1.d0)))
+C  using sigma not sigma^2
          ELSE
             sigman(i)=sgi
          END IF
