@@ -2,17 +2,25 @@ useDynLib(dti, .registration = TRUE, .fixes = "C_")
 
 #exportPattern("^[^\\.]")
 
-import(methods, parallel, oro.nifti, oro.dicom, adimpro, gsl, rgl, awsMethods, quadprog)
-#importFrom("Rsolnp", "solnp")
 importFrom("grDevices", "col2rgb", "dev.off", "grey", "heat.colors",
            "png", "rainbow", "rgb")
 importFrom("graphics", "plot", "axis", "contour", "identify", "legend",
-           "lines", "par", "text", "title")
+           "lines", "par", "text", "title", "image")
+importFrom("methods", "new", "slotNames")
+importFrom("parallel", "makeCluster", "parLapply", "stopCluster", "detectCores")
 importFrom("stats", "IQR", "as.dist", "bw.nrd", "coef", "coefficients",
            "density", "dnorm", "lm", "median", "nls", "optim",
            "optimize", "qchisq", "qnorm", "quantile", "rchisq",
            "runif", "sd")
 importFrom("utils", "data", "setTxtProgressBar", "txtProgressBar")
+importFrom("awsMethods", "extract", "setCores")
+importFrom("adimpro", "show.image", "make.image", "extract.image")
+importFrom("gsl", "ellint_RF", "ellint_RD", "legendre_sphPlm")
+importFrom("oro.dicom", "readDICOMFile", "extractHeader")
+importFrom("oro.nifti", "readAFNI", "readANALYZE", "nifti", "readNIfTI", "writeNIfTI")
+importFrom("quadprog", "solve.QP")
+importFrom("rgl", "rgl.triangles", "rgl.lines", "rgl.points", "open3d", "par3d",
+          "rgl.bg", "rgl.cur", "bbox3d", "title3d")
 
 export("AdjacencyMatrix")
 export(dti.options)
@@ -27,4 +35,3 @@ exportMethods("extract", "show3d", "tracking", "selectFibers", "reduceFibers",
               "getsdofsb", "dwi.smooth", "dwi.smooth.ms")
 export(dtiData, readDWIdata, subsetg, combineDWIdata, awssigmc, awslsigmc, afsigmc,
        aflsigmc, dkiIndices, showFAColorScale, tensor2medinria, medinria2tensor)
-#export(hg1f1)
