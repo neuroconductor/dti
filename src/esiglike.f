@@ -33,11 +33,11 @@ C clws contains (L-1)\sum_j wj log(sj) + ni (L-1) log2 + lgamma(L)
          DO j=1,n
 C            if(wj(j).gt.0.d0) THEN
                za=sj(j)*zs
-               if(za.le.1d2) THEN
-                  za=log(bessliex(za,lm1,1.d0,work))
+               if(za.le.1d3) THEN
+                  za=log(bessliex(za,lm1,2.d0,work))+za
                ELSE
                   za=za-log(za*6.283185d0)/2.d0
-C  large value approximation
+C  large value approximation NIST 10.30.4
                END IF
 C  avoid Inf in besseli (unlikely in optimum, does not change convexity)
                eta=eta+wj(j)*za
