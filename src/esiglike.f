@@ -15,10 +15,12 @@ C
       integer n
       double precision sigma,ni,ksi,wj(n),sj(n),L,work(*)
       integer j
-      double precision eta,z,sig2,zs,pen,sl,lm1,za,clws
+      double precision eta,z,sig2,zs,pen,sl,lm1,za,clws,appr
       double precision bessliex
       external bessliex
       lm1=L-1
+      appr=min((L+1)*5d1,1d3)
+C define level for use of large value approximation NIST 10.30.4
       sig2=sigma*sigma
       eta=0.d0
       sl=ksi-2.d0*L*sig2
@@ -33,7 +35,7 @@ C clws contains (L-1)\sum_j wj log(sj) + ni (L-1) log2 + lgamma(L)
          DO j=1,n
 C            if(wj(j).gt.0.d0) THEN
                za=sj(j)*zs
-               if(za.le.1d3) THEN
+               if(za.le.appr) THEN
                   za=log(bessliex(za,lm1,2.d0,work))+za
                ELSE
                   za=za-log(za*6.283185d0)/2.d0
