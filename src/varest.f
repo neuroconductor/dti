@@ -250,7 +250,7 @@ C
 C   same for Gaussian distribution
 C
       subroutine awslgaus(s,th,ni,sigma,mask,n1,n2,n3,ind,
-     1      w,nw,minni,lambda,nthreds,thn,sigman)
+     1      w,nw,minni,lambda,thn,sigman)
 C
 C  local variance estimation for Gaussian data
 C  using (adaptive) weighted likelihood
@@ -274,7 +274,7 @@ C   ind(.,i)[1:3] are j1-i1,j2-i2 and j3-i3 respectively
 C   wad, sad - array for weights>0 and corresponding observed s
 C
       implicit none
-      integer n1,n2,n3,nw,ind(3,nw),nthreds
+      integer n1,n2,n3,nw,ind(3,nw)
       integer mask(n1,n2,n3)
       double precision s(n1,n2,n3),ni(n1*n2*n3),thn(n1*n2*n3),
      1 th(n1,n2,n3),sigman(n1*n2*n3),lambda,w(nw),sigma(n1,n2,n3),minni

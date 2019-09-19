@@ -155,7 +155,6 @@ awslsigmc <- function(y,                 # data
                     as.integer(nw),
                     as.double(minni),
                     as.double(lambda),
-                    as.integer(mc.cores),
                     th = double(n),
                     sigman = double(n))[c("ni","th","sigman")]
 
