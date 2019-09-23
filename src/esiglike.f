@@ -70,7 +70,7 @@ C  Initialize
 C  ni    - sum(wj)
 C  ksi   - sum(wj*Sj^2)/ni
       Lm1=L-1
-      x0 = max(1d0*L,5d1)
+      x0 = max(1d1*L,8d1)
       bx = bessliex(x0,Lm1,1.d0,work)
       gx0 = log(bx)
       g1x0 = bessliex(x0,L,1.d0,work)/bx+Lm1/x0
