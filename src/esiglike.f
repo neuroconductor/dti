@@ -1,5 +1,5 @@
       double precision function lncchi2(sigma,ni,ksi,wj,sj,L,clws,n,
-     1                                  work)
+     1                                  work, x0, gx0, g1x0)
 C
 C  compute local weighted noncentral chi^2 log-likelihood * (-1)
 C
@@ -15,11 +15,10 @@ C
       integer n
       double precision sigma,ni,ksi,wj(n),sj(n),L,work(*)
       integer j
-      double precision eta,z,sig2,zs,pen,sl,lm1,za,clws,appr
+      double precision eta,z,sig2,zs,pen,sl,lm1,za,clws,x0,gx0,g1x0
       double precision bessliex
       external bessliex
       lm1=L-1
-      appr=min((L+1)*5d1,1d3)
 C define level for use of large value approximation NIST 10.30.4
       sig2=sigma*sigma
       eta=0.d0
@@ -35,13 +34,13 @@ C clws contains (L-1)\sum_j wj log(sj) + ni (L-1) log2 + lgamma(L)
          DO j=1,n
 C            if(wj(j).gt.0.d0) THEN
                za=sj(j)*zs
-               if(za.le.appr) THEN
-                  za=log(bessliex(za,lm1,2.d0,work))+za
+               if(za.lt.x0) THEN
+                  za=log(bessliex(za,lm1,1.d0,work))
                ELSE
-                  za=za-log(za*6.283185d0)/2.d0
-C  large value approximation NIST 10.30.4
+                  za= gx0 + g1x0*(za-x0)
+C  taylor series approximation of log(besselI(za,lm1)) in x0
+C  avoids overflow and costly evaluation for large za
                END IF
-C  avoid Inf in besseli (unlikely in optimum, does not change convexity)
                eta=eta+wj(j)*za
 C            END IF
          END DO
@@ -59,18 +58,22 @@ C
       integer n,maxit
       double precision low,up,wj(n),sj(n),L,tol,xmin,fmin,work(*)
       double precision goldc,a,b,d,e,eps,xm,p,q,r,eps1,eps2,u,v,w,fu,
-     1       fv,fw,fx,x
+     1       fv,fw,fx,x,x0,gx0,g1x0,bx
       double precision ni,ksi,sjj,clws,Lm1
       integer it,j
       logical gsect
-      double precision lncchi2,lgammaf
-      external lncchi2,lgammaf
+      double precision lncchi2,lgammaf,bessliex
+      external lncchi2,lgammaf,bessliex
       eps=1d-8
       goldc=0.381966
 C  Initialize
 C  ni    - sum(wj)
 C  ksi   - sum(wj*Sj^2)/ni
       Lm1=L-1
+      x0 = max(1d0*L,5d1)
+      bx = bessliex(x0,Lm1,1.d0,work)
+      gx0 = log(bx)
+      g1x0 = bessliex(x0,L,1.d0,work)/bx+Lm1/x0
       ni=0.d0
       ksi=0.d0
       clws=0.d0
@@ -91,7 +94,7 @@ C         END IF
       x=v
       e=0.d0
       d=0.d0
-      fx=lncchi2(x,ni,ksi,wj,sj,L,clws,n,work)
+      fx=lncchi2(x,ni,ksi,wj,sj,L,clws,n,work,x0,gx0,g1x0)
       fv=fx
       fw=fx
 C  Search for minimum
@@ -133,7 +136,7 @@ C  Search for minimum
          ELSE
             u=x+sign(eps1,d)
          END IF
-         fu=lncchi2(u,ni,ksi,wj,sj,L,clws,n,work)
+         fu=lncchi2(u,ni,ksi,wj,sj,L,clws,n,work,x0,gx0,g1x0)
          IF (fu .le. fx) THEN
             IF (u .ge. x) THEN
                a=x
