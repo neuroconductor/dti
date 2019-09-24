@@ -122,7 +122,8 @@ C$OMP FLUSH(yout)
       return
       end
       subroutine awslchi2(s,ksi,ni,sigma,vpar,L,mask,n1,n2,n3,ind,
-     1      w,nw,minni,wad,sad,lambda,nthreds,iL,work,thn,sigman,ksin)
+     1      w,nw,minni,wad,sad,lambda,nthreds,iL,work,thn,sigman,ksin,
+     2      flb,nfb)
 C
 C  local variance estimation using (adaptive) weighted likelihood
 C
@@ -145,12 +146,12 @@ C   ind(.,i)[1:3] are j1-i1,j2-i2 and j3-i3 respectively
 C   wad, sad - array for weights>0 and corresponding observed s
 C
       implicit none
-      integer n1,n2,n3,nw,ind(3,nw),nthreds,iL
+      integer n1,n2,n3,nw,ind(3,nw),nthreds,iL,nfb
       integer mask(n1,n2,n3)
       double precision s(n1,n2,n3),ni(n1*n2*n3),thn(n1*n2*n3),
      1  ksi(n1,n2,n3),sigman(n1*n2*n3),lambda,w(nw),sigma(n1,n2,n3),
      2  wad(nw,nthreds),sad(nw,nthreds),L,minni,work(iL,nthreds),
-     3  ksin(n1,n2,n3),vpar(6)
+     3  ksin(n1,n2,n3),vpar(6),flb(nfb)
       integer i1,i2,i3,j1,j2,j3,i,j,jj,n,maxit,thrednr
       double precision z,sw,sws,sws2,sj,thi,wj,kval,fnsi,sgi,tol,low,up,
      1       fmin,sgi2,vz,thi2,thj2,fnsj,thj
@@ -179,7 +180,7 @@ C$OMP DO SCHEDULE(GUIDED)
          sws2=0.d0
          sgi=sigma(i1,i2,i3)
          sgi2=sgi*sgi
-         thi = sqrt(max(1d-6,ksi(i1,i2,i3)/sgi2-2.d0*L))
+         thi = sqrt(max(1d-16,ksi(i1,i2,i3)/sgi2-2.d0*L))
          thn(i) = thi
          if(thi.gt.vpar(1)) THEN
             thi2 = thi*thi
@@ -189,7 +190,7 @@ C$OMP DO SCHEDULE(GUIDED)
             fnsi = vpar(2)
          END IF
 C   thats the estimated standard deviation of s(i1,i2,i3)
-         kval = lambda/ni(i)
+         kval = lambda/ni(i)*(sgi+thi)/(0.2d0*sgi+thi)
          jj = 0
          DO j=1,nw
             wad(j,thrednr)=0.d0
@@ -201,7 +202,7 @@ C   thats the estimated standard deviation of s(i1,i2,i3)
             if(j3.le.0.or.j3.gt.n3) CYCLE
             if(mask(j1,j2,j3).eq.0) CYCLE
             wj=w(j)
-            thj = sqrt(max(1d-6,ksi(j1,j2,j3)/sgi2-2.d0*L))
+            thj = sqrt(max(1d-16,ksi(j1,j2,j3)/sgi2-2.d0*L))
             if(thj.gt.vpar(1)) THEN
                thj2 = thj*thj
                vz = vpar(3)*thj+vpar(4)*thj2+vpar(5)*thj*thj2+vpar(6)
@@ -226,20 +227,20 @@ C   thats the estimated standard deviation of s(i1,i2,i3)
             ksin(i1,i2,i3) = sws2/sw
 C needed for the next iteration
 C            low = max(sqrt(ksin(i1,i2,i3)/2.d0/L),sgi/1d1)
-             low = sgi/1d1
+             low = sgi/2d0
 C  sqrt(ksin(i1,i2,i3)/2.d0/L) is the solution in the central case !
 C  old code was still correct but inefficient
-            up = sgi*1d1
-C            up = min(sqrt(ksin(i1,i2,i3)/2.d0/L),sgi*1d1)
+C            up = sgi*1d1
+            up = min(sqrt(ksin(i1,i2,i3)/2.d0/L),sgi*2d0)
             if(up.le.low) THEN
                sgi = up
             ELSE
                call localmin(low,up,wad(1,thrednr),sad(1,thrednr),L,jj,
-     1                    tol,maxit,work(1,thrednr),sgi,fmin)
+     1                    tol,maxit,work(1,thrednr),sgi,fmin,flb,nfb)
             END IF
          END IF
          sigman(i)=sgi
-         thn(i) = sqrt(max(1.d-6,ksin(i1,i2,i3)-2.d0*sgi*sgi*L))
+         thn(i) = sqrt(max(1.d-16,ksin(i1,i2,i3)-2.d0*sgi*sgi*L))
       END DO
 C$OMP END DO NOWAIT
 C$OMP END PARALLEL

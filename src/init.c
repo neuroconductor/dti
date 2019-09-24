@@ -110,7 +110,7 @@ void F77_NAME(awslchi2)( double* s, double* ksi, double* ni, double* sigma,
   double* vpar, double* L, int* mask, int* n1, int* n2, int* n3, int* ind,
   double* w, int* nw, double* minni, double* wad, double* sad, double* lambda,
   int* nthreds, int* iL, double* work, double* thn, double* sigman,
-  double* ksin);
+  double* ksin, double* flb, int* nfb);
 void F77_NAME(awslgaus)( double* s, double* th, double* ni, double* sigma,
 	int* mask, int* n1, int* n2, int* n3, int* ind, double* w, int* nw,
 	double* minni, double* lambda, double* thn, double* sigman);
@@ -274,7 +274,7 @@ static R_NativePrimitiveArgType awsadchi_t[]={REALSXP, REALSXP,
 static R_NativePrimitiveArgType awslchi2_t[]={REALSXP, REALSXP,
   REALSXP, REALSXP, REALSXP, REALSXP, INTSXP, INTSXP, INTSXP, INTSXP,
   INTSXP, REALSXP, INTSXP, REALSXP, REALSXP, REALSXP, REALSXP, INTSXP,
-  INTSXP, REALSXP, REALSXP, REALSXP, REALSXP};
+  INTSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP, INTSXP};
 static R_NativePrimitiveArgType awslgaus_t[]={REALSXP, REALSXP, REALSXP,
 	  REALSXP, INTSXP, INTSXP, INTSXP, INTSXP, INTSXP, REALSXP, INTSXP, REALSXP,
 		REALSXP, REALSXP, REALSXP};
@@ -420,7 +420,7 @@ static const R_FortranMethodDef FMethods[] = {
             {"afmodevn", (DL_FUNC) &afmodevn_ , 8, afmodevn_t},
             {"asmse30p", (DL_FUNC) &asmse30p_ , 18, asmse30p_t},
             {"awsadchi", (DL_FUNC) &awsadchi_ , 17, awsadchi_t},
-            {"awslchi2", (DL_FUNC) &awslchi2_ , 23, awslchi2_t},
+            {"awslchi2", (DL_FUNC) &awslchi2_ , 25, awslchi2_t},
 						{"awslgaus", (DL_FUNC) &awslgaus_ , 15, awslgaus_t},
             {"awsrgdti", (DL_FUNC) &awsrgdti_ , 37, awsrgdti_t},
             {"awssidti", (DL_FUNC) &awssidti_ , 24, awssidti_t},

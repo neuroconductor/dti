@@ -9,7 +9,7 @@ awslsigmc <- function(y,                 # data
                       ncoils = 1,        # number of coils for parallel MR image acquisition
                       vext = c( 1, 1),   # voxel extensions
                       lambda = 5,       # adaptation parameter for PS
-                      minni = 2,         # minimum sum of weights for estimating local sigma
+                      minni = 10,         # minimum sum of weights for estimating local sigma
                       hsig = 5,          # bandwidth for median smoothing local sigma estimates
                       sigma = NULL,
                       family = c("NCchi"),
@@ -95,6 +95,12 @@ awslsigmc <- function(y,                 # data
   parammd$ind <- parammd$ind[1:(3*nwmd)]
   dim(parammd$ind) <- c(3,nwmd)
   ## iterate PS starting with bandwidth h0
+  if(family=="NCchi"){
+#  precompute values of log(besselI) for interpolation
+    nfb <- 200 * ncoils  # for arguments > nfb  asymp. approx can be used
+    x <- 1:nfb
+    flb <- x + log(besselI(x, ncoils-1, TRUE))
+  }
   for (i in 1:steps) {
 
     h <- 1.25^((i-1)/3)
@@ -135,7 +141,9 @@ awslsigmc <- function(y,                 # data
                     double(floor(ncoils)*mc.cores), # work(L,nthreds)
                     th = double(n),
                     sigman = double(n),
-                    ksi = double(n))[c("ni","ksi","th","sigman")]
+                    ksi = double(n),
+                    as.double(flb),
+                    as.integer(nfb))[c("ni","ksi","th","sigman")]
       thchi <- z$th
       ksi <- z$ksi
       thchi[!mask] <- 0

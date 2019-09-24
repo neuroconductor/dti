@@ -1,5 +1,5 @@
-      double precision function lncchi2(sigma,ni,ksi,wj,sj,L,clws,n,
-     1                                  work, x0, gx0, g1x0)
+      double precision function lncchi2(sigma,ni,ksi,wj,sj,L,n,
+     1                                  work, x0, flb, nfb)
 C
 C  compute local weighted noncentral chi^2 log-likelihood * (-1)
 C
@@ -12,21 +12,25 @@ C  L     - df/2
 C  n     - number of local weights/observations
 C
       implicit none
-      integer n
-      double precision sigma,ni,ksi,wj(n),sj(n),L,work(*)
-      integer j
-      double precision eta,z,sig2,zs,pen,sl,lm1,za,clws,x0,gx0,g1x0
+      integer n,nfb
+      double precision sigma,ni,ksi,wj(n),sj(n),L,work(*),flb(nfb)
+      integer j,ib
+      double precision eta,z,sig2,zs,pen,sl,lm1,za,x0,rb,eps,sl0
       double precision bessliex
       external bessliex
+      eps=1.d-16
       lm1=L-1
 C define level for use of large value approximation NIST 10.30.4
       sig2=sigma*sigma
       eta=0.d0
       sl=ksi-2.d0*L*sig2
-      if(sl.lt.1d-6) THEN
-         z = 1d-3
+      if(sl.lt.eps) THEN
+         z = sqrt(eps)
+         sl0 = eps
+         sig2 = (ksi-eps)/2.d0/L
       ELSE
          z = sqrt(sl)
+         sl0 = sl
       END IF
       zs=z/sig2
       DO j=1,n
@@ -34,67 +38,21 @@ C define level for use of large value approximation NIST 10.30.4
             za=sj(j)*zs
             if(za.lt.x0) THEN
                za=log(bessliex(za,lm1,1.d0,work))
+            ELSE IF (za.gt.nfb-1) THEN
+               za=za-log(za*6.283185d0)/2.d0
             ELSE
-               za= gx0 + g1x0*(za-x0)
-C  taylor series approximation of log(besselI(za,lm1)) in x0
-C  avoids overflow and costly evaluation for large za
+               ib = za
+               rb = za-ib
+               za = (1.d0-rb)*flb(ib)+rb*flb(ib+1)
             END IF
-            eta=eta+wj(j)*za
-         END IF
-      END DO
-      lncchi2=ksi/sig2+log(sig2)+lm1/2.d0*log(sl)-eta/ni
-      if(sl.le.1d-6) lncchi2=lncchi2*(1+1.d6*(1.d-1-sl))
-C penalize for domain violation for theta
-      RETURN
-      END
-      double precision function lncchi20(sigma,ni,ksi,wj,sj,L,clws,n,
-     1                                  work, x0, gx0, g1x0)
-C  previous version
-C  compute local weighted noncentral chi^2 log-likelihood * (-1)
-C
-C  sigma - parameter to estimate
-C  ni    - sum(wj)
-C  ksi   - sum(wj*Sj^2)/ni
-C  wj    - local weights
-C  sj    - observed values
-C  L     - df/2
-C  n     - number of local weights/observations
-C
-      implicit none
-      integer n
-      double precision sigma,ni,ksi,wj(n),sj(n),L,work(*)
-      integer j
-      double precision eta,z,sig2,zs,pen,sl,lm1,za,clws,x0,gx0,g1x0
-      double precision bessliex
-      external bessliex
-      lm1=L-1
-C define level for use of large value approximation NIST 10.30.4
-      sig2=sigma*sigma
-      eta=0.d0
-      sl=ksi-2.d0*L*sig2
-      if(sl.lt.1d-6) THEN
-         pen=sl-1d-6
-C  \theta estimated as zero: central case
-         lncchi20=L*log(sig2)+ksi/sig2+max(sl,0.d0)/2.d0+clws-pen
-C clws contains (L-1)\sum_j wj log(sj) + ni (L-1) log2 + lgamma(L)
-      ELSE
-         z=sqrt(sl)
-         zs=z/sig2
-         DO j=1,n
-C            if(wj(j).gt.0.d0) THEN
-               za=sj(j)*zs
-               if(za.lt.x0) THEN
-                  za=log(bessliex(za,lm1,1.d0,work))
-               ELSE
-                  za= gx0 + g1x0*(za-x0)
 C  taylor series approximation of log(besselI(za,lm1)) in x0
 C  avoids overflow and costly evaluation for large za
-               END IF
-               eta=eta+wj(j)*za
-C            END IF
-         END DO
-         lncchi20=ksi/sig2+log(sig2)+lm1/2.d0*log(sl)-eta/ni
-      END IF
+         END IF
+         eta=eta+wj(j)*za
+      END DO
+      lncchi2=ksi/sig2+log(sig2)+lm1/2.d0*log(sl0)-eta/ni
+      if(sl.le.eps) lncchi2=lncchi2*(1+(eps-sl)/eps)
+C penalize for domain violation for theta
       RETURN
       END
 C
@@ -102,13 +60,14 @@ C    Minimization of noncentral chi2-likelihood
 C    Adapted from procedure localmin in Richard Brent, Algorithms for
 C    Minimization without Derivatives, Prentice-Hall, Inc. (1973)
 C
-      subroutine localmin(low,up,wj,sj,L,n,tol,maxit,work,xmin,fmin)
+      subroutine localmin(low,up,wj,sj,L,n,tol,maxit,work,xmin,fmin,
+     1                    flb,nfb)
       implicit none
-      integer n,maxit
+      integer n,maxit,nfb
       double precision low,up,wj(n),sj(n),L,tol,xmin,fmin,work(*)
       double precision goldc,a,b,d,e,eps,xm,p,q,r,eps1,eps2,u,v,w,fu,
-     1       fv,fw,fx,x,x0,gx0,g1x0,bx
-      double precision ni,ksi,sjj,clws,Lm1
+     1       fv,fw,fx,x,x0,fbessel,flb(nfb)
+      double precision ni,ksi,sjj,Lm1
       integer it,j
       logical gsect
       double precision lncchi2,lgammaf,bessliex
@@ -119,22 +78,16 @@ C  Initialize
 C  ni    - sum(wj)
 C  ksi   - sum(wj*Sj^2)/ni
       Lm1=L-1
-      x0 = max(1d1*L,5d1)
-      bx = bessliex(x0,Lm1,1.d0,work)
-      gx0 = log(bx)
-      g1x0 = bessliex(x0,L,1.d0,work)/bx+Lm1/x0
+      x0 = max(3.d0*L,1.d1)
       ni=0.d0
       ksi=0.d0
-      clws=0.d0
       DO j=1,n
 C         if(wj(j).gt.0.d0) THEN
             ni=ni+wj(j)
             sjj=sj(j)
             ksi=ksi+wj(j)*sjj*sjj
-            clws=clws+wj(j)*log(sjj)
 C         END IF
       END DO
-      clws=-Lm1*clws/ni+Lm1*log(2.d0)+lgammaf(L)
       ksi=ksi/ni
       a=low
       b=up
@@ -143,7 +96,7 @@ C         END IF
       x=v
       e=0.d0
       d=0.d0
-      fx=lncchi2(x,ni,ksi,wj,sj,L,clws,n,work,x0,gx0,g1x0)
+      fx=lncchi2(x,ni,ksi,wj,sj,L,n,work,x0,flb,nfb)
       fv=fx
       fw=fx
 C  Search for minimum
@@ -185,7 +138,7 @@ C  Search for minimum
          ELSE
             u=x+sign(eps1,d)
          END IF
-         fu=lncchi2(u,ni,ksi,wj,sj,L,clws,n,work,x0,gx0,g1x0)
+         fu=lncchi2(u,ni,ksi,wj,sj,L,n,work,x0,flb,nfb)
          IF (fu .le. fx) THEN
             IF (u .ge. x) THEN
                a=x
