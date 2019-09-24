@@ -179,7 +179,7 @@ C$OMP DO SCHEDULE(GUIDED)
          sws2=0.d0
          sgi=sigma(i1,i2,i3)
          sgi2=sgi*sgi
-         thi = sqrt(max(0.d0,ksi(i1,i2,i3)/sgi2-2.d0*L))
+         thi = sqrt(max(1d-6,ksi(i1,i2,i3)/sgi2-2.d0*L))
          thn(i) = thi
          if(thi.gt.vpar(1)) THEN
             thi2 = thi*thi
@@ -201,7 +201,7 @@ C   thats the estimated standard deviation of s(i1,i2,i3)
             if(j3.le.0.or.j3.gt.n3) CYCLE
             if(mask(j1,j2,j3).eq.0) CYCLE
             wj=w(j)
-            thj = sqrt(max(0.d0,ksi(j1,j2,j3)/sgi2-2.d0*L))
+            thj = sqrt(max(1d-6,ksi(j1,j2,j3)/sgi2-2.d0*L))
             if(thj.gt.vpar(1)) THEN
                thj2 = thj*thj
                vz = vpar(3)*thj+vpar(4)*thj2+vpar(5)*thj*thj2+vpar(6)
@@ -229,8 +229,8 @@ C            low = max(sqrt(ksin(i1,i2,i3)/2.d0/L),sgi/1d1)
              low = sgi/1d1
 C  sqrt(ksin(i1,i2,i3)/2.d0/L) is the solution in the central case !
 C  old code was still correct but inefficient
-C            up = sgi*1d1
-            up = min(sqrt(ksin(i1,i2,i3)/2.d0/L),sgi*1d1)
+            up = sgi*1d1
+C            up = min(sqrt(ksin(i1,i2,i3)/2.d0/L),sgi*1d1)
             if(up.le.low) THEN
                sgi = up
             ELSE
@@ -239,7 +239,7 @@ C            up = sgi*1d1
             END IF
          END IF
          sigman(i)=sgi
-         thn(i) = sqrt(max(0.d0,ksin(i1,i2,i3)-2.d0*sgi*sgi*L))
+         thn(i) = sqrt(max(1.d-6,ksin(i1,i2,i3)-2.d0*sgi*sgi*L))
       END DO
 C$OMP END DO NOWAIT
 C$OMP END PARALLEL
