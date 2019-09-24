@@ -24,6 +24,55 @@ C define level for use of large value approximation NIST 10.30.4
       eta=0.d0
       sl=ksi-2.d0*L*sig2
       if(sl.lt.1d-6) THEN
+         z = 1d-3
+      ELSE
+         z = sqrt(sl)
+      END IF
+      zs=z/sig2
+      DO j=1,n
+         if(wj(j).gt.0.d0) THEN
+            za=sj(j)*zs
+            if(za.lt.x0) THEN
+               za=log(bessliex(za,lm1,1.d0,work))
+            ELSE
+               za= gx0 + g1x0*(za-x0)
+C  taylor series approximation of log(besselI(za,lm1)) in x0
+C  avoids overflow and costly evaluation for large za
+            END IF
+            eta=eta+wj(j)*za
+         END IF
+      END DO
+      lncchi2=ksi/sig2+log(sig2)+lm1/2.d0*log(sl)-eta/ni
+      if(sl.le.1d-6) lncchi2=lncchi2*(1+1.d6*(1.d-1-sl))
+C penalize for domain violation for theta
+      RETURN
+      END
+      double precision function lncchi20(sigma,ni,ksi,wj,sj,L,clws,n,
+     1                                  work, x0, gx0, g1x0)
+C  previous version
+C  compute local weighted noncentral chi^2 log-likelihood * (-1)
+C
+C  sigma - parameter to estimate
+C  ni    - sum(wj)
+C  ksi   - sum(wj*Sj^2)/ni
+C  wj    - local weights
+C  sj    - observed values
+C  L     - df/2
+C  n     - number of local weights/observations
+C
+      implicit none
+      integer n
+      double precision sigma,ni,ksi,wj(n),sj(n),L,work(*)
+      integer j
+      double precision eta,z,sig2,zs,pen,sl,lm1,za,clws,x0,gx0,g1x0
+      double precision bessliex
+      external bessliex
+      lm1=L-1
+C define level for use of large value approximation NIST 10.30.4
+      sig2=sigma*sigma
+      eta=0.d0
+      sl=ksi-2.d0*L*sig2
+      if(sl.lt.1d-6) THEN
          pen=sl-1d-6
 C  \theta estimated as zero: central case
          lncchi2=L*log(sig2)+ksi/sig2+max(sl,0.d0)/2.d0+clws-pen
@@ -70,7 +119,7 @@ C  Initialize
 C  ni    - sum(wj)
 C  ksi   - sum(wj*Sj^2)/ni
       Lm1=L-1
-      x0 = max(1d1*L,8d1)
+      x0 = max(1d1*L,5d1)
       bx = bessliex(x0,Lm1,1.d0,work)
       gx0 = log(bx)
       g1x0 = bessliex(x0,L,1.d0,work)/bx+Lm1/x0
