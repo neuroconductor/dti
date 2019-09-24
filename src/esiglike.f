@@ -75,7 +75,7 @@ C define level for use of large value approximation NIST 10.30.4
       if(sl.lt.1d-6) THEN
          pen=sl-1d-6
 C  \theta estimated as zero: central case
-         lncchi2=L*log(sig2)+ksi/sig2+max(sl,0.d0)/2.d0+clws-pen
+         lncchi20=L*log(sig2)+ksi/sig2+max(sl,0.d0)/2.d0+clws-pen
 C clws contains (L-1)\sum_j wj log(sj) + ni (L-1) log2 + lgamma(L)
       ELSE
          z=sqrt(sl)
@@ -93,7 +93,7 @@ C  avoids overflow and costly evaluation for large za
                eta=eta+wj(j)*za
 C            END IF
          END DO
-         lncchi2=ksi/sig2+log(sig2)+lm1/2.d0*log(sl)-eta/ni
+         lncchi20=ksi/sig2+log(sig2)+lm1/2.d0*log(sl)-eta/ni
       END IF
       RETURN
       END
