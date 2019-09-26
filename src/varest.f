@@ -154,7 +154,7 @@ C
      3  ksin(n1,n2,n3),vpar(6),flb(nfb)
       integer i1,i2,i3,j1,j2,j3,i,j,jj,n,maxit,thrednr
       double precision z,sw,sws,sws2,sj,thi,wj,kval,fnsi,sgi,tol,low,up,
-     1       fmin,sgi2,vz,thi2,thj2,fnsj,thj
+     1       fmin,sgi2,vz,thi2,thj2,fnsj,thj,nii
 !$      integer omp_get_thread_num
 !$      external omp_get_thread_num
       n = n1*n2*n3
@@ -165,7 +165,7 @@ C  precompute values of lgamma(corrected df/2) in each voxel
 C$OMP PARALLEL DEFAULT(SHARED)
 C$OMP& FIRSTPRIVATE(iL,L,minni,n1,n2,n3,maxit)
 C$OMP& PRIVATE(i,j,i1,i2,i3,j1,j2,j3,z,sw,sws,sws2,thi,kval,thi2,thj2,
-C$OMP& wj,sj,thrednr,fnsi,low,up,tol,sgi,jj,fmin,sgi2,vz,thj,fnsj)
+C$OMP& wj,sj,thrednr,fnsi,low,up,tol,sgi,jj,fmin,sgi2,vz,thj,fnsj,nii)
 C$OMP DO SCHEDULE(GUIDED)
       DO i=1,n
          i1=mod(i,n1)
@@ -189,8 +189,12 @@ C$OMP DO SCHEDULE(GUIDED)
          ELSE
             fnsi = vpar(2)
          END IF
+         nii = ni(i)
 C   thats the estimated standard deviation of s(i1,i2,i3)
-         kval = lambda/ni(i)*(sgi+thi)/(0.2d0*sgi+thi)
+         kval = lambda/nii*(sgi/nii+thi)/(0.1d0/nii*sgi+thi)
+C allow for increased kval for low SNR and small ni
+C correction vanishes for nii -> \infty and thi>0
+C without this the propagation condition is violated for very small SNR 
          jj = 0
          DO j=1,nw
             wad(j,thrednr)=0.d0

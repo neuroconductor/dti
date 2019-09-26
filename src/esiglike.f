@@ -15,11 +15,12 @@ C
       integer n,nfb
       double precision sigma,ni,ksi,wj(n),sj(n),L,work(*),flb(nfb)
       integer j,ib
-      double precision eta,z,sig2,zs,pen,sl,lm1,za,x0,rb,eps,sl0
+      double precision eta,z,sig2,zs,pen,sl,lm1,za,x0,rb,eps,sl0,nfb1
       double precision bessliex
       external bessliex
       eps=1.d-16
       lm1=L-1
+      nfb1 = nfb-1
 C define level for use of large value approximation NIST 10.30.4
       sig2=sigma*sigma
       eta=0.d0
@@ -37,10 +38,13 @@ C define level for use of large value approximation NIST 10.30.4
          if(wj(j).gt.0.d0) THEN
             za=sj(j)*zs
             if(za.lt.x0) THEN
+C calculate for small arguments za for better accuracy than interpolation
                za=log(bessliex(za,lm1,1.d0,work))
-            ELSE IF (za.gt.nfb-1) THEN
+            ELSE IF (za.gt.nfb1) THEN
+C  asymptotic large value approximation
                za=za-log(za*6.283185d0)/2.d0
             ELSE
+C  linear interpolation between tabulated values
                ib = za
                rb = za-ib
                za = (1.d0-rb)*flb(ib)+rb*flb(ib+1)

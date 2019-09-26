@@ -9,7 +9,7 @@ awslsigmc <- function(y,                 # data
                       ncoils = 1,        # number of coils for parallel MR image acquisition
                       vext = c( 1, 1),   # voxel extensions
                       lambda = 5,       # adaptation parameter for PS
-                      minni = 10,         # minimum sum of weights for estimating local sigma
+                      minni = 2,         # minimum sum of weights for estimating local sigma
                       hsig = 5,          # bandwidth for median smoothing local sigma estimates
                       sigma = NULL,
                       family = c("NCchi"),
