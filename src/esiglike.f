@@ -15,7 +15,7 @@ C
       integer n,nfb
       double precision sigma,ni,ksi,wj(n),sj(n),L,work(*),flb(nfb)
       integer j,ib
-      double precision eta,z,sig2,zs,pen,sl,lm1,za,x0,rb,eps,sl0,nfb1
+      double precision eta,z,sig2,zs,sl,lm1,za,x0,rb,eps,sl0,nfb1
       double precision bessliex
       external bessliex
       eps=1.d-16
@@ -45,8 +45,8 @@ C  asymptotic large value approximation
                za=za-log(za*6.283185d0)/2.d0
             ELSE
 C  linear interpolation between tabulated values
-               ib = za
-               rb = za-ib
+               ib = int(za)
+               rb = za-dble(ib)
                za = (1.d0-rb)*flb(ib)+rb*flb(ib+1)
             END IF
 C  taylor series approximation of log(besselI(za,lm1)) in x0
@@ -70,7 +70,7 @@ C
       integer n,maxit,nfb
       double precision low,up,wj(n),sj(n),L,tol,xmin,fmin,work(*)
       double precision goldc,a,b,d,e,eps,xm,p,q,r,eps1,eps2,u,v,w,fu,
-     1       fv,fw,fx,x,x0,fbessel,flb(nfb)
+     1       fv,fw,fx,x,x0,flb(nfb)
       double precision ni,ksi,sjj,Lm1
       integer it,j
       logical gsect
@@ -83,6 +83,7 @@ C  ni    - sum(wj)
 C  ksi   - sum(wj*Sj^2)/ni
       Lm1=L-1
       x0 = max(3.d0*L,1.d1)
+C  x0 such that interpolation of log(I(x,L-1)) has rel. error < 1e-4
       ni=0.d0
       ksi=0.d0
       DO j=1,n
