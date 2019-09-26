@@ -6,7 +6,7 @@ importFrom("grDevices", "col2rgb", "dev.off", "grey", "heat.colors",
            "png", "rainbow", "rgb")
 importFrom("graphics", "plot", "axis", "contour", "identify", "legend",
            "lines", "par", "text", "title", "image")
-importFrom("methods", "new", "slotNames")
+importFrom("methods", "new", "slotNames", "show")
 importFrom("parallel", "makeCluster", "parLapply", "stopCluster", "detectCores")
 importFrom("stats", "IQR", "as.dist", "bw.nrd", "coef", "coefficients",
            "density", "dnorm", "lm", "median", "nls", "optim",
