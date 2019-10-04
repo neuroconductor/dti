@@ -30,11 +30,11 @@ environment:
     - R_VERSION: release
       R_VER: 3.6
 
-    - R_VERSION: oldrel
+    - R_VERSION: 3.5.3
       CRAN: http://cran.rstudio.com
       R_VER: 3.5
 
-    - R_VERSION: 3.4
+    - R_VERSION: 3.4.4
       CRAN: http://cran.rstudio.com
       R_VER: 3.4
 
@@ -61,6 +61,9 @@ build_script:
   - travis-tool.sh install_deps
 
 test_script:
+  - choco install ffmpeg & exit 0
+  - choco install dcmtk & exit 0
+  - choco install libreoffice-fresh & exit 0
   - if not exist "C:\rtm" mkdir C:\rtm
   - set TMP=C:/rtm
   - set TEMP=C:/rtm
@@ -135,4 +138,4 @@ deploy:
   on:
     appveyor_repo_tag: true
 
-# neuroc.deps commit id:e2bc314
+# neuroc.deps commit id:e5824ce
