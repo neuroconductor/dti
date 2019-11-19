@@ -39,17 +39,7 @@ setMethod("dwi.smooth.ms",
             level <- object@level
             vext <- object@voxelext[2:3]/object@voxelext[1]
 
-            # determine the mesh of gradient triangles for interpolation
-            # determine the number of shells, hmmm: difficult task!
-            # this requires unique values for the bvalues
-            # cf. the corresponding code in multishell.r:getnext3g
-            msstructure <- getnext3g(grad, bvalues)
-            bv <- msstructure$bv
-            nshell <- as.integer(msstructure$nbv)
-            ubv <- msstructure$ubv
 
-            # consider the noise
-            varstats <- sofmchi(ncoils)
             if (length(sigma) == 1) {
               sigmacase <- 1
               if (verbose) cat("using supplied sigma ", sigma, "\n")
@@ -109,129 +99,39 @@ setMethod("dwi.smooth.ms",
             }
             if (is.null(mask)) mask <- getmask(object, level)$mask
             # determine minimal subcube that contains the mask ore use supplied information
-            if(is.null(xind)) xind <- (1:ddim[1])[apply(mask,1,any)]
-            if(is.null(yind)) yind <- (1:ddim[2])[apply(mask,2,any)]
-            if(is.null(zind)) zind <- (1:ddim[3])[apply(mask,3,any)]
-            # reduce everything to this subcube
             ##
             ##  check memory size needed for largest vector
             ##
-            vsize <- (nshell+1)*ngrad*length(xind)*length(yind)*length(zind)
+            vsize <- (nshell+1)*ngrad*sum(mask)
             if(vsize>2^31-1){
-              cat("region specified is to large, a vector of size",vsize,"needs to be passed through
-      the .Fortran, this is limited to 2^31-1 in R\n reducing the zind")
-              maxzind <- (2^31-1)/(nshell+1)/ngrad/length(xind)/length(yind)
-              nzind <- apply(mask,3,sum)
+              stop("region specified is to large, a vector of size",vsize,"needs to be passed through
+      the .Fortran, this is limited to 2^31-1 in R\n please use a smaller mask")
+            }
+            #
+            #  reduce data to contain only voxel from brain mask
+            #
+            dim(sb) <- c(prod(ddim),ngrad)
+            s0 <- s0[mask]
+            sb <- sb[mask,]
 
-            }
-            sb <- sb[xind, yind, zind,]
-            s0 <- s0[xind, yind, zind]
-            mask <- mask[xind, yind, zind]
-            if (length(sigma) > 1) {
-              if(length(dim(sigma)) == 3) {
-                sigma <- sigma[xind, yind, zind]
-              } else {
-                sigma <- sigma[xind, yind, zind, ]
-              }
-            }
-            gc()
-            ddim0 <- dim(s0)
-            ddimb <- dim(sb)
-            gradstats <- getkappasmsh3(grad, msstructure)
-            hseq <- gethseqfullse3msh(kstar,gradstats,kappa0,vext=vext)
-            nind <- as.integer(hseq$n*1.25)
-            # make it nonrestrictive for the first step
-            z <- list(th=array(1,ddimb), th0=array(1,ddim0), ni = array(1,ddimb), ni0 = array(1,ddim0))
-            if(usemaxni){
-              ni <- array(1,ddimb)
-              ni0 <- array(1,ddim0)
-            }
-            prt0 <- Sys.time()
-            cat("adaptive smoothing in SE3, kstar=",kstar,if(verbose)"\n" else " ")
-            kinit <- if(lambda<1e10) 0 else kstar
-            mc.cores <- setCores(,reprt=FALSE)
-            gc()
-            for(k in kinit:kstar){
-              hakt <- hseq$h[,k+1]
-              t0 <- Sys.time()
-              thnimsh <- interpolatesphere1(z$th,z$th0,z$ni,z$ni0,msstructure,mask)
-              if(memrelease) rm(z)
-              gc()
-              t1 <- Sys.time()
-              param <- lkfullse3msh(hakt,kappa0/hakt,gradstats,vext,nind)
-              hakt0 <- mean(hakt)
-              param0 <- lkfulls0(hakt0,vext,nind)
-              vs2 <- varstats$s2[findInterval(thnimsh$mstheta, varstats$mu, all.inside = TRUE)]/2
-              vs02 <- varstats$s2[findInterval(thnimsh$msth0, varstats$mu, all.inside = TRUE)]/2
-              t2 <- Sys.time()
-              z <- .Fortran(C_adsmse3s,
-                            as.double(sb),#y
-                            as.double(s0),#y0
-                            as.double(thnimsh$mstheta),#th
-                            as.double(thnimsh$msni),#ni/si^2
-                            as.double(thnimsh$msth0),#th0
-                            as.double(thnimsh$msni0),#ni0/si^2
-                            as.double(vs2),#var/2
-                            as.double(vs02),#var/2 for s0
-                            as.integer(mask),#mask
-                            as.integer(nshell+1),#ns number of shells
-                            as.integer(ddim0[1]),#n1
-                            as.integer(ddim0[2]),#n2
-                            as.integer(ddim0[3]),#n3
-                            as.integer(ngrad),#ngrad
-                            as.double(lambda),#lambda
-                            as.double(ws0),# wghts0 rel. weight for s0 image
-                            as.integer(param$ind),#ind
-                            as.double(param$w),#w
-                            as.integer(param$n),#n
-                            as.integer(param0$ind),#ind0
-                            as.double(param0$w),#w0
-                            as.integer(param0$n),#n0
-                            th=double(prod(ddimb)),#thn
-                            ni=double(prod(ddimb)),#nin
-                            th0=double(prod(ddim0)),#th0n
-                            ni0=double(prod(ddim0)),#ni0n
-                            double(ngrad*mc.cores),#sw
-                            double(ngrad*mc.cores),#swy
-                            double((nshell+1)*mc.cores),#thi
-                            double((nshell+1)*mc.cores),#nii
-                            double((nshell+1)*mc.cores))[c("ni","th","ni0","th0")]
-              t3 <- Sys.time()
-              gc()
-              if(memrelease) rm(thnimsh,vs2,vs02)
-              gc()
-              if(usemaxni){
-                ni <- z$ni <- if(usemaxni) pmax(ni,z$ni)
-                ni0 <- z$ni0 <- if(usemaxni) pmax(ni0,z$ni0)
-              }
-              dim(z$th) <- ddimb
-              dim(z$th0) <- ddim0
-              dim(z$ni) <- ddimb
-              dim(z$ni0) <- ddim0
-              if(verbose){
-                dim(z$ni) <- c(prod(ddim0),ngrad)
-                cat("k:",k,"h_k:",signif(max(hakt),3)," quartiles of ni",signif(quantile(z$ni[mask,]),3),
-                    "mean of ni",signif(mean(z$ni[mask,]),3),"\n              quartiles of ni0",signif(quantile(z$ni0[mask]),3),
-                    "mean of ni0",signif(mean(z$ni0[mask]),3),
-                    " time elapsed:",format(difftime(Sys.time(),prt0),digits=3),"\n")
-                cat("interpolation:",format(difftime(t1,t0),digits=3),
-                    "param:",format(difftime(t2,t1),digits=3),
-                    "smoothing:",format(difftime(t3,t2),digits=3),"\n")
-              } else {
-                cat(".")
-              }
-            }
-            ngrad <- ngrad+1
+            z <- aws::smse3ms(sb, s0, bv, grad, sigma, kstar, kappa0,
+                            mask, vext=vext, ncoils=ncoils, ws0=ws0, level=level,
+                            verbose=verbose, usemaxni=usemaxni)
+
             #
             #  one s0 image only
             #
-            si <- array(object@si,c(ddim,ngrad))
+            ngrad <- ngrad+1
+            si <- array(0,c(prod(ddim),ngrad))
+            si[mask,1] <- z$th0
+            si[mask,-1] <- z$th
+            dim(si) <- c(ddim,ngrad)
             #
             #  back to original scale
             #
             if (length(sigma) > 1) {
               if(length(dim(sigma)) == 3) {
-                si[xind, yind, zind, 1] <-  z$th0/sqrt(ns0)*sigma
+                si[mask , 1] <-  z$th0/sqrt(ns0)*sigma
               } else {
                 si[xind, yind, zind, 1] <-  z$th0/sqrt(ns0)*sigma[, , , 1]
               }
@@ -241,14 +141,14 @@ setMethod("dwi.smooth.ms",
             #  go back to original s0 scale
             #  for the DWI we need to scale back differently
             if (sigmacase == 1) {
-              si[xind, yind, zind, -1] <- z$th*sigma
+              si[, , , -1] <- z$th*sigma
             } else if (sigmacase == 2) {
-              si[xind, yind, zind, -1] <- sweep(z$th, 1:3, sigma, "*")
+              si[, , , -1] <- sweep(z$th, 1:3, sigma, "*")
             } else if (sigmacase == 3) { # now sigma is an array with (identical(dim(sigma), ddim) == TRUE)
               for (shnr in 1:nshell) {
                 indth <- (1:length(bv))[bv == ubv[shnr]]
                 indsi <- indth+1
-                si[xind, yind, zind, indsi] <- sweep(z$th[, , , indth], 1:3, sigma[, , , shnr+1], "*")
+                si[, , , indsi] <- sweep(z$th[, , , indth], 1:3, sigma[, , , shnr+1], "*")
                 }
             } else {
                 si[xind, yind, zind, -1] <- z$th*sigma[,,,-1]
