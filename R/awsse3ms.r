@@ -114,8 +114,8 @@ setMethod("dwi.smooth.ms",
             s0 <- s0[mask]
             sb <- sb[mask,]
 
-            z <- aws::smse3ms(sb, s0, bv, grad, sigma, kstar, kappa0,
-                            mask, vext=vext, ncoils=ncoils, ws0=ws0, level=level,
+            z <- aws::smse3ms(sb, s0, bv, grad, ns0, kstar, kappa0,
+                            mask, vext=vext, ncoils=ncoils, level=level,
                             verbose=verbose, usemaxni=usemaxni)
 
             #
@@ -131,12 +131,12 @@ setMethod("dwi.smooth.ms",
             #
             if (length(sigma) > 1) {
               if(length(dim(sigma)) == 3) {
-                si[mask , 1] <-  z$th0/sqrt(ns0)*sigma
+                si[ , , , 1] <-  z$th0/sqrt(ns0)*sigma
               } else {
-                si[xind, yind, zind, 1] <-  z$th0/sqrt(ns0)*sigma[, , , 1]
+                si[, , , 1] <-  z$th0/sqrt(ns0)*sigma[, , , 1]
               }
             } else {
-              si[xind, yind, zind, 1] <-  z$th0/sqrt(ns0)*sigma
+              si[, , , 1] <-  z$th0/sqrt(ns0)*sigma
             }
             #  go back to original s0 scale
             #  for the DWI we need to scale back differently
