@@ -78,30 +78,12 @@ static const R_CMethodDef CMethods[] = {
 
 void F77_NAME(adcradii)( double* vert, int* nv, double* tens, int* ntens,
   double* radii);
-void F77_NAME(adsmse3m)( double* y, double* th, double* ni, double* sthi,
-  int* mask, int* ns, int* n1, int* n2, int* n3, int* ngrad, double* lambda,
-  int* ncores, int* ind, double* w, int* n, double* thn, double* sw,
-  double* swy, double* si, double* thi);
-void F77_NAME(adsmse3p)( double* y, double* th, double* ni, int* mask,
-  int* n1, int* n2, int* n3, int* ngrad, double* lambda, int* ncoils,
-  int* ncores, int* ind, double* w, int* n, double* thn, double* ldf,
-  double* sw, double* swy, int* model);
-void F77_NAME(adsmse3s)( double* y, double* y0, double* th, double* ni,
-  double* th0, double* ni0, double* fsi2, double* fsi02, int* mask, int* ns,
-  int* n1, int* n2, int* n3, int* ngrad, double* lambda, double* ws0,
-  int* ind, double* w, int* n, int* ind0, double* w0, int* n0, double* thn,
-  double* nin, double* th0n, double* ni0n, double* sw, double* swy,
-  double* thi, double* nii, double* fsi2i);
 void F77_NAME(afmodem1)( double* y, int* n1, int* n2, int* n3, int* mask,
   double* h, double* vext, double* sigma);
 void F77_NAME(afmodem2)( double* y, int* n1, int* n2, int* n3, int* mask,
   double* h, double* vext, double* sm);
 void F77_NAME(afmodevn)(  double* y, int* n1, int* n2, int* n3, int* mask,
   double* h, double* vext, double* sigma);
-void F77_NAME(asmse30p)( double* y, double* th, double* ni, int* mask,
-  int* n1, int* n2, int* n3, double* lambda, int* ncoils, int* ind, double* w,
-  int* n, int* starts, int* nstarts, double* thn, double* ldf, double* swi,
-  int* model);
 void F77_NAME(awsadchi)( double* y, double* th, double* ni, double* fns,
   int* mask, int* n1, int* n2, int* n3, int* ind, double* w, int* nw,
   double* lambda, double* sigma, double* wad, int* nthreds, double* thn,
@@ -159,8 +141,6 @@ void F77_NAME(gethani)( double* x, double* y, double* value, double* a,
   double* vext, double* eps, double* bw);
 void F77_NAME(getmask)( double* s0, int* n1, int* n2, int* n3, int* ns,
   double* level, int* msize, double* prob, double* s0m, int* mask);
-void F77_NAME(getmsni0)( double* ni, int* n, int* lindi, double* msni);
-void F77_NAME(getmsth0)( double* theta, int* n, int* lindi, double* msth);
 void F77_NAME(getsii30)( double* si, double* vsi, int* ngrad,
   int* nvox, int* m, double* dgrad, int* nv, double* th, int* nth, int* indth,
   double* egrad, int* isample, int* ntry, double* sms, double* z, int* siind,
@@ -174,26 +154,14 @@ void F77_NAME(getsiibv)( double* si, int* ngrad, int* nvox,
   double* egrad, int* isample, int* ntry, double* sms, double* z0, double* z,
   int* siind, double* wi, double* mval, int* ns);
 void F77_NAME(getvofh)( double* a, double* bw, double* vext, double* vol);
-void F77_NAME(ghfse3i)( int* i4, int* kstar, double* k456, int* ng,
-  double* kappa, double* vext, double* h, double* varred, int* n, int* dist);
 void F77_NAME(hg1f1)( double* a, double* b, double* z, int* n, double* fz);
 void F77_NAME(iandir)( double* vico, int* nvico, double* andir, int* nvox,
   int* landir, int* iandi);
 void F77_NAME(initdata)( double* si, int* n1, int* n2, int* n3, int* nb,
   double* maxvalue);
-void F77_NAME(ipolsp)( double* theta, double* th0, double* ni, double* ni0,
-  int* n, int* ng, int* gind, double* gw, int* nbv, int* nbvp1, double* msth,
-  double* msni);
-void F77_NAME(ipolsp1)( double* theta, double* th0, double* ni, double* ni0,
-  int* mask, int* n, int* ng, int* gind, double* gw, int* nbv, int* nbvp1,
-  double* msth, double* msni);
 void F77_NAME(k456krb)( double* par, double* b, double* matm, double* erg);
 void F77_NAME(lconnect)( int* segm, int* n1, int* n2, int* n3, int* i1,
   int* i2, int* i3, int* ind1, int* ind2, int* ind3, int* mask);
-void F77_NAME(lkfuls0)( double* h, double* vext, int* ind, double* wght,
-  int* n);
-void F77_NAME(lkfulse3)( double* h, double* kappa, double* k456, int* ng,
-  double* vext, int* ind, double* wght, int* n, int* dist);
 void F77_NAME(mcorr)( double* res, int* mask, int* n1, int* n2, int* n3,
   int* nv, double* sigma, double* mean, double* scorr, int* l1, int* l2,
   int* l3);
@@ -248,26 +216,12 @@ void F77_NAME(touchfi)( double* fibers1, int* nsegm1, int* startf1, int* endf1,
 
 static R_NativePrimitiveArgType adcradii_t[]={REALSXP, INTSXP, REALSXP,
   INTSXP, REALSXP};
-static R_NativePrimitiveArgType adsmse3m_t[]={REALSXP, REALSXP, REALSXP,
-  REALSXP, INTSXP, INTSXP, INTSXP, INTSXP, INTSXP, INTSXP, REALSXP, INTSXP,
-  INTSXP, REALSXP, INTSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP};
-static R_NativePrimitiveArgType adsmse3p_t[]={REALSXP, REALSXP,
-  REALSXP, INTSXP, INTSXP, INTSXP, INTSXP, INTSXP, REALSXP, INTSXP,
-  INTSXP, INTSXP, REALSXP, INTSXP, REALSXP, REALSXP, REALSXP, REALSXP, INTSXP};
-static R_NativePrimitiveArgType adsmse3s_t[]={REALSXP, REALSXP, REALSXP,
-  REALSXP, REALSXP, REALSXP, REALSXP, REALSXP, INTSXP, INTSXP, INTSXP, INTSXP,
-  INTSXP, INTSXP, REALSXP, REALSXP, INTSXP, REALSXP, INTSXP, INTSXP, REALSXP,
-  INTSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP,
-  REALSXP, REALSXP};
 static R_NativePrimitiveArgType afmodem1_t[]={REALSXP, INTSXP, INTSXP,
   INTSXP, INTSXP, REALSXP, REALSXP, REALSXP};
 static R_NativePrimitiveArgType afmodem2_t[]={REALSXP, INTSXP, INTSXP,
   INTSXP, INTSXP, REALSXP, REALSXP, REALSXP};
 static R_NativePrimitiveArgType afmodevn_t[]={REALSXP, INTSXP, INTSXP,
   INTSXP, INTSXP, REALSXP, REALSXP, REALSXP};
-static R_NativePrimitiveArgType asmse30p_t[]={REALSXP, REALSXP,
-  REALSXP, INTSXP, INTSXP, INTSXP, INTSXP, REALSXP, INTSXP, INTSXP,
-  REALSXP, INTSXP, INTSXP, INTSXP, REALSXP, REALSXP, REALSXP, INTSXP};
 static R_NativePrimitiveArgType awsadchi_t[]={REALSXP, REALSXP,
   REALSXP, REALSXP, INTSXP, INTSXP, INTSXP, INTSXP, INTSXP, REALSXP,
   INTSXP, REALSXP, REALSXP, REALSXP, INTSXP, REALSXP, REALSXP};
@@ -323,10 +277,6 @@ static R_NativePrimitiveArgType gethani_t[]={REALSXP, REALSXP, REALSXP,
   REALSXP, REALSXP, REALSXP, REALSXP};
 static R_NativePrimitiveArgType getmask_t[]={REALSXP, INTSXP, INTSXP,
   INTSXP, INTSXP, REALSXP, INTSXP, REALSXP, REALSXP, INTSXP};
-static R_NativePrimitiveArgType getmsni0_t[]={REALSXP, INTSXP, INTSXP,
-  REALSXP};
-static R_NativePrimitiveArgType getmsth0_t[]={REALSXP, INTSXP, INTSXP,
-  REALSXP};
 static R_NativePrimitiveArgType getsii30_t[]={REALSXP, REALSXP, INTSXP,
   INTSXP, INTSXP, REALSXP, INTSXP, REALSXP, INTSXP, INTSXP, REALSXP, INTSXP,
   INTSXP, REALSXP, REALSXP, INTSXP, REALSXP, INTSXP, INTSXP};
@@ -339,27 +289,16 @@ static R_NativePrimitiveArgType getsiibv_t[]={REALSXP, INTSXP, INTSXP,
   INTSXP, REALSXP, REALSXP, REALSXP, INTSXP, REALSXP, REALSXP, INTSXP};
 static R_NativePrimitiveArgType getvofh_t[]={REALSXP, REALSXP, REALSXP,
   REALSXP};
-static R_NativePrimitiveArgType ghfse3i_t[]={INTSXP, INTSXP, REALSXP,
-  INTSXP, REALSXP, REALSXP, REALSXP, REALSXP, INTSXP, INTSXP};
 static R_NativePrimitiveArgType hg1f1_t[]={REALSXP, REALSXP, REALSXP,
   INTSXP, REALSXP};
 static R_NativePrimitiveArgType iandir_t[]={REALSXP, INTSXP, REALSXP,
   INTSXP, INTSXP, INTSXP};
 static R_NativePrimitiveArgType initdata_t[]={REALSXP, INTSXP, INTSXP,
   INTSXP, INTSXP, REALSXP};
-static R_NativePrimitiveArgType ipolsp_t[]={REALSXP, REALSXP, REALSXP,
-  REALSXP, INTSXP, INTSXP, INTSXP, REALSXP, INTSXP, INTSXP, REALSXP, REALSXP};
-static R_NativePrimitiveArgType ipolsp1_t[]={REALSXP, REALSXP, REALSXP,
-  REALSXP, INTSXP, INTSXP, INTSXP, INTSXP, REALSXP, INTSXP, INTSXP, REALSXP,
-  REALSXP};
 static R_NativePrimitiveArgType k456krb_t[]={REALSXP, REALSXP,
   REALSXP, REALSXP};
 static R_NativePrimitiveArgType lconnect_t[]={INTSXP, INTSXP, INTSXP,
   INTSXP, INTSXP, INTSXP, INTSXP, INTSXP, INTSXP, INTSXP, INTSXP};
-static R_NativePrimitiveArgType lkfuls0_t[]={REALSXP, REALSXP,
-  INTSXP, REALSXP, INTSXP};
-static R_NativePrimitiveArgType lkfulse3_t[]={REALSXP, REALSXP, REALSXP,
-  INTSXP, REALSXP, INTSXP, REALSXP, INTSXP, INTSXP};
 static R_NativePrimitiveArgType mcorr_t[]={REALSXP, INTSXP, INTSXP, INTSXP,
   INTSXP, INTSXP, REALSXP, REALSXP, REALSXP, INTSXP, INTSXP, INTSXP};
 static R_NativePrimitiveArgType means0_t[]={REALSXP, INTSXP, INTSXP, INTSXP,
@@ -412,13 +351,9 @@ static R_NativePrimitiveArgType touchfi_t[]={REALSXP, INTSXP, INTSXP,
 
 static const R_FortranMethodDef FMethods[] = {
             {"adcradii", (DL_FUNC) &adcradii_ , 5,adcradii_t},
-            {"adsmse3m", (DL_FUNC) &adsmse3m_ , 20, adsmse3m_t},
-            {"adsmse3p", (DL_FUNC) &adsmse3p_ , 19, adsmse3p_t},
-            {"adsmse3s", (DL_FUNC) &adsmse3s_ , 31, adsmse3s_t},
             {"afmodem1", (DL_FUNC) &afmodem1_ , 8, afmodem1_t},
             {"afmodem2", (DL_FUNC) &afmodem2_ , 8, afmodem2_t},
             {"afmodevn", (DL_FUNC) &afmodevn_ , 8, afmodevn_t},
-            {"asmse30p", (DL_FUNC) &asmse30p_ , 18, asmse30p_t},
             {"awsadchi", (DL_FUNC) &awsadchi_ , 17, awsadchi_t},
             {"awslchi2", (DL_FUNC) &awslchi2_ , 25, awslchi2_t},
 						{"awslgaus", (DL_FUNC) &awslgaus_ , 15, awslgaus_t},
@@ -443,22 +378,15 @@ static const R_FortranMethodDef FMethods[] = {
             {"fibersta", (DL_FUNC) &fibersta_ , 4, fibersta_t},
             {"gethani", (DL_FUNC) &gethani_ , 7, gethani_t},
             {"getmask", (DL_FUNC) &getmask_ , 10, getmask_t},
-            {"getmsni0", (DL_FUNC) &getmsni0_ , 4, getmsni0_t},
-            {"getmsth0", (DL_FUNC) &getmsth0_ , 4, getmsth0_t},
             {"getsii30", (DL_FUNC) &getsii30_ , 19, getsii30_t},
             {"getsii31", (DL_FUNC) &getsii31_ , 22, getsii31_t},
             {"getsiibv", (DL_FUNC) &getsiibv_ , 19, getsiibv_t},
             {"getvofh", (DL_FUNC) &getvofh_ , 4, getvofh_t},
-            {"ghfse3i", (DL_FUNC) &ghfse3i_ , 10, ghfse3i_t},
             {"hg1f1", (DL_FUNC) &hg1f1_ , 5, hg1f1_t},
             {"iandir", (DL_FUNC) &iandir_ , 6, iandir_t},
             {"initdata", (DL_FUNC) &initdata_ , 6, initdata_t},
-            {"ipolsp", (DL_FUNC) &ipolsp_ , 12, ipolsp_t},
-            {"ipolsp1", (DL_FUNC) &ipolsp1_ , 13, ipolsp1_t},
             {"k456krb", (DL_FUNC) &k456krb_ , 4, k456krb_t},
             {"lconnect", (DL_FUNC) &lconnect_ , 11, lconnect_t},
-            {"lkfuls0", (DL_FUNC) &lkfuls0_ , 5, lkfuls0_t},
-            {"lkfulse3", (DL_FUNC) &lkfulse3_ , 9, lkfulse3_t},
             {"mcorr", (DL_FUNC) &mcorr_ , 12, mcorr_t},
             {"means0", (DL_FUNC) &means0_ , 6, means0_t},
             {"mediansm", (DL_FUNC) &mediansm_ , 10, mediansm_t},

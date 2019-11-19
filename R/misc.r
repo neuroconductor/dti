@@ -661,3 +661,19 @@ hg1f1 <- function(a,b,z){
             as.integer(n),
             fz=double(n))$fz
 }
+
+unifybvals <- function(bval,dbv=51){
+   nbv <- length(bval)
+   nbval <- bval
+   obval <- numeric(nbv)
+   while(any(nbval!=obval)){
+      obval <- nbval
+      sbv <- sort(obval)
+      dsbv <- (1:(nbv-1))[diff(sbv)<dbv]
+      sbv[dsbv+1] <- sbv[dsbv]
+      obv <- order(obval)
+      nbval[obv] <- sbv
+   }
+   for(bv in unique(nbval)) nbval[nbval==bv] <- trunc(mean(bval[nbval==bv]))
+   nbval
+}

@@ -107,21 +107,3 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,mask=NULL,kap
   object
 }
 )
-
-
-lkfullse3 <- function(h,kappa,gradstats,vext,n){
-  ngrad <- dim(gradstats$bghat)[2]
-  if(length(h)<ngrad) h <- rep(h[1],ngrad)
-  z <- .Fortran(C_lkfulse3,
-                as.double(h),
-                as.double(kappa),
-                as.double(gradstats$k456),
-                as.integer(ngrad),
-                as.double(vext),
-                ind=integer(5*n),
-                w=double(n),
-                n=as.integer(n),
-                as.integer(gradstats$dist))[c("ind","w","n")]
-  dim(z$ind) <- c(5,n)
-  list(h=h,kappa=kappa,ind=z$ind[,1:z$n],w=z$w[1:z$n],nind=z$n)
-}
