@@ -8,10 +8,10 @@ C
      1       res(nb,nvox),rss(nvox)
       integer i,j,k
       double precision zrss,z
-C$OMP PARALLEL DEFAULT(NONE)
-C$OMP& SHARED(nb,nvox,th0,D,s,b,res,rss)
-C$OMP& PRIVATE(i,j,k,z,zrss)
-C$OMP DO SCHEDULE(GUIDED)
+C C$OMP PARALLEL DEFAULT(NONE)
+C C$OMP& SHARED(nb,nvox,th0,D,s,b,res,rss)
+C C$OMP& PRIVATE(i,j,k,z,zrss)
+C C$OMP DO SCHEDULE(GUIDED)
       DO i=1,nvox
          zrss = 0.d0
          DO j = 1,nb
@@ -25,8 +25,8 @@ C$OMP DO SCHEDULE(GUIDED)
          END DO
          rss(i) = zrss
       END DO
-C$OMP END DO
-C$OMP END PARALLEL
+C C$OMP END DO
+C C$OMP END PARALLEL
       RETURN
       END
       subroutine ftensor(par,s,nb,b,vinv,gv,fv)
@@ -42,11 +42,6 @@ C
 C      call dblepr("par",3,par,7)
       call rho2D(par(2),D)
       call sihat(th0,D,b,gv,nb)
-C      call dblepr("th0",3,th0,1)
-C      call dblepr("D",1,D,6)
-C      call dblepr("vinv",4,vinv,6)
-C      call dblepr("gv",2,gv,nb)
-C      call dblepr("si",2,s,nb)
 C
 C   this gives vector  th0*exp(-b g_i^T D g_i) in gv
 C
@@ -111,7 +106,6 @@ C
          z1=2.d0*b(6,i)*par(7)
          grad(7)=grad(7)+z*z1
       END DO
-C      call dblepr("grad",4,grad,7)
 C
 C     We now have the gradient in grad
 C
