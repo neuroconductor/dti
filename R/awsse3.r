@@ -47,18 +47,6 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,mask=NULL,kap
   bvalues <- object@bvalue[-s0ind]
   sb <- object@si[,,,-s0ind]
   s0 <- object@si[,,,s0ind]
-  if(is.null(kappa0)){
-    #  select kappa based on variance reduction on the sphere
-    if(is.null(vred)) {
-      warning("You need to specify either kappa0 or vred\n returning unsmoothed object")
-      return(object)
-    }
-    if(!is.numeric(vred)|vred<1){
-      warning("vred needs to be >= 1\n returning unsmoothed object")
-      return(object)
-    }
-    kappa0 <- suggestkappa(grad,vred,dist)$kappa
-  }
   #
   #  rescale so that we have Chi-distributed values
   #
@@ -82,7 +70,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,mask=NULL,kap
   if(model==1)    sigma <- sigma^2
 
   z <- aws::smse3(sb, s0, bvalues, grad, ns0, kstar, lambda,
-                  kappa0, mask, vext, ncoils, model, dist, verbose=verbose)
+                  kappa0, mask, vext, vred, ncoils, model, dist, verbose=verbose)
 
   ngrad <- ngrad+1
   si <- array(0,c(prod(ddim),ngrad))

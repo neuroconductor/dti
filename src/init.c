@@ -109,7 +109,6 @@ void F77_NAME(awssidti)( double* s0, double* si, int* mask, double* th,
 void F77_NAME(awsvchi)( double* y, double* th, double* ni, double* fns,
   int* mask, int* n1, int* n2, int* n3, int* ind, double* w, int* nw,
   double* lambda, double* sigma, double* thn, double* sy);
-void F77_NAME(bgstats)( double* g, int* n, double* bg, double* bghat);
 void F77_NAME(caws03d)( double* y, int* mask, int* n1, int* n2, int* n3,
   double* hakt, double* theta, double* bi, double* lwght, double* wght);
 void F77_NAME(cgaws)( double* y, int* mask, double* si2, int* n1, int* n2,
@@ -159,7 +158,6 @@ void F77_NAME(iandir)( double* vico, int* nvico, double* andir, int* nvox,
   int* landir, int* iandi);
 void F77_NAME(initdata)( double* si, int* n1, int* n2, int* n3, int* nb,
   double* maxvalue);
-void F77_NAME(k456krb)( double* par, double* b, double* matm, double* erg);
 void F77_NAME(lconnect)( int* segm, int* n1, int* n2, int* n3, int* i1,
   int* i2, int* i3, int* ind1, int* ind2, int* ind3, int* mask);
 void F77_NAME(mcorr)( double* res, int* mask, int* n1, int* n2, int* n3,
@@ -244,8 +242,6 @@ static R_NativePrimitiveArgType awssidti_t[]={REALSXP, REALSXP, INTSXP,
 static R_NativePrimitiveArgType awsvchi_t[]={REALSXP, REALSXP, REALSXP,
   REALSXP, INTSXP, INTSXP, INTSXP, INTSXP, INTSXP, REALSXP,
   INTSXP, REALSXP, REALSXP, REALSXP, REALSXP};
-static R_NativePrimitiveArgType bgstats_t[]={REALSXP, INTSXP, REALSXP,
-  REALSXP};
 static R_NativePrimitiveArgType caws03d_t[]={REALSXP, INTSXP, INTSXP,
   INTSXP, INTSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP};
 static R_NativePrimitiveArgType cgaws_t[]={REALSXP, INTSXP, REALSXP,
@@ -295,8 +291,6 @@ static R_NativePrimitiveArgType iandir_t[]={REALSXP, INTSXP, REALSXP,
   INTSXP, INTSXP, INTSXP};
 static R_NativePrimitiveArgType initdata_t[]={REALSXP, INTSXP, INTSXP,
   INTSXP, INTSXP, REALSXP};
-static R_NativePrimitiveArgType k456krb_t[]={REALSXP, REALSXP,
-  REALSXP, REALSXP};
 static R_NativePrimitiveArgType lconnect_t[]={INTSXP, INTSXP, INTSXP,
   INTSXP, INTSXP, INTSXP, INTSXP, INTSXP, INTSXP, INTSXP, INTSXP};
 static R_NativePrimitiveArgType mcorr_t[]={REALSXP, INTSXP, INTSXP, INTSXP,
@@ -360,7 +354,6 @@ static const R_FortranMethodDef FMethods[] = {
             {"awsrgdti", (DL_FUNC) &awsrgdti_ , 37, awsrgdti_t},
             {"awssidti", (DL_FUNC) &awssidti_ , 24, awssidti_t},
             {"awsvchi", (DL_FUNC) &awsvchi_ , 15, awsvchi_t},
-            {"bgstats", (DL_FUNC) &bgstats_ , 4, bgstats_t},
             {"caws03d", (DL_FUNC) &caws03d_ , 10, caws03d_t},
             {"cgaws", (DL_FUNC) &cgaws_ , 16, cgaws_t},
             {"cfibers", (DL_FUNC) &cfibers_ , 6, cfibers_t},
@@ -385,7 +378,6 @@ static const R_FortranMethodDef FMethods[] = {
             {"hg1f1", (DL_FUNC) &hg1f1_ , 5, hg1f1_t},
             {"iandir", (DL_FUNC) &iandir_ , 6, iandir_t},
             {"initdata", (DL_FUNC) &initdata_ , 6, initdata_t},
-            {"k456krb", (DL_FUNC) &k456krb_ , 4, k456krb_t},
             {"lconnect", (DL_FUNC) &lconnect_ , 11, lconnect_t},
             {"mcorr", (DL_FUNC) &mcorr_ , 12, mcorr_t},
             {"means0", (DL_FUNC) &means0_ , 6, means0_t},
