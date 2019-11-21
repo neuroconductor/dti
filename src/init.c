@@ -78,24 +78,6 @@ static const R_CMethodDef CMethods[] = {
 
 void F77_NAME(adcradii)( double* vert, int* nv, double* tens, int* ntens,
   double* radii);
-void F77_NAME(afmodem1)( double* y, int* n1, int* n2, int* n3, int* mask,
-  double* h, double* vext, double* sigma);
-void F77_NAME(afmodem2)( double* y, int* n1, int* n2, int* n3, int* mask,
-  double* h, double* vext, double* sm);
-void F77_NAME(afmodevn)(  double* y, int* n1, int* n2, int* n3, int* mask,
-  double* h, double* vext, double* sigma);
-void F77_NAME(awsadchi)( double* y, double* th, double* ni, double* fns,
-  int* mask, int* n1, int* n2, int* n3, int* ind, double* w, int* nw,
-  double* lambda, double* sigma, double* wad, int* nthreds, double* thn,
-  double* sy);
-void F77_NAME(awslchi2)( double* s, double* ksi, double* ni, double* sigma,
-  double* vpar, double* L, int* mask, int* n1, int* n2, int* n3, int* ind,
-  double* w, int* nw, double* minni, double* wad, double* sad, double* lambda,
-  int* nthreds, int* iL, double* work, double* thn, double* sigman,
-  double* ksin, double* flb, int* nfb);
-void F77_NAME(awslgaus)( double* s, double* th, double* ni, double* sigma,
-	int* mask, int* n1, int* n2, int* n3, int* ind, double* w, int* nw,
-	double* minni, double* lambda, double* thn, double* sigman);
 void F77_NAME(awsrgdti)( double* , double* , double* , int* , int* ,
   int* , int* , int* , int* , double* , double* , double* , double* ,
   double* , double* , double* , double* , double* , double* , double* , double* ,
@@ -106,15 +88,6 @@ void F77_NAME(awssidti)( double* s0, double* si, int* mask, double* th,
   double* solvebtb, double* sigma2, double* sigma2h, int* n1, int* n2,
   int* n3, int* ngrad, double* h, double* vext, double* rho, double* lambda,
   double* thnew, double* sigma2n, double* swsi, double* eps);
-void F77_NAME(awsvchi)( double* y, double* th, double* ni, double* fns,
-  int* mask, int* n1, int* n2, int* n3, int* ind, double* w, int* nw,
-  double* lambda, double* sigma, double* thn, double* sy);
-void F77_NAME(caws03d)( double* y, int* mask, int* n1, int* n2, int* n3,
-  double* hakt, double* theta, double* bi, double* lwght, double* wght);
-void F77_NAME(cgaws)( double* y, int* mask, double* si2, int* n1, int* n2,
-  int* n3, double* hakt, double* hhom, double* lambda, double* theta,
-  double* bi, double* gi, double* gi2, double* thetan, double* lwght,
-  double* wght);
 void F77_NAME(cfibers)( double* fibers, int* sind, int* nf, int* nsi,
   double* delta, int* nnf);
 void F77_NAME(d2rall)( double* D, double* rho, int* nvox);
@@ -165,8 +138,6 @@ void F77_NAME(mcorr)( double* res, int* mask, int* n1, int* n2, int* n3,
   int* l3);
 void F77_NAME(means0)( double* s0, int* n, int* ng0, int* level, double* ms0,
   int* mask);
-void F77_NAME(mediansm)( double* y, int* mask, int* n1, int* n2, int* n3,
-  int* ind, int* nind, double* work, int* ncores, double* yout);
 void F77_NAME(mixandir)( double* ori, double* mix, int* ord, int* mo,
   int* nobj, double* andir);
 void F77_NAME(mixtradi)( double* vert, int* nv, double* ev, double* ori,
@@ -177,7 +148,6 @@ void F77_NAME(outlier)( double* si, int* n, int* nb, int* s0ind, int* siind,
   int* ls0, double* sinew, int* ind);
 void F77_NAME(outlierp)( double* si, int* n, int* nb, int* s0ind, int* ls0,
   int* siind, int* lsi, double* sinew, int* nb1);
-void F77_NAME(paramw3)( double* h, double* vext, int* ind, double* w, int* n);
 void F77_NAME(pgtsii30)( double* si, double* vsi, int* ngrad,
   int* nvox, int* m, double* dgrad, int* nv, double* th, int* nth, int* indth,
   double* egrad, int* isample, int* ntry, double* sms, double* z, int* siind,
@@ -214,22 +184,6 @@ void F77_NAME(touchfi)( double* fibers1, int* nsegm1, int* startf1, int* endf1,
 
 static R_NativePrimitiveArgType adcradii_t[]={REALSXP, INTSXP, REALSXP,
   INTSXP, REALSXP};
-static R_NativePrimitiveArgType afmodem1_t[]={REALSXP, INTSXP, INTSXP,
-  INTSXP, INTSXP, REALSXP, REALSXP, REALSXP};
-static R_NativePrimitiveArgType afmodem2_t[]={REALSXP, INTSXP, INTSXP,
-  INTSXP, INTSXP, REALSXP, REALSXP, REALSXP};
-static R_NativePrimitiveArgType afmodevn_t[]={REALSXP, INTSXP, INTSXP,
-  INTSXP, INTSXP, REALSXP, REALSXP, REALSXP};
-static R_NativePrimitiveArgType awsadchi_t[]={REALSXP, REALSXP,
-  REALSXP, REALSXP, INTSXP, INTSXP, INTSXP, INTSXP, INTSXP, REALSXP,
-  INTSXP, REALSXP, REALSXP, REALSXP, INTSXP, REALSXP, REALSXP};
-static R_NativePrimitiveArgType awslchi2_t[]={REALSXP, REALSXP,
-  REALSXP, REALSXP, REALSXP, REALSXP, INTSXP, INTSXP, INTSXP, INTSXP,
-  INTSXP, REALSXP, INTSXP, REALSXP, REALSXP, REALSXP, REALSXP, INTSXP,
-  INTSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP, INTSXP};
-static R_NativePrimitiveArgType awslgaus_t[]={REALSXP, REALSXP, REALSXP,
-	  REALSXP, INTSXP, INTSXP, INTSXP, INTSXP, INTSXP, REALSXP, INTSXP, REALSXP,
-		REALSXP, REALSXP, REALSXP};
 static R_NativePrimitiveArgType awsrgdti_t[]={REALSXP, REALSXP, REALSXP,
   INTSXP, INTSXP, INTSXP, INTSXP, INTSXP, INTSXP, REALSXP, REALSXP, REALSXP,
   REALSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP,
@@ -239,14 +193,6 @@ static R_NativePrimitiveArgType awssidti_t[]={REALSXP, REALSXP, INTSXP,
   REALSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP,
   REALSXP, INTSXP, INTSXP, INTSXP, INTSXP, REALSXP, REALSXP, REALSXP, REALSXP,
   REALSXP, REALSXP, REALSXP, REALSXP};
-static R_NativePrimitiveArgType awsvchi_t[]={REALSXP, REALSXP, REALSXP,
-  REALSXP, INTSXP, INTSXP, INTSXP, INTSXP, INTSXP, REALSXP,
-  INTSXP, REALSXP, REALSXP, REALSXP, REALSXP};
-static R_NativePrimitiveArgType caws03d_t[]={REALSXP, INTSXP, INTSXP,
-  INTSXP, INTSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP};
-static R_NativePrimitiveArgType cgaws_t[]={REALSXP, INTSXP, REALSXP,
-  INTSXP, INTSXP, INTSXP, REALSXP, REALSXP, REALSXP, REALSXP, REALSXP,
-  REALSXP, REALSXP, REALSXP, REALSXP, REALSXP};
 static R_NativePrimitiveArgType cfibers_t[]={REALSXP, INTSXP, INTSXP,
   INTSXP, REALSXP, INTSXP};
 static R_NativePrimitiveArgType d2rall_t[]={REALSXP, REALSXP, INTSXP};
@@ -297,8 +243,6 @@ static R_NativePrimitiveArgType mcorr_t[]={REALSXP, INTSXP, INTSXP, INTSXP,
   INTSXP, INTSXP, REALSXP, REALSXP, REALSXP, INTSXP, INTSXP, INTSXP};
 static R_NativePrimitiveArgType means0_t[]={REALSXP, INTSXP, INTSXP, INTSXP,
   REALSXP, INTSXP};
-static R_NativePrimitiveArgType mediansm_t[]={REALSXP, INTSXP, INTSXP,
-  INTSXP, INTSXP, INTSXP, INTSXP, REALSXP, INTSXP, REALSXP};
 static R_NativePrimitiveArgType mixandir_t[]={REALSXP, REALSXP, INTSXP,
   INTSXP, INTSXP, REALSXP};
 static R_NativePrimitiveArgType mixtradi_t[]={REALSXP, INTSXP, REALSXP,
@@ -309,8 +253,6 @@ static R_NativePrimitiveArgType outlier_t[]={REALSXP, INTSXP, INTSXP,
   INTSXP, INTSXP, INTSXP, REALSXP, INTSXP};
 static R_NativePrimitiveArgType outlierp_t[]={REALSXP, INTSXP, INTSXP,
   INTSXP, INTSXP, INTSXP, INTSXP, REALSXP, INTSXP};
-static R_NativePrimitiveArgType paramw3_t[]={REALSXP, REALSXP, INTSXP,
-  REALSXP, INTSXP};
 static R_NativePrimitiveArgType pgtsii30_t[]={REALSXP, REALSXP, INTSXP,
   INTSXP, INTSXP, REALSXP, INTSXP, REALSXP, INTSXP, INTSXP, REALSXP,
   INTSXP, INTSXP, REALSXP, REALSXP, INTSXP, REALSXP, INTSXP};
@@ -345,17 +287,8 @@ static R_NativePrimitiveArgType touchfi_t[]={REALSXP, INTSXP, INTSXP,
 
 static const R_FortranMethodDef FMethods[] = {
             {"adcradii", (DL_FUNC) &adcradii_ , 5,adcradii_t},
-            {"afmodem1", (DL_FUNC) &afmodem1_ , 8, afmodem1_t},
-            {"afmodem2", (DL_FUNC) &afmodem2_ , 8, afmodem2_t},
-            {"afmodevn", (DL_FUNC) &afmodevn_ , 8, afmodevn_t},
-            {"awsadchi", (DL_FUNC) &awsadchi_ , 17, awsadchi_t},
-            {"awslchi2", (DL_FUNC) &awslchi2_ , 25, awslchi2_t},
-						{"awslgaus", (DL_FUNC) &awslgaus_ , 15, awslgaus_t},
             {"awsrgdti", (DL_FUNC) &awsrgdti_ , 37, awsrgdti_t},
             {"awssidti", (DL_FUNC) &awssidti_ , 24, awssidti_t},
-            {"awsvchi", (DL_FUNC) &awsvchi_ , 15, awsvchi_t},
-            {"caws03d", (DL_FUNC) &caws03d_ , 10, caws03d_t},
-            {"cgaws", (DL_FUNC) &cgaws_ , 16, cgaws_t},
             {"cfibers", (DL_FUNC) &cfibers_ , 6, cfibers_t},
             {"d2rall", (DL_FUNC) &d2rall_ , 3, d2rall_t},
             {"dti2dga", (DL_FUNC) &dti2dga_ , 6, dti2dga_t},
@@ -381,13 +314,11 @@ static const R_FortranMethodDef FMethods[] = {
             {"lconnect", (DL_FUNC) &lconnect_ , 11, lconnect_t},
             {"mcorr", (DL_FUNC) &mcorr_ , 12, mcorr_t},
             {"means0", (DL_FUNC) &means0_ , 6, means0_t},
-            {"mediansm", (DL_FUNC) &mediansm_ , 10, mediansm_t},
             {"mixandir", (DL_FUNC) &mixandir_ , 6, mixandir_t},
             {"mixtradi", (DL_FUNC) &mixtradi_ , 9, mixtradi_t},
             {"odfradii", (DL_FUNC) &odfradii_ , 5, odfradii_t},
             {"outlier", (DL_FUNC) &outlier_ , 8, outlier_t},
             {"outlierp", (DL_FUNC) &outlierp_ , 9, outlierp_t},
-            {"paramw3", (DL_FUNC) &paramw3_ , 5, paramw3_t},
             {"pgtsii30", (DL_FUNC) &pgtsii30_ , 18, pgtsii30_t},
             {"pgtsii31", (DL_FUNC) &pgtsii31_ , 21, pgtsii31_t},
             {"projdt2", (DL_FUNC) &projdt2_ , 9, projdt2_t},
