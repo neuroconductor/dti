@@ -359,36 +359,6 @@ replind <- function(gradient){
   as.integer(replind)
 }
 
-sofmchi <- function(L, to = 50, delta = .01){
-##
-##  need to <=53  for hg1f1 to work precisely using limiting form otherwise
-##
-  minlev <- sqrt(2) * gamma(L+.5)/gamma(L)
-  x <- seq(0, to, delta)
-  mu <- sqrt(pi/2)*gamma(L+1/2)/gamma(1.5)/gamma(L)*hg1f1(-0.5,L, -x^2/2)
-  s2 <- 2*L+x^2-mu^2
-  s <- sqrt(s2)
-  ## return list containing values of noncentrality parameter (ncp),
-  ## mean (mu), standard deviation (sd) and variance (s2) to be used
-  ## in variance modeling
-  list(ncp = x, mu = mu, s = s, s2 = s2, minlev = minlev, L = L)
-}
-
-
-fncchir <- function(mu,varstats){
-  #
-  #  Bias-correction
-  #
-  varstats$ncp[findInterval(mu, varstats$mu, all.inside = TRUE)]
-}
-
-fncchis <- function(mu,varstats){
-  varstats$s[findInterval(mu, varstats$mu, all.inside = TRUE)]
-}
-
-fncchiv <- function(mu,varstats){
-  varstats$s2[findInterval(mu, varstats$mu, all.inside = TRUE)]
-}
 
 
 Spatialvar.gauss<-function(h,h0,d,interv=1){
