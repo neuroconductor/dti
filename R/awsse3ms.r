@@ -38,35 +38,6 @@ setMethod("dwi.smooth.ms",
             sdcoef <- object@sdcoef
             level <- object@level
             vext <- object@voxelext[2:3]/object@voxelext[1]
-
-
-            if (length(sigma) == 1) {
-              sigmacase <- 1
-              if (verbose) cat("using supplied sigma ", sigma, "\n")
-            } else if (identical(dim(sigma), ddim)) {
-              sigmacase <- 2
-              if (verbose) cat("using supplied array of sigma\n")
-            } else if (identical(dim(sigma), c(ddim, nshell+1L))) {
-              sigmacase <- 3
-              if (is.null(mask)) mask <- getmask(object, level)$mask
-              if (verbose) cat("using supplied array of sigma per shell\n")
-            } else {
-              if (is.null(mask)) mask <- getmask(object, level)$mask
-              sigma <- numeric(object@ngrad)
-              for(i in 1:object@ngrad){
-                ## FOR FUTURE USE:
-                # awslsigmc(object@si[ , , , i], 12, ncoils = ncoils, lambda = 5, verbose = verbose, hsig = 5, mask = mask)
-                ## END
-                sigma[i] <- awssigmc(object@si[,,,i], 12, mask, ncoils, vext, h0=1.25, verbose=verbose)$sigma
-                if (verbose) cat("image ", i," estimated sigma", sigma[i], "\n")
-              }
-              if (verbose) cat("quantiles of estimated sigma values", quantile(sigma), "\n")
-              sigma <- median(sigma)
-              if (verbose) cat("using median estimated sigma", sigma,"\n")
-              sigmacase <- 1
-            }
-
-
             #
             sb <- object@si[,,,-s0ind]
             s0 <- object@si[,,,s0ind]
@@ -75,37 +46,29 @@ setMethod("dwi.smooth.ms",
               warning("You need to specify  kappa0  returning unsmoothed object")
               return(object)
             }
-            #
-            #  rescale so that we have Chi-distributed values
-            #
-            if (sigmacase == 1) {
-              sb <- sb/sigma
-              s0 <- s0/sigma
-            } else if (sigmacase == 2) {
-              sb <- sweep(sb, 1:3, sigma, "/")
-              s0 <- sweep(s0, 1:3, sigma, "/")
-            } else { # now is per shell
-              s0 <- sweep(s0, 1:3, sigma[, , , 1], "/")
-              for (shnr in 1:nshell) {
-                indbv <- (1:length(bv))[bv == ubv[shnr]]
-                sb[, , , indbv] <- sweep(sb[, , , indbv], 1:3, sigma[, , , shnr+1], "/")
-              }
-            }
             if(ns0>1){
               dim(s0) <- c(prod(ddim),ns0)
               s0 <- s0%*%rep(1/sqrt(ns0),ns0)
               #  make sure linear combination of s0 has same variance as original
-              dim(s0) <- ddim
             }
             if (is.null(mask)) mask <- getmask(object, level)$mask
-            # determine minimal subcube that contains the mask ore use supplied information
-            ##
-            ##  check memory size needed for largest vector
-            ##
-            vsize <- (nshell+1)*ngrad*sum(mask)
-            if(vsize>2^31-1){
-              stop("region specified is to large, a vector of size",vsize,"needs to be passed through
-      the .Fortran, this is limited to 2^31-1 in R\n please use a smaller mask")
+            nvoxel <- sum(mask)
+# handle sigma
+            dsigma <- dim(sigma)
+            if (length(sigma) == 1) {
+              sigma <- rep(sigma, nvoxel)
+              if (verbose) cat("using supplied sigma ", sigma, "\n")
+            } else if (identical(dsigma, ddim[1:3])) {
+              sigma <- sigma[mask]
+            } else if (length(dsigma==4)&identical(dsigma[1:3], ddim[1:3])) {
+              dim(sigma) <- c(prod(ddim[1:3]),dsigma[4])
+              sigma <- sigma[mask,]
+              if (verbose) cat("using supplied array of sigma\n")
+            } else {
+# estimate from first s0
+              sigma <- awslsigmc(object@si[ , , , object@s0ind[1]], 12,
+                ncoils = ncoils, lambda = 5, verbose = verbose, hsig = 5, mask = mask)$sigma[mask]
+                if (verbose) cat("estimated sigma image from first S0\n")
             }
             #
             #  reduce data to contain only voxel from brain mask
@@ -113,11 +76,9 @@ setMethod("dwi.smooth.ms",
             dim(sb) <- c(prod(ddim),ngrad)
             s0 <- s0[mask]
             sb <- sb[mask,]
-
-            z <- aws::smse3ms(sb, s0, bv, grad, ns0, kstar, kappa0,
-                            mask, vext=vext, ncoils=ncoils, level=level,
+            z <- aws::smse3ms(sb, s0, bvalues, grad, ns0, kstar, kappa0,
+                            mask, sigma, vext=vext, ncoils=ncoils, level=level,
                             verbose=verbose, usemaxni=usemaxni)
-
             #
             #  one s0 image only
             #
@@ -126,33 +87,6 @@ setMethod("dwi.smooth.ms",
             si[mask,1] <- z$th0
             si[mask,-1] <- z$th
             dim(si) <- c(ddim,ngrad)
-            #
-            #  back to original scale
-            #
-            if (length(sigma) > 1) {
-              if(length(dim(sigma)) == 3) {
-                si[ , , , 1] <-  z$th0/sqrt(ns0)*sigma
-              } else {
-                si[, , , 1] <-  z$th0/sqrt(ns0)*sigma[, , , 1]
-              }
-            } else {
-              si[, , , 1] <-  z$th0/sqrt(ns0)*sigma
-            }
-            #  go back to original s0 scale
-            #  for the DWI we need to scale back differently
-            if (sigmacase == 1) {
-              si[, , , -1] <- z$th*sigma
-            } else if (sigmacase == 2) {
-              si[, , , -1] <- sweep(z$th, 1:3, sigma, "*")
-            } else if (sigmacase == 3) { # now sigma is an array with (identical(dim(sigma), ddim) == TRUE)
-              for (shnr in 1:nshell) {
-                indth <- (1:length(bv))[bv == ubv[shnr]]
-                indsi <- indth+1
-                si[, , , indsi] <- sweep(z$th[, , , indth], 1:3, sigma[, , , shnr+1], "*")
-                }
-            } else {
-                si[xind, yind, zind, -1] <- z$th*sigma[,,,-1]
-            }
             object@si <-  si
             object@gradient <- grad <- cbind(c(0,0,0),grad)
             object@bvalue <- bvalue <- c(0,object@bvalue[-object@s0ind])
@@ -161,6 +95,7 @@ setMethod("dwi.smooth.ms",
             object@replind <- as.integer(1:ngrad)
             object@ngrad <- as.integer(ngrad)
             object@call <- args
+            attr(object,"ns0") <- ns0
             object
           }
 )

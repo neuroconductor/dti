@@ -5,7 +5,7 @@ dwi.smooth <- function(object, ...) cat("No DTI smoothing defined for this class
 
 setGeneric("dwi.smooth", function(object, ...) standardGeneric("dwi.smooth"))
 
-setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,mask=NULL,kappa0=NULL,
+setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,kappa0=NULL,mask=NULL,
                                             ncoils=1,sigma=NULL,level=NULL,
                                             vred=4,verbose=FALSE,dist=1,model=
                                               c("Gapprox","Gapprox2","Chi","Chi2")){
@@ -13,22 +13,22 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,mask=NULL,kap
   model <- match.arg(model)
   args <- sys.call(-1)
   args <- c(object@call,args)
+  ddim <- object@ddim
   sdcoef <- object@sdcoef
   level <- object@level
   vext <- object@voxelext[2:3]/object@voxelext[1]
   if(is.null(mask)) mask <- getmask(object,level)$mask
   nvoxel <- sum(mask)
   if(length(sigma)==1) {
+    sigma <- rep(sigma,nvoxel)
     cat("using supplied sigma",sigma,"\n")
+  } else if(length(sigma)==prod(ddim[1:3])){
+    sigma <- sigma[mask]
+    cat("using supplied sigma image\n")
   } else {
-    sigma <- numeric(object@ngrad)
-    for(i in 1:object@ngrad){
-      sigma[i] <- awssigmc(object@si[,,,i],12,mask,ncoils,vext,h0=1.25,verbose=verbose)$sigma
-      cat("image ",i," estimated sigma",sigma[i],"\n")
-    }
-    cat("quantiles of estimated sigma values",quantile(sigma),"\n")
-    sigma <- median(sigma)
-    cat("using median estimated sigma",sigma,"\n")
+    sigma <- awslsigmc(object@si[ , , , object@s0ind[1]], 12,
+      ncoils = ncoils, lambda = 5, verbose = verbose, hsig = 5, mask = mask)$sigma[mask]
+      if (verbose) cat("estimated sigma image from first S0\n")
   }
   model <- switch(model,"Chi2"=1,"Chi"=0,"Gapprox2"=2,"Gapprox"=3,1)
   #
@@ -65,12 +65,8 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,mask=NULL,kap
   dim(sb) <- c(prod(ddim),ngrad)
   sb <- sb[mask,]
     # S0 will be noncentral Chi with 2*ns0*ncoils DF for model 1 and 2
-  sb <- sb/sigma
-  s0 <- s0/sigma
-  if(model==1)    sigma <- sigma^2
-
-  z <- aws::smse3(sb, s0, bvalues, grad, ns0, kstar, lambda,
-                  kappa0, mask, vext, vred, ncoils, model, dist, verbose=verbose)
+  z <- aws::smse3(sb, s0, bvalues, grad, mask, sigma, kstar, lambda,
+                  kappa0, ns0, vext, vred, ncoils, model, dist, verbose=verbose)
 
   ngrad <- ngrad+1
   si <- array(0,c(prod(ddim),ngrad))
@@ -82,8 +78,7 @@ setMethod("dwi.smooth", "dtiData", function(object,kstar,lambda=20,mask=NULL,kap
   #
   s0factor <- switch(model+1,ns0,ns0,sqrt(ns0),ns0)
   bvalue <- c(0,object@bvalue[-object@s0ind])
-  si[,,,1] <-  th0*sigma/s0factor
-  si[,,,-1] <- z$th*sigma
+  si[,,,1] <-  si[,,,1]/s0factor
   object@si <- if(model==1) sqrt(si) else si
   object@gradient <- grad <- cbind(c(0,0,0),grad)
   object@bvalue <- bvalue
