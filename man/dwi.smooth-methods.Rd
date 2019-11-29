@@ -11,17 +11,16 @@
 \description{
  Adaptive smoothing of DWI data. Smoothing is performed both in space and on the sphere (e.g. between images  obtained for different gradient directions) employing a natural
 geometrical distance ( in SE(3)). Structural adaptation is used in space only.
-Method \code{dwi.smooth} refers to the original POAS approach for single shell data. 
-Method \code{dwi.smooth.ms} implements an improved method that is applicable for both single and multi-shell data. 
+Method \code{dwi.smooth} refers to the original POAS approach for single shell data.
+Method \code{dwi.smooth.ms} implements an improved method that is applicable for both single and multi-shell data.
 }
 \usage{
-  \S4method{dwi.smooth}{dtiData}(object, kstar, lambda=20, kappa0=NULL, ncoils=1, 
-                                 sigma=NULL, level=NULL, vred=4, xind=NULL, 
-                                 yind=NULL, zind=NULL, verbose=FALSE, dist=1, 
+  \S4method{dwi.smooth}{dtiData}(object, kstar, lambda=20, kappa0=NULL, mask=NULL, ncoils=1,
+                                 sigma=NULL, level=NULL, vred=4, verbose=FALSE, dist=1, 
                                  model=c("Gapprox","Gapprox2","Chi","Chi2"))
-  \S4method{dwi.smooth.ms}{dtiData}(object, kstar, lambda=12, kappa0=.5, ncoils=1, 
+  \S4method{dwi.smooth.ms}{dtiData}(object, kstar, lambda=12, kappa0=.5, ncoils=1,
                                     sigma=NULL, ws0=1, level=NULL, mask = NULL, xind=NULL,
-                                    yind=NULL, zind=NULL, verbose=FALSE, 
+                                    yind=NULL, zind=NULL, verbose=FALSE,
                                     usemaxni=TRUE, memrelease = TRUE)
 }
 \arguments{
@@ -30,7 +29,7 @@ Method \code{dwi.smooth.ms} implements an improved method that is applicable for
   \item{lambda}{Scale parameter in adaptation }
   \item{kappa0}{determines amount of smoothing on the sphere. Larger values correspond to stronger smoothing on the sphere. If \code{kappa0=NULL} a value is that corresponds to a variace reduction with factor \code{vred} on the sphere.}
   \item{ncoils}{Number of coils in MR system }
-  \item{sigma}{Error standard deviation. Assumed to be known and homogeneous in the current implementation. A reasonable estimate may be defined 
+  \item{sigma}{Error standard deviation. Assumed to be known and homogeneous in the current implementation. A reasonable estimate may be defined
   as the modal value of standard deviations obtained using method \code{getsdofsb}. }
   \item{level}{Threshold for image intensities when setting mask.}
   \item{mask}{Binary 3D image defining a mask}
@@ -45,15 +44,15 @@ Method \code{dwi.smooth.ms} implements an improved method that is applicable for
   Chi with \code{2*ncoils} degrees of freedom), \code{"Chi2"} for squares of
   observed values (assumed to be distributed as noncentral
   Chi-squared with \code{2*ncoils} degrees of freedom). \code{"Gapprox"}
-  and \code{"Gapprox2"} use a Gaussian approximation for the noncentral 
+  and \code{"Gapprox2"} use a Gaussian approximation for the noncentral
   Chi distribution to smooth ovserved and squared values, respectively.
   }
   \item{ws0}{Factor to downweight information from S0 images, defaults
    to \code{1/numer of s0 images}.}
   \item{usemaxni}{If \code{"usemaxni==TRUE"} a strikter penalization is used.}
-   \item{memrelease}{If \code{"memrelease==TRUE"} try to release allocated memory whenever possible.} 
+   \item{memrelease}{If \code{"memrelease==TRUE"} try to release allocated memory whenever possible.}
   }
-\value{ 
+\value{
   An object of class \code{"dtiData"} with smoothed diffusion weighted images.
 }
 \section{Methods}{
@@ -64,16 +63,16 @@ Returns a warning.
 }
 
 \item{\code{signature(object) = "dtiData"}}{
-Smoothing of DWI data 
+Smoothing of DWI data
 }
 }}
-\author{ 
-  Karsten Tabelow \email{tabelow@wias-berlin.de}\cr 
+\author{
+  Karsten Tabelow \email{tabelow@wias-berlin.de}\cr
   J\"org Polzehl \email{polzehl@wias-berlin.de}
 }
-\seealso{ 
-  \code{\link{dtiData}}, 
-  \code{\linkS4class{dtiData}}, 
-} 
+\seealso{
+  \code{\link{dtiData}},
+  \code{\linkS4class{dtiData}},
+}
 \keyword{methods}
 \keyword{smooth }
