@@ -46,7 +46,7 @@ awssigmc <- function(y,                 # data
 ) {
   method <- switch(method,"VAR"="awsVar","MAD"="awsMAD")
   aws::estGlobalSigma(y, mask, ncoils, steps, vext, lambda, h0,
-                   hadj1, q, qni, sequence=sequence, method=method)
+                   hadj, q, qni, sequence=sequence, method=method)
 }
 
 aflsigmc <- function(y,ncoils,level=NULL,mask=NULL,h=2,hadj=1,vext = c( 1, 1)){
