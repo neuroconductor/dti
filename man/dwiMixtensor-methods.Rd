@@ -66,6 +66,9 @@
 \references{
   Jian et al. (2007), A novel tensor distribution model for the
   diffusion-weighted MR signal, \emph{NeuroImage} \bold{37}, 164--176.
+
+  J. Polzehl, K. Tabelow (2019). Magnetic Resonance Brain Imaging:
+  Modeling and Data Analysis Using R. Springer, Use R! series. Doi:10.1007/978-3-030-29184-6.
 }
 \author{   Karsten Tabelow \email{tabelow@wias-berlin.de}\cr
   J\"org Polzehl \email{polzehl@wias-berlin.de}

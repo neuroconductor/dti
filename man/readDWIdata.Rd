@@ -51,6 +51,9 @@ readDWIdata(gradient, dirlist, format = c("DICOM", "NIFTI", "ANALYZE", "AFNI"),
   An object of class \code{"dtiData"}.
 }
 \references{
+J. Polzehl, K. Tabelow (2019). Magnetic Resonance Brain Imaging:
+Modeling and Data Analysis Using R. Springer, Use R! series. Doi:10.1007/978-3-030-29184-6.
+
   \url{https://afni.nimh.nih.gov/pub/dist/src/README.attributes}
 }
 \author{

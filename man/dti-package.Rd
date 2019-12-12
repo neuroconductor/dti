@@ -19,7 +19,10 @@ The DESCRIPTION file:
 
 Maintainer: \packageMaintainer{dti}
 }
-\references{S. Mohammadi, K. Tabelow, L. Ruthotto, Th. Feiweier, J. Polzehl,
+\references{J. Polzehl, K. Tabelow (2019). Magnetic Resonance Brain Imaging:
+            Modeling and Data Analysis Using R. Springer, Use R! series. Doi:10.1007/978-3-030-29184-6.
+
+            S. Mohammadi, K. Tabelow, L. Ruthotto, Th. Feiweier, J. Polzehl,
             and N. Weiskopf, \emph{High-resolution diffusion kurtosis imaging
             at 3T enabled by advanced post-processing}, 8 (2015), 427.
 
