@@ -135,6 +135,7 @@ sioutlier <- function( si, s0ind, mc.cores = 1, verbose = TRUE){
   dim(z$si) <- c(ng,dsi[-length(dsi)])
   list(si=z$si,index=index)
 }
+
 mcorr <- function(res,mask,ddim,ngrad0,lags=c(5,5,3),mc.cores=1){
   cat("mcorr:")
   if(mc.cores>1){
@@ -170,6 +171,7 @@ mcorr <- function(res,mask,ddim,ngrad0,lags=c(5,5,3),mc.cores=1){
   cat("estimated corresponding bandwidths",format(Sys.time()),"\n")
   list(scorr=scorr,bw=bw)
 }
+
 dti3Dreg <- function(D,mc.cores=1){
   nvox <- length(D)/6
   cat("dti3Dreg:")
