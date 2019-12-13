@@ -107,9 +107,7 @@ aflsigmc(y, ncoils, level = NULL, mask = NULL, h=2, hadj=1,  vext = c( 1, 1))
 }
 \item{theta}{the estimated mean structure}
 }
-\references{
-K. Tabelow and J. Polzehl (2013). Estimating the noise level in 
-MRI using structural adaptive smoothing. Manuscript in preparation.
+\references{K. Tabelow, H.U. Voss, J. Polzehl, Local estimation of the noise level in MRI using structural adaptation, Medical Image Analysis, 20 (2015), pp. 76--86.
 }
 \author{
   J\"org Polzehl \email{polzehl@wias-berlin.de}
