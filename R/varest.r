@@ -66,11 +66,11 @@ afsigmc <- function(y,                 # data
                     hadj = 1,           # adjust parameter for density() call for mode estimation
                     method = c("modevn","modem1chi","bkm2chi","bkm1chi")# methods according to table 2 in Aja-Ferbnandez (2009)
 ) {
-  method <- switch(method, "modevn"="AFmodevb",
-                           "modem1chi"="AFmodevb",
+  method <- switch(method, "modevn"="AFmodevn",
+                           "modem1chi"="AFmodem1chi",
                            "bkm2chi"="AFbkm2chi",
                            "bkm1chi"="AFbkm1chi")
   aws::estGlobalSigma(y, mask, ncoils, vext=vext,
-                      lambda=NULL, h0=h, hadj=hadj,
-                      level=level, method="method")
+                      lambda=NULL, hinit=h, hadj=hadj,
+                      level=level, method=method)$sigma
 }
