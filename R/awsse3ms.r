@@ -77,7 +77,7 @@ setMethod("dwi.smooth.ms",
             s0 <- s0[mask]
             sb <- sb[mask,]
             z <- aws::smse3ms(sb, s0, bvalues, grad, kstar, lambda, kappa0,
-                            mask, sigma, ns0=ns0, vext=vext, ncoils=ncoils,
+                            mask, sigma, ns0=ns0, ws0=ws0, vext=vext, ncoils=ncoils,
                             verbose=verbose, usemaxni=usemaxni)
             #
             #  one s0 image only
