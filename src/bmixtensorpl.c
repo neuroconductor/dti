@@ -9,7 +9,7 @@
 #include <sys/time.h>
 #include <time.h>
 
-int dimxb = 0, ngradcc = 0;
+int ngradcc = 0;
 int iibv = 0;
 double* si_init, *bv, *grad;
 double alpha, lambda;
@@ -439,7 +439,6 @@ void mixtrl2b( int* n1, int* siind, double* wi, int* ngrad, int* maxcomp, int* m
    int fail;              // failure code for optim: zero is OK
    double Fmin = 0.;          // minimal value of obj fct in optim
     //Setting global variables
-   dimxb = *n1;
    si_init = si_in; grad = grad_in, ngradcc = *ngrad; bv = bv_in;
    alpha = *alpha_in;
    lambda = *lambda_in;
@@ -461,7 +460,7 @@ void mixtrl2b( int* n1, int* siind, double* wi, int* ngrad, int* maxcomp, int* m
    for(i=0; i<param_length_init; i++){
        param[i] = 0;
    }
-   for(iibv = 0; iibv < dimxb; iibv++){
+   for(iibv = 0; iibv < *n1; iibv++){
        for(i=0; i<param_length_init; i++){
           lower[i] = R_NegInf;
           upper[i] = R_PosInf;
@@ -676,7 +675,6 @@ void mixtrl1b( int* n1, int* siind, double* wi, int* ngrad, int* maxcomp, int* m
    double Fmin = 0.;          // minimal value of obj fct in optim
 
    //Setting global variables
-   dimxb = *n1;
    si_init = si_in; grad = grad_in, ngradcc = *ngrad; bv = bv_in;
    alpha = *alpha_in;
    lambda = *lambda_in;
@@ -700,7 +698,7 @@ void mixtrl1b( int* n1, int* siind, double* wi, int* ngrad, int* maxcomp, int* m
        param[i] = 0;
    }
 
-   for(iibv = 0; iibv < dimxb; iibv++){
+   for(iibv = 0; iibv < *n1; iibv++){
       for(i=0; i<param_length_init; i++){
          lower[i] = R_NegInf;
          upper[i] = R_PosInf;
@@ -893,7 +891,6 @@ void mixtrl0b( int* n1, int* siind, double* wi, int* ngrad, int* maxcomp, int* m
 
    //Setting global variables
    alpha = *alpha_in; lambda = *lambda_in;;
-   dimxb = *n1;
    si_init = si_in; grad = grad_in, ngradcc = *ngrad; bv = bv_in;
 
 
@@ -915,7 +912,7 @@ void mixtrl0b( int* n1, int* siind, double* wi, int* ngrad, int* maxcomp, int* m
        param[i] = 0;
    }
 
-   for(iibv = 0; iibv < dimxb; iibv++){
+   for(iibv = 0; iibv < *n1; iibv++){
        for(i=0; i<param_length_init; i++){
           lower[i] = R_NegInf;
           upper[i] = R_PosInf;
