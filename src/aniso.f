@@ -313,10 +313,6 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       double precision D(6,n),fa(n),md(n),adir(3,n),bary(3,n),ga(n)
       integer i,ierr
       double precision lambda(3),evec(9),trc,d1,d2,d3,a1,a2,a3,dd
-C$OMP PARALLEL DEFAULT(NONE)
-C$OMP& SHARED(D,n,fa,ga,md,adir,bary)
-C$OMP& PRIVATE(i,ierr,lambda,evec,trc,d1,d2,d3,a1,a2,a3,dd)
-C$OMP DO SCHEDULE(GUIDED)
       DO i=1,n
          call eigen3(D(1,i),lambda,evec,ierr)
          a1=dmax1(1d-12,lambda(1))
@@ -351,9 +347,6 @@ C$OMP DO SCHEDULE(GUIDED)
          adir(2,i)=evec(8)
          adir(3,i)=evec(9)
       END DO
-C$OMP END DO NOWAIT
-C$OMP END PARALLEL
-C$OMP FLUSH(fa,ga,md,adir,bary)
       RETURN
       END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
@@ -367,10 +360,6 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       double precision D(6,n),fa(n),ev(3,n),adir(6,n)
       integer i,ierr
       double precision lambda(3),evec(9),trc,d1,d2,d3,a1,a2,a3,dd,fai
-C$OMP PARALLEL DEFAULT(NONE)
-C$OMP& SHARED(D,n,fa,ev,adir)
-C$OMP& PRIVATE(i,ierr,lambda,evec,trc,d1,d2,d3,a1,a2,a3,dd,fai)
-C$OMP DO SCHEDULE(STATIC)
       DO i=1,n
          call eigen3(D(1,i),lambda,evec,ierr)
          a1=lambda(1)
@@ -397,9 +386,6 @@ C$OMP DO SCHEDULE(STATIC)
          ev(3,i)=a1
          fa(i)=fai
       END DO
-C$OMP END DO NOWAIT
-C$OMP END PARALLEL
-C$OMP FLUSH(fa,adir,ev)
       RETURN
       END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
@@ -428,19 +414,12 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       double precision D(6,n),andir(3,n)
       integer i,ierr
       double precision lambda(3),evec(3,3)
-C$OMP PARALLEL DEFAULT(NONE)
-C$OMP& SHARED(D,n,andir)
-C$OMP& PRIVATE(i,lambda,evec,ierr)
-C$OMP DO SCHEDULE(STATIC)
       DO i=1,n
          call eigen3(D(1,i),lambda,evec,ierr)
          andir(1,i)=evec(1,3)
          andir(2,i)=evec(2,3)
          andir(3,i)=evec(3,3)
       END DO
-C$OMP END DO NOWAIT
-C$OMP END PARALLEL
-C$OMP FLUSH(andir)
       RETURN
       END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
@@ -454,10 +433,6 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       double precision D( 6, n), andir( 9, n), evalues( 3, n)
       integer i, ierr
       double precision lambda( 3), evec( 3, 3)
-C$OMP PARALLEL DEFAULT(NONE)
-C$OMP& SHARED(D,n,andir,evalues)
-C$OMP& PRIVATE(i,lambda,evec,ierr)
-C$OMP DO SCHEDULE(STATIC)
       DO i=1,n
          call eigen3(D(1,i),lambda,evec,ierr)
          andir( 1, i) = evec( 1, 3)
@@ -473,9 +448,6 @@ C$OMP DO SCHEDULE(STATIC)
          evalues( 2, i) = lambda( 2)
          evalues( 3, i) = lambda( 1)
       END DO
-C$OMP END DO NOWAIT
-C$OMP END PARALLEL
-C$OMP FLUSH(andir)
       RETURN
       END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
@@ -489,10 +461,6 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       double precision D(6,n)
       integer i,ierr
       double precision lam(3),evec(3,3)
-C$OMP PARALLEL DEFAULT(NONE)
-C$OMP& SHARED(D,n)
-C$OMP& PRIVATE(i,lam,evec,ierr)
-C$OMP DO SCHEDULE(STATIC)
       DO i=1,n
          call eigen3(D(1,i),lam,evec,ierr)
          lam(1)=max(1.d-12,lam(1))
@@ -510,9 +478,6 @@ C$OMP DO SCHEDULE(STATIC)
          D(6,i) = lam(1)*evec(3,1)*evec(3,1)+
      1          lam(2)*evec(3,2)*evec(3,2)+lam(3)*evec(3,3)*evec(3,3)
       END DO
-C$OMP END DO NOWAIT
-C$OMP END PARALLEL
-C$OMP FLUSH(D)
       RETURN
       END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
@@ -526,10 +491,6 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       double precision D(6,n),fa(n),md(n),adir(3,n),ev(3,n),ga(n)
       integer i,ierr
       double precision evec(3,3),trc,d1,d2,d3,a1,a2,a3,dd
-C$OMP PARALLEL DEFAULT(NONE)
-C$OMP& SHARED(D,n,fa,ga,md,adir,ev)
-C$OMP& PRIVATE(i,ierr,evec,trc,d1,d2,d3,a1,a2,a3,dd)
-C$OMP DO SCHEDULE(STATIC)
       DO i=1,n
           call eigen3(D(1,i),ev(1,i),evec,ierr)
           a1=dmax1(1d-12,ev(1,i))
@@ -561,9 +522,6 @@ C$OMP DO SCHEDULE(STATIC)
           d3=d3-dd
           ga(i)=sqrt(d1*d1+d2*d2+d3*d3)
       END DO
-C$OMP END DO NOWAIT
-C$OMP END PARALLEL
-C$OMP FLUSH(fa,ga,md,adir,ev)
       RETURN
       END
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC

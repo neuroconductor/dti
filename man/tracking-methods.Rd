@@ -28,7 +28,7 @@
 \S4method{tracking}{dtiIndices}(obj, roix=NULL, roiy=NULL, roiz=NULL, mask=NULL,
                     method="LINEPROP", minfa=0.3, maxangle=30, subsample = 1)
 \S4method{tracking}{dwiMixtensor}(obj, roix=NULL, roiy=NULL, roiz=NULL, mask=NULL,
-                    method="LINEPROP", minfa=0.3, maxangle=30, subsample = 1, 
+                    method="LINEPROP", minfa=0.3, maxangle=30, subsample = 1,
                     mincompartsize = 0)
 \S4method{selectFibers}{dwiFiber}(obj, roix=NULL, roiy=NULL, roiz=NULL, mask=NULL,
                     minlength=1)
@@ -53,20 +53,20 @@
 \item{maxdist}{Maximal supremum distance between fibers in mm}
 \item{ends}{Logical: Use only endpoints of shorter fibers for distance (TRUE) or
            compute distances using full fiber-length (FALSE). Default (TRUE) removes more fibers and is significantly faster. }
-\item{mincompartsize}{Minimal size of a compartment in dwiMixtensor 
+\item{mincompartsize}{Minimal size of a compartment in dwiMixtensor
            that will be used in fiber tracking.}
-\item{combine}{If \code{combine=TRUE}  fibers selected from \code{obj} 
+\item{combine}{If \code{combine=TRUE}  fibers selected from \code{obj}
    are combined with the fibers from \code{obj2}.}
 }
 \section{Methods}{
 \describe{
 
-  \item{obj = "dtiTensor"}{ Fiber tracking is performed on the estimated vector field of principal diffusion direction using the method \code{method}. Currently only line propagation is implemented. The resulting tracks can be visualized using function \code{\link{show3d}}}. 
- 
-  \item{obj = "dtiIndices"}{ Fiber tracking is performed on the estimated vector field of principal diffusion direction using the method \code{method}. Currently only line propagation is implemented. The resulting tracks can be visualized using function \code{\link{show3d}}}. 
-  
+  \item{obj = "dtiTensor"}{ Fiber tracking is performed on the estimated vector field of principal diffusion direction using the method \code{method}. Currently only line propagation is implemented. The resulting tracks can be visualized using function \code{\link{show3d}}}.
+
+  \item{obj = "dtiIndices"}{ Fiber tracking is performed on the estimated vector field of principal diffusion direction using the method \code{method}. Currently only line propagation is implemented. The resulting tracks can be visualized using function \code{\link{show3d}}}.
+
   \item{obj = "dwiMixtensor"}{ Fiber tracking is performed on the estimated vector fields of diffusion direction in the mixed tensor model using the method \code{method}. Currently only line propagation is implemented. The resulting tracks can be visualized using function \code{\link{show3d}}}.
- 
+
   \item{obj = "dwiFiber"}{\code{selectFibers} produces a dwiFiber-object containing all fibers that cross the region of interest and exceed a minimum length. \code{reduceFibers} eliminates all fibers that are within a maximum supremum distance of \code{maxdist} mm of a longer fiber. \code{reduceFibers}
   allows to reduce the size of a dwiFiber-object considerably but is slow !
 }
@@ -79,10 +79,14 @@
 \value{
   The function returns an object of class \code{\linkS4class{dwiFiber}}.
 }
-\author{ 
+\references{
+J. Polzehl, K. Tabelow (2019). Magnetic Resonance Brain Imaging:
+Modeling and Data Analysis Using R. Springer, Use R! series. Doi:10.1007/978-3-030-29184-6.
+}
+\author{
   Karsten Tabelow \email{tabelow@wias-berlin.de}, Joerg Polzehl \email{polzehl@wias-berlin.de}
 }
-\seealso{ 
+\seealso{
   \code{\linkS4class{dtiTensor}},\code{\linkS4class{dtiIndices}},\code{\linkS4class{dwiFiber}},
   \code{\link{show3d}}, \code{\link{summary}}, \code{\link{print}}
 }

@@ -225,11 +225,6 @@ C Initialize keep to none
       END DO
       alength=0
 C check which fibers in fibers1 are to be kept
-C$OMP PARALLEL DEFAULT(NONE)
-C$OMP& SHARED(fibers1,nsegm1,startf1,endf1,nfibers1,keep,fibers2,
-C$OMP& nsegm2,maxdist,alength)
-C$OMP& PRIVATE(i,j,x1,y1,z1,d,k)
-C$OMP DO SCHEDULE(GUIDED)
       DO i=1,nfibers1
          DO j=startf1(i),endf1(i)
             x1=fibers1(1,j)
@@ -248,9 +243,6 @@ C$OMP DO SCHEDULE(GUIDED)
             END IF
          END DO
       END DO
-C$OMP END DO
-C$OMP END PARALLEL
-C$OMP FLUSH(keep)
 C now reorganize fibers1, keeping only the fibers touching fibers2
       j=0
       DO i=1,nfibers1

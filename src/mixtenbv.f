@@ -570,36 +570,3 @@ C use something small as initial value to be in the interior
       END DO
       RETURN
       END
-C
-C __________________________________________________________________
-C
-      subroutine means0(s0,n,ng0,level,ms0,mask)
-C
-C   calculate mean s0 value
-C   generate mask
-C   sweep s0 from si to generate  siq
-C   calculate variance of siq
-C
-      integer n,ng0,mask(n),level
-      double precision s0(ng0,n),ms0(n)
-      integer i,k
-      double precision z,thresh
-      thresh = max(1,level*ng0)
-C$OMP PARALLEL DEFAULT(NONE)
-C$OMP& SHARED(s0,n,ng0,ms0,mask,thresh)
-C$OMP& PRIVATE(i,k,z)
-C$OMP DO SCHEDULE(STATIC)
-      DO i=1,n
-         z=0.d0
-         DO k=1,ng0
-            z=z+s0(k,i)
-         END DO
-         ms0(i) = z/ng0
-         mask(i) = 0
-         if(z.ge.thresh) mask(i) = 1
-      END DO
-C$OMP END DO NOWAIT
-C$OMP END PARALLEL
-C$OMP FLUSH(mask,ms0)
-      RETURN
-      END

@@ -138,7 +138,7 @@ setMethod("sdpar", "dtiData", function(object,
           sdcoef0[2] <- 0
        }
      } else {
-       sdcoef0 <- awslinsd(s0,hmax=5,mask=NULL,A0=A0,A1=A1)$vcoef
+       sdcoef0 <- aws::awslinsd(s0,hmax=5,mask=NULL,A0=A0,A1=A1)$vcoef
      }
      cat("Estimated parameters:",signif(sdcoef0[1:2],3),"Interval of linearity",signif(A0,3),"-",signif(A1,3),"\n")
   }
@@ -181,7 +181,7 @@ setMethod("getsdofsb","dtiData", function(object,qA0=.1,qA1=.98,nsb=NULL,level=N
   A1 <- quantile(sb,qA1)
   sdcoef1 <- coef1 <- coef2 <- numeric(nsb)
   for(i in 1:nsb) {
-    z <- awslinsd(sb[,,,i],hmax=5,mask=mask,A0=A0,A1=A1)$vcoef
+    z <- aws::awslinsd(sb[,,,i],hmax=5,mask=mask,A0=A0,A1=A1)$vcoef
     cat("standard deviation parameters trial i",z,"\n")
     coef1[i] <- z[1]
     coef2[i] <- z[2]

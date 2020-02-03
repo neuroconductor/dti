@@ -271,9 +271,10 @@ C
       call dgelsy(n,m,1,z,n,w,n,jpvt,1d-8,rank,work,25,
      1            mode)
 C  1d-6  is a limit for condition number
-      IF(mode.ne.0) THEN
-         call intpr("mode",4,mode,1)
-      ELSE
+      IF(mode.eq.0) THEN
+C      IF(mode.ne.0) THEN
+C         call intpr("mode",4,mode,1)
+C      ELSE
          sw=0.d0
 C penalize for extreme th values
          if(th.gt.1.d1) sw=sw+th-1.d1
@@ -866,10 +867,11 @@ C  now search for minima of sms (or weighted sms)
                   is(m)=iandir(i)
                   call dcopy(ngrad,egrad(1,is(m)),1,z(1,m),1)
         call nnls(z,ngrad,ngrad,m,sms,w,erg,work2,work1,ind,mode)
-                  IF(mode.gt.1) THEN
-                     call intpr("mode",4,mode,1)
-                     call intpr("isample",7,is,m)
-                  ELSE
+                  IF(mode.le.1) THEN
+C                  IF(mode.gt.1) THEN
+C                     call intpr("mode",4,mode,1)
+C                     call intpr("isample",7,is,m)
+C                  ELSE
                      IF(erg.lt.krit) THEN
                         krit=erg
                         iw=0
@@ -990,10 +992,11 @@ C  now search for minima of sms (or weighted sms)
                is(m)=iandir(i)
                call dcopy(ngrad,egrad(1,is(m)),1,z(1,m),1)
         call nnls(z,ngrad,ngrad,m,sms,w,erg,work2,work1,ind,mode)
-               IF(mode.gt.1) THEN
-                  call intpr("mode",4,mode,1)
-                  call intpr("isample",7,is,m)
-               ELSE
+               IF(mode.le.1) THEN
+C               IF(mode.gt.1) THEN
+C                  call intpr("mode",4,mode,1)
+C                  call intpr("isample",7,is,m)
+C               ELSE
                   IF(erg.lt.krit) THEN
                      krit=erg
                      iw=0
@@ -1026,133 +1029,6 @@ C   nonactive directions
             call rchkusr()
          END DO
       END DO
-      RETURN
-      END
-C
-C __________________________________________________________________
-C
-      subroutine sweeps0(si,s0,n,ng0,ng1,level,siq,ms0,vsi,mask)
-C
-C   calculate mean s0 value
-C   generate mask
-C   sweep s0 from si to generate  siq
-C   calculate variance of siq
-C
-      integer n,ng0,ng1,mask(n),level
-      double precision si(ng1,n),s0(ng0,n)
-      double precision siq(ng1,n),ms0(n),vsi(n)
-      logical maskk
-      integer i,k
-      double precision s,z,z2,thresh,cv,s0mean,tvsi
-      thresh = max(1,level*ng0)
-      cv=ng1*(ng1-1)
-C$OMP PARALLEL DEFAULT(NONE)
-C$OMP& SHARED(si,s0,n,ng0,ng1,level,siq,ms0,vsi,mask)
-C$OMP& FIRSTPRIVATE(thresh,cv)
-C$OMP& PRIVATE(i,k,maskk,s,z,z2,s0mean,tvsi)
-C$OMP DO SCHEDULE(STATIC)
-      DO i=1,n
-         z=0.d0
-         DO k=1,ng0
-            z=z+s0(k,i)
-         END DO
-         s0mean = z/ng0
-         maskk = z.ge.thresh
-         IF(maskk) THEN
-            z=0.d0
-            z2=0.d0
-            DO k=1,ng1
-               s=si(k,i)/s0mean
-               if(s.gt.0.99d0) s=0.99d0
-               z=z+s
-               z2=z2+s*s
-               siq(k,i)=s
-            END DO
-            tvsi=(ng1*z2-z)/cv
-            if(tvsi.lt.1d-8) THEN
-               maskk = .FALSE.
-               tvsi=0.d0
-            END IF
-         ELSE
-            tvsi=0.d0
-            DO k=1,ng1
-               siq(k,i)=1.d0
-            END DO
-         END IF
-         ms0(i) = s0mean
-         mask(i) = 0
-         if(maskk) mask(i) = 1
-         vsi(i) = tvsi
-      END DO
-C$OMP END DO NOWAIT
-C$OMP END PARALLEL
-C$OMP FLUSH(mask,siq,vsi,ms0)
-      RETURN
-      END
-C
-C __________________________________________________________________
-C
-      subroutine sweeps0p(si,s0,n,ng0,ng1,level,siq,ng2)
-C
-C   calculate mean s0 value
-C   generate mask
-C   sweep s0 from si to generate  siq
-C   calculate variance of siq
-C
-      integer n,ng0,ng1,ng2,level
-      double precision si(ng1,n),s0(ng0,n)
-      double precision siq(ng2,n)
-      logical maskk
-      integer i,k
-      double precision s,z,z2,thresh,cv,s0mean,tvsi,siqi(253)
-      thresh = max(1,level*ng0)
-      cv=ng1*(ng1-1)
-C$OMP PARALLEL DEFAULT(NONE)
-C$OMP& SHARED(si,s0,n,ng0,ng1,level,siq,ng2)
-C$OMP& FIRSTPRIVATE(thresh,cv)
-C$OMP& PRIVATE(i,k,maskk,s,z,z2,s0mean,tvsi,siqi)
-C$OMP DO SCHEDULE(STATIC)
-      DO i=1,n
-         z=0.d0
-         DO k=1,ng0
-            z=z+s0(k,i)
-         END DO
-         s0mean = z/ng0
-         maskk = z.ge.thresh
-         IF(maskk) THEN
-            z=0.d0
-            z2=0.d0
-            DO k=1,ng1
-               s=si(k,i)/s0mean
-               s=min(s,0.99d0)
-               z=z+s
-               z2=z2+s*s
-               siqi(k)=s
-            END DO
-            tvsi=(ng1*z2-z)/cv
-            if(tvsi.lt.1d-8) THEN
-               maskk = .FALSE.
-               tvsi=0.d0
-            END IF
-         ELSE
-            tvsi=0.d0
-            DO k=1,ng1
-               siqi(k)=1.d0
-            END DO
-         END IF
-         siqi(ng1+1) = s0mean
-         siqi(ng1+2) = tvsi
-         if(maskk) THEN
-            siqi(ng2) = 1
-         ELSE
-            siqi(ng2) = 0
-         ENDIF
-         DO k=1,ng2
-            siq(k,i)=siqi(k)
-         END DO
-      END DO
-C$OMP END DO NOWAIT
-C$OMP END PARALLEL
       RETURN
       END
 C

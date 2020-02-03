@@ -135,6 +135,7 @@ sioutlier <- function( si, s0ind, mc.cores = 1, verbose = TRUE){
   dim(z$si) <- c(ng,dsi[-length(dsi)])
   list(si=z$si,index=index)
 }
+
 mcorr <- function(res,mask,ddim,ngrad0,lags=c(5,5,3),mc.cores=1){
   cat("mcorr:")
   if(mc.cores>1){
@@ -170,6 +171,7 @@ mcorr <- function(res,mask,ddim,ngrad0,lags=c(5,5,3),mc.cores=1){
   cat("estimated corresponding bandwidths",format(Sys.time()),"\n")
   list(scorr=scorr,bw=bw)
 }
+
 dti3Dreg <- function(D,mc.cores=1){
   nvox <- length(D)/6
   cat("dti3Dreg:")
@@ -359,36 +361,6 @@ replind <- function(gradient){
   as.integer(replind)
 }
 
-sofmchi <- function(L, to = 50, delta = .01){
-##
-##  need to <=53  for hg1f1 to work precisely using limiting form otherwise
-##
-  minlev <- sqrt(2) * gamma(L+.5)/gamma(L)
-  x <- seq(0, to, delta)
-  mu <- sqrt(pi/2)*gamma(L+1/2)/gamma(1.5)/gamma(L)*hg1f1(-0.5,L, -x^2/2)
-  s2 <- 2*L+x^2-mu^2
-  s <- sqrt(s2)
-  ## return list containing values of noncentrality parameter (ncp),
-  ## mean (mu), standard deviation (sd) and variance (s2) to be used
-  ## in variance modeling
-  list(ncp = x, mu = mu, s = s, s2 = s2, minlev = minlev, L = L)
-}
-
-
-fncchir <- function(mu,varstats){
-  #
-  #  Bias-correction
-  #
-  varstats$ncp[findInterval(mu, varstats$mu, all.inside = TRUE)]
-}
-
-fncchis <- function(mu,varstats){
-  varstats$s[findInterval(mu, varstats$mu, all.inside = TRUE)]
-}
-
-fncchiv <- function(mu,varstats){
-  varstats$s2[findInterval(mu, varstats$mu, all.inside = TRUE)]
-}
 
 
 Spatialvar.gauss<-function(h,h0,d,interv=1){
@@ -660,4 +632,20 @@ hg1f1 <- function(a,b,z){
             as.double(z),
             as.integer(n),
             fz=double(n))$fz
+}
+
+unifybvals <- function(bval,dbv=51){
+   nbv <- length(bval)
+   nbval <- bval
+   obval <- numeric(nbv)
+   while(any(nbval!=obval)){
+      obval <- nbval
+      sbv <- sort(obval)
+      dsbv <- (1:(nbv-1))[diff(sbv)<dbv]
+      sbv[dsbv+1] <- sbv[dsbv]
+      obv <- order(obval)
+      nbval[obv] <- sbv
+   }
+   for(bv in unique(nbval)) nbval[nbval==bv] <- trunc(mean(bval[nbval==bv]))
+   nbval
 }

@@ -30,11 +30,6 @@ C
       double precision s0,sji
       integer changed
       ls0m1=ls0-1
-C$OMP PARALLEL DEFAULT(NONE)
-C$OMP& SHARED(s0ind,siind,si,sinew,n,nb,ls0,ind)
-C$OMP& FIRSTPRIVATE(ls0m1)
-C$OMP& PRIVATE(i,j,changed,s0,sji)
-C$OMP DO SCHEDULE(STATIC)
       DO i=1,n
          s0=0
          DO j1=1,ls0
@@ -56,8 +51,6 @@ C$OMP DO SCHEDULE(STATIC)
          END DO
          ind(i)=changed
       END DO
-C$OMP END DO NOWAIT
-C$OMP END PARALLEL
       RETURN
       END
       subroutine outlierp(si,n,nb,s0ind,ls0,siind,lsi,sinew,nb1)
@@ -70,11 +63,6 @@ C
       integer i,j1,j,ls0m1,changed
       double precision s0,sinn(251),sji
       ls0m1=ls0-1
-C$OMP PARALLEL DEFAULT(NONE)
-C$OMP& SHARED(s0ind,siind,si,sinew,n,nb,ls0,nb1,lsi)
-C$OMP& FIRSTPRIVATE(ls0m1)
-C$OMP& PRIVATE(i,j,changed,s0,sji,sinn)
-C$OMP DO SCHEDULE(STATIC)
       DO i=1,n
          s0=0
          DO j1=1,ls0
@@ -99,8 +87,6 @@ C$OMP DO SCHEDULE(STATIC)
             sinew(j,i)=sinn(j)
          END DO
       END DO
-C$OMP END DO NOWAIT
-C$OMP END PARALLEL
       RETURN
       END
 
@@ -155,10 +141,6 @@ C  correlation in x
       integer mask(n)
       integer i,iv
       double precision z,resi,zm,sigi
-C$OMP PARALLEL DEFAULT(NONE)
-C$OMP& SHARED(res,n,mask,nv,sigma,mean)
-C$OMP& PRIVATE(z,iv,i,resi,zm,sigi)
-C$OMP DO SCHEDULE(GUIDED)
       DO i=1,n
          sigi=0.d0
          zm=0.d0
@@ -176,9 +158,6 @@ C$OMP DO SCHEDULE(GUIDED)
          mean(i)=zm
          sigma(i)=sigi
       END DO
-C$OMP END DO NOWAIT
-C$OMP END PARALLEL
-C$OMP FLUSH(mean,sigma)
       RETURN
       END
 
@@ -193,10 +172,6 @@ C$OMP FLUSH(mean,sigma)
       double precision sci
       n=n1*n2*n3
       call msd(res,mask,n,nv,sigma,mean)
-C$OMP PARALLEL DEFAULT(NONE)
-C$OMP& SHARED(res,mask,n1,n2,n3,nv,sigma,mean,scorr,l1,l2,l3)
-C$OMP& PRIVATE(lag,i1,i2,i3,sci)
-C$OMP DO SCHEDULE(GUIDED)
       Do i1=1,l1
          lag(1)=i1-1
          DO i2=1,l2
@@ -208,9 +183,6 @@ C$OMP DO SCHEDULE(GUIDED)
             END DO
          END DO
       END DO
-C$OMP END DO NOWAIT
-C$OMP END PARALLEL
-C$OMP FLUSH(scorr)
       return
       end
       subroutine thcorr(w,n1,n2,n3,scorr,l1,l2,l3)
@@ -402,6 +374,146 @@ C
       END DO
       RETURN
       END
+C
+C __________________________________________________________________
+C
+      subroutine means0(s0,n,ng0,level,ms0,mask)
+C
+C   calculate mean s0 value
+C   generate mask
+C   sweep s0 from si to generate  siq
+C   calculate variance of siq
+C
+      integer n,ng0,mask(n),level
+      double precision s0(ng0,n),ms0(n)
+      integer i,k
+      double precision z,thresh
+      thresh = max(1,level*ng0)
+      DO i=1,n
+         z=0.d0
+         DO k=1,ng0
+            z=z+s0(k,i)
+         END DO
+         ms0(i) = z/ng0
+         mask(i) = 0
+         if(z.ge.thresh) mask(i) = 1
+      END DO
+      RETURN
+      END
+
+C
+C __________________________________________________________________
+C
+      subroutine sweeps0(si,s0,n,ng0,ng1,level,siq,ms0,vsi,mask)
+C
+C   calculate mean s0 value
+C   generate mask
+C   sweep s0 from si to generate  siq
+C   calculate variance of siq
+C
+      integer n,ng0,ng1,mask(n),level
+      double precision si(ng1,n),s0(ng0,n)
+      double precision siq(ng1,n),ms0(n),vsi(n)
+      logical maskk
+      integer i,k
+      double precision s,z,z2,thresh,cv,s0mean,tvsi
+      thresh = max(1,level*ng0)
+      cv=ng1*(ng1-1)
+      DO i=1,n
+         z=0.d0
+         DO k=1,ng0
+            z=z+s0(k,i)
+         END DO
+         s0mean = z/ng0
+         maskk = z.ge.thresh
+         IF(maskk) THEN
+            z=0.d0
+            z2=0.d0
+            DO k=1,ng1
+               s=si(k,i)/s0mean
+               if(s.gt.0.99d0) s=0.99d0
+               z=z+s
+               z2=z2+s*s
+               siq(k,i)=s
+            END DO
+            tvsi=(ng1*z2-z)/cv
+            if(tvsi.lt.1d-8) THEN
+               maskk = .FALSE.
+               tvsi=0.d0
+            END IF
+         ELSE
+            tvsi=0.d0
+            DO k=1,ng1
+               siq(k,i)=1.d0
+            END DO
+         END IF
+         ms0(i) = s0mean
+         mask(i) = 0
+         if(maskk) mask(i) = 1
+         vsi(i) = tvsi
+      END DO
+      RETURN
+      END
+C
+C __________________________________________________________________
+C
+      subroutine sweeps0p(si,s0,n,ng0,ng1,level,siq,ng2)
+C
+C   calculate mean s0 value
+C   generate mask
+C   sweep s0 from si to generate  siq
+C   calculate variance of siq
+C
+      integer n,ng0,ng1,ng2,level
+      double precision si(ng1,n),s0(ng0,n)
+      double precision siq(ng2,n)
+      logical maskk
+      integer i,k
+      double precision s,z,z2,thresh,cv,s0mean,tvsi,siqi(253)
+      thresh = max(1,level*ng0)
+      cv=ng1*(ng1-1)
+      DO i=1,n
+         z=0.d0
+         DO k=1,ng0
+            z=z+s0(k,i)
+         END DO
+         s0mean = z/ng0
+         maskk = z.ge.thresh
+         IF(maskk) THEN
+            z=0.d0
+            z2=0.d0
+            DO k=1,ng1
+               s=si(k,i)/s0mean
+               s=min(s,0.99d0)
+               z=z+s
+               z2=z2+s*s
+               siqi(k)=s
+            END DO
+            tvsi=(ng1*z2-z)/cv
+            if(tvsi.lt.1d-8) THEN
+               maskk = .FALSE.
+               tvsi=0.d0
+            END IF
+         ELSE
+            tvsi=0.d0
+            DO k=1,ng1
+               siqi(k)=1.d0
+            END DO
+         END IF
+         siqi(ng1+1) = s0mean
+         siqi(ng1+2) = tvsi
+         if(maskk) THEN
+            siqi(ng2) = 1
+         ELSE
+            siqi(ng2) = 0
+         ENDIF
+         DO k=1,ng2
+            siq(k,i)=siqi(k)
+         END DO
+      END DO
+      RETURN
+      END
+
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 C
 C   Hypergeometric 1F1 NIST HB 13.2.2, 13.2.39, 13.2(iv)
