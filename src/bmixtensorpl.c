@@ -221,7 +221,7 @@ mfunrskmb2_ret getparam2b(int param_length, double* param, double fmin){
       param_work[i] = param[i];
    }
  //  calculate weights
-  double* mix = (double*) R_alloc(c_ord, sizeof(double));
+  double* mix = (double*) R_alloc((long unsigned int) c_ord, sizeof(double));
   for( i = 0; i < c_ord; i++){
       mix[i] = param[3*i];
       o[i] = i;
@@ -229,7 +229,7 @@ mfunrskmb2_ret getparam2b(int param_length, double* param, double fmin){
    revsort(mix, o, c_ord);
 //  this sorts in decreasing order, now rearrange parameters
 //  sorted index in o
-   double* orient = (double*) R_alloc(2*c_ord, sizeof(double));
+   double* orient = (double*) R_alloc(2*(long unsigned int) c_ord, sizeof(double));
    for( i = 0; i < c_ord; i++){
       w_tmp[i] = param[3*o[i]];
       orient[2*i] = param[3*o[i]+1];
@@ -290,7 +290,7 @@ mfunrskmb1_ret getparam1b(int param_length, double* param, double fmin){
       param_work[i] = param[i];
    }
 //  calculate weights
-   double* mix = (double*) R_alloc(c_ord, sizeof(double));
+   double* mix = (double*) R_alloc((long unsigned int) c_ord, sizeof(double));
    for( i = 0; i < c_ord; i++){
       mix[i] = param[3*i];
       o[i] = i;
@@ -298,7 +298,7 @@ mfunrskmb1_ret getparam1b(int param_length, double* param, double fmin){
    revsort(mix, o, c_ord);
 //  this sorts in decreasing order, now rearrange parameters
 //  sorted index in o
-   double* orient = (double*) R_alloc(2*c_ord, sizeof(double));
+   double* orient = (double*) R_alloc(2*(long unsigned int) c_ord, sizeof(double));
    for( i = 0; i < c_ord; i++){
       w_tmp[i] = param[3*o[i]];
       orient[2*i] = param[3*o[i]+1];
@@ -353,14 +353,14 @@ mfunrskmb0_ret getparam0b(int param_length, double* param, double fmin){
       param_work[i] = param[i];
    }
 //  calculate weights
-   double* mix = (double*) R_alloc(c_ord, sizeof(double));
+   double* mix = (double*) R_alloc((long unsigned int) c_ord, sizeof(double));
    for( i = 0; i < c_ord; i++){
       mix[i] = param[3*i];
       o[i] = i;
    }
    revsort(mix, o, c_ord);
 //  this sorts in decreasing order, now rearrange parameters
-   double* orient = (double*) R_alloc(2*c_ord, sizeof(double));
+   double* orient = (double*) R_alloc(2*(long unsigned int) c_ord, sizeof(double));
    for( i = 0; i < c_ord; i++){
       w_tmp[i] = param[3*o[i]];
       orient[2*i] = param[3*o[i]+1];
@@ -448,14 +448,14 @@ void mixtrl2b( int* n1, int* siind, double* wi, int* ngrad, int* maxcomp, int* m
 
    param_length_init=3*maxcompc+3;
 
-   param = (double *) R_alloc(param_length_init, sizeof(double));
-   param_work = (double *) R_alloc(param_length_init, sizeof(double));
-   param_last = (double *) R_alloc(param_length_init, sizeof(double));
-   param_tmp = (double *) R_alloc(param_length_init, sizeof(double));
-   lower = (double *) R_alloc(param_length_init, sizeof(double));
-   upper = (double *) R_alloc(param_length_init, sizeof(double));
-   int *nbd = (int *) R_alloc(param_length_init, sizeof(int));
-   si = (double *) R_alloc(ngradcc, sizeof(double));
+   param = (double *) R_alloc((long unsigned int) param_length_init, sizeof(double));
+   param_work = (double *) R_alloc((long unsigned int) param_length_init, sizeof(double));
+   param_last = (double *) R_alloc((long unsigned int) param_length_init, sizeof(double));
+   param_tmp = (double *) R_alloc((long unsigned int) param_length_init, sizeof(double));
+   lower = (double *) R_alloc((long unsigned int) param_length_init, sizeof(double));
+   upper = (double *) R_alloc((long unsigned int) param_length_init, sizeof(double));
+   int *nbd = (int *) R_alloc((long unsigned int) param_length_init, sizeof(int));
+   si = (double *) R_alloc((long unsigned int) ngradcc, sizeof(double));
 
    //initialize param
    for(i=0; i<param_length_init; i++){
@@ -685,14 +685,14 @@ void mixtrl1b( int* n1, int* siind, double* wi, int* ngrad, int* maxcomp, int* m
 
    param_length_init=3*maxcompc+2;
 
-   param = (double *) R_alloc(param_length_init, sizeof(double));
-   param_work = (double *) R_alloc(param_length_init, sizeof(double));
-   param_last = (double *) R_alloc(param_length_init, sizeof(double));
-   param_tmp = (double *) R_alloc(param_length_init, sizeof(double));
-   lower = (double *) R_alloc(param_length_init, sizeof(double));
-   upper = (double *) R_alloc(param_length_init, sizeof(double));
-   int *nbd = (int *) R_alloc(param_length_init, sizeof(int));
-   si = (double *) R_alloc(ngradcc, sizeof(double));
+   param = (double *) R_alloc((long unsigned int) param_length_init, sizeof(double));
+   param_work = (double *) R_alloc((long unsigned int) param_length_init, sizeof(double));
+   param_last = (double *) R_alloc((long unsigned int) param_length_init, sizeof(double));
+   param_tmp = (double *) R_alloc((long unsigned int) param_length_init, sizeof(double));
+   lower = (double *) R_alloc((long unsigned int) param_length_init, sizeof(double));
+   upper = (double *) R_alloc((long unsigned int) param_length_init, sizeof(double));
+   int *nbd = (int *) R_alloc((long unsigned int) param_length_init, sizeof(int));
+   si = (double *) R_alloc((long unsigned int) ngradcc, sizeof(double));
 
    //initialize param
    for(i=0; i<param_length_init; i++){
@@ -899,14 +899,14 @@ void mixtrl0b( int* n1, int* siind, double* wi, int* ngrad, int* maxcomp, int* m
 
    param_length_init=3*maxcompc + 1;
 
-   param = (double *) R_alloc(param_length_init, sizeof(double));
-   param_work = (double *) R_alloc(param_length_init, sizeof(double));
-   param_last = (double *) R_alloc(param_length_init, sizeof(double));
-   param_tmp = (double *) R_alloc(param_length_init, sizeof(double));
-   lower = (double *) R_alloc(param_length_init, sizeof(double));
-   upper = (double *) R_alloc(param_length_init, sizeof(double));
-   int *nbd = (int *) R_alloc(param_length_init, sizeof(int));
-   si = (double *) R_alloc(ngradcc, sizeof(double));
+   param = (double *) R_alloc((long unsigned int) param_length_init, sizeof(double));
+   param_work = (double *) R_alloc((long unsigned int) param_length_init, sizeof(double));
+   param_last = (double *) R_alloc((long unsigned int) param_length_init, sizeof(double));
+   param_tmp = (double *) R_alloc((long unsigned int) param_length_init, sizeof(double));
+   lower = (double *) R_alloc((long unsigned int) param_length_init, sizeof(double));
+   upper = (double *) R_alloc((long unsigned int) param_length_init, sizeof(double));
+   int *nbd = (int *) R_alloc((long unsigned int) param_length_init, sizeof(int));
+   si = (double *) R_alloc((long unsigned int) ngradcc, sizeof(double));
 
    //initialize param
    for(i=0; i<param_length_init; i++){

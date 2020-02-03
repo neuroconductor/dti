@@ -290,7 +290,7 @@ mfunplwghts0_ret mfunplwghts0(int param_length, double* param, double* siq){
    w_red2[i] = w_red[i];
   }
 
-  qsort(w_red, m, sizeof(double), compare_doubles);
+  qsort(w_red, (long unsigned int) m, sizeof(double), compare_doubles);
   int* o = Calloc(m, int);
   for(i = 0; i<m; i++){
    o[i] = -1;
@@ -324,7 +324,7 @@ mfunplwghts0_ret mfunplwghts0(int param_length, double* param, double* siq){
   if (c_ord == 0) c_ord = 1;
 
   // here ord will not be replaced, because zero-check is important
-  double* mix = (double*) R_alloc(ord, sizeof(double));
+  double* mix = (double*) R_alloc((long unsigned int) ord, sizeof(double));
 
   if(ord > 0){
    for(i = 0; i < ord; i++){
@@ -334,7 +334,7 @@ mfunplwghts0_ret mfunplwghts0(int param_length, double* param, double* siq){
    mix = NULL;
   }
 
-  double* or = (double*) R_alloc(2*c_ord, sizeof(double));
+  double* or = (double*) R_alloc(2*(long unsigned int) c_ord, sizeof(double));
   for(i = 0; i < c_ord; i++){
    or[get_ind2d(0,i,2)] = param[2*o[i]+1];
    or[get_ind2d(1,i,2)] = param[2*o[i]+2];
@@ -417,14 +417,14 @@ void mixture( int* n1, int* siind, int* ngrad0, int* maxcomp, int* maxit,
 
    param_length_init=2*maxcompc+1;
 
-   param = (double *) R_alloc(param_length_init, sizeof(double));
-   param_work = (double *) R_alloc(param_length_init, sizeof(double));
-   param_last = (double *) R_alloc(param_length_init, sizeof(double));
-   param_tmp = (double *) R_alloc(param_length_init, sizeof(double));
-   mask = (int *) R_alloc(param_length_init, sizeof(int));
+   param = (double *) R_alloc((long unsigned int) param_length_init, sizeof(double));
+   param_work = (double *) R_alloc((long unsigned int) param_length_init, sizeof(double));
+   param_last = (double *) R_alloc((long unsigned int) param_length_init, sizeof(double));
+   param_tmp = (double *) R_alloc((long unsigned int) param_length_init, sizeof(double));
+   mask = (int *) R_alloc((long unsigned int) param_length_init, sizeof(int));
    for (i = 0; i < param_length_init; i++) mask[i] = 1;
 
-   siq = (double *) R_alloc(ngrad0c, sizeof(double));
+   siq = (double *) R_alloc((long unsigned int) ngrad0c, sizeof(double));
 
    //initialize param
    for(i=0; i<param_length_init; i++){
