@@ -105,7 +105,7 @@ setMethod("dkiTensor", "dtiData",
                   Tabesh_B <- -ttt[,i]
                   ## QP solution
                   dvec <- as.vector(t(Tabesh_A) %*% Tabesh_B)
-                  resQPsolution <- solve.QP(Dmat, dvec, Amat,factorized=FALSE)$solution
+                  resQPsolution <- quadprog::solve.QP(Dmat, dvec, Amat,factorized=FALSE)$solution
                   D[, mi] <- resQPsolution[Dind] / mbv # re-order DT estimate to comply with dtiTensor
 
                   ## Tabesh Eq. [9]

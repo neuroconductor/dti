@@ -63,7 +63,7 @@ pdkiQP <- function(x,TA,Dmat,Amat){
   param <- matrix(0,21,nvox)
   for(i in 1:nvox){
     dvec <- -as.vector(t(TA) %*% x[,i])
-    resQPsolution <- solve.QP(Dmat, dvec, Amat,factorized=FALSE)$solution
+    resQPsolution <- quadprog::solve.QP(Dmat, dvec, Amat,factorized=FALSE)$solution
     param[1:6, i] <- resQPsolution[1:6]
     param[7:21, i] <- resQPsolution[7:21] / mean(resQPsolution[1:3])^2
   }

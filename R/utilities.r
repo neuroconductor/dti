@@ -78,9 +78,9 @@ setMethod("sdpar", "dtiData", function(object,
       legend(min(A0,0.25*max(z$x)),ylim[2],c("Full cube",paste("Central",(n1*100)%/%n,"%"),
                                              paste("Central",(n2*100)%/%n,"%"),paste("Central",(n3*100)%/%n,"%")),col=1:4,lwd=rep(1,4))
       cat("A good cut off point should be left of support \n of the density of grayvalues within the head\n")
-      show.image(make.image(img/maximg))
+      adimpro::show.image(adimpro::make.image(img/maximg))
       title("Central slice: Intensity values")
-      show.image(make.image((img<A0)))
+      adimpro::show.image(adimpro::make.image((img<A0)))
       title("Central slice: voxel not in mask")
       a <- readline(paste("Accept current cut off point",A0," (Y/N):"))
       if (toupper(a) == "N") {

@@ -17,7 +17,7 @@ getsphericalharmonicseven <- function( order, theta, phi) {
     mseq <- seq( -k, k, 1)
     for (m in mseq) {
       ind <- (k^2+k+2)/2+m
-      z <- legendre_sphPlm( k, abs(m), cos(theta))## gsl
+      z <- gls::legendre_sphPlm( k, abs(m), cos(theta))## gsl
       if (m < 0) {
         z <- sqrt(2)*z*cos(m*phi)
       }

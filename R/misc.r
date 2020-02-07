@@ -504,8 +504,8 @@ andir2.image <- function(dtobject,slice=1,method=1,quant=0,minfa=NULL,show=TRUE,
   andirection <- andirection*as.vector(anindex)*as.numeric(anindex>minfa)
   dim(andirection)<-c(dimg,3)
   #  if(adimpro) {
-  andirection <- make.image(andirection)
-  if(show) show.image(andirection,...)
+  andirection <- adimpro::make.image(andirection)
+  if(show) adimpro::show.image(andirection,...)
   #  } else if(show) {
   #    dim(anindex) <- dimg
   #    image(anindex,...)
@@ -524,7 +524,7 @@ andir.image <- function(anindex,andirection,quant=0,minfa=NULL){
   andirection[3,] <- abs(andirection[3,])
   andirection <- t(andirection)*as.vector(anindex)*as.numeric(anindex>minfa)
   dim(andirection)<-c(dimg,3)
-  show.image(make.image(andirection))
+  adimpro::show.image(adimpro::make.image(andirection))
   invisible(NULL)
 }
 
