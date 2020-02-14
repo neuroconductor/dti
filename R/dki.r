@@ -548,32 +548,22 @@ setMethod("dkiIndices", "dkiTensor",
               kurtosisFunctionF2(lambda[3, object@mask], lambda[2, object@mask], lambda[1, object@mask]) * Wtilde1122
             ## END
 
+            ## Tabesh Eq. [31] and [32]
+            kaxial <- array(0, ddim)
+            kaxial[ object@mask] <- (lambda[1, object@mask] + lambda[2, object@mask] + lambda[3, object@mask])^2/
+                                     9/lambda[1, object@mask]^2 * Wtilde1111
+            kradial <- array(0, ddim)
+            kradial[ object@mask] <-  kurtosisFunctionG1(lambda[1, object@mask], lambda[2, object@mask], lambda[3, object@mask]) * Wtilde2222 +
+                          kurtosisFunctionG1(lambda[1, object@mask], lambda[3, object@mask], lambda[2, object@mask]) * Wtilde3333 +
+                          kurtosisFunctionG2(lambda[1, object@mask], lambda[2, object@mask], lambda[3, object@mask]) * Wtilde2233
 
-            ## START
-            ## Fractional kurtosis following Hui et al. (2008), this might be not useful!
-            x1 <- dkiDesign(andir[, 1, ])
-            x2 <- dkiDesign(andir[, 2, ])
-            x3 <- dkiDesign(andir[, 3, ])
-
-            ## cannot allocate memory for the following:
-            ## w1111 <- diag( x1[ , 7:21] %*% D[ 7:21, ])
-            w1111 <- (x1[, 7:21] * t(W)) %*% rep(1, 15)
-            #            w1111 <- numeric( nvox)
-            #            for ( i in 1:nvox) if (object@mask[ i]) w1111[ i] <- x1[ i, 7:21] %*% W[ , i]
-            w2222 <- (x2[, 7:21] * t(W)) %*% rep(1, 15)
-            #            w2222 <- numeric( nvox)
-            #            for ( i in 1:nvox) if (object@mask[ i]) w2222[ i] <- x2[ i, 7:21] %*% W[ , i]
-            w3333 <- (x3[, 7:21] * t(W)) %*% rep( 1, 15)
-            #            w3333 <- numeric( nvox)
-            #            for ( i in 1:nvox) if (object@mask[ i]) w3333[ i] <- x3[ i, 7:21] %*% W[ , i]
-
-            k1 <- w1111 / lambda[1, ]^2
-            k2 <- w2222 / lambda[2, ]^2
-            k3 <- w3333 / lambda[3, ]^2
+            ## Kurtosis along individual eigenvectors following Hui et al. (2008)
+            k1 <- k2 <- k3 <- array(0, ddim)
+            k1[ object@mask] <- MD2[object@mask]/lambda[1, object@mask]^2*Wtilde1111
+            k2[ object@mask] <- MD2[object@mask]/lambda[2, object@mask]^2*Wtilde2222
+            k3[ object@mask] <- MD2[object@mask]/lambda[3, object@mask]^2*Wtilde3333
 
             kbar <- (k1 + k2 + k3) / 3
-            kaxial <- k1
-            kradial <- (k2 + k3) / 2
             fak <- sqrt(3/2 * ((k1-kbar)^2 + (k2-kbar)^2 + (k3-kbar)^2) / (k1^2 + k2^2 + k3^2))
             ## END
 

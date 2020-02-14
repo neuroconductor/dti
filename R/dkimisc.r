@@ -166,8 +166,8 @@ kurtosisFunctionF1<- function(l1, l2, l3) {
   l3i <- l3[ind]
   if (any(ind)) F1[ind] <-
     (l1i+l2i+l3i)^2 /18 /(l1i-l2i)/(l1i-l3i) *
-    (gls::ellint_RF(l1i/l2i, l1i/l3i, 1) * sqrt(l2i*l3i)/l1i +
-        gls::ellint_RD(l1i/l2i, l1i/l3i, 1) * (3*l1i^2 - l1i*l2i - l1i*l3i - l2i*l3i)/(3*l1i*sqrt(l2i*l3i))
+    (gsl::ellint_RF(l1i/l2i, l1i/l3i, 1) * sqrt(l2i*l3i)/l1i +
+        gsl::ellint_RD(l1i/l2i, l1i/l3i, 1) * (3*l1i^2 - l1i*l2i - l1i*l3i - l2i*l3i)/(3*l1i*sqrt(l2i*l3i))
       - 1)
   ind1 <- (!ind12) & (ind13)
   if (any(ind1)) F1[ind1] <- kurtosisFunctionF2(l3[ind1], l1[ind1], l1[ind1]) / 2
@@ -211,8 +211,8 @@ kurtosisFunctionF2 <- function(l1, l2, l3) {
     l3i <- l3[ind23]
     F2[ind23] <-
       (l1i + l2i + l3i)^2 / (l2i - l3i)^2 / 3 *
-      (gls::ellint_RF(l1i/l2i, l1i/l3i, 1) * (l2i + l3i) / sqrt(l2i*l3i) +
-          gls::ellint_RD(l1i/l2i, l1i/l3i, 1) * (2*l1i - l2i - l3i) / 3 / sqrt(l2i*l3i)
+      (gsl::ellint_RF(l1i/l2i, l1i/l3i, 1) * (l2i + l3i) / sqrt(l2i*l3i) +
+          gsl::ellint_RD(l1i/l2i, l1i/l3i, 1) * (2*l1i - l2i - l3i) / 3 / sqrt(l2i*l3i)
         - 2 )
   }
   ind1 <- (!ind23) & (ind12)
@@ -236,4 +236,20 @@ pseudoinverseSVD <- function(xxx, eps=1e-8) {
   dinv <- 1/d
   dinv[abs(d) < eps] <- 0
   svdresult$v %*% diag(dinv) %*% t(svdresult$u)
+}
+
+kurtosisFunctionG1 <- function(l1, l2, l3, eps=1e-6){
+   l23 <- l2-l3
+   ind23 <- abs(l23)<eps
+   G1 <- (l1+l2+l3)^2/18/l2/l23^2*(2*l2+(l3^2-3*l2*l3)/sqrt(l2*l3))
+   if(any(ind23)) G1[ind23] <- ((l1+l2+l3)^2/12/(l2^2+l3^2))[ind23]
+   G1
+   }
+
+kurtosisFunctionG2 <- function(l1, l2, l3, eps=1e-6){
+   l23 <- l2-l3
+   ind23 <- abs(l23)<eps
+   G2 <- (l1+l2+l3)^2/3/l23^2*((l2+l3)/sqrt(l2*l3)-2)
+   if(any(ind23)) G2[ind23] <- ((l1+l2+l3)^2/6/(l2^2+l3^2))[ind23]
+   G2
 }
