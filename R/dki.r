@@ -143,15 +143,13 @@ setMethod("dkiTensor", "dtiData",
                 ##   sigma should be of length ng here
                 #browser()
                 ng <- dim(A)[1]
-                #  cat("param",signif(param,4),"value")
-                gvalue <- param[22] * exp(A%*%param[1:21])/sigma
+#                cat("param",signif(param,4),"value")
+                gvalue <- exp(A%*%param)/sigma
+#                cat("range",range(gvalue))
+                gvalue <- pmin(1e5,pmax(0,gvalue))
                 muL <- CL * hg1f1(rep(-.5, ng), rep(L, ng), -gvalue*gvalue/2)
-                vL <- pmax(1e-8, 2*L + gvalue^2 - muL^2)
-                ## avoid negative variances that may result due to approximations
-                ## within the iteration process
-
-                ## factor sigma in muL and sigma^2 in vL cancels in the quotient
-                sum((si/sigma - muL)^2/vL)
+#                cat("krit:",sum((si/sigma - muL)^2),"\n")
+                sum((si/sigma - muL)^2)
               }
 
               dim(D) <- c(6, ddim)
@@ -164,11 +162,13 @@ setMethod("dkiTensor", "dtiData",
                   for (ix in 1:ddim[1]) {
                     if (mask[ix, iy, iz]) {
                       i <- i+1
-                      param <- c(D[, ix, iy, iz], W[, ix, iy, iz], s0[ix, iy, iz])
+                      ##  rescale for conditioning of gradient matrix
+                      sii <- z$si[,i]/s0[ix,iy,iz]
+                      param <- c(D[, ix, iy, iz], W[, ix, iy, iz])
                       param[1:6] <- param[c(1,4,6,2,3,5)] * mbv
                       param[7:21] <- param[7:21]*mean(param[1:3])^2
                       param <- optim(param,
-                                     dkiModelQL, si = z$si[,i], sigma = sigma[ix, iy, iz], A = A, L = L, CL = CL,
+                                     dkiModelQL, si = sii, sigma = sigma[ix, iy, iz]/s0[ix,iy,iz], A = A, L = L, CL = CL,
                                      method="BFGS",
                                      control = list(reltol = 1e-6,
                                                     maxit = 100))$par
