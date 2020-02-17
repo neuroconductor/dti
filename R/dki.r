@@ -471,7 +471,7 @@ setMethod("dkiIndices", "dkiTensor",
             ## we need this for all the arrays
             ddim <- object@ddim
             nvox <- prod(ddim)
-            nvox0 <- sum(object@mask)
+            nmask <- sum(object@mask)
 
             ## perform the DTI indices calculations
             D <- object@D
@@ -489,24 +489,25 @@ setMethod("dkiIndices", "dkiTensor",
 
             dim(D) <- c(6, nvox)
             dim(W) <- c(15, nvox)
+            D <- D[, object@mask]
+            W <- W[, object@mask]
             andir <- matrix(0, 9, nvox)
             lambda <- matrix(1e20, 3, nvox)
 
             t1 <- Sys.time()
 
             zz <- .Fortran(C_dti3devall,
-                           as.double(D[ , object@mask]),
-                           as.integer(nvox0),
-                           andir=double(9*nvox0),
-                           evalues=double(3*nvox0))[c("andir", "evalues")]
-            andir[, object@mask] <- zz$andir
-            lambda[, object@mask] <- zz$evalues
+                           as.double(D),
+                           as.integer(nmask),
+                           andir=double(9*nmask),
+                           evalues=double(3*nmask))[c("andir", "evalues")]
+            andir <- array(zz$andir,c(3,3,nmask))
+            lambda <- matrix(zz$evalues,3,nmask)
 
             t2 <- Sys.time()
-            if (verbose) cat("dkiTensor: calculation took ", difftime(t2, t1), attr(difftime( t2, t1), "units"), " for", nvox0, "voxel\n")
+            if (verbose) cat("dkiTensor: calculation took ", difftime(t2, t1), attr(difftime( t2, t1), "units"), " for", nmask, "voxel\n")
 
             if (mc.cores > 1) setCores(mc.cores.old, reprt=FALSE)
-            dim(andir) <- c(3, 3, nvox)
 
             xxx <- dkiDesign(object@gradient[, - object@s0ind])
             Tabesh_AD <- xxx[, 1:6]
@@ -516,9 +517,9 @@ setMethod("dkiIndices", "dkiTensor",
 
             ## Note: the DT entries in D are re-ordered compared to Tabesh_AD for backward comp.
             ## Maybe we dont need this!
-            Dapp <- Tabesh_AD %*% D[c(1, 4, 6, 2, 3, 5), object@mask]
-            MD2 <- apply(D[c(1, 4, 6), object@mask], 2, mean)^2
-            Kapp <- sweep((Tabesh_AK %*% W[, object@mask]) / Dapp^2, 2, MD2, "*")
+            Dapp <- Tabesh_AD %*% D[c(1, 4, 6, 2, 3, 5), ]
+            MD2 <- apply(D[c(1, 4, 6), ], 2, mean)^2
+            Kapp <- sweep((Tabesh_AK %*% W[,]) / Dapp^2, 2, MD2, "*")
             ## remove pathological values!
             Kapp[Kapp < 0] <- 0
             Kapp[Dapp <= 0] <- 0
@@ -530,38 +531,38 @@ setMethod("dkiIndices", "dkiTensor",
             ## Mean Kurtosis definition following Tabesh et al. (2011), this should be exact
             ## Note, these values already contain MD^2 as factor!
             ## Tabesh Eq. [26] needed for Tabesh Eq. [25]
-            Wtilde1111 <- rotateKurtosis(andir[, , object@mask], W[, object@mask], 1, 1, 1, 1)
-            Wtilde2222 <- rotateKurtosis(andir[, , object@mask], W[, object@mask], 2, 2, 2, 2)
-            Wtilde3333 <- rotateKurtosis(andir[, , object@mask], W[, object@mask], 3, 3, 3, 3)
-            Wtilde1122 <- rotateKurtosis(andir[, , object@mask], W[, object@mask], 1, 1, 2, 2)
-            Wtilde1133 <- rotateKurtosis(andir[, , object@mask], W[, object@mask], 1, 1, 3, 3)
-            Wtilde2233 <- rotateKurtosis(andir[, , object@mask], W[, object@mask], 2, 2, 3, 3)
+            Wtilde1111 <- rotateKurtosis(andir, W, 1, 1, 1, 1)
+            Wtilde2222 <- rotateKurtosis(andir, W, 2, 2, 2, 2)
+            Wtilde3333 <- rotateKurtosis(andir, W, 3, 3, 3, 3)
+            Wtilde1122 <- rotateKurtosis(andir, W, 1, 1, 2, 2)
+            Wtilde1133 <- rotateKurtosis(andir, W, 1, 1, 3, 3)
+            Wtilde2233 <- rotateKurtosis(andir, W, 2, 2, 3, 3)
 
             ## Tabesh Eq. [25]
             mk2 <- array(0, ddim)
             mk2[ object@mask] <-
-              kurtosisFunctionF1(lambda[1, object@mask], lambda[2, object@mask], lambda[3, object@mask]) * Wtilde1111 +
-              kurtosisFunctionF1(lambda[2, object@mask], lambda[1, object@mask], lambda[3, object@mask]) * Wtilde2222 +
-              kurtosisFunctionF1(lambda[3, object@mask], lambda[2, object@mask], lambda[1, object@mask]) * Wtilde3333 +
-              kurtosisFunctionF2(lambda[1, object@mask], lambda[2, object@mask], lambda[3, object@mask]) * Wtilde2233 +
-              kurtosisFunctionF2(lambda[2, object@mask], lambda[1, object@mask], lambda[3, object@mask]) * Wtilde1133 +
-              kurtosisFunctionF2(lambda[3, object@mask], lambda[2, object@mask], lambda[1, object@mask]) * Wtilde1122
+              kurtosisFunctionF1(lambda[1, ], lambda[2, ], lambda[3, ]) * Wtilde1111 +
+              kurtosisFunctionF1(lambda[2, ], lambda[1, ], lambda[3, ]) * Wtilde2222 +
+              kurtosisFunctionF1(lambda[3, ], lambda[2, ], lambda[1, ]) * Wtilde3333 +
+              kurtosisFunctionF2(lambda[1, ], lambda[2, ], lambda[3, ]) * Wtilde2233 +
+              kurtosisFunctionF2(lambda[2, ], lambda[1, ], lambda[3, ]) * Wtilde1133 +
+              kurtosisFunctionF2(lambda[3, ], lambda[2, ], lambda[1, ]) * Wtilde1122
             ## END
 
             ## Tabesh Eq. [31] and [32]
             kaxial <- array(0, ddim)
-            kaxial[ object@mask] <- (lambda[1, object@mask] + lambda[2, object@mask] + lambda[3, object@mask])^2/
-                                     9/lambda[1, object@mask]^2 * Wtilde1111
+            kaxial[ object@mask] <- (lambda[1, ] + lambda[2, ] + lambda[3, ])^2/
+                                     9/lambda[1, ]^2 * Wtilde1111
             kradial <- array(0, ddim)
-            kradial[ object@mask] <-  kurtosisFunctionG1(lambda[1, object@mask], lambda[2, object@mask], lambda[3, object@mask]) * Wtilde2222 +
-                          kurtosisFunctionG1(lambda[1, object@mask], lambda[3, object@mask], lambda[2, object@mask]) * Wtilde3333 +
-                          kurtosisFunctionG2(lambda[1, object@mask], lambda[2, object@mask], lambda[3, object@mask]) * Wtilde2233
+            kradial[ object@mask] <-  kurtosisFunctionG1(lambda[1, ], lambda[2, ], lambda[3, ]) * Wtilde2222 +
+                          kurtosisFunctionG1(lambda[1, ], lambda[3, ], lambda[2, ]) * Wtilde3333 +
+                          kurtosisFunctionG2(lambda[1, ], lambda[2, ], lambda[3, ]) * Wtilde2233
 
             ## Kurtosis along individual eigenvectors following Hui et al. (2008)
             k1 <- k2 <- k3 <- array(0, ddim)
-            k1[ object@mask] <- MD2[object@mask]/lambda[1, object@mask]^2*Wtilde1111
-            k2[ object@mask] <- MD2[object@mask]/lambda[2, object@mask]^2*Wtilde2222
-            k3[ object@mask] <- MD2[object@mask]/lambda[3, object@mask]^2*Wtilde3333
+            k1[ object@mask] <- MD2/lambda[1, ]^2*Wtilde1111
+            k2[ object@mask] <- MD2/lambda[2, ]^2*Wtilde2222
+            k3[ object@mask] <- MD2/lambda[3, ]^2*Wtilde3333
 
             kbar <- (k1 + k2 + k3) / 3
             fak <- sqrt(3/2 * ((k1-kbar)^2 + (k2-kbar)^2 + (k3-kbar)^2) / (k1^2 + k2^2 + k3^2))
