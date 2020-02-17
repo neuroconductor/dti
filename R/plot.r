@@ -66,13 +66,10 @@ setMethod("plot", "dtiData", function(x, y,slice=1, gradient=NULL, view= "axial"
   }
   oldpar <- par(mar=mar,mgp=mgp, ...)
   #if(adimpro) {
-  img <- adimpro::make.image(65535*img/maxsi)
-  if(show) adimpro::show.image(img,...)
-  #} else if(show) {
-  #  image(img,...)
-  #}
+  img <- img/maxsi
+  if(show) adimpro::rimage(img, ...)
   par(oldpar)
-  invisible(img)
+  invisible(adimpro::make.image(65535*img))
 })
 
 ##############
@@ -143,23 +140,27 @@ setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, mi
   img<-D[1,,]
   rg<-quantile(img,qrange)
   img[img>rg[2]]<-rg[2]
-  adimpro::show.image(adimpro::make.image(65535*img/max(img)))
+  adimpro::rimage(img, ...)
+#  adimpro::show.image(adimpro::make.image(65535*img/max(img)))
   title(paste("Dxx: mean",signif(mean(D[mask]),3),"max",signif(max(D[1,,][mask]),3)))
   img<-D[2,,]
   rg<-quantile(img,qrange)
   img[img>rg[2]]<-rg[2]
   img[img<rg[1]]<-rg[1]
   img <- (img-rg[1])/(rg[2]-rg[1])
-  adimpro::show.image(adimpro::make.image(img))
+  adimpro::rimage(img, ...)
+#  adimpro::show.image(adimpro::make.image(img))
   title(paste("Dxy: min",signif(min(D[2,,][mask]),3),"max",signif(max(D[2,,][mask]),3)))
   img<-D[3,,]
   rg<-quantile(img,qrange)
   img[img>rg[2]]<-rg[2]
   img[img<rg[1]]<-rg[1]
   img <- (img-rg[1])/(rg[2]-rg[1])
-  adimpro::show.image(adimpro::make.image(img))
+#  adimpro::show.image(adimpro::make.image(img))
+  adimpro::rimage(img, ...)
   title(paste("Dxz: min",signif(min(D[3,,][mask]),3),"max",signif(max(D[3,,][mask]),3)))
-  adimpro::show.image(adimpro::make.image(matrix(z$fa,n1,n2)))
+  adimpro::rimage(matrix(z$fa,n1,n2), ...)
+#  adimpro::show.image(adimpro::make.image(matrix(z$fa,n1,n2)))
   if(what=="GA"){
     title(paste("Anisotropy Index  (GA)  range:",signif(min(z$fa[mask]),3),"-",
                 signif(max(z$fa[mask]),3)))
@@ -171,19 +172,22 @@ setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, mi
   rg<-quantile(img,qrange)
   img[img>rg[2]]<-rg[2]
   img[img<rg[1]]<-rg[1]
-  adimpro::show.image(adimpro::make.image(65535*img/max(img)))
+  adimpro::rimage(img, ...)
+#  adimpro::show.image(adimpro::make.image(65535*img/max(img)))
   title(paste("Dyy: min",signif(min(D[4,,][mask]),3),"max",signif(max(D[4,,][mask]),3)))
   img<-D[5,,]
   rg<-quantile(img,qrange)
   img[img>rg[2]]<-rg[2]
   img[img<rg[1]]<-rg[1]
   img <- (img-rg[1])/(rg[2]-rg[1])
-  adimpro::show.image(adimpro::make.image(img))
+  adimpro::rimage(img, ...)
+#  adimpro::show.image(adimpro::make.image(img))
   title(paste("Dyz: min",signif(min(D[5,,][mask]),3),"max",signif(max(D[5,,][mask]),3)))
   andir.image(matrix(z$fa,n1,n2),array(z$andir,c(3,n1,n2)),quant=quant,minfa=minfa)
   title(paste("Anisotropy directions"))
   img <- matrix(z$md,n1,n2)
-  adimpro::show.image(adimpro::make.image(65535*img/max(img)))
+  adimpro::rimage(img, ...)
+#  adimpro::show.image(adimpro::make.image(65535*img/max(img)))
   if(what=="GA"){
     title(paste("Mean log diffusivity   range:",signif(min(z$md[mask]),3),"-",
                 signif(max(z$md[mask]),3)))
@@ -195,7 +199,8 @@ setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, mi
   rg<-quantile(img,qrange)
   img[img>rg[2]]<-rg[2]
   img[img<rg[1]]<-rg[1]
-  adimpro::show.image(adimpro::make.image(65535*img/max(img)))
+  adimpro::rimage(img, ...)
+#  adimpro::show.image(adimpro::make.image(65535*img/max(img)))
   title(paste("Dzz: min",signif(min(D[6,,][mask]),3),"max",signif(max(D[6,,][mask]),3)))
   invisible(NULL)
 })
@@ -205,7 +210,6 @@ setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, mi
 setMethod("plot", "dwiMixtensor", function(x, y, slice=1, view="axial", what="fa", minfa=NULL,
                                            identify=FALSE,  xind=NULL,yind=NULL,zind=NULL,
                                            mar=par("mar"),mgp=par("mgp"),...) {
-  #adimpro <- require(adimpro)
   if(is.null(xind)) xind<-(1:x@ddim[1])
   if(is.null(yind)) yind<-(1:x@ddim[2])
   if(is.null(zind)) zind<-(1:x@ddim[3])
@@ -240,41 +244,48 @@ setMethod("plot", "dwiMixtensor", function(x, y, slice=1, view="axial", what="fa
   oldpar <- par(mfrow=c(1,length(what)),mar=mar,mgp=mgp,...)
   on.exit(par(oldpar))
   if("w0" %in% what){
-    w0 <- drop(stats$w0)
-    adimpro::show.image(img <- adimpro::make.image(65535*w0))
+    img <- drop(stats$w0)
+    adimpro::rimage(img, ...)
+#    adimpro::show.image(img <- adimpro::make.image(65535*w0))
     title(paste("Isotropic compartment size"))
   }
   if("fa" %in% what){
-    fa <- drop(stats$fa)
-    if(!is.null(minfa)) fa[fa<minfa] <- 0
-    adimpro::show.image(img <- adimpro::make.image(65535*fa))
+    img <- drop(stats$fa)
+    if(!is.null(minfa)) img[img<minfa] <- 0
+    adimpro::rimage(img, ...)
+#    adimpro::show.image(img <- adimpro::make.image(65535*fa))
     title(paste("effective FA"))
   }
   if("order" %in% what){
-    order <- drop(stats$order)
-    adimpro::show.image(img <- adimpro::make.image(65535*order/max(order)))
-    title(paste("Order of mixture (Maximum=",max(order),")"))
+    img <- drop(stats$order)
+    img <- img/max(img)
+    adimpro::rimage(img, ...)
+#    adimpro::show.image(img <- adimpro::make.image(65535*order/max(order)))
+    title(paste("Order of mixture (Maximum=",max(img),")"))
   }
   if("eorder" %in% what){
-    eorder <- drop(stats$eorder)
-    adimpro::show.image(img <- adimpro::make.image(65535*eorder/max(eorder)))
-    title(paste("Eff. order of mixture (Maximum=",signif(max(eorder),2),")"))
+    img <- drop(stats$eorder)
+    img <- img/max(img)
+    adimpro::rimage(img, ...)
+#    adimpro::show.image(img <- adimpro::make.image(65535*eorder/max(eorder)))
+    title(paste("Eff. order of mixture (Maximum=",signif(max(img),2),")"))
   }
   if("ev" %in% what){
-    ev <- drop(stats$ev[1,,,])
-    adimpro::show.image(img <- adimpro::make.image(65535*ev/max(ev)))
-    title(paste("Maximal Eigenvalue (Maximum=",signif(max(ev),3),")"))
+    img <- drop(stats$ev[1,,,])
+    img <- img/max(img)
+    adimpro::rimage(img, ...)
+#    adimpro::show.image(img <- adimpro::make.image(65535*ev/max(ev)))
+    title(paste("Maximal Eigenvalue (Maximum=",signif(max(img),3),")"))
   }
   if(identify){
     xind<-(1:x@ddim[1])
     yind<-(1:x@ddim[2])
     zind<-(1:x@ddim[3])
-    img <- adimpro::extract.image(img)
-    image(1:dim(img)[1],1:dim(img)[2],img,col=grey((0:255)/255), asp=TRUE)
+    adimpro::rimage(1:dim(img)[1],1:dim(img)[2],img, ...)
     identifyFA(view,slice,xind,yind,zind)
   } else {
     par(oldpar)
-    invisible(img)
+    invisible(adimpro::make.image(65535*img))
   }
 })
 
@@ -320,7 +331,6 @@ setMethod("plot", "dtiIndices", function(x, y, slice=1, view= "axial", method=1,
     }
     return(invisible(z))
   }
-  #adimpro <- require(adimpro)
   oldpar <- par(mar=mar,mgp=mgp, ...)
   if (view == "sagittal") {
     anindex <- if(what=="ga") tanh(x@ga[slice,yind,zind]) else x@fa[slice,yind,zind]
@@ -379,16 +389,6 @@ setMethod("plot", "dtiIndices", function(x, y, slice=1, view= "axial", method=1,
       par(oldpar)
       invisible(andirection)
     }
-    #    } else if(show) {
-    #      dim(anindex) <- dim(andirection)[2:3]
-    #      image(anindex,...)
-    #      if(identify){
-    #         identifyFA(view,slice,xind,yind,zind)
-    #      } else {
-    #        par(oldpar)
-    #        invisible(NULL)
-    #      }
-    #    }
   } else if (method==3) {
     #    if(adimpro) {
     andirection[is.na(andirection)] <- 0
@@ -400,15 +400,6 @@ setMethod("plot", "dtiIndices", function(x, y, slice=1, view= "axial", method=1,
       par(oldpar)
       invisible(bary)
     }
-    #    } else if(show) {
-    #      image(andirection[1,,],...)
-    #      if(identify){
-    #         identifyFA(view,slice,xind,yind,zind)
-    #      } else {
-    #         par(oldpar)
-    #         invisible(NULL)
-    #      }
-    #    }
   } else if (method==5) {
     #    if(adimpro) {
     andirection[is.na(andirection)] <- 0
@@ -425,15 +416,6 @@ setMethod("plot", "dtiIndices", function(x, y, slice=1, view= "axial", method=1,
       par(oldpar)
       invisible(img.hsi)
     }
-    #    } else if(show) {
-    #      image(andirection[1,,],...)
-    #      if(identify){
-    #         identifyFA(view,slice,xind,yind,zind)
-    #      } else {
-    #         par(oldpar)
-    #         invisible(NULL)
-    #      }
-    #    }
   } else if (method==6) {
     data("colqFA", envir = environment())
     #    if (adimpro) {
@@ -452,15 +434,6 @@ setMethod("plot", "dtiIndices", function(x, y, slice=1, view= "axial", method=1,
       par(oldpar)
       invisible(img)
     }
-    #    } else if (show) {
-    #      image(anindex, col=colqFA)
-    #      if(identify){
-    #         identifyFA(view,slice,xind,yind,zind)
-    #      } else {
-    #         par(oldpar)
-    #         invisible(NULL)
-    #      }
-    #    }
   }
 })
 
@@ -474,7 +447,8 @@ setMethod("plot", "dkiIndices", function(x,
                                          y,
                                          slice = 1,
                                          #view = "axial",
-                                         what = c("md", "fa", "mk", "mk2", "kaxial", "kradial", "fak"),
+                                         what = c("md", "fa", "mk", "mk2",
+                                         "k1", "k2", "k3","kaxial", "kradial", "fak"),
                                          #method = 1,
                                          #quant = 0,
                                          #minfa = NULL,
@@ -510,11 +484,14 @@ setMethod("plot", "dkiIndices", function(x,
 #  }
 
   switch(what,
-         md = image(xind, yind, x@md[xind, yind, slice], col=grey(0:255/255), asp=TRUE, ...),
-         fa = image(xind, yind, x@fa[xind, yind, slice], col=grey(0:255/255), asp=TRUE, ...),
-         mk = image(xind, yind, x@mk[xind, yind, slice], col=grey(0:255/255), asp=TRUE, ...),
-         mk2 = image(xind, yind, x@mk2[xind, yind, slice], col=grey(0:255/255), asp=TRUE, ...),
-         kaxial = image(xind, yind, x@kaxial[xind, yind, slice], col=grey(0:255/255), asp=TRUE, ...),
-         kradial = image(xind, yind, x@kradial[xind, yind, slice], col=grey(0:255/255), asp=TRUE, ...),
-         fak = image(xind, yind, x@fak[xind, yind, slice], col=grey(0:255/255), asp=TRUE, ...))
+         md = adimpro::rimage(xind, yind, x@md[xind, yind, slice], ...),
+         fa = adimpro::rimage(xind, yind, x@fa[xind, yind, slice], ...),
+         mk = adimpro::rimage(xind, yind, x@mk[xind, yind, slice], ...),
+         mk2 = adimpro::rimage(xind, yind, x@mk2[xind, yind, slice], ...),
+         k1 = adimpro::rimage(xind, yind, x@k1[xind, yind, slice], ...),
+         k2 = adimpro::rimage(xind, yind, x@k2[xind, yind, slice], ...),
+         k3 = adimpro::rimage(xind, yind, x@k3[xind, yind, slice], ...),
+         kaxial = adimpro::rimage(xind, yind, x@kaxial[xind, yind, slice], ...),
+         kradial = adimpro::rimage(xind, yind, x@kradial[xind, yind, slice], ...),
+         fak = adimpro::rimage(xind, yind, x@fak[xind, yind, slice], ...))
 })

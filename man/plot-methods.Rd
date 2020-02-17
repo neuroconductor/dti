@@ -26,8 +26,8 @@
    xind=NULL, yind=NULL, zind=NULL, mar=par("mar"), mgp=par("mgp"), \dots)
 \S4method{plot}{dwiFiber}(x, y, \dots)
 \S4method{plot}{dkiIndices}(x, y, slice=1, what=c("md", "fa", "mk", "mk2",
-     "kaxial", "kradial", "fak"), xind=NULL, yind=NULL,
-     mar=par("mar"), mgp=par("mgp"),\dots)
+     "k1", "k2", "k3", "kaxial", "kradial", "fak"), xind=NULL, yind=NULL,
+     mar=par("mar"), mgp=par("mgp"), \dots)
 }
 \arguments{
   \item{x}{ Object of class \code{"dtiIndices"}, \code{"dtiData"} or \code{"dtiTensor"}}
