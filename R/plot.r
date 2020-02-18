@@ -19,6 +19,8 @@ setMethod("plot", "dtiData", function(x, y,slice=1, gradient=NULL, view= "axial"
 
 # reorient plots depending on .dtiopts
   impars <- get(".dtiopts",envir=.dtiOpts)
+  rimpars <- adimpro::rimage.options()
+  adimpro::rimage.options(swapx=FALSE,swapy=FALSE)
   if(impars$swapx){
      x@si <- x@si[x@ddim[1]:1,,,]
      xind <- sort((x@ddim[1]+1)-xind)
@@ -69,6 +71,7 @@ setMethod("plot", "dtiData", function(x, y,slice=1, gradient=NULL, view= "axial"
   img <- img/maxsi
   if(show) adimpro::rimage(img, ...)
   par(oldpar)
+  adimpro::rimage.options(swapx=rimpars$swapx,swapy=rimpars$swapy)
   invisible(adimpro::make.image(65535*img))
 })
 
@@ -85,6 +88,8 @@ setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, mi
 
   # reorient plots depending on .dtiopts
     impars <- get(".dtiopts",envir=.dtiOpts)
+    rimpars <- adimpro::rimage.options()
+    adimpro::rimage.options(swapx=FALSE,swapy=FALSE)
   if(impars$swapx){
      x <- x[x@ddim[1]:1,,]
      xind <- sort((x@ddim[1]+1)-xind)
@@ -202,6 +207,7 @@ setMethod("plot", "dtiTensor", function(x, y, slice=1, view="axial", quant=0, mi
   adimpro::rimage(img, ...)
 #  adimpro::show.image(adimpro::make.image(65535*img/max(img)))
   title(paste("Dzz: min",signif(min(D[6,,][mask]),3),"max",signif(max(D[6,,][mask]),3)))
+  adimpro::rimage.options(swapx=rimpars$swapx,swapy=rimpars$swapy)
   invisible(NULL)
 })
 
@@ -216,6 +222,8 @@ setMethod("plot", "dwiMixtensor", function(x, y, slice=1, view="axial", what="fa
 
 # reorient plots depending on .dtiopts
   impars <- get(".dtiopts",envir=.dtiOpts)
+  rimpars <- adimpro::rimage.options()
+  adimpro::rimage.options(swapx=FALSE,swapy=FALSE)
   if(impars$swapx){
      x <- x[x@ddim[1]:1,,]
      xind <- sort((x@ddim[1]+1)-xind)
@@ -282,9 +290,11 @@ setMethod("plot", "dwiMixtensor", function(x, y, slice=1, view="axial", what="fa
     yind<-(1:x@ddim[2])
     zind<-(1:x@ddim[3])
     adimpro::rimage(1:dim(img)[1],1:dim(img)[2],img, ...)
+    adimpro::rimage.options(swapx=rimpars$swapx,swapy=rimpars$swapy)
     identifyFA(view,slice,xind,yind,zind)
   } else {
     par(oldpar)
+    adimpro::rimage.options(swapx=rimpars$swapx,swapy=rimpars$swapy)
     invisible(adimpro::make.image(65535*img))
   }
 })
@@ -467,6 +477,8 @@ setMethod("plot", "dkiIndices", function(x,
 
   # reorient plots depending on .dtiopts
   impars <- get(".dtiopts",envir=.dtiOpts)
+  rimpars <- adimpro::rimage.options()
+  adimpro::rimage.options(swapx=FALSE,swapy=FALSE)
   if(impars$swapx){
      x <- x[x@ddim[1]:1,,]
      xind <- sort((x@ddim[1]+1)-xind)
@@ -494,4 +506,6 @@ setMethod("plot", "dkiIndices", function(x,
          kaxial = adimpro::rimage(xind, yind, x@kaxial[xind, yind, slice], ...),
          kradial = adimpro::rimage(xind, yind, x@kradial[xind, yind, slice], ...),
          fak = adimpro::rimage(xind, yind, x@fak[xind, yind, slice], ...))
+adimpro::rimage.options(swapx=rimpars$swapx,swapy=rimpars$swapy)
+invisible(NULL)
 })
