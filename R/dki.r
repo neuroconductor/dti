@@ -199,11 +199,7 @@ setMethod("dkiTensor", "dtiData",
                 ##  Risk function for Diffusion Kurtosis model with nonlinear regression
                 ##
                 ##   si are the original observations
-                gvalue <- param[22] * exp(A%*%param[1:21])
-                ## avoid negative variances that may result due to approximations
-                ## within the iteration process
-
-                ## factor sigma in muL and sigma^2 in vL cancels in the quotient
+                gvalue <- exp(A%*%param[1:21])
                 sum((si - gvalue)^2)
               }
 
@@ -217,7 +213,8 @@ setMethod("dkiTensor", "dtiData",
                   for (ix in 1:ddim[1]) {
                     if (mask[ix, iy, iz]) {
                       i <- i+1
-                      param <- c(D[, ix, iy, iz], W[, ix, iy, iz], s0[ix, iy, iz])
+                      sii <- object@si[ix,iy,iz,]/s0[ix, iy, iz]
+                      param <- c(D[, ix, iy, iz], W[, ix, iy, iz])
                       param[1:6] <- param[c(1,4,6,2,3,5)] * mbv
                       param[7:21] <- param[7:21]*mean(param[1:3])^2
 
