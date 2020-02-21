@@ -9,10 +9,11 @@
 #include <sys/time.h>
 #include <time.h>
 
-int dimxb = 0, ngradcc = 0;
+int ngradcc = 0;
 int iibv = 0;
-double* si_init, *bv, *grad;
+double* si_init, *bv, *gradients;
 double alpha, lambda;
+
 extern void F77_NAME(rskmixb2)(double* param, int* npar, double* si,
              double* grad, double* bv, int* ng, double* result);
 
@@ -109,7 +110,7 @@ double rskmixb2(int param_length, double *param, void* ex){
     si[i] = si_init[i+iibv*ngradcc];
   }
 
-  F77_CALL(rskmixb2)(param, &param_length, si, grad, bv, &ngradcc, &result);
+  F77_CALL(rskmixb2)(param, &param_length, si, gradients, bv, &ngradcc, &result);
 
   //check for infinity
 //  if(result == R_PosInf || result == R_NegInf){
@@ -131,7 +132,7 @@ double rskmixb1(int param_length, double *param, void* ex){
     si[i] = si_init[i+iibv*ngradcc];
   }
 
-  F77_CALL(rskmixb1)(param, &param_length, si, grad, bv, &ngradcc, &alpha, &result);
+  F77_CALL(rskmixb1)(param, &param_length, si, gradients, bv, &ngradcc, &alpha, &result);
 
   //check for infinity
 //  if(result == R_PosInf || result == R_NegInf){
@@ -153,7 +154,7 @@ double rskmixb0(int param_length, double *param, void* ex){
     si[i] = si_init[i+iibv*ngradcc];
   }
 
-  F77_CALL(rskmixb0)(param, &param_length, si, grad, bv, &ngradcc, &lambda, &alpha, &result);
+  F77_CALL(rskmixb0)(param, &param_length, si, gradients, bv, &ngradcc, &lambda, &alpha, &result);
 
   //check for infinity
 //  if(result == R_PosInf || result == R_NegInf){
@@ -173,7 +174,7 @@ void drskmb2(int param_length, double* param, double* result, void* ex){
    si[i] = si_init[i+iibv*ngradcc];
   }
 
-  F77_CALL(drskmb2)(param, &param_length, si, grad, bv, &ngradcc, result);
+  F77_CALL(drskmb2)(param, &param_length, si, gradients, bv, &ngradcc, result);
 
   Free(si);
 }
@@ -186,7 +187,7 @@ void drskmb1(int param_length, double* param, double* result, void* ex){
    si[i] = si_init[i+iibv*ngradcc];
   }
 
-  F77_CALL(drskmb1)(param, &param_length, si, grad, bv, &ngradcc, &alpha, result);
+  F77_CALL(drskmb1)(param, &param_length, si, gradients, bv, &ngradcc, &alpha, result);
 
   Free(si);
 }
@@ -199,7 +200,7 @@ void drskmb0(int param_length, double* param, double* result, void* ex){
    si[i] = si_init[i+iibv*ngradcc];
   }
 
-  F77_CALL(drskmb0)(param, &param_length, si, grad, bv, &ngradcc, &lambda, &alpha, result);
+  F77_CALL(drskmb0)(param, &param_length, si, gradients, bv, &ngradcc, &lambda, &alpha, result);
 
   Free(si);
 }
@@ -220,7 +221,7 @@ mfunrskmb2_ret getparam2b(int param_length, double* param, double fmin){
       param_work[i] = param[i];
    }
  //  calculate weights
-  double* mix = (double*) R_alloc(c_ord, sizeof(double));
+  double* mix = (double*) R_alloc((long unsigned int) c_ord, sizeof(double));
   for( i = 0; i < c_ord; i++){
       mix[i] = param[3*i];
       o[i] = i;
@@ -228,7 +229,7 @@ mfunrskmb2_ret getparam2b(int param_length, double* param, double fmin){
    revsort(mix, o, c_ord);
 //  this sorts in decreasing order, now rearrange parameters
 //  sorted index in o
-   double* orient = (double*) R_alloc(2*c_ord, sizeof(double));
+   double* orient = (double*) R_alloc(2*(long unsigned int) c_ord, sizeof(double));
    for( i = 0; i < c_ord; i++){
       w_tmp[i] = param[3*o[i]];
       orient[2*i] = param[3*o[i]+1];
@@ -289,7 +290,7 @@ mfunrskmb1_ret getparam1b(int param_length, double* param, double fmin){
       param_work[i] = param[i];
    }
 //  calculate weights
-   double* mix = (double*) R_alloc(c_ord, sizeof(double));
+   double* mix = (double*) R_alloc((long unsigned int) c_ord, sizeof(double));
    for( i = 0; i < c_ord; i++){
       mix[i] = param[3*i];
       o[i] = i;
@@ -297,7 +298,7 @@ mfunrskmb1_ret getparam1b(int param_length, double* param, double fmin){
    revsort(mix, o, c_ord);
 //  this sorts in decreasing order, now rearrange parameters
 //  sorted index in o
-   double* orient = (double*) R_alloc(2*c_ord, sizeof(double));
+   double* orient = (double*) R_alloc(2*(long unsigned int) c_ord, sizeof(double));
    for( i = 0; i < c_ord; i++){
       w_tmp[i] = param[3*o[i]];
       orient[2*i] = param[3*o[i]+1];
@@ -352,14 +353,14 @@ mfunrskmb0_ret getparam0b(int param_length, double* param, double fmin){
       param_work[i] = param[i];
    }
 //  calculate weights
-   double* mix = (double*) R_alloc(c_ord, sizeof(double));
+   double* mix = (double*) R_alloc((long unsigned int) c_ord, sizeof(double));
    for( i = 0; i < c_ord; i++){
       mix[i] = param[3*i];
       o[i] = i;
    }
    revsort(mix, o, c_ord);
 //  this sorts in decreasing order, now rearrange parameters
-   double* orient = (double*) R_alloc(2*c_ord, sizeof(double));
+   double* orient = (double*) R_alloc(2*(long unsigned int) c_ord, sizeof(double));
    for( i = 0; i < c_ord; i++){
       w_tmp[i] = param[3*o[i]];
       orient[2*i] = param[3*o[i]+1];
@@ -439,8 +440,7 @@ void mixtrl2b( int* n1, int* siind, double* wi, int* ngrad, int* maxcomp, int* m
    int fail;              // failure code for optim: zero is OK
    double Fmin = 0.;          // minimal value of obj fct in optim
     //Setting global variables
-   dimxb = *n1;
-   si_init = si_in; grad = grad_in, ngradcc = *ngrad; bv = bv_in;
+   si_init = si_in; gradients = grad_in, ngradcc = *ngrad; bv = bv_in;
    alpha = *alpha_in;
    lambda = *lambda_in;
 
@@ -448,20 +448,20 @@ void mixtrl2b( int* n1, int* siind, double* wi, int* ngrad, int* maxcomp, int* m
 
    param_length_init=3*maxcompc+3;
 
-   param = (double *) R_alloc(param_length_init, sizeof(double));
-   param_work = (double *) R_alloc(param_length_init, sizeof(double));
-   param_last = (double *) R_alloc(param_length_init, sizeof(double));
-   param_tmp = (double *) R_alloc(param_length_init, sizeof(double));
-   lower = (double *) R_alloc(param_length_init, sizeof(double));
-   upper = (double *) R_alloc(param_length_init, sizeof(double));
-   int *nbd = (int *) R_alloc(param_length_init, sizeof(int));
-   si = (double *) R_alloc(ngradcc, sizeof(double));
+   param = (double *) R_alloc((long unsigned int) param_length_init, sizeof(double));
+   param_work = (double *) R_alloc((long unsigned int) param_length_init, sizeof(double));
+   param_last = (double *) R_alloc((long unsigned int) param_length_init, sizeof(double));
+   param_tmp = (double *) R_alloc((long unsigned int) param_length_init, sizeof(double));
+   lower = (double *) R_alloc((long unsigned int) param_length_init, sizeof(double));
+   upper = (double *) R_alloc((long unsigned int) param_length_init, sizeof(double));
+   int *nbd = (int *) R_alloc((long unsigned int) param_length_init, sizeof(int));
+   si = (double *) R_alloc((long unsigned int) ngradcc, sizeof(double));
 
    //initialize param
    for(i=0; i<param_length_init; i++){
        param[i] = 0;
    }
-   for(iibv = 0; iibv < dimxb; iibv++){
+   for(iibv = 0; iibv < *n1; iibv++){
        for(i=0; i<param_length_init; i++){
           lower[i] = R_NegInf;
           upper[i] = R_PosInf;
@@ -676,8 +676,7 @@ void mixtrl1b( int* n1, int* siind, double* wi, int* ngrad, int* maxcomp, int* m
    double Fmin = 0.;          // minimal value of obj fct in optim
 
    //Setting global variables
-   dimxb = *n1;
-   si_init = si_in; grad = grad_in, ngradcc = *ngrad; bv = bv_in;
+   si_init = si_in; gradients = grad_in, ngradcc = *ngrad; bv = bv_in;
    alpha = *alpha_in;
    lambda = *lambda_in;
 
@@ -686,21 +685,21 @@ void mixtrl1b( int* n1, int* siind, double* wi, int* ngrad, int* maxcomp, int* m
 
    param_length_init=3*maxcompc+2;
 
-   param = (double *) R_alloc(param_length_init, sizeof(double));
-   param_work = (double *) R_alloc(param_length_init, sizeof(double));
-   param_last = (double *) R_alloc(param_length_init, sizeof(double));
-   param_tmp = (double *) R_alloc(param_length_init, sizeof(double));
-   lower = (double *) R_alloc(param_length_init, sizeof(double));
-   upper = (double *) R_alloc(param_length_init, sizeof(double));
-   int *nbd = (int *) R_alloc(param_length_init, sizeof(int));
-   si = (double *) R_alloc(ngradcc, sizeof(double));
+   param = (double *) R_alloc((long unsigned int) param_length_init, sizeof(double));
+   param_work = (double *) R_alloc((long unsigned int) param_length_init, sizeof(double));
+   param_last = (double *) R_alloc((long unsigned int) param_length_init, sizeof(double));
+   param_tmp = (double *) R_alloc((long unsigned int) param_length_init, sizeof(double));
+   lower = (double *) R_alloc((long unsigned int) param_length_init, sizeof(double));
+   upper = (double *) R_alloc((long unsigned int) param_length_init, sizeof(double));
+   int *nbd = (int *) R_alloc((long unsigned int) param_length_init, sizeof(int));
+   si = (double *) R_alloc((long unsigned int) ngradcc, sizeof(double));
 
    //initialize param
    for(i=0; i<param_length_init; i++){
        param[i] = 0;
    }
 
-   for(iibv = 0; iibv < dimxb; iibv++){
+   for(iibv = 0; iibv < *n1; iibv++){
       for(i=0; i<param_length_init; i++){
          lower[i] = R_NegInf;
          upper[i] = R_PosInf;
@@ -893,29 +892,28 @@ void mixtrl0b( int* n1, int* siind, double* wi, int* ngrad, int* maxcomp, int* m
 
    //Setting global variables
    alpha = *alpha_in; lambda = *lambda_in;;
-   dimxb = *n1;
-   si_init = si_in; grad = grad_in, ngradcc = *ngrad; bv = bv_in;
+   si_init = si_in; gradients = grad_in, ngradcc = *ngrad; bv = bv_in;
 
 
    //Gradient vectors corresponding to minima in spherical coordinates
 
    param_length_init=3*maxcompc + 1;
 
-   param = (double *) R_alloc(param_length_init, sizeof(double));
-   param_work = (double *) R_alloc(param_length_init, sizeof(double));
-   param_last = (double *) R_alloc(param_length_init, sizeof(double));
-   param_tmp = (double *) R_alloc(param_length_init, sizeof(double));
-   lower = (double *) R_alloc(param_length_init, sizeof(double));
-   upper = (double *) R_alloc(param_length_init, sizeof(double));
-   int *nbd = (int *) R_alloc(param_length_init, sizeof(int));
-   si = (double *) R_alloc(ngradcc, sizeof(double));
+   param = (double *) R_alloc((long unsigned int) param_length_init, sizeof(double));
+   param_work = (double *) R_alloc((long unsigned int) param_length_init, sizeof(double));
+   param_last = (double *) R_alloc((long unsigned int) param_length_init, sizeof(double));
+   param_tmp = (double *) R_alloc((long unsigned int) param_length_init, sizeof(double));
+   lower = (double *) R_alloc((long unsigned int) param_length_init, sizeof(double));
+   upper = (double *) R_alloc((long unsigned int) param_length_init, sizeof(double));
+   int *nbd = (int *) R_alloc((long unsigned int) param_length_init, sizeof(int));
+   si = (double *) R_alloc((long unsigned int) ngradcc, sizeof(double));
 
    //initialize param
    for(i=0; i<param_length_init; i++){
        param[i] = 0;
    }
 
-   for(iibv = 0; iibv < dimxb; iibv++){
+   for(iibv = 0; iibv < *n1; iibv++){
        for(i=0; i<param_length_init; i++){
           lower[i] = R_NegInf;
           upper[i] = R_PosInf;
