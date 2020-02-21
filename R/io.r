@@ -237,9 +237,9 @@ readDWIdata <- function(gradient, dirlist,
     i <- i+1
     if (!verbose) setTxtProgressBar(pb, i)
     if (format == "DICOM") {
-      dd <- readDICOMFile(ff, skipSequence = TRUE)
-      delta <- c(as.numeric(unlist(strsplit(extractHeader(dd$hdr, "PixelSpacing", FALSE)[1], " "))), extractHeader(dd$hdr, "SliceThickness")[1])
-      imageOrientationPatient <- as.numeric(unlist(strsplit(extractHeader(dd$hdr, "ImageOrientationPatient", FALSE)[1], " ")))
+      dd <- oro.dicom::readDICOMFile(ff, skipSequence = TRUE)
+      delta <- c(as.numeric(unlist(strsplit(oro.dicom::extractHeader(dd$hdr, "PixelSpacing", FALSE)[1], " "))), oro.dicom::extractHeader(dd$hdr, "SliceThickness")[1])
+      imageOrientationPatient <- as.numeric(unlist(strsplit(oro.dicom::extractHeader(dd$hdr, "ImageOrientationPatient", FALSE)[1], " ")))
       imageOrientationPatient <- matrix(c(imageOrientationPatient, vcrossp(imageOrientationPatient[1:3], imageOrientationPatient[4:6])), 3, 3)
       gradx <- dd$hdr[which((dd$hdr[, 1] == "0019") & (dd$hdr[, 2] == "10BB"))[1], 6]
       grady <- dd$hdr[which((dd$hdr[, 1] == "0019") & (dd$hdr[, 2] == "10BC"))[1], 6]
@@ -250,13 +250,13 @@ readDWIdata <- function(gradient, dirlist,
       #      dd$img <- aperm(dd$img, c(2, 1))
       #      ## END WORKAROUND!!
     } else if (format == "NIFTI") {
-      dd <- readNIfTI(ff, reorient = FALSE)
+      dd <- oro.nifti::readNIfTI(ff, reorient = FALSE)
       nslice <- dim(dd)[3]
       if (is.null(zind)) zind <- 1:nslice
       delta <- dd@pixdim[2:4]
       imageOrientationPatient <- t(matrix(c(dd@srow_x[1:3]/dd@pixdim[2:4], dd@srow_y[1:3]/dd@pixdim[2:4], dd@srow_z[1:3]/dd@pixdim[2:4]), 3, 3))
     } else if (format == "ANALYZE") {
-      dd <- readANALYZE(ff)
+      dd <- oro.nifti::readANALYZE(ff)
       if ( SPM2) dd@.Data <- dd@.Data * dd@funused1
       nslice <- dim(dd)[3]
       if (is.null(zind)) zind <- 1:nslice
@@ -264,7 +264,7 @@ readDWIdata <- function(gradient, dirlist,
       imageOrientationPatient <- diag(3)
       if ( length( dim( dd)) == 4) if ( dim( dd)[ 4] == 1) dim( dd) <-  dim( dd)[ 1:3]
     } else if (format == "AFNI") {
-      dd <- readAFNI(ff)
+      dd <- oro.nifti::readAFNI(ff)
       nslice <- dim(dd)[3]
       if (is.null(zind)) zind <- 1:nslice
       delta <- dd@DELTA
@@ -846,7 +846,7 @@ tensor2medinria <- function(obj, filename, xind=NULL, yind=NULL, zind=NULL) {
 
   D <- aperm( obj@D, c( 2:4, 1))[ xind, yind, zind, c( 1, 2, 4, 3, 5, 6)]
   dim(D) <- c( length(xind), length(yind), length(zind), 1, 6)
-  nim <- nifti(D,
+  nim <- oro.nifti::nifti(D,
                dim_ = c( 5, length(xind), length(yind), length(zind), 1, 6, 1, 1),
                pixdim = c( -1, obj@voxelext[1:3], 1, 1, 0, 0),
                intent_code = 1007,
@@ -862,12 +862,12 @@ tensor2medinria <- function(obj, filename, xind=NULL, yind=NULL, zind=NULL) {
                srow_z = c( 0, 0, obj@voxelext[3], 0)
   )
 
-  writeNIfTI( nim, filename)
+  oro.nifti::writeNIfTI( nim, filename)
 }
 
 medinria2tensor <- function(filename) {
   args <- sys.call()
-  data <- readNIfTI(filename, reorient = FALSE)
+  data <- oro.nifti::readNIfTI(filename, reorient = FALSE)
 
   invisible(new("dtiTensor",
                 call  = list(args),

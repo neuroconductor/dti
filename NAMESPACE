@@ -14,7 +14,7 @@ importFrom("stats", "IQR", "as.dist", "bw.nrd", "coef", "coefficients",
            "runif", "sd")
 importFrom("utils", "data", "setTxtProgressBar", "txtProgressBar")
 importFrom("awsMethods", "extract", "setCores")
-importFrom("adimpro", "show.image", "make.image", "extract.image")
+importFrom("adimpro", "show.image", "make.image", "extract.image", "rimage")
 importFrom("gsl", "ellint_RF", "ellint_RD", "legendre_sphPlm")
 importFrom("oro.dicom", "readDICOMFile", "extractHeader")
 importFrom("oro.nifti", "readAFNI", "readANALYZE", "nifti", "readNIfTI", "writeNIfTI")
