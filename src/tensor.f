@@ -8,10 +8,6 @@ C
      1       res(nb,nvox),rss(nvox)
       integer i,j,k
       double precision zrss,z
-C C$OMP PARALLEL DEFAULT(NONE)
-C C$OMP& SHARED(nb,nvox,th0,D,s,b,res,rss)
-C C$OMP& PRIVATE(i,j,k,z,zrss)
-C C$OMP DO SCHEDULE(GUIDED)
       DO i=1,nvox
          zrss = 0.d0
          DO j = 1,nb
@@ -25,8 +21,6 @@ C C$OMP DO SCHEDULE(GUIDED)
          END DO
          rss(i) = zrss
       END DO
-C C$OMP END DO
-C C$OMP END PARALLEL
       RETURN
       END
       subroutine ftensor(par,s,nb,b,vinv,gv,fv)
@@ -39,7 +33,6 @@ C
       integer i
       double precision D(6),th0,rss,res
       th0=par(1)
-C      call dblepr("par",3,par,7)
       call rho2D(par(2),D)
       call sihat(th0,D,b,gv,nb)
 C
@@ -51,7 +44,6 @@ C
          rss=rss+res*res*vinv(i)
       END DO
       fv=rss
-C      call dblepr("fv",2,fv,1)
 C
 C   now we have value of the criterion in fv
 C
