@@ -120,7 +120,7 @@
     <h2 class="hasAnchor" id="slots"><a class="anchor" href="#slots"></a>Slots</h2>
 
     
-<dl'>
+<dl>
     <dt> <code>.Data</code>: </dt><dd><p>Object of class <code>"list"</code>, usually empty.</p></dd>
     <dt> <code>gradient</code>: </dt><dd><p>Object of class <code>"matrix"</code>, matrix of dimension <code><a href='https://rdrr.io/r/base/c.html'>c(3,ngrad)</a></code> containing gradient directions.</p></dd>
     <dt> <code>btb</code>: </dt><dd><p>Object of class <code>"matrix"</code>, matrix of dimension <code><a href='https://rdrr.io/r/base/c.html'>c(6,ngrad)</a></code> obtained from gradient directions.</p></dd>
@@ -141,7 +141,7 @@
 </dl>
 
 <p>For class <code>"dtiData"</code>:</p>
-<dl'>
+<dl>
     <dt> <code>si</code>: </dt><dd><p>Object of class <code>"array"</code>, Diffusion Weighted Data.</p></dd>
     <dt> <code>sdcoef</code>: </dt><dd><p>Object of class <code>"numeric"</code>, Parameters of the model for error 
       standard deviation as a function of the mean. First two entries refer to intercept and slope of a linear function,
@@ -150,7 +150,7 @@
 </dl>
 
 <p>For class <code>"dtiTensor"</code>:</p>
-<dl'>
+<dl>
     <dt> <code>D</code>: </dt><dd><p>Object of class <code>"array"</code>, estimated tensors, dimension <code><a href='https://rdrr.io/r/base/c.html'>c(6,ddim)</a></code>.
           Tensors are stored as upper diagonal matrices.</p></dd> 
     <dt> <code>th0</code>: </dt><dd><p>Object of class <code>"array"</code>, estimated intensities in S0 images, dimension <code>ddim</code></p></dd> 
@@ -167,7 +167,7 @@
 </dl>
 
 <p>For class <code>"dtiIndices"</code>:</p>
-<dl'>
+<dl>
     <dt> <code>fa</code>: </dt><dd><p>Object of class <code>"array"</code>, Fractional anisotropy values (FA)</p></dd>
     <dt> <code>ga</code>: </dt><dd><p>Object of class <code>"array"</code>, Geodetic anisotropy values (GA)</p></dd>
     <dt> <code>md</code>: </dt><dd><p>Object of class <code>"array"</code>, Mean diffusivity values (MD)</p></dd>
@@ -178,7 +178,7 @@
 </dl>
 
 <p>For class <code>"dkiTensor"</code>:</p>
-<dl'>
+<dl>
     <dt> <code>D</code>: </dt><dd><p>Object of class <code>"array"</code>, estimated tensors, dimension <code><a href='https://rdrr.io/r/base/c.html'>c(6,ddim)</a></code>.
           Tensors are stored as upper diagonal matrices.</p></dd> 
     <dt> <code>W</code>: </dt><dd><p>Object of class <code>"array"</code>, estimated kurtosis tensors, dimension <code><a href='https://rdrr.io/r/base/c.html'>c(15,ddim)</a></code>.</p></dd> 
@@ -196,7 +196,7 @@
 </dl>
 
 <p>For class <code>"dkiIndices"</code>:</p>
-<dl'>
+<dl>
     <dt> <code>fa</code>: </dt><dd><p>Object of class <code>"array"</code>, Fractional anisotropy values (FA)</p></dd>
     <dt> <code>ga</code>: </dt><dd><p>Object of class <code>"array"</code>, Geodetic anisotropy values (GA)</p></dd>
     <dt> <code>md</code>: </dt><dd><p>Object of class <code>"array"</code>, Mean diffusivity values (MD)</p></dd>
@@ -215,7 +215,7 @@
 </dl>
 
 <p>For class <code>"dwiQball"</code>:</p>
-<dl'>
+<dl>
     <dt> <code>order</code>: </dt><dd><p>Object of class <code>"integer"</code>, maximal order of Spherical Harmonics to use, needs to be even.</p></dd> 
     <dt> <code>forder</code>: </dt><dd><p>Object of class <code>"integer"</code>, maximal order Gaussian-Laguerre functions in SPF basis (for EAP estimation)</p></dd> 
     <dt> <code>zeta</code>: </dt><dd><p>Object of class <code>"numeric"</code>, Scale parameter used in Gaussian-Laguerre functions (for EAP estimation)</p></dd>
@@ -232,7 +232,7 @@
     <dt> <code>what</code>: </dt><dd><p>Object of class <code>"character"</code>, <code>"ODF"</code>, <code>"wODF"</code>, <code>"aODF"</code> or <code>"ADC"</code>. Indicates if the object contains coefficients of the orientation density function (ODF (Descoteaux 2007), wODF (Sapiro(2009) or aODF) or the apparent diffusion coefficient (ADC). Coefficients are computed with respect to spherical harmonics of the specified order.</p></dd>
 
 </dl><p>For class <code>"dwiFiber"</code>:</p>
-<dl'>
+<dl>
     <dt> <code>fibers</code>: </dt><dd><p>Object of class <code>"matrix"</code>, Matrix of fibers. The first three columns contain the coordinates of the track points, the last three columns the direction vectors for each of these points.</p></dd> 
     <dt> <code>startind</code>: </dt><dd><p>Object of class <code>"integer"</code>, indices for the first dimension of <code>fibers</code> where
                               coordinates for a new fiber start.</p></dd>
@@ -244,7 +244,7 @@
     <dt> <code>maxangle</code>: </dt><dd><p>Object of class <code>"numeric"</code>, maximal angle between fibres.</p></dd> 
 
 </dl><p>For class <code>"dwiMixtensor"</code>:</p>
-<dl'>
+<dl>
     <dt> <code>model</code>: </dt><dd><p>Object of class <code>"character"</code>, characterizes the type of the 
             mixed tensor model. Currently the only implemented model is <code>model="homogeneous_prolate"</code>.</p></dd> 
     <dt> <code>ev</code>: </dt><dd><p>Object of class <code>"array"</code>, estimated eigenvalues, dimension <code><a href='https://rdrr.io/r/base/c.html'>c(2,ddim)</a></code></p></dd> 
@@ -266,7 +266,7 @@
 
     <h2 class="hasAnchor" id="methods"><a class="anchor" href="#methods"></a>Methods</h2>
 
-    <p>Methods only operate on subclasses <code>"dtiData"</code>, <code>"dtiTensor"</code>,  <code>"dtiIndices"</code>, <code>"dwiQball"</code> and <code>"dwiFiber"</code>.</p><dl'>
+    <p>Methods only operate on subclasses <code>"dtiData"</code>, <code>"dtiTensor"</code>,  <code>"dtiIndices"</code>, <code>"dwiQball"</code> and <code>"dwiFiber"</code>.</p><dl>
     <dt>dti.smooth</dt><dd><p>Create estimates of diffusion tensors in each voxel using structural adaptive spatial smoothing.</p></dd>
     <dt>dtiTensor</dt><dd><p><code>signature(object = "dtiData")</code>: Create estimates of diffusion tensors in each voxel.</p></dd>
     <dt>dtiIndices</dt><dd><p><code>signature(object = "dtiTensor")</code>: Create estimates of diffusion tensors indices in each voxel.</p></dd>
